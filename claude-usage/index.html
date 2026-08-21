@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Usage</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #0d1117;
+  --card:   #161b22;
+  --border: #21262d;
+  --text:   #e6edf3;
+  --muted:  #8b949e;
+  --blue:   #58a6ff;
+  --green:  #3fb950;
+  --purple: #bc8cff;
+  --orange: #e3b341;
+  --red:    #f47067;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Single sticky nav bar ── */
+.top-nav {
+  display: flex;
+  align-items: stretch;
+  height: 48px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0 8px 0 20px;
+}
+.nav-brand {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  padding-right: 16px;
+  margin-right: 4px;
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-tabs {
+  display: flex;
+  align-items: stretch;
+}
+.tab-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  background: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+.nav-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 0 8px;
+  border-left: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.nav-filters .pill { padding: 3px 10px; font-size: 11px; }
+
+#refresh-btn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0 16px;
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+#refresh-btn:hover { color: var(--text); }
+
+#error-banner {
+  display: none;
+  background: #3d1a1a;
+  border-bottom: 1px solid #8b2020;
+  color: var(--red);
+  padding: 10px 24px;
+  font-size: 13px;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.pill.active { border-color: var(--blue); color: var(--blue); }
+.pill.active.green { border-color: var(--green); color: var(--green); }
+.pill .dismiss { font-size: 10px; opacity: 0.7; }
+.pill .dismiss:hover { opacity: 1; }
+
+.date-picker-popup {
+  display: none;
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  gap: 8px;
+  flex-direction: column;
+  z-index: 20;
+  margin-top: 4px;
+}
+.date-picker-popup.open { display: flex; }
+.date-picker-popup label { color: var(--muted); font-size: 12px; }
+.date-picker-popup input[type=date] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  width: 100%;
+}
+.date-presets { display: flex; gap: 4px; }
+.preset-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.preset-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+.dropdown-popup {
+  display: none;
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 20;
+  min-width: 180px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+.dropdown-popup.open { display: block; }
+.dropdown-item {
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dropdown-item:hover { background: var(--border); }
+.dropdown-item.selected { color: var(--blue); }
+
+.content { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+@media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.stat-label { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.stat-value { font-size: 22px; font-weight: 600; }
+.stat-delta { font-size: 11px; margin-top: 4px; }
+.stat-delta.up   { color: var(--green); }
+.stat-delta.down { color: var(--red); }
+.stat-delta.flat { color: var(--muted); }
+
+.streak-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.section-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.section-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-header .section-title { margin-bottom: 0; }
+.chart-wrap { position: relative; }
+
+.toggle-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.toggle-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.toggle-btn.active { background: var(--blue); color: #fff; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.heatmap-scroll { overflow-x: auto; }
+.heatmap-months {
+  display: flex;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  padding-left: 28px;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  text-align: left;
+  padding: 8px 12px;
+  color: var(--muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+thead th:hover { color: var(--text); }
+thead th.sort-asc::after  { content: ' ↑'; }
+thead th.sort-desc::after { content: ' ↓'; }
+tbody tr { border-bottom: 1px solid var(--border); }
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+tbody td { padding: 10px 12px; color: var(--text); }
+tbody td.muted { color: var(--muted); }
+.load-more-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.load-more-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+.ctx-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.ctx-badge.low  { background: #1f3a1f; color: var(--green); }
+.ctx-badge.mid  { background: #3d2b00; color: var(--orange); }
+.ctx-badge.high { background: #3d1a1a; color: var(--red); }
+
+.savings-card {
+  background: #1a2e1a;
+  border: 1px solid #2d5a2d;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.savings-amount { font-size: 32px; font-weight: 700; color: var(--green); margin: 8px 0 4px; }
+.savings-desc   { font-size: 12px; color: var(--muted); }
+
+#loading {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13,17,23,0.7);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  font-size: 14px;
+  color: var(--muted);
+}
+#loading.show { display: flex; }
+</style>
+</head>
+<body>
+
+<div id="loading" class="show">Loading data…</div>
+<div id="error-banner"></div>
+
+<nav class="top-nav" id="top-nav">
+  <div class="nav-brand">Claude Usage</div>
+  <div class="nav-tabs" id="tab-bar"></div>
+  <div class="nav-filters" id="filter-bar"></div>
+  <button id="refresh-btn" title="Refresh">↺</button>
+</nav>
+
+<main class="content">
+  <div id="panel-overview"  class="tab-panel active"></div>
+  <div id="panel-sessions"  class="tab-panel"></div>
+  <div id="panel-analytics" class="tab-panel"></div>
+  <div id="panel-cost"      class="tab-panel"></div>
+</main>
+
+<script src="app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// ── Utilities ───────────────────────────────────────────
+
+function fmt(n) {
+  if (n == null) return '0';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return String(n);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  return iso.slice(0, 10);
+}
+
+function fmtCost(n) {
+  if (!n) return '$0.00';
+  if (n >= 100) return '$' + n.toFixed(0);
+  if (n >= 1)   return '$' + n.toFixed(2);
+  return '$' + n.toFixed(4);
+}
+
+function fmtDuration(first, last) {
+  if (!first || !last) return '—';
+  const ms = new Date(last) - new Date(first);
+  if (ms < 0) return '—';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h > 0) return h + 'h ' + m + 'm';
+  if (m > 0) return m + 'm';
+  return '<1m';
+}
+
+function sum(arr, key) {
+  return arr.reduce((t, r) => t + (r[key] || 0), 0);
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls)      e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function emptyState(msg) {
+  return el('div', 'empty-state', msg || 'No data for selected filters');
+}
+
+function makeSection(title) {
+  const card = el('div', 'section-card');
+  card.appendChild(el('div', 'section-title', title));
+  return card;
+}
+
+// ── Chart registry ──────────────────────────────────────
+
+const charts = {};
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+// ── Filter state ────────────────────────────────────────
+
+const filterState = {
+  dateFrom: null,
+  dateTo:   null,
+  projects: new Set(),
+  models:   new Set(),
+};
+
+// ── applyFilters ─────────────────────────────────────────
+
+function applyFilters(filters, data) {
+  let sessions = data.sessions || [];
+
+  if (filters.dateFrom) sessions = sessions.filter(s => s.first_timestamp >= filters.dateFrom);
+  if (filters.dateTo)   sessions = sessions.filter(s => s.first_timestamp <= filters.dateTo + 'T23:59:59');
+  if (filters.projects.size > 0) sessions = sessions.filter(s => filters.projects.has(s.project_name));
+  if (filters.models.size > 0)   sessions = sessions.filter(s => filters.models.has(s.model));
+
+  let daily = data.daily || [];
+  if (filters.dateFrom) daily = daily.filter(d => d.date >= filters.dateFrom);
+  if (filters.dateTo)   daily = daily.filter(d => d.date <= filters.dateTo);
+
+  if (filters.projects.size > 0 || filters.models.size > 0) {
+    const byDate = {};
+    for (const s of sessions) {
+      const date = s.first_timestamp.slice(0, 10);
+      if (!byDate[date]) byDate[date] = { date, sessions: 0, turns: 0, input_tokens: 0, output_tokens: 0, cache_read_tokens: 0, cache_creation_tokens: 0 };
+      byDate[date].sessions++;
+      byDate[date].turns              += s.turn_count       || 0;
+      byDate[date].input_tokens       += s.total_input_tokens  || 0;
+      byDate[date].output_tokens      += s.total_output_tokens || 0;
+      byDate[date].cache_read_tokens  += s.total_cache_read    || 0;
+      byDate[date].cache_creation_tokens += s.total_cache_creation || 0;
+    }
+    daily = Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  let prevSessions = null, prevDaily = null;
+  if (filters.dateFrom) {
+    const fromMs = new Date(filters.dateFrom + 'T00:00:00').getTime();
+    const toMs   = filters.dateTo ? new Date(filters.dateTo + 'T23:59:59').getTime() : Date.now();
+    const spanMs = toMs - fromMs;
+    const prevToMs   = fromMs - 1;
+    const prevFromMs = prevToMs - spanMs;
+    const prevFromStr = new Date(prevFromMs).toISOString().slice(0, 10);
+    const prevToStr   = new Date(prevToMs).toISOString().slice(0, 10);
+
+    prevSessions = (data.sessions || []).filter(s =>
+      s.first_timestamp >= prevFromStr && s.first_timestamp <= prevToStr + 'T23:59:59'
+    );
+    if (filters.projects.size > 0) prevSessions = prevSessions.filter(s => filters.projects.has(s.project_name));
+    if (filters.models.size > 0)   prevSessions = prevSessions.filter(s => filters.models.has(s.model));
+    prevDaily = (data.daily || []).filter(d => d.date >= prevFromStr && d.date <= prevToStr);
+  }
+
+  return { sessions, daily, tools: data.tools || [], hourly: data.hourly || [], prevSessions, prevDaily };
+}
+
+// ── Filter bar ──────────────────────────────────────────
+
+let datePickerEl  = null;
+let projectDropEl = null;
+let modelDropEl   = null;
+let rawData = null;
+
+function renderFilterBar() {
+  const bar = document.getElementById('filter-bar');
+  bar.replaceChildren();
+
+  const dateWrap = el('div');
+  dateWrap.style.position = 'relative';
+  datePickerEl = makeDatePickerPopup();
+  dateWrap.appendChild(makeDatePill());
+  dateWrap.appendChild(datePickerEl);
+  bar.appendChild(dateWrap);
+
+  const projectWrap = el('div');
+  projectWrap.style.position = 'relative';
+  const projPills = makeProjModelPills('projects', 'Project');
+  projPills.pills.forEach(p => projectWrap.appendChild(p));
+  projectDropEl = projPills.drop;
+  projectWrap.appendChild(projectDropEl);
+  bar.appendChild(projectWrap);
+
+  const modelWrap = el('div');
+  modelWrap.style.position = 'relative';
+  const modPills = makeProjModelPills('models', 'Model');
+  modPills.pills.forEach(p => modelWrap.appendChild(p));
+  modelDropEl = modPills.drop;
+  modelWrap.appendChild(modelDropEl);
+  bar.appendChild(modelWrap);
+}
+
+function closeAllPopups() {
+  if (datePickerEl)  datePickerEl.classList.remove('open');
+  if (projectDropEl) projectDropEl.classList.remove('open');
+  if (modelDropEl)   modelDropEl.classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  const nav = document.getElementById('top-nav');
+  if (nav && !nav.contains(e.target)) closeAllPopups();
+}, true);
+
+function makeDatePill() {
+  const hasDate = filterState.dateFrom || filterState.dateTo;
+  const pill = el('div', 'pill' + (hasDate ? ' active' : ''));
+
+  if (hasDate) {
+    const presets = [['7d', 7], ['30d', 30], ['90d', 90]];
+    const match = presets.find(([, d]) => {
+      const f = new Date(); f.setDate(f.getDate() - d);
+      return filterState.dateFrom === f.toISOString().slice(0, 10) && !filterState.dateTo;
+    });
+    const label = match ? 'Last ' + match[0] : (filterState.dateFrom || '') + ' → ' + (filterState.dateTo || '');
+    pill.appendChild(document.createTextNode(label + ' '));
+    const x = el('span', 'dismiss', '✕');
+    x.addEventListener('click', e => {
+      e.stopPropagation();
+      filterState.dateFrom = null;
+      filterState.dateTo   = null;
+      trigger();
+    });
+    pill.appendChild(x);
+  } else {
+    pill.textContent = '+ Date range';
+  }
+
+  pill.addEventListener('click', e => {
+    e.stopPropagation();
+    closeAllPopups();
+    datePickerEl.classList.toggle('open');
+  });
+  return pill;
+}
+
+function makeDatePickerPopup() {
+  const pop = el('div', 'date-picker-popup');
+  const row = el('div', 'date-presets');
+
+  [['7d', 7], ['30d', 30], ['90d', 90], ['All', 0]].forEach(([label, days]) => {
+    const btn = el('button', 'preset-btn', label);
+    let active = false;
+    if (days === 0 && !filterState.dateFrom && !filterState.dateTo) {
+      active = true;
+    } else if (days > 0) {
+      const f = new Date(); f.setDate(f.getDate() - days);
+      active = filterState.dateFrom === f.toISOString().slice(0, 10) && !filterState.dateTo;
+    }
+    if (active) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      if (days === 0) {
+        filterState.dateFrom = null;
+        filterState.dateTo   = null;
+      } else {
+        const f = new Date(); f.setDate(f.getDate() - days);
+        filterState.dateFrom = f.toISOString().slice(0, 10);
+        filterState.dateTo   = null;
+      }
+      closeAllPopups();
+      trigger();
+    });
+    row.appendChild(btn);
+  });
+  pop.appendChild(row);
+
+  pop.appendChild(el('label', null, 'From'));
+  const fromInput = document.createElement('input');
+  fromInput.type = 'date';
+  fromInput.value = filterState.dateFrom || '';
+  fromInput.addEventListener('change', () => { filterState.dateFrom = fromInput.value || null; trigger(); });
+  pop.appendChild(fromInput);
+
+  pop.appendChild(el('label', null, 'To'));
+  const toInput = document.createElement('input');
+  toInput.type = 'date';
+  toInput.value = filterState.dateTo || '';
+  toInput.addEventListener('change', () => { filterState.dateTo = toInput.value || null; trigger(); });
+  pop.appendChild(toInput);
+
+  return pop;
+}
+
+function makeProjModelPills(key, label) {
+  const selected = filterState[key];
+  const pills = [];
+
+  for (const val of selected) {
+    const pill = el('div', 'pill active green');
+    pill.appendChild(document.createTextNode(val + ' '));
+    const x = el('span', 'dismiss', '✕');
+    x.addEventListener('click', e => {
+      e.stopPropagation();
+      filterState[key].delete(val);
+      trigger();
+    });
+    pill.appendChild(x);
+    pills.push(pill);
+  }
+
+  const addPill = el('div', 'pill', '+ ' + label);
+  pills.push(addPill);
+
+  const drop = el('div', 'dropdown-popup');
+  const options = key === 'projects'
+    ? [...new Set((rawData.sessions || []).map(s => s.project_name).filter(Boolean))].sort()
+    : (rawData.meta && rawData.meta.models ? rawData.meta.models : []);
+
+  for (const opt of options) {
+    const item = el('div', 'dropdown-item' + (selected.has(opt) ? ' selected' : ''), opt);
+    item.addEventListener('click', e => {
+      e.stopPropagation();
+      if (selected.has(opt)) selected.delete(opt); else selected.add(opt);
+      trigger();
+    });
+    drop.appendChild(item);
+  }
+
+  addPill.addEventListener('click', e => {
+    e.stopPropagation();
+    closeAllPopups();
+    drop.classList.toggle('open');
+  });
+  return { pills, drop };
+}
+
+// ── Tab management ──────────────────────────────────────
+
+const TAB_NAMES  = ['overview', 'sessions', 'analytics', 'cost'];
+const TAB_LABELS = { overview: 'Overview', sessions: 'Sessions', analytics: 'Analytics', cost: 'Cost' };
+let activeTab = 'overview';
+
+function buildTabBar() {
+  const nav = document.getElementById('tab-bar');
+  nav.replaceChildren();
+  for (const name of TAB_NAMES) {
+    const btn = el('button', 'tab-btn' + (name === activeTab ? ' active' : ''), TAB_LABELS[name]);
+    btn.addEventListener('click', () => switchTab(name));
+    nav.appendChild(btn);
+  }
+}
+
+function switchTab(name) {
+  activeTab = name;
+  document.querySelectorAll('#tab-bar .tab-btn').forEach((btn, i) => {
+    btn.className = 'tab-btn' + (TAB_NAMES[i] === name ? ' active' : '');
+  });
+  for (const n of TAB_NAMES) {
+    document.getElementById('panel-' + n).className = 'tab-panel' + (n === name ? ' active' : '');
+  }
+  if (rawData) renderActiveTab(applyFilters(filterState, rawData));
+}
+
+function renderActiveTab(filtered) {
+  const panel = document.getElementById('panel-' + activeTab);
+  if (activeTab === 'overview')  renderTabOverview(filtered, panel);
+  if (activeTab === 'sessions')  renderTabSessions(filtered, panel);
+  if (activeTab === 'analytics') renderTabAnalytics(filtered, panel);
+  if (activeTab === 'cost')      renderTabCost(filtered, panel);
+}
+
+function trigger() {
+  if (!rawData) return;
+  renderFilterBar();
+  renderActiveTab(applyFilters(filterState, rawData));
+}
+
+// ── Streak computation ──────────────────────────────────
+
+function computeStreaks(daily) {
+  const active = new Set((daily || []).map(d => d.date));
+  const today  = new Date().toISOString().slice(0, 10);
+
+  let current = 0;
+  const d = new Date(today + 'T12:00:00');
+  while (active.has(d.toISOString().slice(0, 10))) {
+    current++;
+    d.setDate(d.getDate() - 1);
+  }
+
+  const sorted = [...active].sort();
+  let longest = 0, run = 0, prev = null;
+  for (const ds of sorted) {
+    if (!prev) { run = 1; }
+    else {
+      const diff = Math.round((new Date(ds) - new Date(prev)) / 86400000);
+      run = diff === 1 ? run + 1 : 1;
+    }
+    if (run > longest) longest = run;
+    prev = ds;
+  }
+
+  const thisMonth = today.slice(0, 7);
+  return {
+    currentStreak:       current,
+    longestStreak:       longest,
+    activeDaysThisMonth: sorted.filter(ds => ds.startsWith(thisMonth)).length,
+  };
+}
+
+// ── Shared chart builders ───────────────────────────────
+
+const HEAT_COLORS = ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'];
+
+function heatColor(val, sortedVals) {
+  if (!val) return HEAT_COLORS[0];
+  const rank = sortedVals.filter(v => v <= val).length / sortedVals.length;
+  if (rank <= 0.25) return HEAT_COLORS[1];
+  if (rank <= 0.50) return HEAT_COLORS[2];
+  if (rank <= 0.75) return HEAT_COLORS[3];
+  return HEAT_COLORS[4];
+}
+
+function renderTimelineChart(daily, container) {
+  destroyChart('timeline');
+  if (!daily || daily.length === 0) { container.appendChild(emptyState()); return; }
+
+  const canvas = document.createElement('canvas');
+  canvas.height = 120;
+  container.appendChild(canvas);
+
+  charts['timeline'] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: daily.map(d => d.date),
+      datasets: [
+        { label: 'Input',          data: daily.map(d => d.input_tokens          || 0), borderColor: '#58a6ff', backgroundColor: '#58a6ff26', fill: true, tension: 0.3, pointRadius: 2 },
+        { label: 'Output',         data: daily.map(d => d.output_tokens         || 0), borderColor: '#e3b341', backgroundColor: '#e3b34126', fill: true, tension: 0.3, pointRadius: 2 },
+        { label: 'Cache Read',     data: daily.map(d => d.cache_read_tokens     || 0), borderColor: '#3fb950', backgroundColor: '#3fb95026', fill: true, tension: 0.3, pointRadius: 2 },
+        { label: 'Cache Creation', data: daily.map(d => d.cache_creation_tokens || 0), borderColor: '#bc8cff', backgroundColor: '#bc8cff26', fill: true, tension: 0.3, pointRadius: 2 },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw) } },
+      },
+      scales: {
+        x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#8b949e', callback: fmt }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderProjectsChart(sessions, container) {
+  destroyChart('projects');
+  if (!sessions || sessions.length === 0) { container.appendChild(emptyState()); return; }
+
+  const byProject = {};
+  for (const s of sessions) {
+    const p = s.project_name || '(unknown)';
+    byProject[p] = (byProject[p] || 0) + (s.total_input_tokens || 0) + (s.total_output_tokens || 0);
+  }
+  const entries = Object.entries(byProject).sort((a, b) => b[1] - a[1]);
+
+  const canvas = document.createElement('canvas');
+  canvas.height = Math.max(80, entries.length * 28);
+  container.appendChild(canvas);
+
+  charts['projects'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: entries.map(([p]) => p),
+      datasets: [{ label: 'Total Tokens', data: entries.map(([, v]) => v), backgroundColor: '#58a6ff66', borderColor: '#58a6ff', borderWidth: 1, borderRadius: 3 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + fmt(ctx.raw) + ' tokens' } },
+      },
+      scales: {
+        x: { ticks: { color: '#8b949e', callback: fmt }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#e6edf3' }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderHeatmap(daily, container) {
+  container.replaceChildren();
+  if (!daily || daily.length === 0) { container.appendChild(emptyState()); return; }
+
+  const tokensByDate = {};
+  for (const d of daily) tokensByDate[d.date] = d.input_tokens || 0;
+
+  const dates = daily.map(d => d.date).sort();
+  const start = new Date(dates[0] + 'T00:00:00');
+  const end   = new Date(dates[dates.length - 1] + 'T00:00:00');
+  const startSun = new Date(start);
+  startSun.setDate(start.getDate() - start.getDay());
+
+  const allDays = [];
+  const cur = new Date(startSun);
+  while (cur <= end) { allDays.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+  const weeks = Math.ceil(allDays.length / 7);
+
+  const vals = Object.values(tokensByDate).filter(v => v > 0).sort((a, b) => a - b);
+
+  const CELL = 14, GAP = 2, LW = 28;
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width',  LW + weeks * (CELL + GAP));
+  svg.setAttribute('height', 7 * (CELL + GAP));
+  svg.style.display = 'block';
+
+  const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+  for (let row = 0; row < 7; row++) {
+    if (DAY_LABELS[row]) {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', LW - 4);
+      t.setAttribute('y', row * (CELL + GAP) + CELL - 3);
+      t.setAttribute('text-anchor', 'end');
+      t.setAttribute('fill', '#8b949e');
+      t.setAttribute('font-size', '10');
+      t.textContent = DAY_LABELS[row];
+      svg.appendChild(t);
+    }
+  }
+
+  const monthsEl = el('div', 'heatmap-months');
+  let lastMonth = -1;
+
+  for (let week = 0; week < weeks; week++) {
+    const d0 = allDays[week * 7];
+    if (d0 && d0.getMonth() !== lastMonth) {
+      lastMonth = d0.getMonth();
+      const span = el('span', null, d0.toLocaleString('default', { month: 'short' }));
+      span.style.minWidth = (CELL + GAP) + 'px';
+      monthsEl.appendChild(span);
+    }
+    for (let row = 0; row < 7; row++) {
+      const idx = week * 7 + row;
+      if (idx >= allDays.length) break;
+      const day     = allDays[idx];
+      const dateStr = day.toISOString().slice(0, 10);
+      const tokens  = tokensByDate[dateStr] || 0;
+      const rect = document.createElementNS(NS, 'rect');
+      rect.setAttribute('x',      LW + week * (CELL + GAP));
+      rect.setAttribute('y',      row * (CELL + GAP));
+      rect.setAttribute('width',  CELL);
+      rect.setAttribute('height', CELL);
+      rect.setAttribute('rx',     '2');
+      rect.setAttribute('fill',   heatColor(tokens, vals));
+      if (tokens > 0) rect.setAttribute('title', dateStr + ': ' + fmt(tokens) + ' tokens');
+      svg.appendChild(rect);
+    }
+  }
+
+  container.appendChild(monthsEl);
+  container.appendChild(svg);
+}
+
+// ── OVERVIEW TAB ─────────────────────────────────────────
+
+function renderStatCards(sessions, prevSessions, container) {
+  const totalCost = sessions.reduce((s, x) => s + computeCost(x), 0);
+  const prevCost  = prevSessions ? prevSessions.reduce((s, x) => s + computeCost(x), 0) : null;
+
+  function pct(curr, prev) {
+    if (prev == null || prev === 0) return null;
+    return (curr - prev) / prev * 100;
+  }
+
+  const cardDefs = [
+    { label: 'Sessions',      value: String(sessions.length),                   color: 'var(--text)',   d: pct(sessions.length,                    prevSessions ? prevSessions.length : null) },
+    { label: 'Turns',         value: fmt(sum(sessions, 'turn_count')),           color: 'var(--text)',   d: pct(sum(sessions, 'turn_count'),          prevSessions ? sum(prevSessions, 'turn_count') : null) },
+    { label: 'Input Tokens',  value: fmt(sum(sessions, 'total_input_tokens')),   color: 'var(--blue)',   d: pct(sum(sessions, 'total_input_tokens'),  prevSessions ? sum(prevSessions, 'total_input_tokens') : null) },
+    { label: 'Output Tokens', value: fmt(sum(sessions, 'total_output_tokens')),  color: 'var(--orange)', d: pct(sum(sessions, 'total_output_tokens'), prevSessions ? sum(prevSessions, 'total_output_tokens') : null) },
+    { label: 'Cache Read',    value: fmt(sum(sessions, 'total_cache_read')),     color: 'var(--green)',  d: pct(sum(sessions, 'total_cache_read'),    prevSessions ? sum(prevSessions, 'total_cache_read') : null) },
+    { label: 'Est. Cost',     value: fmtCost(totalCost),                         color: 'var(--purple)', d: pct(totalCost, prevCost) },
+  ];
+
+  const grid = el('div', 'stats-grid');
+  for (const c of cardDefs) {
+    const card = el('div', 'stat-card');
+    card.appendChild(el('div', 'stat-label', c.label));
+    const val = el('div', 'stat-value', c.value);
+    val.style.color = c.color;
+    card.appendChild(val);
+    if (c.d != null) {
+      const sign = c.d > 0 ? '+' : '';
+      const cls  = c.d > 0 ? 'up' : c.d < 0 ? 'down' : 'flat';
+      card.appendChild(el('div', 'stat-delta ' + cls, sign + c.d.toFixed(1) + '%'));
+    }
+    grid.appendChild(card);
+  }
+  container.appendChild(grid);
+}
+
+function renderStreakCard(daily, container) {
+  const { currentStreak, longestStreak, activeDaysThisMonth } = computeStreaks(daily);
+  const row = el('div', 'streak-row');
+  const items = [
+    { label: 'Current Streak',        value: currentStreak + (currentStreak === 1 ? ' day' : ' days') },
+    { label: 'Longest Streak',        value: longestStreak + (longestStreak === 1 ? ' day' : ' days') },
+    { label: 'Active Days This Month', value: String(activeDaysThisMonth) },
+  ];
+  for (const item of items) {
+    const card = el('div', 'stat-card');
+    card.appendChild(el('div', 'stat-label', item.label));
+    card.appendChild(el('div', 'stat-value', item.value));
+    row.appendChild(card);
+  }
+  container.appendChild(row);
+}
+
+function renderMonthlyUsage(daily, container) {
+  const card = makeSection('Monthly Usage');
+  container.appendChild(card);
+
+  // TODO: overlay plan limit % when Anthropic usage API available
+
+  if (!daily || daily.length === 0) { card.appendChild(emptyState()); return; }
+
+  const byMonth = new Map();
+  for (const d of daily) {
+    const m = d.date.slice(0, 7);
+    if (!byMonth.has(m)) byMonth.set(m, { input: 0, output: 0 });
+    byMonth.get(m).input  += d.input_tokens  || 0;
+    byMonth.get(m).output += d.output_tokens || 0;
+  }
+  const months = [...byMonth.keys()].sort();
+
+  const wrap = el('div', 'chart-wrap');
+  const canvas = document.createElement('canvas');
+  canvas.height = 120;
+  wrap.appendChild(canvas);
+  card.appendChild(wrap);
+
+  destroyChart('monthlyUsage');
+  charts['monthlyUsage'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Input',  data: months.map(m => byMonth.get(m).input),  backgroundColor: '#58a6ff99', borderColor: '#58a6ff', borderWidth: 1, stack: 's' },
+        { label: 'Output', data: months.map(m => byMonth.get(m).output), backgroundColor: '#e3b34199', borderColor: '#e3b341', borderWidth: 1, stack: 's' },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw) } },
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+        y: { stacked: true, ticks: { color: '#8b949e', callback: fmt }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderTabOverview(filtered, panel) {
+  panel.replaceChildren();
+  const { sessions, daily, prevSessions } = filtered;
+
+  const statsWrap = el('div');
+  renderStatCards(sessions, prevSessions, statsWrap);
+  panel.appendChild(statsWrap);
+
+  const streakWrap = el('div');
+  renderStreakCard(daily, streakWrap);
+  panel.appendChild(streakWrap);
+
+  renderMonthlyUsage(daily, panel);
+
+  const timelineCard = makeSection('Token Usage Over Time');
+  const timelineBody = el('div', 'chart-wrap');
+  timelineCard.appendChild(timelineBody);
+  renderTimelineChart(daily, timelineBody);
+  panel.appendChild(timelineCard);
+
+  const heatCard   = makeSection('Activity Heatmap');
+  const heatScroll = el('div', 'heatmap-scroll');
+  heatCard.appendChild(heatScroll);
+  renderHeatmap(daily, heatScroll);
+  panel.appendChild(heatCard);
+
+  const projCard = makeSection('Usage by Project');
+  const projBody = el('div', 'chart-wrap');
+  projCard.appendChild(projBody);
+  renderProjectsChart(sessions, projBody);
+  panel.appendChild(projCard);
+}
+
+// ── SESSIONS TAB ─────────────────────────────────────────
+
+let sessionViewMode = 'day';
+
+function renderSessionTimelineChart(sessions, daily, container) {
+  const header  = el('div', 'section-header');
+  const titleEl = el('div', 'section-title', 'Session Timeline');
+  const group   = el('div', 'toggle-group');
+  const btnDay  = el('button', 'toggle-btn' + (sessionViewMode === 'day'     ? ' active' : ''), 'By Day');
+  const btnSes  = el('button', 'toggle-btn' + (sessionViewMode === 'session' ? ' active' : ''), 'By Session');
+  group.appendChild(btnDay);
+  group.appendChild(btnSes);
+  header.appendChild(titleEl);
+  header.appendChild(group);
+  container.appendChild(header);
+
+  const chartArea = el('div', 'chart-wrap');
+  container.appendChild(chartArea);
+
+  function showDay() {
+    sessionViewMode = 'day';
+    btnDay.className = 'toggle-btn active';
+    btnSes.className = 'toggle-btn';
+    chartArea.replaceChildren();
+    destroyChart('sessionBar');
+    renderTimelineChart(daily, chartArea);
+  }
+
+  function showSession() {
+    sessionViewMode = 'session';
+    btnDay.className = 'toggle-btn';
+    btnSes.className = 'toggle-btn active';
+    chartArea.replaceChildren();
+    destroyChart('timeline');
+    destroyChart('sessionBar');
+    if (!sessions || sessions.length === 0) { chartArea.appendChild(emptyState()); return; }
+
+    const sorted = [...sessions]
+      .sort((a, b) => (b.first_timestamp || '').localeCompare(a.first_timestamp || ''))
+      .slice(0, 100);
+
+    const canvas = document.createElement('canvas');
+    canvas.height = Math.max(80, sorted.length * 20);
+    chartArea.appendChild(canvas);
+
+    charts['sessionBar'] = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(s => (s.project_name || '?') + ' ' + fmtDate(s.first_timestamp)),
+        datasets: [{
+          label: 'Total Tokens',
+          data:  sorted.map(s => (s.total_input_tokens || 0) + (s.total_output_tokens || 0)),
+          backgroundColor: sorted.map(s => {
+            const m = s.model || '';
+            if (m.includes('opus'))  return '#bc8cff66';
+            if (m.includes('haiku')) return '#3fb95066';
+            return '#58a6ff66';
+          }),
+          borderRadius: 3,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmt(ctx.raw) + ' tokens' } } },
+        scales: {
+          x: { ticks: { color: '#8b949e', callback: fmt }, grid: { color: '#21262d' } },
+          y: { ticks: { color: '#e6edf3', font: { size: 11 } }, grid: { color: '#21262d' } },
+        },
+      },
+    });
+  }
+
+  btnDay.addEventListener('click', showDay);
+  btnSes.addEventListener('click', showSession);
+  if (sessionViewMode === 'session') showSession(); else showDay();
+}
+
+function renderContextFillBars(sessions, container) {
+  destroyChart('contextFill');
+  if (!sessions || sessions.length === 0) { container.appendChild(emptyState()); return; }
+
+  const sorted = [...sessions]
+    .map(s => ({ s, pct: contextFillPct(s) }))
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 20);
+
+  const canvas = document.createElement('canvas');
+  canvas.height = Math.max(80, sorted.length * 24);
+  container.appendChild(canvas);
+
+  charts['contextFill'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(({ s }) => (s.project_name || '?') + ' ' + fmtDate(s.first_timestamp)),
+      datasets: [{
+        label: 'Context Fill %',
+        data:  sorted.map(({ pct }) => +pct.toFixed(1)),
+        backgroundColor: sorted.map(({ pct }) => pct > 80 ? '#f4706666' : pct > 50 ? '#e3b34166' : '#3fb95066'),
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + '% of context window' } } },
+      scales: {
+        x: { min: 0, max: 100, ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#e6edf3', font: { size: 11 } }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+let tableState    = { sortKey: 'first_timestamp', sortDir: 'desc', page: 1 };
+let tableSessions = [];
+
+function renderSessionsTable(sessions, container) {
+  tableSessions    = sessions;
+  tableState.page  = 1;
+  _renderTablePage(container);
+}
+
+function _renderTablePage(container) {
+  container.replaceChildren();
+  if (!tableSessions || tableSessions.length === 0) { container.appendChild(emptyState()); return; }
+
+  const cols = [
+    { key: 'first_timestamp',    label: 'Date' },
+    { key: 'project_name',       label: 'Project' },
+    { key: 'model',              label: 'Model' },
+    { key: 'turn_count',         label: 'Turns' },
+    { key: 'total_input_tokens', label: 'Input' },
+    { key: 'total_cache_read',   label: 'Cache Read' },
+    { key: '_duration',          label: 'Duration' },
+    { key: '_avg_tok',           label: 'Avg tok/turn' },
+    { key: '_ctx_pct',           label: 'Context %' },
+  ];
+
+  const augmented = tableSessions.map(s => ({
+    ...s,
+    _duration: s.last_timestamp ? (new Date(s.last_timestamp) - new Date(s.first_timestamp)) : 0,
+    _avg_tok:  s.turn_count ? Math.round((s.total_input_tokens || 0) / s.turn_count) : 0,
+    _ctx_pct:  contextFillPct(s),
+  }));
+
+  const sorted = [...augmented].sort((a, b) => {
+    const av = a[tableState.sortKey] ?? '';
+    const bv = b[tableState.sortKey] ?? '';
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return tableState.sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const visible = sorted.slice(0, tableState.page * 50);
+  const table   = document.createElement('table');
+  const thead   = document.createElement('thead');
+  const hrow    = document.createElement('tr');
+
+  for (const col of cols) {
+    const th = el('th', null, col.label);
+    if (tableState.sortKey === col.key) th.className = tableState.sortDir === 'asc' ? 'sort-asc' : 'sort-desc';
+    th.addEventListener('click', () => {
+      if (tableState.sortKey === col.key) tableState.sortDir = tableState.sortDir === 'asc' ? 'desc' : 'asc';
+      else { tableState.sortKey = col.key; tableState.sortDir = 'desc'; }
+      tableState.page = 1;
+      _renderTablePage(container);
+    });
+    hrow.appendChild(th);
+  }
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+  for (const s of visible) {
+    const tr = document.createElement('tr');
+    const td = (text, muted) => el('td', muted ? 'muted' : null, text);
+    const pct   = s._ctx_pct;
+    const badge = el('span', 'ctx-badge ' + (pct > 80 ? 'high' : pct > 50 ? 'mid' : 'low'), pct.toFixed(1) + '%');
+    const ctxTd = document.createElement('td');
+    ctxTd.appendChild(badge);
+
+    tr.appendChild(td(fmtDate(s.first_timestamp)));
+    tr.appendChild(td(s.project_name || ''));
+    tr.appendChild(td(s.model || '', true));
+    tr.appendChild(td(String(s.turn_count || 0)));
+    tr.appendChild(td(fmt(s.total_input_tokens)));
+    tr.appendChild(td(fmt(s.total_cache_read)));
+    tr.appendChild(td(fmtDuration(s.first_timestamp, s.last_timestamp)));
+    tr.appendChild(td(fmt(s._avg_tok)));
+    tr.appendChild(ctxTd);
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  container.appendChild(table);
+
+  if (visible.length < sorted.length) {
+    const btn = el('button', 'load-more-btn', '+ Load more (' + (sorted.length - visible.length) + ' remaining)');
+    btn.addEventListener('click', () => { tableState.page++; _renderTablePage(container); });
+    container.appendChild(btn);
+  }
+}
+
+function renderTabSessions(filtered, panel) {
+  panel.replaceChildren();
+  const { sessions, daily } = filtered;
+
+  const timelineCard = el('div', 'section-card');
+  const timelineBody = el('div');
+  renderSessionTimelineChart(sessions, daily, timelineBody);
+  timelineCard.appendChild(timelineBody);
+  panel.appendChild(timelineCard);
+
+  const ctxCard = makeSection('Context Fill % (Top 20)');
+  const ctxBody = el('div', 'chart-wrap');
+  ctxCard.appendChild(ctxBody);
+  renderContextFillBars(sessions, ctxBody);
+  panel.appendChild(ctxCard);
+
+  const tableCard = makeSection('Sessions');
+  const tableBody = el('div');
+  tableCard.appendChild(tableBody);
+  renderSessionsTable(sessions, tableBody);
+  panel.appendChild(tableCard);
+}
+
+// ── ANALYTICS TAB ────────────────────────────────────────
+
+function renderToolUsageChart(tools, container) {
+  destroyChart('toolUsage');
+  if (!tools || tools.length === 0) { container.appendChild(emptyState()); return; }
+
+  const top    = tools.slice(0, 15);
+  const canvas = document.createElement('canvas');
+  canvas.height = Math.max(80, top.length * 28);
+  container.appendChild(canvas);
+
+  charts['toolUsage'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: top.map(t => t.tool_name),
+      datasets: [{ label: 'Calls', data: top.map(t => t.count), backgroundColor: '#58a6ff66', borderColor: '#58a6ff', borderWidth: 1, borderRadius: 3 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + ' calls' } } },
+      scales: {
+        x: { ticks: { color: '#8b949e' }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#e6edf3' }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderModelDistChart(sessions, container) {
+  destroyChart('modelDist');
+  if (!sessions || sessions.length === 0) { container.appendChild(emptyState()); return; }
+
+  const byModel = {};
+  for (const s of sessions) {
+    const m = s.model || 'unknown';
+    byModel[m] = (byModel[m] || 0) + (s.total_input_tokens || 0) + (s.total_output_tokens || 0);
+  }
+  const entries = Object.entries(byModel).sort((a, b) => b[1] - a[1]);
+
+  function modelColor(m) {
+    if (m.includes('opus'))   return '#bc8cff';
+    if (m.includes('haiku'))  return '#3fb950';
+    if (m.includes('sonnet')) return '#58a6ff';
+    return '#8b949e';
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.style.maxWidth  = '300px';
+  canvas.style.margin    = '0 auto';
+  canvas.style.display   = 'block';
+  container.appendChild(canvas);
+
+  charts['modelDist'] = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(([m]) => m),
+      datasets: [{
+        data:            entries.map(([, v]) => v),
+        backgroundColor: entries.map(([m]) => modelColor(m)),
+        borderColor:     '#161b22',
+        borderWidth:     2,
+      }],
+    },
+    options: {
+      responsive: false,
+      plugins: {
+        legend: { labels: { color: '#8b949e' }, position: 'bottom' },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw) + ' tokens' } },
+      },
+    },
+  });
+}
+
+function renderHourHeatmap(hourly, container) {
+  if (!hourly || hourly.length === 0) { container.appendChild(emptyState()); return; }
+
+  // Rows 0–6 = Mon–Sun (dow: Mon=1, …, Sat=6, Sun=0)
+  const ROW_TO_DOW = [1, 2, 3, 4, 5, 6, 0];
+  const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  const grid = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  for (const h of hourly) {
+    const row = ROW_TO_DOW.indexOf(h.dow);
+    if (row >= 0 && h.hour >= 0 && h.hour < 24) grid[row][h.hour] += h.tokens || 0;
+  }
+
+  const allVals = grid.flat().filter(v => v > 0).sort((a, b) => a - b);
+
+  const CELL = 18, GAP = 2, LW = 34, TH = 20;
+  const NS  = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width',  LW + 24 * (CELL + GAP));
+  svg.setAttribute('height', TH + 7  * (CELL + GAP));
+  svg.style.display = 'block';
+
+  for (let h = 0; h < 24; h += 3) {
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', LW + h * (CELL + GAP) + CELL / 2);
+    t.setAttribute('y', TH - 4);
+    t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('fill', '#8b949e');
+    t.setAttribute('font-size', '10');
+    t.textContent = String(h);
+    svg.appendChild(t);
+  }
+
+  for (let row = 0; row < 7; row++) {
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', LW - 4);
+    t.setAttribute('y', TH + row * (CELL + GAP) + CELL - 4);
+    t.setAttribute('text-anchor', 'end');
+    t.setAttribute('fill', '#8b949e');
+    t.setAttribute('font-size', '10');
+    t.textContent = DAY_NAMES[row];
+    svg.appendChild(t);
+
+    for (let col = 0; col < 24; col++) {
+      const v    = grid[row][col];
+      const rect = document.createElementNS(NS, 'rect');
+      rect.setAttribute('x',      LW + col * (CELL + GAP));
+      rect.setAttribute('y',      TH + row * (CELL + GAP));
+      rect.setAttribute('width',  CELL);
+      rect.setAttribute('height', CELL);
+      rect.setAttribute('rx',     '3');
+      rect.setAttribute('fill',   heatColor(v, allVals));
+      if (v > 0) rect.setAttribute('title', DAY_NAMES[row] + ' ' + col + ':00 — ' + fmt(v) + ' tokens');
+      svg.appendChild(rect);
+    }
+  }
+
+  const scroll = el('div');
+  scroll.style.overflowX = 'auto';
+  scroll.appendChild(svg);
+  container.appendChild(scroll);
+}
+
+function renderCacheEfficiencyChart(daily, container) {
+  destroyChart('cacheEff');
+  if (!daily || daily.length === 0) { container.appendChild(emptyState()); return; }
+
+  const canvas = document.createElement('canvas');
+  canvas.height = 120;
+  container.appendChild(canvas);
+
+  charts['cacheEff'] = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: daily.map(d => d.date),
+      datasets: [
+        {
+          label: 'Cache Efficiency %',
+          data: daily.map(d => {
+            const total = (d.input_tokens || 0) + (d.cache_read_tokens || 0);
+            return total > 0 ? +((d.cache_read_tokens || 0) / total * 100).toFixed(1) : 0;
+          }),
+          borderColor: '#3fb950',
+          backgroundColor: '#3fb95026',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+        },
+        {
+          label: '50% reference',
+          data: daily.map(() => 50),
+          borderColor: '#8b949e',
+          borderDash: [4, 4],
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + ctx.raw + '%' } },
+      },
+      scales: {
+        x: { ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: '#21262d' } },
+        y: { min: 0, max: 100, ticks: { color: '#8b949e', callback: v => v + '%' }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderTabAnalytics(filtered, panel) {
+  panel.replaceChildren();
+  const { sessions, daily, tools, hourly } = filtered;
+
+  const toolCard = makeSection('Tool Usage (Top 15)');
+  const toolBody = el('div', 'chart-wrap');
+  toolCard.appendChild(toolBody);
+  renderToolUsageChart(tools, toolBody);
+  panel.appendChild(toolCard);
+
+  const modelCard = makeSection('Model Distribution by Tokens');
+  const modelBody = el('div');
+  modelCard.appendChild(modelBody);
+  renderModelDistChart(sessions, modelBody);
+  panel.appendChild(modelCard);
+
+  const hourCard = makeSection('Activity by Hour of Day');
+  const hourBody = el('div');
+  hourCard.appendChild(hourBody);
+  renderHourHeatmap(hourly, hourBody);
+  panel.appendChild(hourCard);
+
+  const cacheCard = makeSection('Cache Efficiency Over Time');
+  const cacheBody = el('div', 'chart-wrap');
+  cacheCard.appendChild(cacheBody);
+  renderCacheEfficiencyChart(daily, cacheBody);
+  panel.appendChild(cacheCard);
+}
+
+// ── COST TAB ─────────────────────────────────────────────
+
+function renderCostStatCards(sessions, container) {
+  const totalCost  = sessions.reduce((s, x) => s + computeCost(x), 0);
+  const thisMonth  = new Date().toISOString().slice(0, 7);
+  const monthCost  = sessions.filter(s => (s.first_timestamp || '').startsWith(thisMonth)).reduce((s, x) => s + computeCost(x), 0);
+  const avgCost    = sessions.length ? totalCost / sessions.length : 0;
+
+  const grid = el('div', 'stats-grid');
+  grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+
+  const cards = [
+    { label: 'Total Est. Cost', value: fmtCost(totalCost), color: 'var(--purple)' },
+    { label: 'This Month',      value: fmtCost(monthCost), color: 'var(--purple)' },
+    { label: 'Avg / Session',   value: fmtCost(avgCost),   color: 'var(--muted)'  },
+  ];
+  for (const c of cards) {
+    const card = el('div', 'stat-card');
+    card.appendChild(el('div', 'stat-label', c.label));
+    const val = el('div', 'stat-value', c.value);
+    val.style.color = c.color;
+    card.appendChild(val);
+    grid.appendChild(card);
+  }
+  container.appendChild(grid);
+}
+
+function renderCacheSavingsCard(sessions, container) {
+  let savings = 0;
+  for (const s of sessions) {
+    const p = getPrice(s.model);
+    savings += (s.total_cache_read || 0) * (p.input - p.cache_read) / 1e6;
+  }
+
+  const card = el('div', 'savings-card');
+  card.appendChild(el('div', 'stat-label', 'Saved by Cache Reuse'));
+  card.appendChild(el('div', 'savings-amount', fmtCost(savings)));
+  card.appendChild(el('div', 'savings-desc', 'Cache-read tokens billed at reduced rate vs. re-sending as input'));
+  container.appendChild(card);
+}
+
+function renderCostTimelineChart(daily, container) {
+  destroyChart('costTimeline');
+  if (!daily || daily.length === 0) { container.appendChild(emptyState()); return; }
+
+  const p      = getPrice('claude-sonnet-4');
+  const canvas = document.createElement('canvas');
+  canvas.height = 120;
+  container.appendChild(canvas);
+
+  charts['costTimeline'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: daily.map(d => d.date),
+      datasets: [
+        { label: 'Input',          data: daily.map(d => +((d.input_tokens          || 0) * p.input       / 1e6).toFixed(5)), backgroundColor: '#58a6ff99', stack: 's' },
+        { label: 'Output',         data: daily.map(d => +((d.output_tokens         || 0) * p.output      / 1e6).toFixed(5)), backgroundColor: '#e3b34199', stack: 's' },
+        { label: 'Cache Creation', data: daily.map(d => +((d.cache_creation_tokens || 0) * p.cache_write / 1e6).toFixed(5)), backgroundColor: '#bc8cff99', stack: 's' },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#8b949e', boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.dataset.label + ': $' + ctx.raw } },
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#8b949e', maxTicksLimit: 10 }, grid: { color: '#21262d' } },
+        y: { stacked: true, ticks: { color: '#8b949e', callback: v => '$' + v }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderCostByProjectChart(sessions, container) {
+  destroyChart('costByProject');
+  if (!sessions || sessions.length === 0) { container.appendChild(emptyState()); return; }
+
+  const byProject = {};
+  for (const s of sessions) {
+    const p = s.project_name || '(unknown)';
+    byProject[p] = (byProject[p] || 0) + computeCost(s);
+  }
+  const entries = Object.entries(byProject).sort((a, b) => b[1] - a[1]);
+
+  const canvas = document.createElement('canvas');
+  canvas.height = Math.max(80, entries.length * 28);
+  container.appendChild(canvas);
+
+  charts['costByProject'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: entries.map(([p]) => p),
+      datasets: [{ label: 'Est. Cost', data: entries.map(([, v]) => +v.toFixed(5)), backgroundColor: '#bc8cff66', borderColor: '#bc8cff', borderWidth: 1, borderRadius: 3 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' $' + ctx.raw } } },
+      scales: {
+        x: { ticks: { color: '#8b949e', callback: v => '$' + v }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#e6edf3' }, grid: { color: '#21262d' } },
+      },
+    },
+  });
+}
+
+function renderTabCost(filtered, panel) {
+  panel.replaceChildren();
+  const { sessions, daily } = filtered;
+
+  const statsWrap = el('div');
+  renderCostStatCards(sessions, statsWrap);
+  panel.appendChild(statsWrap);
+
+  const savingsWrap = el('div');
+  renderCacheSavingsCard(sessions, savingsWrap);
+  panel.appendChild(savingsWrap);
+
+  const timelineCard = makeSection('Daily Cost Breakdown (Sonnet pricing)');
+  const timelineBody = el('div', 'chart-wrap');
+  timelineCard.appendChild(timelineBody);
+  renderCostTimelineChart(daily, timelineBody);
+  panel.appendChild(timelineCard);
+
+  const projCard = makeSection('Cost by Project');
+  const projBody = el('div', 'chart-wrap');
+  projCard.appendChild(projBody);
+  renderCostByProjectChart(sessions, projBody);
+  panel.appendChild(projCard);
+}
+
+// ── Event wiring ─────────────────────────────────────────
+
+window.addEventListener('claude-data-ready', () => {
+  rawData = window.CLAUDE_DATA;
+  document.getElementById('loading').classList.remove('show');
+
+  const from = new Date();
+  from.setDate(from.getDate() - 30);
+  filterState.dateFrom = from.toISOString().slice(0, 10);
+  filterState.dateTo   = null;
+  filterState.projects.clear();
+  filterState.models.clear();
+
+  buildTabBar();
+  renderFilterBar();
+  renderActiveTab(applyFilters(filterState, rawData));
+});
+
+window.addEventListener('claude-data-error', e => {
+  const banner = document.getElementById('error-banner');
+  banner.textContent = 'Error loading data: ' + (e.detail || 'unknown error');
+  banner.style.display = '';
+  document.getElementById('loading').classList.remove('show');
+});
+
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  document.getElementById('loading').classList.add('show');
+  window.refresh();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Main application dependency
+yt-dlp==2023.11.16
+
+# Dependencies for testing
+pytest
+pytest-mock
