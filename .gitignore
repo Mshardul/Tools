@@ -175,3 +175,16 @@ cython_debug/
 
 # Personal Data
 data/
+
+# macOS
+.DS_Store
+
+# Superpowers brainstorm session artifacts
+.superpowers/
+**/.superpowers/
+
+# Local Claude usage dashboard data (symlinks into ~/.claude)
+/usage.db
+/projects
+claude-usage/usage.db
+claude-usage/projects

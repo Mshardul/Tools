@@ -27,7 +27,7 @@ A robust, multi-threaded YouTube downloader application built with Python and `y
 1.  Clone the repository:
     ```bash
     git clone <your-repo-url>
-    cd python-youtube-downloader
+    cd youtube-downloader
     ```
 
 2.  Install the required dependencies:
