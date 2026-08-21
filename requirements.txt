@@ -1,0 +1,8 @@
+# Shared deps for the Tools nursery. Install into the repo-root .venv only:
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+# Prefer stdlib in leaves; add a leaf requirements.txt and include it here when a pin is needed.
+
+-r cli/data-convert/requirements.txt
+-r cli/qr-encode/requirements.txt
+-r cli/image-tool/requirements.txt

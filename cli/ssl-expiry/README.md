@@ -2,8 +2,26 @@
 
 **Backlog:** T-075 · `ssl-expiry`
 
-Days until TLS cert expires for a host
+Days until a host's TLS certificate expires.
 
-Status: planned (`idea`). Implementation not started.
+Not for: full certificate chain validation reports, OCSP/CRL checks, or non-TLS ports.
 
-Not for: unrelated jobs — keep this leaf single-purpose (conversions use source/target or mode options inside this tool).
+## Usage
+
+```bash
+python3 ssl_expiry.py example.com
+python3 ssl_expiry.py example.com -p 443
+python3 ssl_expiry.py example.com --json
+```
+
+## Test
+
+```bash
+PYTHONPATH=. python3 -m unittest tests.test_ssl_expiry -v
+```
+
+Live smoke (needs network):
+
+```bash
+python3 ssl_expiry.py example.com
+```

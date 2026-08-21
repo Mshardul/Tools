@@ -2,8 +2,21 @@
 
 **Backlog:** T-033 · `cron-explain`
 
-Explain a cron expression in plain English
+Explain a standard 5-field cron expression in plain English.
 
-Status: planned (`idea`). Implementation not started.
+Not for: 6-field (seconds) cron, Quartz/`?` syntax, or scheduling jobs.
 
-Not for: unrelated jobs — keep this leaf single-purpose (conversions use source/target or mode options inside this tool).
+## Usage
+
+```bash
+cd cli/cron-explain
+python3 cron_explain.py '*/15 * * * *'
+python3 cron_explain.py 0 22 '*' '*' 1-5
+python3 cron_explain.py '5 4 * jan sun'
+```
+
+## Test
+
+```bash
+PYTHONPATH=. python3 -m unittest tests.test_cron_explain -v
+```

@@ -8,7 +8,7 @@
 
 ## Summary
 
-This repo is a collection, not an application. Live tools live in type buckets. The root README is only a catalog. There is no shared runtime, lockfile, or “run everything” CI. A tool that becomes too large, too secret-heavy, or too user-facing leaves for its own repository.
+This repo is a collection, not an application. Live tools live in type buckets. The root README is only a catalog. There is no shared application runtime, monorepo lockfile, or “run everything” CI. Optional Python pins for leaves install into **one repo-root `.venv`** (see root `requirements.txt`); leaves stay independently runnable. A tool that becomes too large, too secret-heavy, or too user-facing leaves for its own repository.
 
 ---
 

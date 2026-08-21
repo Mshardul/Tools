@@ -107,6 +107,8 @@ Batch the picked group in one session when practical; still **one directory per 
 ## Product shape (important)
 
 1. **Python preferred** (`python3`, stdlib first; pin leaf deps only when needed).
+   - Shared env: **repo-root** `.venv` only (`python3 -m venv .venv` then `.venv/bin/pip install -r requirements.txt`). Do not create per-leaf `.venv`.
+   - When a leaf needs a pin, add `bucket/slug/requirements.txt` and include it from the root `requirements.txt` (`-r …`).
 2. **One leaf directory per mini-tool** at `bucket/slug/` with README, `*.py` entrypoint, tests when useful, optional `config.sample.yaml`, `ticket-backlog.md` when building+.
 3. **Tiny related conversions** = one leaf with `--from` / `--to` or mode flags.
 4. Layout: `cli/` primary; `apps/` when needed; `extensions/chrome|vlc|macos/` for platform shells.
@@ -121,7 +123,7 @@ Batch the picked group in one session when practical; still **one directory per 
 
 ## CLI conventions
 
-- Document: `python3 <module>.py …` from the leaf dir.
+- Document: from the leaf dir, prefer repo-root `.venv/bin/python <module>.py …` (or activated root venv). Plain `python3` is fine for stdlib-only leaves.
 - Exit `0` on success; non-zero on errors.
 - Clipboard copy opt-in (`-c`), never required.
 - Config: `~/.config/tools/<slug>.yaml` or `TOOLS_<SLUG>_CONFIG` / `--config`; CLI overrides file.

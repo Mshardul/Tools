@@ -2,6 +2,17 @@
 
 A collection of small open-source tools (MIT). Each leaf directory is an independent project. Tools that outgrow this repo move to their own.
 
+## Python environment
+
+Use one shared virtualenv at the **repo root** (never per-leaf `.venv`):
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+Run tools with that interpreter, e.g. `.venv/bin/python cli/data-convert/data_convert.py …`, or `source .venv/bin/activate` first. Most leaves are stdlib-only; optional pins live in leaf `requirements.txt` files and are aggregated in the root `requirements.txt`.
+
 | Tool | Bucket | Status | What it does |
 |---|---|---|---|
 | [claude-usage](apps/claude-usage/) | apps | active | Browser dashboard for Claude Code token usage |
@@ -28,8 +39,33 @@ A collection of small open-source tools (MIT). Each leaf directory is an indepen
 | [number-base](cli/number-base/) | cli | active | Convert among bin / oct / dec / hex |
 | [timezone-convert](cli/timezone-convert/) | cli | active | Convert a time across timezones |
 | [line-endings](cli/line-endings/) | cli | active | Convert CRLF ↔ LF |
+| [data-convert](cli/data-convert/) | cli | active | Convert among json / yaml / toml / csv / env |
+| [file-size](cli/file-size/) | cli | active | Human-readable size of a path |
+| [dir-du](cli/dir-du/) | cli | active | Disk usage summary for a folder |
+| [big-files](cli/big-files/) | cli | active | Largest N files under a path |
+| [strip-exif](cli/strip-exif/) | cli | active | Remove EXIF/GPS metadata from JPEG/PNG |
+| [ssl-expiry](cli/ssl-expiry/) | cli | active | Days until TLS cert expires for a host |
+| [quarantine-clear](extensions/macos/quarantine-clear/) | ext/macos | active | Clear Gatekeeper quarantine xattr |
+| [file-snippets](cli/file-snippets/) | cli | active | List/show snippets from a folder |
+| [json-query](cli/json-query/) | cli | active | Tiny path query on JSON (jq-lite) |
+| [secret-scan](cli/secret-scan/) | cli | active | Scan files for likely API keys |
+| [srt-shifter](cli/srt-shifter/) | cli | active | Shift SRT/VTT timings by milliseconds |
+| [cron-explain](cli/cron-explain/) | cli | active | Explain a cron expression in English |
+| [xml-format](cli/xml-format/) | cli | active | Pretty-print or minify XML |
+| [qr-encode](cli/qr-encode/) | cli | active | Encode text as QR (ASCII or PNG) |
+| [image-tool](cli/image-tool/) | cli | active | Resize, compress, or convert images |
+| [git-large-files](cli/git-large-files/) | cli | active | Large blobs in git history |
+| [series-progress](cli/series-progress/) | cli | active | Sidecar: which episode to resume |
+| [open-terminal-here](extensions/macos/open-terminal-here/) | ext/macos | active | Open Terminal at a folder |
+| [floating-note](apps/floating-note/) | apps | active | Always-on-top scratchpad (tkinter) |
+| [world-clock](apps/world-clock/) | apps | active | Current time in a few IANA zones (CLI-first) |
+| [battery-eta](apps/battery-eta/) | apps | active | Battery percent / charge / ETA from pmset |
+| [pomodoro](apps/pomodoro/) | apps | active | CLI 25/5 focus timer with notification |
+| [focus-toggle](extensions/macos/focus-toggle/) | ext/macos | active | Focus on/off/toggle via Shortcuts |
+| [mic-mute](extensions/macos/mic-mute/) | ext/macos | active | Mute/unmute mic input volume |
+| [vlc-skip-chapter](extensions/vlc/vlc-skip-chapter/) | ext/vlc | active | Skip Intro/Credits chapters in VLC |
 
-Planned work lives in [`BACKLOG.md`](BACKLOG.md). Empty buckets: [`extensions/chrome/`](extensions/chrome/), [`extensions/vlc/`](extensions/vlc/), [`extensions/macos/`](extensions/macos/). Add a catalog row when a tool lands there.
+Planned work lives in [`BACKLOG.md`](BACKLOG.md). Empty bucket: [`extensions/chrome/`](extensions/chrome/) (stub only until `send-to-downloader` lands).
 
 Older one-off scripts live in [`archive/`](archive/). They are kept for reference, not as the supported versions.
 
@@ -39,7 +75,8 @@ Older one-off scripts live in [`archive/`](archive/). They are kept for referenc
 2. When status is `building`, add `ticket-backlog.md` and implement in that directory.
 3. Tiny related conversions share **one** leaf with source/target (or mode) options — see Backlog leaf rules.
 4. Do not commit secrets or machine-specific paths.
-5. When `active`, ensure the catalog table above links to the leaf. Default publish path is this GitHub repo, free.
+5. When a leaf needs a Python pin, add `bucket/slug/requirements.txt` and include it from the root `requirements.txt`; install only into the repo-root `.venv`.
+6. When `active`, ensure the catalog table above links to the leaf. Default publish path is this GitHub repo, free.
 
 ## Layout
 
