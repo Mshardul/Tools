@@ -1,0 +1,7 @@
+# Optional config for trash (T-046).
+# Copy to ~/.config/tools/trash.yaml or set TOOLS_TRASH_CONFIG.
+#
+# method: home    # default — move into ~/.Trash (no Finder)
+# method: finder  # AppleScript via Finder (Put Back semantics)
+
+method: home

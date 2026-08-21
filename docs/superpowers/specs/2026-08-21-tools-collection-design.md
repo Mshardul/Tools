@@ -21,9 +21,12 @@ Tools/
   extensions/
     chrome/
     vlc/
+    macos/                 # Finder, Share, Shortcuts; full .app may live under apps/
   archive/                 # superseded one-offs (not a live bucket)
   docs/                    # collection-level design notes only
-  README.md                # catalog
+  README.md                # catalog of active tools
+  BACKLOG.md               # inventory + planned tools
+  LICENSE                  # MIT unless a leaf says otherwise
 ```
 
 Add a new top-level type only when a second example exists (Firefox, Raycast, etc.). Do not add `libs/` until two tools actually share code.
@@ -40,23 +43,27 @@ Add a new top-level type only when a second example exists (Firefox, Raycast, et
 
 ## Leaf contract
 
-Anything not in `archive/` must have:
+Anything not in `archive/` and not `dropped` in the backlog must have:
 
-- A `kebab-case` directory name (stable for later GitHub URLs and graduation)
-- `README.md` covering: what it is, how to install/run, one “not for” line
+- A `kebab-case` directory at `bucket/slug/` (created when the backlog row is added)
+- `README.md` covering: what it is, how to install/run (or “planned” stub), one “not for” line
 - Its own dependency file if it has dependencies
 - No secrets and no machine-specific paths committed
-- A row in the root catalog with status `active`, `graduated`, or `archived`
+- A row in `BACKLOG.md`; active tools also appear in the root README catalog
 
-Optional only when needed: tests, per-tool `LICENSE`, screenshots, store-listing notes.
+**Combine tiny conversions** into one leaf with source/target or mode options (e.g. number bases, json/yaml/toml/csv/env). Do not ship one tool per conversion direction. Do not merge unrelated jobs into one mega-utils binary.
+
+When status is `building` or later: `ticket-backlog.md` in the leaf (nested ids `{root}-1`).
 
 Collection-level design docs stay under `docs/`. Per-tool notes stay in the leaf.
+
+Default license is MIT at repo root. Default publish path is GitHub (this repo), free. `publish` on a backlog row may be `videolan`, `chrome-store`, or `mac-store` later.
 
 ---
 
 ## Catalog
 
-Root `README.md` is a table: name (link), bucket, status, one-line purpose. Empty extension buckets may exist as placeholders (`extensions/chrome/`, `extensions/vlc/`) and are not catalog rows until they contain a tool.
+Root `README.md` is a table: name (link), bucket, status, one-line purpose. Empty extension buckets may exist as placeholders (`extensions/chrome/`, `extensions/vlc/`, `extensions/macos/`) and are not catalog rows until they contain a tool. Planned tools are rows in `BACKLOG.md`, not the README catalog.
 
 ---
 
