@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Send to Tools downloader</title>
+    <style>
+      body {
+        font: 13px/1.4 system-ui, sans-serif;
+        margin: 12px 14px;
+        min-width: 220px;
+        color: #1a1a1a;
+      }
+      button {
+        width: 100%;
+        padding: 8px 10px;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 10px;
+        color: #444;
+        word-break: break-all;
+      }
+      #status.err {
+        color: #a31;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="send" type="button">Send tab to downloader</button>
+    <p id="status">Ready.</p>
+    <script src="popup.js"></script>
+  </body>
+</html>

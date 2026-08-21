@@ -23,11 +23,11 @@ Nested tickets use `{id}-1`, `{id}-2`.
 |---|---|---|---|---|---|---|---|---|---|
 | T-001 | Claude Usage | claude-usage | apps | active | P3 | medium | github | — | Local dashboard for Claude Code token usage |
 | T-002 | YouTube Downloader | youtube-downloader | cli | active | P3 | high | github | — | Multi-threaded yt-dlp downloader with config |
-| T-003 | VLC per-file memory | vlc-file-memory | ext/vlc | idea | P2 | medium | github | — | Remember audio, subtitle, and delay per file |
+| T-003 | VLC per-file memory | vlc-file-memory | ext/vlc | active | P2 | medium | github | — | Remember audio, subtitle, and delay per file |
 | T-004 | SRT shifter | srt-shifter | cli | active | P2 | low | github | — | Shift SRT/VTT timings by milliseconds and save |
 | T-005 | VLC skip chapter by name | vlc-skip-chapter | ext/vlc | active | P3 | low | github | T-003 | Auto-skip MKV chapters named Intro or Credits |
-| T-006 | Send tab to downloader | send-to-downloader | ext/chrome | idea | P2 | medium | github | T-002 | Right-click or toolbar sends the tab URL to the CLI |
-| T-007 | Claude session archive | claude-session-archive | apps | idea | P3 | medium | github | T-001 | Search and export local Claude Code JSONL sessions |
+| T-006 | Send tab to downloader | send-to-downloader | ext/chrome | active | P2 | medium | github | T-002 | Right-click or toolbar sends the tab URL to the CLI |
+| T-007 | Claude session archive | claude-session-archive | apps | active | P3 | medium | github | T-001 | Search and export local Claude Code JSONL sessions |
 | T-008 | Series folder progress | series-progress | cli | active | P4 | medium | github | — | Sidecar file for which episode to resume in a folder |
 | T-009 | ID generator | id-gen | cli | active | P2 | low | github | — | Generate ids; choose type (uuid, nanoid, …) |
 | T-010 | Base64 encode/decode | base64-tool | cli | active | P2 | low | github | — | Encode or decode Base64 (mode select) |
@@ -38,7 +38,7 @@ Nested tickets use `{id}-1`, `{id}-2`.
 | T-015 | File snippets | file-snippets | cli | active | P2 | low | github | — | List/copy snippets from a git-friendly snippets folder |
 | T-016 | Emoji to clipboard | emoji-copy | cli | dropped | P3 | low | github | — | OS emoji picker covers this; not worth a leaf |
 | T-017 | Floating scratch note | floating-note | apps | active | P3 | medium | github | — | Always-on-top scratchpad that saves to a local file |
-| T-018 | Clipboard history | clipboard-history | apps | idea | P4 | high | github | — | Local searchable clipboard history with pins and image OCR |
+| T-018 | Clipboard history | clipboard-history | apps | active | P4 | high | github | — | Local searchable clipboard history with pins and image OCR |
 | T-019 | Global snippet expand | snippet-expand | ext/macos | idea | P5 | high | github | T-015 | Expand file snippets by keyword in any app |
 | T-020 | Window layouts | window-layouts | apps | idea | P5 | high | github | — | Named multi-display layouts from a config file |
 | T-021 | App launcher | app-launcher | apps | idea | P5 | high | github | — | Fast app/file launcher (last; ecosystem war) |
@@ -111,10 +111,10 @@ Nested tickets use `{id}-1`, `{id}-2`.
 | T-088 | Quarantine clear | quarantine-clear | ext/macos | active | P2 | low | github | — | Clear Gatekeeper quarantine on a file |
 | T-089 | Open Terminal here | open-terminal-here | ext/macos | active | P3 | medium | github | — | Finder Quick Action: Terminal at folder |
 | T-090 | Reveal in Finder | reveal-in-finder | cli | dropped | P3 | low | github | — | Alias of open -R; not worth a leaf |
-| T-091 | AirDrop files | airdrop-folder | ext/macos | idea | P4 | medium | github | — | Open AirDrop sharing for selected files |
-| T-092 | Brew outdated | brew-outdated | apps | idea | P4 | medium | github | — | CLI or menu-bar count of outdated brew packages |
+| T-091 | AirDrop files | airdrop-folder | ext/macos | active | P4 | medium | github | — | Open AirDrop sharing for selected files |
+| T-092 | Brew outdated | brew-outdated | apps | active | P4 | medium | github | — | CLI or menu-bar count of outdated brew packages |
 | T-093 | Pomodoro | pomodoro | apps | active | P4 | medium | github | — | Menu-bar 25/5 focus timer |
-| T-094 | Weather bar | weather-bar | apps | idea | P4 | medium | github | — | Menu-bar local weather |
+| T-094 | Weather bar | weather-bar | apps | active | P4 | medium | github | — | Menu-bar local weather |
 | T-095 | Number base convert | number-base | cli | active | P2 | low | github | — | Convert among binary, octal, decimal, hex (from/to) |
 
 Dropped / skipped on purpose: copy-as-Markdown extensions, ClearURLs, OneTab, generic skip-intro-by-seconds UIs, a second Claude cost dashboard, a single mega “utils” binary, Spotify/Notion/Slack bots, a full jq clone, one tool per conversion direction (e.g. separate decimal→binary and binary→hex), and alias-tier wraps of existing CLI/OS tools (gh browse, dig, curl -I, git rev-parse, open -R, wc, say, date, diskutil, etc.).

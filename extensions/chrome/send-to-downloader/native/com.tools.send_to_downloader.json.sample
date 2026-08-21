@@ -1,0 +1,9 @@
+{
+  "name": "com.tools.send_to_downloader",
+  "description": "Queue URLs for Tools send-to-downloader",
+  "path": "/ABS/PATH/TO/Tools/extensions/chrome/send-to-downloader/native/native_host.py",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://YOUR_EXTENSION_ID/"
+  ]
+}

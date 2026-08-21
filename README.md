@@ -64,8 +64,15 @@ Run tools with that interpreter, e.g. `.venv/bin/python cli/data-convert/data_co
 | [focus-toggle](extensions/macos/focus-toggle/) | ext/macos | active | Focus on/off/toggle via Shortcuts |
 | [mic-mute](extensions/macos/mic-mute/) | ext/macos | active | Mute/unmute mic input volume |
 | [vlc-skip-chapter](extensions/vlc/vlc-skip-chapter/) | ext/vlc | active | Skip Intro/Credits chapters in VLC |
+| [brew-outdated](apps/brew-outdated/) | apps | active | Count/list outdated Homebrew packages |
+| [claude-session-archive](apps/claude-session-archive/) | apps | active | Search/export local Claude Code JSONL sessions |
+| [send-to-downloader](extensions/chrome/send-to-downloader/) | ext/chrome | active | Queue tab URLs for youtube-downloader |
+| [clipboard-history](apps/clipboard-history/) | apps | active | Local searchable clipboard history with pins |
+| [weather-bar](apps/weather-bar/) | apps | active | Compact local weather via Open-Meteo (CLI-first) |
+| [airdrop-folder](extensions/macos/airdrop-folder/) | ext/macos | active | Open AirDrop and select files in Finder |
+| [vlc-file-memory](extensions/vlc/vlc-file-memory/) | ext/vlc | active | Remember audio/subtitle/delay per file in VLC |
 
-Planned work lives in [`BACKLOG.md`](BACKLOG.md). Empty bucket: [`extensions/chrome/`](extensions/chrome/) (stub only until `send-to-downloader` lands).
+Planned work lives in [`BACKLOG.md`](BACKLOG.md).
 
 Older one-off scripts live in [`archive/`](archive/). They are kept for reference, not as the supported versions.
 
