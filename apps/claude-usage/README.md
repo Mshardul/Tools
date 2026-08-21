@@ -2,6 +2,8 @@
 
 Browser-based dashboard showing token usage from Claude Code sessions. Reads data directly from local Claude files — no server, no API, no cloud.
 
+Not for: Anthropic Console billing, or usage from the Claude web/app APIs. Local Claude Code session files only.
+
 ## Setup
 
 One-time setup (run from this directory):
@@ -12,7 +14,7 @@ ln -s ~/.claude/projects projects
 python3 -m http.server 8080
 ```
 
-Open **http://localhost:8080/claude-usage/**
+Open **http://localhost:8080/**
 
 ## How it works
 
@@ -75,7 +77,7 @@ Available in browser console — useful for ad-hoc queries.
 ## Files
 
 ```
-claude-usage/
+apps/claude-usage/
 ├── index.html     # dashboard UI
 ├── app.js         # data layer (reads DB + JSONL, exposes window.CLAUDE_DATA)
 ├── usage.db -> ~/.claude/usage.db        # symlink

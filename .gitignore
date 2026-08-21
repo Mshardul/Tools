@@ -188,3 +188,5 @@ data/
 /projects
 claude-usage/usage.db
 claude-usage/projects
+apps/claude-usage/usage.db
+apps/claude-usage/projects

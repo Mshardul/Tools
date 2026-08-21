@@ -2,6 +2,8 @@
 
 A robust, multi-threaded YouTube downloader application built with Python and `yt-dlp`.
 
+Not for: a GUI, a hosted service, or downloading content you do not have the right to copy.
+
 ## Features
 
 - **Concurrent Downloads:** Download multiple videos at once, with configurable limits.
@@ -27,7 +29,7 @@ A robust, multi-threaded YouTube downloader application built with Python and `y
 1.  Clone the repository:
     ```bash
     git clone <your-repo-url>
-    cd youtube-downloader
+    cd cli/youtube-downloader
     ```
 
 2.  Install the required dependencies:

@@ -98,14 +98,14 @@ async function fetchDirLinks(url) {
 }
 
 async function discoverUnprocessedJSONL(processedKeys) {
-  const projectDirs = (await fetchDirLinks('/claude-usage/projects/')).filter(l => l.endsWith('/'));
+  const projectDirs = (await fetchDirLinks('projects/')).filter(l => l.endsWith('/'));
   const unprocessed = [];
   for (const dir of projectDirs) {
-    const files = (await fetchDirLinks(`/claude-usage/projects/${dir}`)).filter(f => f.endsWith('.jsonl'));
+    const files = (await fetchDirLinks(`projects/${dir}`)).filter(f => f.endsWith('.jsonl'));
     for (const file of files) {
       const key = `${dir.replace(/\/$/, '')}/${file}`;
       if (!processedKeys.has(key)) {
-        unprocessed.push(`/claude-usage/projects/${key}`);
+        unprocessed.push(`projects/${key}`);
       }
     }
   }
@@ -339,9 +339,9 @@ async function openDb() {
   await ensureSqlJs();
   const SQL = await initSqlJs({ locateFile: () => SQL_WASM });
 
-  const res = await fetch('/claude-usage/usage.db');
+  const res = await fetch('usage.db');
   if (!res.ok) {
-    throw new Error('Cannot fetch usage.db — run: ln -s ~/.claude/usage.db claude-usage/usage.db');
+    throw new Error('Cannot fetch usage.db — run: ln -s ~/.claude/usage.db usage.db');
   }
 
   const buf = await res.arrayBuffer();

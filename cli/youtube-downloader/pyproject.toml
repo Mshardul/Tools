@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/Mshardul/Tools/tree/main/youtube-downloader"
+"Homepage" = "https://github.com/Mshardul/Tools/tree/main/cli/youtube-downloader"
