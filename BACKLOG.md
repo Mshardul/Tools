@@ -37,11 +37,7 @@ Nested tickets use `{id}-1`, `{id}-2`.
 | T-014 | JSON format | json-format | cli | active | P2 | low | github | — | Pretty-print or minify JSON from stdin or a file |
 | T-015 | File snippets | file-snippets | cli | active | P2 | low | github | — | List/copy snippets from a git-friendly snippets folder |
 | T-016 | Emoji to clipboard | emoji-copy | cli | dropped | P3 | low | github | — | OS emoji picker covers this; not worth a leaf |
-| T-017 | Floating scratch note | floating-note | apps | active | P3 | medium | github | — | Always-on-top scratchpad that saves to a local file |
-| T-018 | Clipboard history | clipboard-history | apps | active | P4 | high | github | — | Local searchable clipboard history with pins and image OCR |
 | T-019 | Global snippet expand | snippet-expand | ext/macos | idea | P5 | high | github | T-015 | Expand file snippets by keyword in any app |
-| T-020 | Window layouts | window-layouts | apps | idea | P5 | high | github | — | Named multi-display layouts from a config file |
-| T-021 | App launcher | app-launcher | apps | idea | P5 | high | github | — | Fast app/file launcher (last; ecosystem war) |
 | T-022 | URL encode/decode | url-encode | cli | active | P2 | low | github | — | Percent-encode or decode a string (mode select) |
 | T-023 | HTML entities | html-entities | cli | active | P2 | low | github | — | Encode or decode HTML entities (mode select) |
 | T-024 | Case transform | case-transform | cli | active | P2 | low | github | — | camel / snake / kebab / Pascal (target case select) |
@@ -67,8 +63,6 @@ Nested tickets use `{id}-1`, `{id}-2`.
 | T-044 | Open GitHub remote | gh-open | cli | dropped | P3 | low | github | — | Alias of gh browse; not worth a leaf |
 | T-045 | Git root | git-root | cli | dropped | P3 | low | github | — | Alias of git rev-parse --show-toplevel; not worth a leaf |
 | T-046 | Trash | trash | cli | active | P1 | low | github | — | Move files to Trash instead of rm |
-| T-047 | World clock | world-clock | apps | active | P4 | medium | github | — | Menu-bar clock for a few timezones |
-| T-048 | Battery ETA | battery-eta | apps | active | P4 | medium | github | — | Menu-bar estimate of battery time remaining |
 | T-049 | Mic mute toggle | mic-mute | ext/macos | active | P4 | medium | github | — | Global microphone mute with indicator |
 | T-050 | Focus toggle | focus-toggle | ext/macos | active | P4 | medium | github | — | Toggle macOS Focus / Do Not Disturb |
 | T-051 | Desktop icons toggle | desktop-icons | ext/macos | dropped | P4 | low | github | — | defaults write one-liner; not worth a leaf |
@@ -112,9 +106,8 @@ Nested tickets use `{id}-1`, `{id}-2`.
 | T-089 | Open Terminal here | open-terminal-here | ext/macos | active | P3 | medium | github | — | Finder Quick Action: Terminal at folder |
 | T-090 | Reveal in Finder | reveal-in-finder | cli | dropped | P3 | low | github | — | Alias of open -R; not worth a leaf |
 | T-091 | AirDrop files | airdrop-folder | ext/macos | active | P4 | medium | github | — | Open AirDrop sharing for selected files |
-| T-092 | Brew outdated | brew-outdated | apps | active | P4 | medium | github | — | CLI or menu-bar count of outdated brew packages |
-| T-093 | Pomodoro | pomodoro | apps | active | P4 | medium | github | — | Menu-bar 25/5 focus timer |
-| T-094 | Weather bar | weather-bar | apps | active | P4 | medium | github | — | Menu-bar local weather |
 | T-095 | Number base convert | number-base | cli | active | P2 | low | github | — | Convert among binary, octal, decimal, hex (from/to) |
 
 Dropped / skipped on purpose: copy-as-Markdown extensions, ClearURLs, OneTab, generic skip-intro-by-seconds UIs, a second Claude cost dashboard, a single mega “utils” binary, Spotify/Notion/Slack bots, a full jq clone, one tool per conversion direction (e.g. separate decimal→binary and binary→hex), and alias-tier wraps of existing CLI/OS tools (gh browse, dig, curl -I, git rev-parse, open -R, wc, say, date, diskutil, etc.).
+
+Menu-bar / hotkey / palette mini-tools are out of scope for this repo and are not tracked here.

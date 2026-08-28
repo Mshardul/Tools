@@ -2,6 +2,8 @@
 
 A collection of small open-source tools (MIT). Each leaf directory is an independent project. Tools that outgrow this repo move to their own.
 
+Menu-bar / hotkey / palette **mini-tools** are out of scope here. `apps/` is only for full standalone apps.
+
 ## Python environment
 
 Use one shared virtualenv at the **repo root** (never per-leaf `.venv`):
@@ -57,18 +59,11 @@ Run tools with that interpreter, e.g. `.venv/bin/python cli/data-convert/data_co
 | [git-large-files](cli/git-large-files/) | cli | active | Large blobs in git history |
 | [series-progress](cli/series-progress/) | cli | active | Sidecar: which episode to resume |
 | [open-terminal-here](extensions/macos/open-terminal-here/) | ext/macos | active | Open Terminal at a folder |
-| [floating-note](apps/floating-note/) | apps | active | Always-on-top scratchpad (tkinter) |
-| [world-clock](apps/world-clock/) | apps | active | Current time in a few IANA zones (CLI-first) |
-| [battery-eta](apps/battery-eta/) | apps | active | Battery percent / charge / ETA from pmset |
-| [pomodoro](apps/pomodoro/) | apps | active | CLI 25/5 focus timer with notification |
 | [focus-toggle](extensions/macos/focus-toggle/) | ext/macos | active | Focus on/off/toggle via Shortcuts |
 | [mic-mute](extensions/macos/mic-mute/) | ext/macos | active | Mute/unmute mic input volume |
 | [vlc-skip-chapter](extensions/vlc/vlc-skip-chapter/) | ext/vlc | active | Skip Intro/Credits chapters in VLC |
-| [brew-outdated](apps/brew-outdated/) | apps | active | Count/list outdated Homebrew packages |
 | [claude-session-archive](apps/claude-session-archive/) | apps | active | Search/export local Claude Code JSONL sessions |
 | [send-to-downloader](extensions/chrome/send-to-downloader/) | ext/chrome | active | Queue tab URLs for youtube-downloader |
-| [clipboard-history](apps/clipboard-history/) | apps | active | Local searchable clipboard history with pins |
-| [weather-bar](apps/weather-bar/) | apps | active | Compact local weather via Open-Meteo (CLI-first) |
 | [airdrop-folder](extensions/macos/airdrop-folder/) | ext/macos | active | Open AirDrop and select files in Finder |
 | [vlc-file-memory](extensions/vlc/vlc-file-memory/) | ext/vlc | active | Remember audio/subtitle/delay per file in VLC |
 
@@ -88,7 +83,7 @@ Older one-off scripts live in [`archive/`](archive/). They are kept for referenc
 ## Layout
 
 ```
-apps/                 # small web or desktop apps
+apps/                 # standalone web or desktop apps (not mini menu-bar / hotkey / palette tools)
 cli/                  # command-line tools
 extensions/chrome/
 extensions/vlc/
