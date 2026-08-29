@@ -1,0 +1,20 @@
+name: media-grabber
+on:
+  push:
+    paths: ['apps/media-grabber/**', '.github/workflows/media-grabber.yml']
+  pull_request:
+    paths: ['apps/media-grabber/**', '.github/workflows/media-grabber.yml']
+jobs:
+  build-test:
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: apps/media-grabber
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: tuist generate --no-open
+      - run: tuist build
+      - run: tuist test
+      - run: mise exec -- swiftformat --lint .
+      - run: mise exec -- swiftlint lint --strict

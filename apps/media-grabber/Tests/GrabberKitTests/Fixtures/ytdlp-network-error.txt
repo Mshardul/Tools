@@ -1,0 +1,3 @@
+[generic] Extracting URL: https://nonexistent-host-xyz-12345.invalid/video
+[generic] video: Downloading webpage
+ERROR: [generic] Unable to download webpage: <urllib3.connection.HTTPSConnection object at 0x10b9ab4d0>: Failed to resolve 'nonexistent-host-xyz-12345.invalid' ([Errno 8] nodename nor servname provided, or not known) (caused by TransportError("<urllib3.connection.HTTPSConnection object at 0x10b9ab4d0>: Failed to resolve 'nonexistent-host-xyz-12345.invalid' ([Errno 8] nodename nor servname provided, or not known)"))

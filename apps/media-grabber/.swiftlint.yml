@@ -1,0 +1,19 @@
+included:
+  - Sources
+  - Tests
+excluded:
+  - Derived
+  - .build
+  - Tuist/.build
+disabled_rules:
+  - todo
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - explicit_init
+line_length:
+  warning: 100
+  error: 140
+identifier_name:
+  min_length: 2
+  excluded: [id, ok, to]

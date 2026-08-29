@@ -1,0 +1,7 @@
+# Tuist / Xcode generated — scoped to this leaf
+*.xcodeproj
+*.xcworkspace
+Derived/
+.build/
+*.xcuserstate
+xcuserdata/
