@@ -26,12 +26,18 @@ final class FakeProcessRunner: ProcessRunning, Sendable {
         }
     }
 
+    private struct Delays {
+        var perRun: Duration = .zero
+        var perLine: Duration = .zero
+    }
+
     private struct State {
         var scripts: [String: Script] = [:]
         var launches: [ProcessLaunch] = []
         var maxConcurrent = 0
         var currentConcurrent = 0
-        var perRunDelay: Duration = .zero
+        var delays = Delays()
+        var cancelledCount = 0
     }
 
     private let box = LockedBox(State())
@@ -39,8 +45,13 @@ final class FakeProcessRunner: ProcessRunning, Sendable {
     init() {}
 
     var perRunDelay: Duration {
-        get { box.read { $0.perRunDelay } }
-        set { box.mutate { $0.perRunDelay = newValue } }
+        get { box.read { $0.delays.perRun } }
+        set { box.mutate { $0.delays.perRun = newValue } }
+    }
+
+    var perLineDelay: Duration {
+        get { box.read { $0.delays.perLine } }
+        set { box.mutate { $0.delays.perLine = newValue } }
     }
 
     var launches: [ProcessLaunch] {
@@ -49,6 +60,10 @@ final class FakeProcessRunner: ProcessRunning, Sendable {
 
     var maxConcurrent: Int {
         box.read { $0.maxConcurrent }
+    }
+
+    var cancelledCount: Int {
+        box.read { $0.cancelledCount }
     }
 
     func script(_ script: Script, forPathEndingIn suffix: String) {
@@ -60,39 +75,64 @@ final class FakeProcessRunner: ProcessRunning, Sendable {
     }
 
     func run(_ launch: ProcessLaunch) -> ProcessExecution {
-        let (script, delay) = box.mutate { state -> (Script, Duration) in
+        let (script, delays) = box.mutate { state -> (Script, Delays) in
             state.launches.append(launch)
             state.currentConcurrent += 1
             state.maxConcurrent = max(state.maxConcurrent, state.currentConcurrent)
             let script = state.scripts[launch.executableURL.path]
                 ?? state.scripts[launch.executableURL.lastPathComponent]
                 ?? Script(exitCode: 127)
-            return (script, state.perRunDelay)
+            return (script, state.delays)
         }
+        return makeExecution(script: script, delays: delays)
+    }
 
+    private func makeExecution(script: Script, delays: Delays) -> ProcessExecution {
         let (stream, continuation) = AsyncStream<ProcessLine>.makeStream()
         let exitBox = FakeExitBox()
         let box = box
-
-        Task {
-            if delay != .zero {
-                try? await Task.sleep(for: delay)
+        let settled = LockedBox(false)
+        let markSettled: @Sendable () -> Bool = {
+            settled.mutate { done in
+                if done {
+                    return false
+                }
+                done = true
+                return true
             }
+        }
+
+        let emitter = Task {
+            if delays.perRun != .zero {
+                try? await Task.sleep(for: delays.perRun)
+            }
+            try Task.checkCancellation()
             for line in script.lines {
+                if delays.perLine != .zero {
+                    try await Task.sleep(for: delays.perLine)
+                }
                 continuation.yield(line)
             }
             continuation.finish()
-            exitBox.set(
-                ProcessResult(exitCode: script.exitCode, wasCancelled: false)
-            )
-            box.mutate { $0.currentConcurrent -= 1 }
+            if markSettled() {
+                exitBox.set(ProcessResult(exitCode: script.exitCode, wasCancelled: false))
+                box.mutate { $0.currentConcurrent -= 1 }
+            }
         }
 
         return ProcessExecution(lines: stream) {
             await withTaskCancellationHandler {
                 await exitBox.value()
             } onCancel: {
-                exitBox.set(ProcessResult(exitCode: -15, wasCancelled: true))
+                emitter.cancel()
+                continuation.finish()
+                if markSettled() {
+                    box.mutate {
+                        $0.cancelledCount += 1
+                        $0.currentConcurrent -= 1
+                    }
+                    exitBox.set(ProcessResult(exitCode: -15, wasCancelled: true))
+                }
             }
         }
     }

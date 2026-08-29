@@ -1,6 +1,8 @@
 # MediaGrabber Phase 1 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Mark a task's steps done before starting the next; wait for the human's go-ahead between tasks. Commit cadence is the human's call, not a plan step.
+>
+> **Comments in code:** single-line only, only for *why*, only when the names don't already carry it. No `///` doc comments, no stacked `//` blocks. `.swiftformat` disables `docComments`; `.swiftlint.yml` disables `todo` (the one `// TODO(Task 11)` marker in `OnboardingInstaller` is deliberate).
 
 **Goal:** Ship a launchable macOS app that takes one pasted URL, installs its
 dependencies on first run if missing, resolves the title, downloads the file
@@ -16,10 +18,20 @@ theming plumbing. The engine shells out to `yt-dlp`, one child process per
 download, and parses its `--progress-template` output.
 
 **Tech Stack:** Swift 6, SwiftUI, Swift Concurrency (actors, `AsyncStream`),
-`@Observable`, `Foundation.Process`, `os.Logger`. Tuist for project generation,
-mise for tool version pinning. SwiftFormat + SwiftLint. GitHub Actions on
-`macos-14`. `yt-dlp` + `ffmpeg` are external runtime dependencies (Homebrew),
-never bundled.
+`@Observable`, `Foundation.Process`, `os.Logger`. Tuist 4.205.0 for project
+generation, mise for tool version pinning (tuist 4.205.0, swiftformat 0.62.1,
+swiftlint 0.65.1 — all pinned exactly in `.mise.toml`). GitHub Actions on
+`macos-14`; local builds run on the current Xcode. `yt-dlp` + `ffmpeg` are
+external runtime dependencies (Homebrew), never bundled.
+
+**Concurrency shape.** `GrabberKit` targets macOS 14, so `Synchronization.Mutex`
+(macOS 15) is unavailable — internal locking uses a small `os_unfair_lock`
+wrapper. Swift actors are reentrant across `await`, so an actor that must
+serialize work through a suspension point (`MetadataProbe`) chains its calls on
+an internal `Task`, not on actor isolation alone. `ProcessRunner` streams pipe
+output on dedicated blocking reader threads rather than `readabilityHandler`s,
+because the handler-plus-termination approach dropped lines under the test
+suite's concurrent execution.
 
 **Spec:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md`
 (Phase 1 is §12.1). Visual design: `apps/media-grabber/docs/design-system.md`.
@@ -40,13 +52,19 @@ Living mockup: `apps/media-grabber/docs/mockups/screens.html`.
   `*.xcodeproj`, `*.xcworkspace`, `Derived/`, Xcode user state, all scoped to
   the leaf.
 - **TDD throughout:** the test is written and seen to fail before the
-  implementation, for every unit. Frequent commits — one per red→green cycle.
+  implementation, for every unit.
 - **No network in tests.** Real-network integration tests are gated behind the
-  `MG_LIVE_TESTS=1` environment variable and are off in CI.
+  `MG_LIVE_TESTS=1` environment variable and are off in CI. Fixtures are
+  captured once from real `yt-dlp` runs against Creative-Commons sources
+  (`commons.wikimedia.org`, `archive.org`) — YouTube is unreachable without a
+  POT provider, which is out of Phase 1.
 - **`GrabberKit` imports no SwiftUI** and has no dependency on the `App` target.
 - **Phase 1 skin:** Aurora / Mint & Iris only. No skin or palette picker UI, but
   the `Skin` / `Palette` / environment plumbing is real (not hardcoded literals
-  in views).
+  in views). The Aurora typefaces (Sora / Inter / JetBrains Mono) are not
+  bundled — `Skin`'s font accessors resolve the family if present and fall back
+  to the system face otherwise. Bundling the faces is a tracked follow-up, not
+  Phase 1.
 - **Privacy (spec §8.5):** logs are local only, no telemetry, no network egress
   from logging. Redact in all logs: cookie contents, proxy credentials, any
   `--username` / `--password`, and absolute `/Users/<name>/…` paths rewritten to
@@ -62,29 +80,29 @@ Living mockup: `apps/media-grabber/docs/mockups/screens.html`.
 
 ```
 apps/media-grabber/
-  Project.swift                         # Tuist project: App + GrabberKit + GrabberKitTests
+  Project.swift                         # Tuist: MediaGrabber + GrabberKit + GrabberKitTests + AppUnitTests
   Tuist/
     Config.swift                        # Tuist config
-  .mise.toml                            # pins tuist
-  .gitignore                            # leaf-scoped: *.xcodeproj, Derived/, etc.
-  .swiftformat                          # SwiftFormat rules
-  .swiftlint.yml                        # SwiftLint rules
+  .mise.toml                            # pins tuist, swiftformat, swiftlint (exact versions)
+  .gitignore                            # leaf-scoped: *.xcodeproj, *.xcworkspace, Derived/
+  .swiftformat                          # --disable docComments; Derived/ excluded
+  .swiftlint.yml                        # disabled_rules: [todo]; Derived/ excluded
   README.md                             # build steps + Gatekeeper "Open Anyway"
   PRIVACY.md                            # what the logs contain, all local
-  ticket-backlog.md                     # leaf backlog
+  ticket-backlog.md                     # leaf backlog (incl. bundle the Aurora fonts)
   docs/
     design-system.md                    # (exists)
     mockups/screens.html                # (exists)
   Sources/
     App/
-      MediaGrabberApp.swift             # @main, single WindowGroup, window size restore
-      AppModel.swift                    # @Observable: deps, job, page
+      MediaGrabberApp.swift             # @main, single WindowGroup, -MGForceOnboarding
+      AppModel.swift                    # @MainActor @Observable: deps, job, page
       MainWindow.swift                  # brand row + health strip + nav + page switch
       Theme/
-        Skin.swift                      # Skin enum: fonts, radii, border, elevation, motif
-        Palette.swift                   # Palette enum + Color token struct
-        SkinEnvironment.swift           # EnvironmentKey injecting resolved skin+palette
-        MotifView.swift                 # conic-gradient orb, isActive, reduce-motion aware
+        Skin.swift                      # Skin enum: font resolvers (system fallback), radii, motif; Spacing
+        Palette.swift                   # PaletteTokens struct, palette(for:), Color(hex:)
+        SkinEnvironment.swift           # @Entry EnvironmentValues.theme -> ResolvedTheme
+        MotifView.swift                 # conic-gradient orb; isSpinning(reduceMotion:) for tests
       Onboarding/
         OnboardingView.swift            # full-window checklist, blocks Home
       Home/
@@ -92,26 +110,30 @@ apps/media-grabber/
         RunwayView.swift                # labelled slots + Grab button
     GrabberKit/
       Onboarding/
-        ProcessRunner.swift             # async Process wrapper, line-streamed output
-        EnvironmentProbe.swift          # locate + version brew, yt-dlp, ffmpeg
+        ProcessRunner.swift             # async Process wrapper; blocking reader threads
+        EnvironmentProbe.swift          # locate + version brew/yt-dlp/ffmpeg; EnvironmentProbing
         OnboardingInstaller.swift       # first-run setup state machine
       Download/
-        DownloadRequest.swift           # immutable request value
-        DownloadJob.swift               # @Observable per-row state
-        Progress.swift                  # progress value type
-        ErrorClass.swift                # error classification enum
-        YtDlpArguments.swift            # (DownloadRequest) -> [String], + redacted view
+        DownloadRequest.swift           # immutable request value + AudioCodec / DownloadKind
+        DownloadJob.swift               # @MainActor @Observable per-row state + JobState
+        Progress.swift                  # progress value type, fraction clamped 0...1
+        ErrorClass.swift                # error classification enum (full spec §9 case list)
+        YtDlpArguments.swift            # build(for:) -> [String]; redacted(for:) seam
         ProgressParser.swift            # progress-template lines -> ProgressEvent; stderr -> ErrorClass
-        MetadataProbe.swift             # yt-dlp -J -> title / duration / isPlaylist
-        DownloadEngine.swift            # actor: submit one job, drive it to terminal
+        MetadataProbe.swift             # yt-dlp -J -> title/duration; serialized via Task chain
+        DownloadEngine.swift            # actor: submit enqueues, drain() drives each job to terminal
       Model/
-        Preferences.swift              # @Observable, UserDefaults-backed
+        Preferences.swift               # @Observable, UserDefaults-backed; SkinKind / PaletteKind
       Logging/
         LogWriter.swift                 # actor: JSON Lines + os.Logger mirror
         LogEvent.swift                  # event enum + schema + redaction helpers
   Tests/
     GrabberKitTests/
-      Fixtures/                         # checked-in yt-dlp output samples
+      Support/
+        FakeProcessRunner.swift         # ProcessRunning fake, os_unfair_lock LockedBox
+        FakeEnvironmentProbe.swift      # EnvironmentProbing fake, scripted report sequence
+      Fixtures/                         # checked-in real yt-dlp output samples + shell helpers
+      SmokeTests.swift
       ProcessRunnerTests.swift
       EnvironmentProbeTests.swift
       OnboardingInstallerTests.swift
@@ -122,6 +144,8 @@ apps/media-grabber/
       MetadataProbeTests.swift
       DownloadEngineTests.swift
       LogWriterTests.swift
+    AppUnitTests/
+      ThemeTests.swift
       AppModelTests.swift               # AppModel logic with a fake engine
 ```
 
@@ -130,6 +154,16 @@ touched. `DownloadEngine` is the only component that spawns download processes.
 `ProcessRunner`, `EnvironmentProbe`, `YtDlpArguments`, `ProgressParser`,
 `Progress`, `ErrorClass`, `Preferences` are pure or fixture-testable. The `App`
 target holds only SwiftUI and reads everything else from `GrabberKit`.
+
+**Test doubles.** `FakeProcessRunner` and `FakeEnvironmentProbe` live in
+`Tests/GrabberKitTests/Support/` and are shared across every suite that needs
+them. `FakeProcessRunner` matches scripts by executable path (full path, then
+last component), records launches, tracks peak concurrency, and takes an
+optional per-run delay to widen concurrency windows. Its state sits behind a
+`LockedBox` (`os_unfair_lock`), since Swift 6 forbids `NSLock` in async
+contexts and `Mutex` needs macOS 15. `FakeEnvironmentProbe` returns a scripted
+sequence of `EnvironmentReport`s, one per `probe()` call (the last repeats), so
+"install, then re-probe finds the tools" is deterministic without timing.
 
 ---
 
@@ -145,29 +179,48 @@ target holds only SwiftUI and reads everything else from `GrabberKit`.
 - Create: `apps/media-grabber/Sources/App/MediaGrabberApp.swift`
 - Create: `apps/media-grabber/Sources/GrabberKit/GrabberKit.swift` (placeholder so the target compiles)
 - Create: `apps/media-grabber/Tests/GrabberKitTests/SmokeTests.swift`
+- Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/` (dir; populated in later tasks)
 - Create: `.github/workflows/media-grabber.yml`
 
 **Interfaces:**
 - Consumes: nothing (first task).
 - Produces:
-  - A Tuist project at `apps/media-grabber/` with three targets:
-    `MediaGrabber` (app, bundle ID `app.mediagrabber.mac`, deployment target
-    macOS 14.0, `INFOPLIST_KEY_LSMinimumSystemVersion = 14.0`), `GrabberKit`
-    (framework), `GrabberKitTests` (unit-test bundle for `GrabberKit`).
-  - `tuist generate` produces a buildable workspace; `tuist build` and
-    `tuist test` both succeed.
+  - A Tuist project at `apps/media-grabber/` with four targets: `MediaGrabber`
+    (app, bundle ID `app.mediagrabber.mac`, deployment target macOS 14.0,
+    `LSMinimumSystemVersion 14.0`), `GrabberKit` (framework), `GrabberKitTests`
+    (unit tests for `GrabberKit`), `AppUnitTests` (unit tests for `MediaGrabber`
+    — added in Task 7).
+  - `tuist generate` produces `MediaGrabber.xcworkspace` (gitignored); the
+    `MediaGrabber-Workspace` scheme builds and tests both test bundles.
   - App target has `CODE_SIGN_IDENTITY = "-"`, `CODE_SIGN_STYLE = Manual`,
     `ENABLE_HARDENED_RUNTIME = NO`, `ENABLE_APP_SANDBOX = NO`.
 
-- [x] **Step 1: Install the toolchain**
+**Build & test commands.** `mise exec -- tuist generate --no-open` after adding
+or removing files. Build and test through xcodebuild on the generated
+workspace, not `tuist test` — `tuist test`'s output filtering hides compiler
+errors:
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' test
+```
+Lint: `mise exec -- swiftformat --lint .` and `mise exec -- swiftlint lint --strict`.
 
-Run:
+- [x] **Step 1: Pin the toolchain**
+
 ```bash
 brew install mise
-cd apps/media-grabber && mise use tuist@latest && mise install
+cd apps/media-grabber
+mise use tuist@latest swiftformat@latest swiftlint@latest
+mise install
 ```
-Expected: `mise ls` shows `tuist`. `.mise.toml` now exists and pins the version.
-Commit `.mise.toml` as-is.
+Then rewrite `.mise.toml` to pin exact versions (mise writes `latest`; CI needs
+determinism). `swiftformat` needs `no_app = true` on macOS:
+```toml
+[tools]
+tuist = "4.205.0"
+swiftformat = { version = "0.62.1", no_app = true, rename_exe = "swiftformat" }
+swiftlint = "0.65.1"
+```
 
 - [x] **Step 2: Write `Tuist/Config.swift`**
 
@@ -179,8 +232,13 @@ let config = Config(
     generationOptions: .options()
 )
 ```
+(Tuist warns this path is deprecated in favour of `Tuist.swift` at the leaf
+root; the deprecated path still works and the plan keeps it for now.)
 
 - [x] **Step 3: Write `Project.swift`**
+
+Four targets. `AppUnitTests` is added here in the file structure even though its
+first test lands in Task 7, so `Project.swift` is not re-edited mid-plan.
 
 ```swift
 import ProjectDescription
@@ -194,11 +252,11 @@ let project = Project(
     settings: .settings(
         base: [
             "SWIFT_VERSION": "6.0",
-            "MACOSX_DEPLOYMENT_TARGET": "14.0",
+            "MACOSX_DEPLOYMENT_TARGET": "14.0"
         ],
         configurations: [
             .debug(name: "Debug"),
-            .release(name: "Release"),
+            .release(name: "Release")
         ]
     ),
     targets: [
@@ -211,7 +269,7 @@ let project = Project(
             infoPlist: .extendingDefault(with: [
                 "LSMinimumSystemVersion": "14.0",
                 "CFBundleDisplayName": "MediaGrabber",
-                "NSHumanReadableCopyright": "MIT",
+                "NSHumanReadableCopyright": "MIT"
             ]),
             sources: ["Sources/App/**"],
             resources: [],
@@ -220,7 +278,7 @@ let project = Project(
                 "CODE_SIGN_IDENTITY": "-",
                 "CODE_SIGN_STYLE": "Manual",
                 "ENABLE_HARDENED_RUNTIME": "NO",
-                "ENABLE_APP_SANDBOX": "NO",
+                "ENABLE_APP_SANDBOX": "NO"
             ])
         ),
         .target(
@@ -242,6 +300,15 @@ let project = Project(
             resources: ["Tests/GrabberKitTests/Fixtures/**"],
             dependencies: [.target(name: "GrabberKit")]
         ),
+        .target(
+            name: "AppUnitTests",
+            destinations: .macOS,
+            product: .unitTests,
+            bundleId: "app.mediagrabber.mac.tests",
+            deploymentTargets: .macOS("14.0"),
+            sources: ["Tests/AppUnitTests/**"],
+            dependencies: [.target(name: "MediaGrabber")]
+        )
     ]
 )
 ```
@@ -249,7 +316,6 @@ let project = Project(
 - [x] **Step 4: Write the leaf `.gitignore`**
 
 ```gitignore
-# Tuist / Xcode generated — scoped to this leaf
 *.xcodeproj
 *.xcworkspace
 Derived/
@@ -260,9 +326,12 @@ xcuserdata/
 
 - [x] **Step 5: Write `.swiftformat` and `.swiftlint.yml`**
 
-`.swiftformat`:
+`.swiftformat` — `docComments` is disabled (it promotes single-line `//` above a
+declaration to `///`, which the comment rule forbids); `Derived/` is excluded so
+Tuist's generated bundle sources don't fail the lint:
 ```
 --swiftversion 6.0
+--exclude Derived,Tuist/.build,.build
 --indent 4
 --maxwidth 100
 --wraparguments before-first
@@ -270,13 +339,21 @@ xcuserdata/
 --self remove
 --commas inline
 --trimwhitespace always
+--disable docComments
 ```
 
-`.swiftlint.yml`:
+`.swiftlint.yml` — `todo` is disabled (Task 8 leaves an intentional
+`// TODO(Task 11)` marker); `Derived/` excluded:
 ```yaml
 included:
   - Sources
   - Tests
+excluded:
+  - Derived
+  - .build
+  - Tuist/.build
+disabled_rules:
+  - todo
 opt_in_rules:
   - empty_count
   - closure_spacing
@@ -307,11 +384,11 @@ struct MediaGrabberApp: App {
     }
 }
 ```
+Task 11 replaces this body with the real `AppModel` graph.
 
-`Sources/GrabberKit/GrabberKit.swift`:
+`Sources/GrabberKit/GrabberKit.swift` — a placeholder so the framework compiles
+before its real types exist:
 ```swift
-// GrabberKit — headless engine for MediaGrabber.
-// Real types are added in later tasks.
 public enum GrabberKit {
     public static let name = "GrabberKit"
 }
@@ -321,8 +398,8 @@ public enum GrabberKit {
 
 `Tests/GrabberKitTests/SmokeTests.swift`:
 ```swift
-import XCTest
 @testable import GrabberKit
+import XCTest
 
 final class SmokeTests: XCTestCase {
     func test_grabberKitName() {
@@ -333,16 +410,16 @@ final class SmokeTests: XCTestCase {
 
 - [x] **Step 8: Generate, build, test locally**
 
-Run:
 ```bash
 cd apps/media-grabber
-tuist generate
-tuist build
-tuist test
+mise exec -- tuist generate --no-open
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' test
+mise exec -- swiftformat --lint .
+mise exec -- swiftlint lint --strict
 ```
-Expected: generate creates `MediaGrabber.xcworkspace` (gitignored), build
-succeeds, the smoke test passes, and running the app opens a window titled
-"MediaGrabber".
+Expected: workspace generates (gitignored), the smoke test passes, lint is
+clean, and running the app opens a window titled "MediaGrabber".
 
 - [x] **Step 9: Write the GitHub Actions workflow**
 
@@ -369,17 +446,11 @@ jobs:
       - run: mise exec -- swiftformat --lint .
       - run: mise exec -- swiftlint lint --strict
 ```
-Add `swiftformat` and `swiftlint` to `.mise.toml` (`mise use swiftformat@latest
-swiftlint@latest`).
 
-- [ ] **Step 10: Commit**
-
-```bash
-git add apps/media-grabber .github/workflows/media-grabber.yml
-git commit -m "feat(media-grabber): Tuist project skeleton, CI, lint, bare window"
-```
-DoD: CI is green on the pushed branch; `tuist test` passes locally; launching
-the app opens a window.
+DoD: `tuist generate` + the xcodebuild test command pass locally; lint is
+clean; launching the app opens a window. The CI runner uses `macos-14` / an
+older Xcode than local — nothing in the code assumes a specific Xcode beyond
+`SWIFT_VERSION = 6.0` and the macOS 14 deployment target.
 
 ---
 
@@ -394,8 +465,9 @@ shells out (`EnvironmentProbe`, `OnboardingInstaller`, `MetadataProbe`,
 - Create: `apps/media-grabber/Tests/GrabberKitTests/ProcessRunnerTests.swift`
 - Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/emit3lines.sh` (a
   helper script: prints 3 lines with a 50ms gap between them, then exits 0)
-- Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/hang.sh` (sleeps
-  60s — used for the cancellation test)
+- Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/hang.sh`
+  (`exec sleep 60` — `exec` so a SIGTERM reaches `sleep` directly instead of
+  orphaning it under the shell; used for the cancellation test)
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
@@ -419,11 +491,10 @@ shells out (`EnvironmentProbe`, `OnboardingInstaller`, `MetadataProbe`,
   public struct ProcessResult: Sendable {
       public let exitCode: Int32
       public let wasCancelled: Bool
+      public init(exitCode: Int32, wasCancelled: Bool)
   }
 
   public protocol ProcessRunning: Sendable {
-      /// Streams stdout/stderr line by line as they arrive; the stream
-      /// finishes when the process exits. Await `result()` for the exit code.
       func run(_ launch: ProcessLaunch) -> ProcessExecution
   }
 
@@ -436,10 +507,13 @@ shells out (`EnvironmentProbe`, `OnboardingInstaller`, `MetadataProbe`,
       public init()
   }
   ```
-  Cancellation: cancelling the `Task` that is awaiting `result()` (or iterating
-  `lines`) sends `SIGTERM` to the child; `ProcessResult.wasCancelled == true`.
-  Later tasks depend on the exact names `ProcessRunner`, `ProcessRunning`,
-  `ProcessLaunch`, `ProcessLine`, `ProcessExecution`, `ProcessResult`.
+  `lines` streams stdout/stderr as they arrive and finishes when the process
+  exits; `result()` then yields the exit code. Cancelling the `Task` that
+  awaits `result()` (or iterates `lines`) sends `SIGTERM` to the child and sets
+  `ProcessResult.wasCancelled == true`. Later tasks depend on the exact names
+  `ProcessRunner`, `ProcessRunning`, `ProcessLaunch`, `ProcessLine`,
+  `ProcessExecution`, `ProcessResult`, and on `ProcessResult`'s public
+  memberwise init (the fakes construct it directly).
 
 - [x] **Step 1: Write the failing tests**
 
@@ -453,53 +527,58 @@ shells out (`EnvironmentProbe`, `OnboardingInstaller`, `MetadataProbe`,
 - `test_threeLines_arriveInOrder` — run `Fixtures/emit3lines.sh` → three
   `.stdout` lines in emission order.
 - `test_cancellation_sendsSigtermAndReports` — run `Fixtures/hang.sh` inside a
-  `Task`, cancel it after 100ms → `result()` returns with
-  `wasCancelled == true` and returns within ~1s (not 60s).
+  `Task`, cancel it after 100ms → `result()` returns `wasCancelled == true`
+  within ~5s (not 60s). Build the `ProcessLaunch` before the `Task` and capture
+  only `Sendable` values into it — an `XCTestCase` instance is not `Sendable`,
+  so a helper method that builds the launch cannot be called from inside the
+  `Task` under Swift 6.
 - `test_environment_isPassedThrough` — `/bin/sh -c 'echo $MG_TEST'` with
   `environment: ["MG_TEST": "xyz"]` (merged onto the parent env) → `.stdout("xyz")`.
 
 Make the two fixture scripts executable and add them to the test target's
-`Fixtures/` resource bundle (Task 1 already wired `Fixtures/**` as resources).
-Resolve them at test time via `Bundle.module.url(forResource:withExtension:)`.
+`Fixtures/` resource bundle. Resolve them at test time via
+`Bundle.module.url(forResource:withExtension:)`.
 
 - [x] **Step 2: Run the tests — verify they fail**
 
-Run: `tuist test --test-targets GrabberKitTests/ProcessRunnerTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/ProcessRunnerTests test
+```
 Expected: FAIL — `ProcessRunner` / the protocol types are not defined.
 
 - [x] **Step 3: Implement `ProcessRunner`**
 
-Sketch (executor fills the body):
-- `run(_:)` builds a `Foundation.Process` + two `Pipe`s, starts it, and returns
-  a `ProcessExecution` whose `lines` is an `AsyncStream` fed by
-  `readabilityHandler`s that split incoming `Data` on `\n` (buffer partial
-  lines; flush the buffer on EOF).
-- `result()` awaits `process.waitUntilExit` bridged into async (a
-  `withCheckedContinuation` in `terminationHandler`), then returns
-  `ProcessResult(exitCode: process.terminationStatus, wasCancelled:)`.
-- Wrap the await in `withTaskCancellationHandler`; on cancel call
-  `process.terminate()` (SIGTERM) and record `wasCancelled = true`.
-- `environment: nil` means "inherit" — pass `ProcessInfo.processInfo.environment`;
-  a non-nil value is merged onto the parent environment, caller keys winning.
-- Nothing throws out of `run` / `result`; a launch failure surfaces as a
-  non-zero synthetic `exitCode` (e.g. `127`) plus a `.stderr` line.
+- `run(_:)` builds a `Foundation.Process` + two `Pipe`s and starts it. Each
+  pipe is drained on its own dedicated blocking-`read` thread; a `LineSplitter`
+  per pipe buffers partial lines and flushes the tail at EOF. A 2-count latch
+  finishes the `AsyncStream` only once *both* reader threads have hit EOF, so no
+  line is dropped. (`readabilityHandler` + a `terminationHandler` drain was
+  tried first and dropped stdout under the concurrently-run test suite.)
+- A third thread calls `process.waitUntilExit()` and publishes the
+  `ProcessResult` through a small `@unchecked Sendable` box that supports one
+  producer and many awaiters.
+- `result()` wraps the await in `withTaskCancellationHandler`; on cancel it
+  calls `process.terminate()` (SIGTERM) and records `wasCancelled = true`.
+- `environment: nil` inherits `ProcessInfo.processInfo.environment`; a non-nil
+  value is merged onto the parent, caller keys winning.
+- Nothing throws out of `run` / `result`; a launch failure surfaces as
+  `exitCode == 127` plus a `.stderr` line.
+- Internal locking uses `os_unfair_lock`, not `NSLock` (Swift 6 forbids
+  `NSLock.lock()` in async contexts) and not `Mutex` (macOS 15). Decode pipe
+  bytes with `String(bytes:encoding:)` (swiftlint's
+  `optional_data_string_conversion`), with an ISO-Latin-1 fallback.
 
 - [x] **Step 4: Run the tests — verify they pass**
 
-Run: `tuist test --test-targets GrabberKitTests/ProcessRunnerTests`
-Expected: PASS (all 7).
+Same command as Step 2. Expected: PASS (all 7). Run the full suite too — the
+line-drop bug only showed under concurrent execution.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Onboarding/ProcessRunner.swift \
-        apps/media-grabber/Tests/GrabberKitTests/ProcessRunnerTests.swift \
-        apps/media-grabber/Tests/GrabberKitTests/Fixtures/
-git commit -m "feat(media-grabber): ProcessRunner — async line-streamed child processes"
-```
-DoD: every process-control path (exit 0, exit non-zero, stdout, stderr,
-ordered multi-line, cancel→SIGTERM, env pass-through) is covered by a passing
-fixture-backed test; no network.
+DoD: every process-control path (exit 0, exit non-zero, stdout, stderr, ordered
+multi-line, cancel→SIGTERM, env pass-through) is covered by a passing
+fixture-backed test; the full suite is stable across repeated runs; no orphan
+child processes remain (`pgrep` the fixture is empty after the cancel test); no
+network.
 
 ---
 
@@ -516,97 +595,105 @@ fixture-backed test; no network.
   public struct ToolInfo: Sendable, Equatable {
       public let path: URL
       public let version: String        // parsed, e.g. "2025.09.26" or "8.0"
+      public init(path: URL, version: String)
   }
 
   public struct EnvironmentReport: Sendable, Equatable {
       public let brew: ToolInfo?
       public let ytDlp: ToolInfo?
       public let ffmpeg: ToolInfo?
-      /// true when both yt-dlp and ffmpeg are present.
       public var isReadyForDownloads: Bool { ytDlp != nil && ffmpeg != nil }
+      public init(brew: ToolInfo?, ytDlp: ToolInfo?, ffmpeg: ToolInfo?)
   }
 
-  public struct EnvironmentProbe: Sendable {
+  public protocol EnvironmentProbing: Sendable {
+      func probe() async -> EnvironmentReport
+  }
+
+  public struct EnvironmentProbe: EnvironmentProbing {
       public init(runner: ProcessRunning = ProcessRunner(),
-                  extraSearchPaths: [URL] = EnvironmentProbe.defaultSearchPaths)
+                  extraSearchPaths: [URL] = EnvironmentProbe.defaultSearchPaths,
+                  isExecutable: @escaping @Sendable (URL) -> Bool =
+                      { FileManager.default.isExecutableFile(atPath: $0.path) })
       public func probe() async -> EnvironmentReport
 
-      /// Homebrew locations + common installs, in priority order:
-      /// /opt/homebrew/bin, /usr/local/bin, /usr/bin, ~/.local/bin,
-      /// plus each entry of $PATH.
+      // /opt/homebrew/bin, /usr/local/bin, /usr/bin, ~/.local/bin, then $PATH.
       public static var defaultSearchPaths: [URL] { get }
   }
   ```
-  Later tasks (`OnboardingInstaller`, the App's `AppModel`) depend on
-  `EnvironmentReport`, `ToolInfo`, `EnvironmentProbe`, and `isReadyForDownloads`.
+  `EnvironmentProbing` is the seam `OnboardingInstaller` (Task 8) and `AppModel`
+  (Task 11) test against. `isExecutable` is injectable so a fake can "find"
+  executables at paths that don't exist on disk — `FileManager.isExecutableFile`
+  can't be pointed at a fixture. `ToolInfo` / `EnvironmentReport` carry public
+  memberwise inits (the fakes build them). Later tasks depend on
+  `EnvironmentReport`, `ToolInfo`, `EnvironmentProbe`, `EnvironmentProbing`,
+  `isReadyForDownloads`.
 
-**Version parsing rules (pin these — tests assert them):**
-- `brew --version` → first line `Homebrew 4.3.0` → `"4.3.0"`.
-- `yt-dlp --version` → the whole output is the version, e.g. `2025.09.26`.
-- `ffmpeg -version` → first line `ffmpeg version 8.0 Copyright ...` → `"8.0"`
-  (take the token after `version`, strip a leading `n`, keep up to the first
-  space).
-- Unparseable / empty output → treat the tool as **not found** (`nil`), never
-  crash.
+**Version parsing rules (tests assert them):**
+- `brew --version` → first line `Homebrew <version>` → the second token.
+- `yt-dlp --version` → the whole first non-empty line is the version; reject it
+  (tool "not found") if it doesn't start with a digit or `v`, so an error blob
+  isn't mistaken for a version.
+- `ffmpeg -version` → first line `ffmpeg version 8.0 Copyright ...` → the token
+  after `version`, leading `n` stripped, must start with a digit.
+- Unparseable / empty output → the tool is **not found** (`nil`), never a crash.
+- These match real `brew` / `yt-dlp` / `ffmpeg` output on macOS — verify against
+  the installed tools during implementation.
 
-- [x] **Step 1: Write the failing tests**
+- [x] **Step 1: Build `FakeProcessRunner` and write the failing tests**
 
-Use a `FakeProcessRunner` (a `ProcessRunning` that returns scripted lines +
-exit code per matched executable path — build it in this test file; later tasks
-reuse it, so give it a small public-ish shape inside the test target).
+`Tests/GrabberKitTests/Support/FakeProcessRunner.swift` — a `ProcessRunning`
+returning a scripted `[ProcessLine]` + exit code per matched executable path
+(full path first, then last component, so `["brew"]` matches
+`/opt/homebrew/bin/brew`). It records `launches`, tracks `maxConcurrent`, and
+takes a `perRunDelay`. State sits behind an `os_unfair_lock` `LockedBox`
+(`NSLock.lock()` is banned in async contexts; `Mutex` needs macOS 15). Add
+`Script.stdout(_:)` / `Script.stderr(_:)` helpers that split a blob on
+newlines.
 
-- `test_allToolsPresent_parsesVersions` — fake returns the three version
-  strings above → `report.brew?.version == "4.3.0"`, `ytDlp?.version ==
-  "2025.09.26"`, `ffmpeg?.version == "8.0"`, `isReadyForDownloads == true`.
-- `test_ytDlpMissing_reportsNilAndNotReady` — fake has no `yt-dlp` on any search
-  path → `report.ytDlp == nil`, `isReadyForDownloads == false`.
-- `test_ffmpegMalformedVersion_treatedAsMissing` — fake returns `garbage` for
-  `ffmpeg -version` → `report.ffmpeg == nil`.
-- `test_firstMatchOnSearchPathWins` — `yt-dlp` exists in both
-  `/opt/homebrew/bin` and `/usr/local/bin`; the report's path is the
-  `/opt/homebrew/bin` one.
-- `test_noRealBrewOrNetwork` — the whole suite runs with the fake; assert the
-  real `ProcessRunner` is never constructed (inject the fake).
+`EnvironmentProbeTests.swift` — inject the fake plus a fake `isExecutable`
+predicate (a `Set<String>` of "present" paths):
+- `test_allToolsPresent_parsesVersions` — the three version strings →
+  `brew?.version`, `ytDlp?.version`, `ffmpeg?.version` parsed, `isReadyForDownloads`.
+- `test_ytDlpMissing_reportsNilAndNotReady`.
+- `test_ffmpegMalformedVersion_treatedAsMissing` — `garbage` for `ffmpeg -version`.
+- `test_firstMatchOnSearchPathWins` — `yt-dlp` present in both
+  `/opt/homebrew/bin` and `/usr/local/bin`; the report's path is the first.
+- `test_noRealBrewOrNetwork` — every recorded launch is under a search-path
+  directory; the real `ProcessRunner` is never constructed.
 
 - [x] **Step 2: Run the tests — verify they fail**
 
-Run: `tuist test --test-targets GrabberKitTests/EnvironmentProbeTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/EnvironmentProbeTests test
+```
 Expected: FAIL — `EnvironmentProbe` undefined.
 
 - [x] **Step 3: Implement `EnvironmentProbe`**
 
-- `probe()` iterates each tool name over `extraSearchPaths`, `FileManager`
-  `isExecutableFile` check for the first hit, then runs its version command via
-  the injected `runner`, parses per the rules above, builds `ToolInfo`.
-- All three tools probed concurrently (`async let` / task group); assemble the
-  `EnvironmentReport`.
-- Parsing helpers are private free functions, each unit-coverable through the
-  public `probe()` behavior.
+- `probe()` runs all three tools concurrently (`async let`). For each: walk
+  `searchPaths`, take the first `isExecutable` hit, run its version command
+  through the injected `runner`, parse.
+- Parsing helpers are `private static` functions on `EnvironmentProbe`,
+  exercised through the public `probe()` behavior.
 
 - [x] **Step 4: Run the tests — verify they pass**
 
-Run: `tuist test --test-targets GrabberKitTests/EnvironmentProbeTests`
-Expected: PASS.
+Same command as Step 2. Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Onboarding/EnvironmentProbe.swift \
-        apps/media-grabber/Tests/GrabberKitTests/EnvironmentProbeTests.swift
-git commit -m "feat(media-grabber): EnvironmentProbe — locate and version brew/yt-dlp/ffmpeg"
-```
-DoD: a correct `EnvironmentReport` is produced against fixtures with no real
-brew and no network; a missing or malformed tool degrades to `nil` without
-crashing.
+DoD: a correct `EnvironmentReport` against fixtures with no real brew and no
+network; a missing or malformed tool degrades to `nil` without crashing; the
+parsers match the real installed tools' output.
 
 ---
 
 ## Task 4: Data types — request, job, progress, error class, preferences
 
-The Phase 1 model surface. Pure value types plus one `@Observable` job and one
-`@Observable` UserDefaults-backed `Preferences`. `ErrorClass` gets its full
-spec §9 case list now (later phases fill in the classification logic); Phase 1
-only ever produces `.unknown`, `.networkDown`, `.depMissing`.
+The Phase 1 model surface. Pure value types plus one `@MainActor @Observable`
+job and one `@Observable` UserDefaults-backed `Preferences`. `ErrorClass` gets
+its full spec §9 case list now (later phases fill in the classification logic);
+Phase 1 only ever produces `.unknown`, `.networkDown`, `.depMissing`.
 
 **Files:**
 - Create: `apps/media-grabber/Sources/GrabberKit/Download/DownloadRequest.swift`
@@ -640,11 +727,14 @@ only ever produces `.unknown`, `.networkDown`, `.depMissing`.
   }
 
   public struct Progress: Sendable, Equatable {
-      public var fraction: Double            // 0.0 ... 1.0
+      public var fraction: Double            // clamped 0.0 ... 1.0, in init and on set
       public var speedBytesPerSec: Double?
       public var etaSeconds: Int?
       public var downloadedBytes: Int64
       public var totalBytes: Int64?
+      public init(fraction: Double, speedBytesPerSec: Double? = nil,
+                  etaSeconds: Int? = nil, downloadedBytes: Int64,
+                  totalBytes: Int64? = nil)
   }
 
   public enum ErrorClass: Sendable, Equatable {
@@ -661,8 +751,8 @@ only ever produces `.unknown`, `.networkDown`, `.depMissing`.
       case failed(ErrorClass)
   }
 
-  @Observable
-  public final class DownloadJob: Identifiable, @unchecked Sendable {
+  @MainActor @Observable
+  public final class DownloadJob: Identifiable {
       public let id: UUID
       public let request: DownloadRequest
       public var title: String?
@@ -681,7 +771,7 @@ only ever produces `.unknown`, `.networkDown`, `.depMissing`.
   public final class Preferences: @unchecked Sendable {
       public var defaultDestFolder: URL          // default ~/Downloads
       public var lastUsedDestFolder: URL         // default = defaultDestFolder
-      public var defaultKind: DownloadKind       // default .video(maxHeight: 1080)
+      public var defaultKind: DownloadKind       // derived from the fields below
       public var defaultMaxHeight: Int           // default 1080
       public var defaultAudioCodec: AudioCodec   // default .m4a
       public var outputTemplate: String          // default "%(title)s.%(ext)s"
@@ -693,16 +783,24 @@ only ever produces `.unknown`, `.networkDown`, `.depMissing`.
       // each property is get/set-backed by `defaults` under key "mg.<name>"
   }
   ```
-  `SkinKind` / `PaletteKind` are lightweight `String`-raw enums defined here
-  (the App-side `Skin` / `Palette` in Task 7 map from them — `GrabberKit`
-  imports no SwiftUI so it cannot hold `Color`/`Font`). `SkinKind` cases:
-  `tapeDeck, aurora`. `PaletteKind` cases: `auroraMintIris, auroraLimeForest,
-  auroraMagentaViolet, tapeDeckA, tapeDeckB, tapeDeckC` (Phase 1 only uses
-  `auroraMintIris`).
+  `DownloadJob` is `@MainActor` (a UI-facing observable — Task 10's engine hops
+  to the main actor for every mutation the UI reads). Tests that touch it are
+  `@MainActor`.
+
+  `Preferences.defaultKind` is computed from a stored `"mg.defaultKindSelector"`
+  (`video` / `audio`) plus `defaultMaxHeight` / `defaultAudioCodec`, so there is
+  no separate stored `defaultKind` to fall out of sync. URL props are stored as
+  absolute path strings (no security-scoped bookmarks in Phase 1).
+
+  `SkinKind` / `PaletteKind` are `String`-raw enums defined here (the App-side
+  `Skin` / `Palette` in Task 7 map from them — `GrabberKit` imports no SwiftUI
+  so it cannot hold `Color`/`Font`). `SkinKind`: `tapeDeck, aurora`.
+  `PaletteKind`: `auroraMintIris, auroraLimeForest, auroraMagentaViolet,
+  tapeDeckA, tapeDeckB, tapeDeckC` (Phase 1 uses only `auroraMintIris`).
 
   Later tasks depend on: `DownloadRequest`, `DownloadKind`, `AudioCodec`,
-  `Progress`, `ErrorClass`, `JobState`, `DownloadJob`, `Preferences`,
-  `SkinKind`, `PaletteKind`.
+  `Progress` (+ its memberwise init), `ErrorClass`, `JobState`, `DownloadJob`,
+  `Preferences`, `SkinKind`, `PaletteKind`.
 
 - [x] **Step 1: Write the failing tests**
 
@@ -714,8 +812,11 @@ only ever produces `.unknown`, `.networkDown`, `.depMissing`.
 - `test_codableRoundTrip_audio` — same for `.audio(codec: .mp3)`.
 - `test_errorClass_unknownCarriesRaw` — `ErrorClass.unknown(raw: "boom")` is
   `Equatable` and keeps `"boom"`.
-- `test_jobStartsQueued` — `DownloadJob(request:)` has `state == .queued`,
-  `attempt == 0`, `title == nil`, `progress == nil`, `outputFiles == []`.
+- `test_jobStartsQueued` (`@MainActor`) — `DownloadJob(request:)` has
+  `state == .queued`, `attempt == 0`, `title == nil`, `progress == nil`,
+  `outputFiles == []`.
+- `test_progressClampsFraction` — `Progress(fraction: 1.5, …).fraction == 1.0`
+  and `-0.2 → 0.0`.
 
 `PreferencesTests.swift` (use `UserDefaults(suiteName:)` throwaway suites, wiped
 in `tearDown`):
@@ -733,40 +834,33 @@ in `tearDown`):
 
 - [x] **Step 2: Run — verify fail**
 
-Run: `tuist test --test-targets GrabberKitTests/DownloadRequestTests GrabberKitTests/PreferencesTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' \
+  -only-testing:GrabberKitTests/DownloadRequestTests \
+  -only-testing:GrabberKitTests/PreferencesTests test
+```
 Expected: FAIL — types undefined.
 
 - [x] **Step 3: Implement the types**
 
-- Value types are plain structs; `DownloadKind` / `ErrorClass` / `JobState`
-  hand-rolled `Codable` where associated values need it (`JobState` is not
-  `Codable` in Phase 1 — no persistence yet — only `Equatable`/`Sendable`).
-- `Progress.fraction` is clamped to `0...1` in an `init` or on set.
-- `Preferences` — a small `@AppStorage`-free implementation: computed
-  properties over `defaults.object(forKey:)` / `set(_:forKey:)`, keys
-  `"mg.defaultMaxHeight"` etc.; `maxAutoAttempts` clamps on set; URL props
-  stored as bookmark-free absolute path strings for Phase 1.
+- Value types are plain structs; `DownloadKind` needs a hand-rolled `Codable`
+  for its associated values. `JobState` / `ErrorClass` are `Equatable` /
+  `Sendable` only (no persistence in Phase 1).
+- `Progress.fraction` is clamped `0...1` in the init *and* the `didSet`.
+- `Preferences` — computed properties over `defaults.object(forKey:)` /
+  `set(_:forKey:)`, keys `"mg.<name>"`; `maxAutoAttempts` clamps on set;
+  `defaultKind` reads the selector + the two format fields; URL props are
+  absolute path strings.
+- `DownloadJob` is `@MainActor @Observable` (see the interface note).
 
 - [x] **Step 4: Run — verify pass**
 
-Run: `tuist test --test-targets GrabberKitTests/DownloadRequestTests GrabberKitTests/PreferencesTests`
-Expected: PASS.
+Same command as Step 2. Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Download/DownloadRequest.swift \
-        apps/media-grabber/Sources/GrabberKit/Download/Progress.swift \
-        apps/media-grabber/Sources/GrabberKit/Download/ErrorClass.swift \
-        apps/media-grabber/Sources/GrabberKit/Download/DownloadJob.swift \
-        apps/media-grabber/Sources/GrabberKit/Model/Preferences.swift \
-        apps/media-grabber/Tests/GrabberKitTests/DownloadRequestTests.swift \
-        apps/media-grabber/Tests/GrabberKitTests/PreferencesTests.swift
-git commit -m "feat(media-grabber): Phase 1 data model — request, job, progress, error class, preferences"
-```
 DoD: the types compile, `DownloadRequest` round-trips through `Codable` for
-every kind, and `Preferences` defaults match the spec and persist across
-instances.
+every kind, `Progress.fraction` clamps, and `Preferences` defaults match the
+spec and persist across instances.
 
 ---
 
@@ -785,14 +879,15 @@ later phases (cookies, proxy creds) redact through it without a new call site.
 - Produces:
   ```swift
   public enum YtDlpArguments {
-      /// The argv passed to yt-dlp (excludes the executable path itself).
+      public static let progressTemplate: String     // the exact --progress-template value
       public static func build(for request: DownloadRequest) -> [String]
-      /// Same shape, with secrets masked. Phase 1: identical to build(for:).
       public static func redacted(for request: DownloadRequest) -> [String]
   }
   ```
-  Task 10 (`DownloadEngine`) calls `build(for:)`; Task 11's logging calls
-  `redacted(for:)`.
+  `build` is the argv (no executable path). `redacted` masks secrets; Phase 1
+  has none in the argv, so it returns `build` unchanged. `progressTemplate` is
+  exposed so Task 6's parser and Task 5's tests reference one literal. Task 10
+  calls `build`; Task 11's logging calls `redacted`.
 
 **Argv contract (tests assert exact tokens & order):**
 1. `["-P", <destFolder.path>]` — download root.
@@ -826,30 +921,28 @@ later phases (cookies, proxy creds) redact through it without a new call site.
 
 - [x] **Step 2: Run — verify fail**
 
-Run: `tuist test --test-targets GrabberKitTests/YtDlpArgumentsTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/YtDlpArgumentsTests test
+```
 Expected: FAIL — `YtDlpArguments` undefined.
 
 - [x] **Step 3: Implement**
 
-A single `build(for:)` that appends tokens per the contract; `redacted(for:)`
-returns `build(for:)` unchanged with a `// Phase 1: no secrets in the argv yet`
-note.
+`build(for:)` appends tokens per the contract; the video format selector's
+selector string is assembled from `+`-joined fragments for line width but the
+result equals the contract literal exactly. `redacted(for:)` returns `build`.
+Run the built argv against the real `yt-dlp` with `--simulate` during
+implementation to confirm no flag is rejected (a `yt-dlp` extractor error is
+fine — a *flag parse* error is not).
 
 - [x] **Step 4: Run — verify pass**
 
-Run: `tuist test --test-targets GrabberKitTests/YtDlpArgumentsTests`
-Expected: PASS.
+Same command as Step 2. Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Download/YtDlpArguments.swift \
-        apps/media-grabber/Tests/GrabberKitTests/YtDlpArgumentsTests.swift
-git commit -m "feat(media-grabber): YtDlpArguments — request to argv with a redaction seam"
-```
 DoD: snapshot tests pass for video (with/without container), audio m4a/mp3, a
 custom template, URL-last ordering, and the exact progress-template string;
-`redacted` equals `build` for Phase 1.
+`redacted` equals `build`; real `yt-dlp` accepts the flags.
 
 ---
 
@@ -864,11 +957,16 @@ everything else is `.unknown(raw:)`.
 - Create: `apps/media-grabber/Sources/GrabberKit/Download/ProgressParser.swift`
 - Create: `apps/media-grabber/Tests/GrabberKitTests/ProgressParserTests.swift`
 - Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-video-run.txt`
-  — a captured full run: `[download]` lines, the `MG|…` progress-template
-  lines, a `[Merger]`/post-processing line, a final line. Capture this once
-  from a real `yt-dlp` run during implementation (not in CI).
+  — a real run captured once from `yt-dlp` (audio-extract of a Wikimedia CC
+  file): `[download] Destination`, the `MG|…` lines, `[ExtractAudio]` and
+  `Deleting original file` post-processing lines. (Wikimedia has no separate
+  a/v streams, so there's no real `[Merger]` line — a synthetic test covers
+  that string.)
 - Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-network-error.txt`
+  — a real DNS-failure stderr (`Failed to resolve … nodename nor servname
+  provided`).
 - Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-generic-error.txt`
+  — a real 404 (`Unable to download webpage: HTTP Error 404`).
 
 **Interfaces:**
 - Consumes: `Progress`, `ErrorClass` from Task 4; the progress-template string
@@ -905,8 +1003,13 @@ everything else is `.unknown(raw:)`.
   → `.postProcessing`.
 - Anything else → `.ignored`.
 - `classifyStderr`:
-  - contains `Unable to download` + (`getaddrinfo` | `Network is unreachable`
-    | `Temporary failure in name resolution` | `Connection reset`) → `.networkDown`
+  - contains `Unable to download` + a network signature → `.networkDown`. The
+    signature list covers both Linux and macOS resolver phrasing: `getaddrinfo`,
+    `Network is unreachable`, `Temporary failure in name resolution`,
+    `Connection reset`, `Failed to resolve`, `nodename nor servname provided`,
+    `Could not connect to server`, `The Internet connection appears to be offline`.
+    (macOS says "Failed to resolve … nodename nor servname provided", not
+    "getaddrinfo" — omitting these misclassifies a real offline failure.)
   - starts with `ERROR:` (any other) → `.unknown(raw: <the line>)`
   - no `ERROR:` and no network signature → `nil`
   - (`.depMissing` is raised by the engine when the executable itself is
@@ -938,33 +1041,34 @@ everything else is `.unknown(raw:)`.
   `MG|||||` all return `.ignored` (or a best-effort `.progress` with safe
   defaults) without throwing.
 
+Also test: `test_progressLine_hoursEta` (`01:53:10` → 6790), and fixture-driven
+`test_fixtureNetworkError_classifiesNetworkDown` /
+`test_fixtureGenericError_classifiesUnknown` (the 404 must *not* classify as
+network).
+
 - [x] **Step 2: Run — verify fail**
 
-Run: `tuist test --test-targets GrabberKitTests/ProgressParserTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/ProgressParserTests test
+```
 Expected: FAIL — `ProgressParser` undefined.
 
 - [x] **Step 3: Implement**
 
-Two static functions, small private helpers for the `mm:ss` and `1.23MiB/s`
-parsing. No state. Defensive: any split/parse miss on a `MG|` line falls back
-to `.ignored` rather than throwing.
+Two static functions, small `private static` helpers for `mm:ss` / `hh:mm:ss`
+and `1.23MiB/s` parsing. No state. Any split/parse miss on a `MG|` line →
+`.ignored`, never a throw. Split the post-processing check into its own
+predicate rather than an inline multi-line `||` — swiftformat and swiftlint
+disagree on where the opening brace of a wrapped `if` condition goes.
 
 - [x] **Step 4: Run — verify pass**
 
-Run: `tuist test --test-targets GrabberKitTests/ProgressParserTests`
-Expected: PASS.
+Same command as Step 2. Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Download/ProgressParser.swift \
-        apps/media-grabber/Tests/GrabberKitTests/ProgressParserTests.swift \
-        apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-*.txt
-git commit -m "feat(media-grabber): ProgressParser — progress-template lines to events, stderr to ErrorClass"
-```
 DoD: fixture-driven tests cover start / mid / 100% / post-processing / ignored
-/ network-error / generic-error / non-error lines, and malformed lines never
-crash.
+/ network-error / generic-error / non-error / hours-ETA lines; malformed lines
+never crash; the 404 fixture classifies as `.unknown`, not `.networkDown`.
 
 ---
 
@@ -984,12 +1088,13 @@ Mint & Iris values).
 - Create: `apps/media-grabber/Sources/App/Theme/Palette.swift`
 - Create: `apps/media-grabber/Sources/App/Theme/SkinEnvironment.swift`
 - Create: `apps/media-grabber/Sources/App/Theme/MotifView.swift`
-- Create: `apps/media-grabber/Tests/GrabberKitTests/ThemeTests.swift`
-  — **wait:** theme types live in the `App` target, not `GrabberKit`. Add a new
-  test target `AppUnitTests` (`product: .unitTests`, `dependencies:
-  [.target(name: "MediaGrabber")]`, sources `Tests/AppUnitTests/**`) to
-  `Project.swift` in this task, and put the test at
-  `apps/media-grabber/Tests/AppUnitTests/ThemeTests.swift`.
+- Create: `apps/media-grabber/Tests/AppUnitTests/ThemeTests.swift`
+
+The `AppUnitTests` target is already declared in `Project.swift` (Task 1) — this
+is the task that first fills it. Its first test failing because the target has no
+sources is expected. Adding the first source under `Tests/AppUnitTests/` and
+re-running `tuist generate` also makes the `MediaGrabber` scheme appear
+(`AppUnitTests` depends on it).
 
 **Interfaces:**
 - Consumes: `SkinKind`, `PaletteKind` from Task 4.
@@ -1009,9 +1114,9 @@ Mint & Iris values).
   enum Skin {
       case tapeDeck, aurora
       init(_ kind: SkinKind)
-      var displayFont: (CGFloat, Font.Weight) -> Font   // Sora for Aurora
-      var bodyFont:    (CGFloat, Font.Weight) -> Font   // Inter
-      var monoFont:    (CGFloat, Font.Weight) -> Font   // JetBrains Mono
+      var displayFont: (CGFloat, Font.Weight) -> Font   // Sora, system fallback
+      var bodyFont:    (CGFloat, Font.Weight) -> Font   // Inter, system fallback
+      var monoFont:    (CGFloat, Font.Weight) -> Font   // JetBrains Mono, .monospaced fallback
       var windowRadius: CGFloat        // Aurora 18
       var cardRadius: CGFloat          // 14
       var controlRadius: CGFloat       // 9
@@ -1023,26 +1128,41 @@ Mint & Iris values).
 
   enum MotifKind { case reel, orb }
 
-  func palette(for kind: PaletteKind) -> PaletteTokens   // Phase 1: only .auroraMintIris implemented; others may `fatalError("Phase 9")` or return the Mint & Iris set
+  func palette(for kind: PaletteKind) -> PaletteTokens
 
-  struct Spacing { static let s1: CGFloat = 4, s2 = 8, s3 = 12, s4 = 16, s5 = 22, s6 = 30, s7 = 44 }
+  enum Spacing { static let s1: CGFloat = 4; static let s2: CGFloat = 8; /* … s7 = 44 */ }
 
-  // SwiftUI environment
-  struct ResolvedTheme { let skin: Skin; let palette: PaletteTokens }
-  extension EnvironmentValues { var theme: ResolvedTheme { get set } }  // default: Aurora / Mint & Iris
+  struct ResolvedTheme {
+      let skin: Skin
+      let palette: PaletteTokens
+      init(skin: Skin, palette: PaletteTokens)
+      init(skinKind: SkinKind, paletteKind: PaletteKind)   // used by Task 11
+      static let auroraMintIris: ResolvedTheme
+  }
+  extension EnvironmentValues { @Entry var theme: ResolvedTheme = .auroraMintIris }
   extension View { func theme(_ t: ResolvedTheme) -> some View }
 
   struct MotifView: View {
       var isActive: Bool
       var size: CGFloat
-      // conic-gradient orb from palette.orbStops; 6s linear spin when isActive
-      // AND !accessibilityReduceMotion; otherwise static.
+      func isSpinning(reduceMotion: Bool) -> Bool   // isActive && !reduceMotion; tested
   }
   ```
-  Fonts: register Sora / Inter / JetBrains Mono as bundled resources (add
-  `Sources/App/Resources/Fonts/**` to the app target's `resources` in
-  `Project.swift`, plus `ATSApplicationFontsPath` = `Fonts` in the Info.plist).
-  If a face is missing at runtime, fall back to `.system` — never crash.
+  `palette(for:)` returns the Mint & Iris `PaletteTokens` for every case in
+  Phase 1 — the other five carry a `// Phase 9` note and the same values, so a
+  stale preference never crashes or blanks the UI. Never `fatalError`.
+
+  `EnvironmentValues.theme` uses the `@Entry` macro; its default is
+  `ResolvedTheme.auroraMintIris`.
+
+  **Fonts are not bundled.** `Skin`'s font accessors call `NSFont(name:)` and
+  fall back to `Font.system` (`.monospaced` design for the mono face) when the
+  family is absent — the running app uses system faces. Bundling Sora / Inter /
+  JetBrains Mono under `Sources/App/Resources/Fonts/**` with
+  `ATSApplicationFontsPath` is a leaf-backlog item, not Phase 1.
+
+  `MotifView` uses `TimelineView(.animation(paused:))` gated on
+  `isSpinning(reduceMotion:)`, which reads `@Environment(\.accessibilityReduceMotion)`.
 
   Task 8 (Onboarding) and Task 11 (Home / MainWindow) read `@Environment(\.theme)`.
 
@@ -1056,61 +1176,53 @@ Mint & Iris values).
 `barFill #5EF2C8 → #8B7BFF` · `bannerFill #FF7A6B → #FFC24B` ·
 `glowA rgba(94,242,200,.14)` · `glowB rgba(139,123,255,.16)`.
 
-- [x] **Step 1: Add `AppUnitTests` target + write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
-Edit `Project.swift` to add the `AppUnitTests` unit-test target. Then
-`ThemeTests.swift`:
-- `test_auroraSkin_radii` — `Skin(.aurora).windowRadius == 18`, `cardRadius ==
-  14`, `controlRadius == 9`, `pillRadius == 20`, `chipRadius == 7`.
-- `test_auroraSkin_motifIsOrb` — `Skin(.aurora).motif == .orb`.
+`Tests/AppUnitTests/ThemeTests.swift` (`@testable import MediaGrabber`):
+- `test_auroraSkin_radii` — `windowRadius == 18`, `cardRadius == 14`,
+  `controlRadius == 9`, `pillRadius == 20`, `chipRadius == 7`.
+- `test_auroraSkin_motifIsOrb`.
 - `test_mintIrisPalette_keyTokens` — `palette(for: .auroraMintIris)` has
-  `accent == Color(hex: "#5EF2C8")`, `danger == Color(hex: "#FF7A6B")`,
-  `ground == Color(hex: "#0C1013")`, and `orbStops.count == 4`.
-- `test_defaultEnvironmentTheme_isAuroraMintIris` — a bare
+  `accent == Color(hex: "#5EF2C8")`, `danger == "#FF7A6B"`, `ground == "#0C1013"`,
+  `orbStops.count == 4`.
+- `test_defaultEnvironmentTheme_isAuroraMintIris` —
   `EnvironmentValues().theme.palette.accent` equals the Mint & Iris accent.
 - `test_spacingScale` — `Spacing.s1 == 4 … Spacing.s7 == 44`.
-- `test_motifView_staticUnderReduceMotion` — render `MotifView(isActive: true,
-  size: 20)` in an environment with `accessibilityReduceMotion == true`; assert
-  no animation is attached (snapshot the view's animation state, or expose an
-  internal `isSpinning` for the test).
+- `test_motifView_staticUnderReduceMotion` (`@MainActor`) —
+  `MotifView(isActive: true, size: 20).isSpinning(reduceMotion: true) == false`,
+  `isSpinning(reduceMotion: false) == true`.
 
-Add a small `Color(hex:)` helper (in `Palette.swift`) — tests and palette
-definitions both use it.
+`Color(hex:)` lives in `Palette.swift` (`#RRGGBB` / `#RRGGBBAA`; `.clear` on a
+malformed string) — tests and the palette definitions both use it.
 
 - [x] **Step 2: Run — verify fail**
 
-Run: `tuist test --test-targets MediaGrabber/AppUnitTests`
-Expected: FAIL — theme types undefined / target missing.
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:AppUnitTests test
+```
+Expected: FAIL — theme types undefined.
 
 - [x] **Step 3: Implement**
 
-- `Skin` enum with the fixed Aurora axes; `tapeDeck` may return placeholder
-  values (Phase 1 never selects it) but the shape is complete.
-- `palette(for:)` returns the Mint & Iris `PaletteTokens` for `.auroraMintIris`;
-  the other five cases return the same set for now with a `// Phase 9` note
-  (do **not** `fatalError` — keeps the app launchable if a stale pref is read).
-- `SkinEnvironment` — an `EnvironmentKey` whose `defaultValue` is
-  `ResolvedTheme(skin: Skin(.aurora), palette: palette(for: .auroraMintIris))`.
-- `MotifView` — `TimelineView`/`.rotationEffect` animation guarded by
-  `@Environment(\.accessibilityReduceMotion)`.
+- `Skin` — fixed Aurora axes; `tapeDeck` carries placeholder geometry (never
+  selected in Phase 1) so the shape is complete. Font accessors resolve the
+  family or fall back to the system face.
+- `palette(for:)` — Mint & Iris for every case (Phase 9 note on the rest).
+- `SkinEnvironment` — `@Entry var theme: ResolvedTheme = .auroraMintIris`. Refer
+  to `PaletteTokens.auroraMintIris` (a static) rather than calling `palette(for:)`
+  inside the `ResolvedTheme` static — the free function name-collides with the
+  stored `palette` property.
+- `MotifView` — `TimelineView(.animation(paused:))` gated on
+  `isSpinning(reduceMotion:)`.
 
 - [x] **Step 4: Run — verify pass**
 
-Run: `tuist test --test-targets MediaGrabber/AppUnitTests`
-Expected: PASS.
+Same command as Step 2. Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/App/Theme/ \
-        apps/media-grabber/Sources/App/Resources/Fonts/ \
-        apps/media-grabber/Project.swift \
-        apps/media-grabber/Tests/AppUnitTests/ThemeTests.swift
-git commit -m "feat(media-grabber): skin/palette theming plumbing — Aurora/Mint & Iris"
-```
-DoD: views can read colours and fonts from `@Environment(\.theme)`; every
-Aurora token resolves to the design-system value; `MotifView` is static under
-reduce-motion.
+DoD: views can read colours and fonts from `@Environment(\.theme)`; every Aurora
+token resolves to the design-system value; `MotifView` is static under
+reduce-motion; the app builds and `swiftlint`/`swiftformat` are clean.
 
 ---
 
@@ -1126,117 +1238,117 @@ First-run setup. `OnboardingInstaller` (GrabberKit) drives the steps;
 - Create: `apps/media-grabber/Tests/GrabberKitTests/OnboardingInstallerTests.swift`
 
 **Interfaces:**
-- Consumes: `ProcessRunning`, `ProcessLaunch` (Task 2); `EnvironmentProbe`,
+- Consumes: `ProcessRunning`, `ProcessLaunch` (Task 2); `EnvironmentProbing`,
   `EnvironmentReport` (Task 3); `@Environment(\.theme)` (Task 7).
 - Produces:
   ```swift
   public enum OnboardingStepID: Sendable, CaseIterable {
-      case homebrew          // "Homebrew"
-      case downloaderTools   // "Downloader + media tools" (brew install yt-dlp ffmpeg) — required
-      case botCheckShield    // "Bot-check shield" (pipx install ...) — recommended, NOT blocking
-      case testRun           // "Test run" — a canary probe (Phase 1: skipped/auto-pass, see note)
+      case homebrew
+      case downloaderTools    // brew install yt-dlp ffmpeg — required
+      case botCheckShield     // pipx install … — recommended, NOT blocking
+      case testRun            // canary probe — Phase 1: auto-pass, see note
   }
 
   public enum OnboardingStepState: Sendable, Equatable {
       case pending
-      case running(text: String)     // latest streamed line
+      case running(text: String)
       case done
       case failed(reason: String)
-      case skipped                   // e.g. homebrew already present
+      case skipped
   }
 
-  public struct HomebrewInstallInfo: Sendable {
+  public enum HomebrewInstallInfo: Sendable {
       public static let command =
         "/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
-      // shown with a Copy button + "Open in Terminal"; NEVER auto-run.
   }
 
   @MainActor @Observable
   public final class OnboardingInstaller {
       public private(set) var steps: [OnboardingStepID: OnboardingStepState]
-      /// true once yt-dlp AND ffmpeg are present (re-probed).
       public private(set) var canProceedToHome: Bool
 
-      public init(probe: EnvironmentProbe = .init(),
+      public init(probe: EnvironmentProbing = EnvironmentProbe(),
                   runner: ProcessRunning = ProcessRunner())
 
-      /// Probe, then run each actionable step in order. Homebrew missing →
-      /// leaves `.homebrew` as `.failed` with the command in `reason`,
-      /// stops, waits for `recheck()`. botCheckShield failing does not block.
       public func start() async
-      /// Re-probe after the user installed Homebrew in Terminal, then resume.
-      public func recheck() async
-      /// Open Terminal.app at the Homebrew install command (App calls this).
+      public func recheck() async         // re-probe, then resume the flow
       public func openTerminalForHomebrew()
   }
   ```
-  **Phase 1 `testRun` note:** the real canary probe needs `MetadataProbe`
-  (Task 9) and `DownloadEngine` (Task 10), which come later. In this task
-  `testRun` is wired as a step that immediately reports `.done` when
-  `canProceedToHome` is true. Task 11 replaces its body with a real probe of a
-  known-stable URL. Leave a `// TODO(Task 11): real canary` marker.
+  `start` / `recheck` both run one shared flow: probe → if `brew` missing, leave
+  `.homebrew` `.failed(reason: HomebrewInstallInfo.command)` and stop; else run
+  each actionable step in order. A `.downloaderTools` failure blocks; a
+  `.botCheckShield` failure does not.
+
+  `HomebrewInstallInfo.command` is shown with a Copy button and an "Open in
+  Terminal" button — the app never runs it.
+
+  **Phase 1 `testRun`:** the real canary needs `MetadataProbe` (Task 9) and
+  `DownloadEngine` (Task 10). Here it reports `.done` when `canProceedToHome`,
+  with a `// TODO(Task 11): real canary` marker. Task 11 gives it a real body.
 
   Task 11's `AppModel` owns an `OnboardingInstaller` and shows `OnboardingView`
   whenever `!installer.canProceedToHome`.
 
-- [x] **Step 1: Write the failing tests**
+- [x] **Step 1: Build `FakeEnvironmentProbe` and write the failing tests**
 
-Use the `FakeProcessRunner` from Task 3 and a fake/injected `EnvironmentProbe`
-(add an `EnvironmentProbe` init seam or a `Probing` protocol — a
-`protocol EnvironmentProbing { func probe() async -> EnvironmentReport }` that
-both the real probe and a fake conform to; update Task 3's type to conform).
+`Tests/GrabberKitTests/Support/FakeEnvironmentProbe.swift` conforms to
+`EnvironmentProbing` and returns a *scripted sequence* of `EnvironmentReport`s,
+one per `probe()` call (the last repeats), plus a `setReports(...)` to swap the
+remaining sequence. This models "install, then re-probe finds the tools"
+deterministically — no `Task.sleep`. An `EnvironmentReport.with(brew:ytDlp:ffmpeg:)`
+helper builds a report from booleans.
 
-- `test_allPresent_skipsToProceed` — probe reports yt-dlp + ffmpeg + brew all
-  present → after `start()`, `steps[.homebrew] == .skipped`,
-  `steps[.downloaderTools] == .skipped` (or `.done`), `canProceedToHome ==
-  true`.
-- `test_toolsMissing_brewPresent_installsThenProceeds` — probe: brew present,
-  yt-dlp + ffmpeg absent; fake `brew install yt-dlp ffmpeg` exits 0 and the
-  re-probe now finds them → `steps[.downloaderTools]` walks
-  `.pending → .running → .done`, `canProceedToHome == true`.
-- `test_brewMissing_blocksWithCommand` — probe: brew absent → `start()` leaves
-  `steps[.homebrew] == .failed`, its `reason` contains
-  `HomebrewInstallInfo.command`, `canProceedToHome == false`, and no
-  `brew install` was ever attempted.
-- `test_recheck_afterBrewInstalled_resumes` — after the blocked state, the fake
-  probe is swapped to "brew now present", `recheck()` → installs the tools →
-  `canProceedToHome == true`.
-- `test_botCheckShieldFailure_doesNotBlock` — `pipx install …` exits non-zero →
-  `steps[.botCheckShield] == .failed` but `canProceedToHome == true` and
-  `.downloaderTools == .done`.
-- `test_downloaderInstallFailure_surfacesReasonAndBlocks` — `brew install`
-  exits 1 → `steps[.downloaderTools] == .failed(reason:)` with the stderr tail,
+`OnboardingInstallerTests.swift` (`@MainActor`), fake probe + `FakeProcessRunner`:
+- `test_allPresent_skipsToProceed` — all present → `.homebrew == .skipped`,
+  `.downloaderTools == .skipped` or `.done`, `canProceedToHome`.
+- `test_toolsMissing_brewPresent_installsThenProceeds` — probe sequence
+  `[brew only, all present]`; `brew install` exits 0 → `.downloaderTools == .done`,
+  `canProceedToHome`.
+- `test_brewMissing_blocksWithCommand` — brew absent → `.homebrew == .failed`
+  with `HomebrewInstallInfo.command` in the reason, `canProceedToHome == false`,
+  no `brew install` attempted.
+- `test_recheck_afterBrewInstalled_resumes` — start blocked; `setReports([brew,
+  all present])`; `recheck()` → `canProceedToHome`.
+- `test_botCheckShieldFailure_doesNotBlock` — `pipx` fails → `.botCheckShield`
+  not `.done` but `canProceedToHome` and `.downloaderTools == .done`.
+- `test_downloaderInstallFailure_surfacesReasonAndBlocks` — `brew install` exits
+  1 → `.downloaderTools == .failed(reason:)` with the stderr tail,
   `canProceedToHome == false`.
-- `test_streamedLineShowsInRunningState` — while `brew install` emits lines,
-  `steps[.downloaderTools] == .running(text: <last line>)`.
+
+(`FakeProcessRunner` delivers all scripted lines in one burst, so there is no
+deterministic test for observing a *specific* intermediate `.running(text:)`
+line — the `.running` transition is exercised, just not snapshot mid-stream.)
 
 - [x] **Step 2: Run — verify fail**
 
-Run: `tuist test --test-targets GrabberKitTests/OnboardingInstallerTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/OnboardingInstallerTests test
+```
 Expected: FAIL — `OnboardingInstaller` undefined.
 
 - [x] **Step 3: Implement the installer**
 
-- `start()`: `await probe.probe()`. If `report.brew == nil` → set `.homebrew`
-  `.failed(reason: HomebrewInstallInfo.command)`, return. Else `.homebrew` =
-  `.skipped`.
-- If `report.isReadyForDownloads` → `.downloaderTools = .skipped`; else run
-  `brew install yt-dlp ffmpeg` via `runner`, mapping each `.stdout`/`.stderr`
-  line to `.running(text:)`; on exit 0 re-probe and set `.done` (or `.failed`
-  if the re-probe still misses them); on non-zero `.failed(reason:)` with the
-  last ~5 stderr lines.
-- `botCheckShield`: `pipx install bgutil-ytdlp-pot-provider` — same streaming,
-  but failure sets `.failed` without touching `canProceedToHome`.
-- `testRun`: if `canProceedToHome`, `.done`. (`// TODO(Task 11)`.)
-- `canProceedToHome` recomputed after every probe: `report.isReadyForDownloads`.
-- `openTerminalForHomebrew()`: `NSWorkspace.open` Terminal.app with the command
-  on the clipboard, or an `osascript` `do script` — pick the simpler; it must
-  not run the script itself, only place the user in Terminal ready to paste.
-  (Guard behind `#if canImport(AppKit)`.)
+- One private `runFlow()` behind both `start()` and `recheck()`.
+- Probe. `report.brew == nil` → `.homebrew = .failed(reason:
+  HomebrewInstallInfo.command)`, return. Else `.homebrew = .skipped`.
+- `report.isReadyForDownloads` → `.downloaderTools = .skipped`; else stream
+  `brew install yt-dlp ffmpeg`, each line → `.running(text:)`; on exit 0
+  re-probe and set `.done` (or `.failed` if the tools still aren't found); on
+  non-zero `.failed` with the last ~5 stderr lines. A failure returns early.
+- `botCheckShield`: `pipx install bgutil-ytdlp-pot-provider`, same streaming;
+  its result is written straight to `steps[.botCheckShield]` and never touches
+  `canProceedToHome`.
+- `runStreaming` returns an `OnboardingStepState` directly (`.done` / `.failed`)
+  — there is no separate outcome type.
+- `testRun`: `canProceedToHome ? .done : .pending`, `// TODO(Task 11)`.
+- `openTerminalForHomebrew()`: put the command on the pasteboard and
+  `NSWorkspace.open` Terminal.app — never run the script. Guard `#if canImport(AppKit)`.
 
 - [x] **Step 4: Build `OnboardingView` (App)**
 
-Not unit-tested (SwiftUI layout); verified in the Step 6 manual check.
+Not unit-tested (SwiftUI layout).
 - Full-window `ZStack` over `theme.palette.ground`, centred column, max width
   ~520.
 - `MotifView(isActive: true, size: 20)` + "MediaGrabber" wordmark at top.
@@ -1251,32 +1363,30 @@ Not unit-tested (SwiftUI layout); verified in the Step 6 manual check.
     and a **Re-check** button (`installer.recheck`).
   - `.downloaderTools` `.failed` shows the reason + a **Retry** button
     (`installer.start`).
-- Nothing dismisses this view; it is replaced by Home when
-  `installer.canProceedToHome` flips true (Task 11 owns that switch).
-- Quality floor: every icon button has a VoiceOver label; buttons are keyboard-
-  reachable; the spinner respects reduce-motion (use `ProgressView` which does).
+- `@Bindable var installer` on the view. `@Bindable`, not `@ObservedObject` —
+  `OnboardingInstaller` is `@Observable`.
+- Nothing dismisses this view; Task 11's `AppModel` swaps in Home when
+  `installer.canProceedToHome` flips true.
+- Quality floor: every icon button has a VoiceOver label; buttons are
+  keyboard-reachable; the spinner (`ProgressView`) respects reduce-motion.
 
-- [ ] **Step 5: Run tests + generate + launch with deps faked absent**
-
-Run: `tuist test --test-targets GrabberKitTests/OnboardingInstallerTests` → PASS.
-Then add a debug launch argument `-MGForceOnboarding` that makes `AppModel`
-(Task 11) treat the environment as not-ready — note this here; wire it in Task
-11. For now, temporarily rename your `yt-dlp` on `PATH`, `tuist generate &&
-open` the app, confirm onboarding appears and the install step runs; restore
-`yt-dlp`.
-
-- [ ] **Step 6: Commit**
+- [x] **Step 5: Run the suite**
 
 ```bash
-git add apps/media-grabber/Sources/GrabberKit/Onboarding/OnboardingInstaller.swift \
-        apps/media-grabber/Sources/App/Onboarding/OnboardingView.swift \
-        apps/media-grabber/Tests/GrabberKitTests/OnboardingInstallerTests.swift
-git commit -m "feat(media-grabber): onboarding — installer state machine + blocking checklist screen"
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' test
 ```
-DoD: with `yt-dlp`/`ffmpeg` absent, onboarding shows and installs them via a
-fake `ProcessRunner` in tests (and really, via brew, in the manual check);
-with them present, onboarding is skipped; a missing Homebrew blocks with the
-command shown and never auto-runs it; a failing bot-check shield does not block.
+Expected: full suite PASS; app builds; lint clean.
+
+The live check — rename `yt-dlp` on `PATH`, launch, see onboarding take over,
+restore, Re-check → Home — happens in **Task 11**, once `MediaGrabberApp` hosts
+the real `AppModel` and the `-MGForceOnboarding` flag. Task 11's manual
+walkthrough covers it. Nothing in this task launches the app.
+
+DoD: with `yt-dlp` / `ffmpeg` absent, onboarding installs them via the fake
+runner in tests; with them present, onboarding is skipped; a missing Homebrew
+blocks with the command shown and never auto-runs it; a failing bot-check
+shield does not block.
 
 ---
 
@@ -1291,14 +1401,14 @@ title + duration + a definite `isPlaylist: false` (Phase 1 forces
 - Create: `apps/media-grabber/Sources/GrabberKit/Download/MetadataProbe.swift`
 - Create: `apps/media-grabber/Tests/GrabberKitTests/MetadataProbeTests.swift`
 - Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-J-video.json`
-  — a real `yt-dlp -J` blob for one video, trimmed to the fields used
-  (`title`, `duration`, `_type`, `id`, `webpage_url`). Capture during impl.
+  — a real `yt-dlp -J` blob (archive.org CC video), trimmed to `id`, `title`,
+  `duration`, `_type`, `webpage_url`.
 - Create: `apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-J-unavailable.txt`
-  — captured stderr of a probe against an unavailable video.
+  — real stderr from a probe against an unavailable video.
 
 **Interfaces:**
-- Consumes: `ProcessRunning`, `ProcessLaunch` (Task 2); `EnvironmentReport` /
-  the resolved `yt-dlp` path (Task 3).
+- Consumes: `ProcessRunning`, `ProcessLaunch` (Task 2); a resolved `yt-dlp`
+  `URL` (Task 3); `ProgressParser.classifyStderr` (Task 6).
 - Produces:
   ```swift
   public struct MediaMetadata: Sendable, Equatable {
@@ -1306,91 +1416,93 @@ title + duration + a definite `isPlaylist: false` (Phase 1 forces
       public let durationSeconds: Int?
       public let isPlaylist: Bool          // Phase 1: always false
       public let sourceURL: String
+      public init(title: String, durationSeconds: Int?, isPlaylist: Bool, sourceURL: String)
   }
 
   public enum MetadataError: Error, Sendable, Equatable {
-      case badURL                // yt-dlp: "is not a valid URL" / no extractor
-      case unsupported           // no extractor for this site
-      case unavailable           // private / removed / geo
-      case network               // resolution / connection failure
-      case ytDlpMissing          // the executable isn't where we expect
-      case malformedOutput       // exit 0 but unparseable JSON
+      case badURL, unsupported, unavailable, network, ytDlpMissing, malformedOutput
       case unknown(raw: String)
   }
 
-  public actor MetadataProbe {
+  public protocol MetadataProbing: Sendable {
+      func probe(_ url: String) async -> Result<MediaMetadata, MetadataError>
+  }
+
+  public actor MetadataProbe: MetadataProbing {
       public init(ytDlpURL: URL, runner: ProcessRunning = ProcessRunner())
-      /// Serialized by the actor: concurrent callers queue.
       public func probe(_ url: String) async -> Result<MediaMetadata, MetadataError>
   }
   ```
-  Task 10 calls `probe` to fill `job.title` before spawning the download.
-  Task 11's `HomeView` calls it on paste to arm the runway.
+  `MetadataProbing` is the seam Task 10's `DownloadEngine` and Task 11's
+  `AppModel` test against. Task 10 calls `probe` to fill `job.title` before
+  spawning the download; Task 11's `HomeView` calls it on paste.
+
+**Serialization.** Swift actors are *reentrant* across `await`, and `probe`
+suspends on its output stream — so actor isolation alone lets a second call
+start mid-first-probe. Serialize explicitly: hold the previous probe's `Task` in
+an actor-isolated `tail`; each new probe `await`s `tail` before doing its work
+and installs itself as the new `tail`.
 
 **Mapping (tests pin):**
-- exit 0 + valid JSON with `title` → `.success`. `duration` (a number) →
-  `Int(rounded)`; absent → `nil`. `_type == "playlist"` never happens
-  (`--no-playlist`), but if seen → `isPlaylist: true` (defensive).
-- exit non-zero: scan stderr —
+- exit 0 + valid JSON with `title` → `.success`. `duration` → `Int(rounded)`,
+  absent → `nil`. `_type == "playlist"` → `isPlaylist: true` (defensive; can't
+  happen with `--no-playlist`).
+- exit 0, no `title` or unparseable JSON → `.malformedOutput`.
+- exit non-zero, empty stderr → `.ytDlpMissing`.
+- exit non-zero, scan stderr:
   `is not a valid URL` → `.badURL`;
   `Unsupported URL` → `.unsupported`;
-  `Video unavailable` | `Private video` | `This video is not available` |
-  `blocked it in your country` → `.unavailable`;
-  `Unable to download webpage` + a network signature (reuse
-  `ProgressParser.classifyStderr` → `.networkDown`) → `.network`;
-  else → `.unknown(raw:)`.
-- exit 0 but JSON parse fails → `.malformedOutput`.
+  `Video unavailable` | `This video is unavailable` | `This video is not
+  available` | `Private video` | `blocked it in your country` | `The web client
+  only works when logged-in` → `.unavailable`;
+  `Unable to download` + `ProgressParser.classifyStderr(errorLine) == .networkDown`
+  → `.network`;
+  else, first `ERROR:` line → `.unknown(raw:)`.
 
 - [x] **Step 1: Write the failing tests**
 
-Fake runner scripts stdout (the fixture JSON) + exit code per case.
-- `test_validVideo_returnsTitleAndDuration` — fixture JSON → `.success` with
-  the fixture's `title`, `durationSeconds` matching, `isPlaylist == false`,
+`FakeProcessRunner` scripts stdout (fixture JSON) + exit code per case:
+- `test_validVideo_returnsTitleAndDuration` — fixture → `.success` with its
+  `title`, `durationSeconds` (`596.46 → 596`), `isPlaylist == false`,
   `sourceURL == <input>`.
 - `test_noDurationField_returnsNilDuration`.
-- `test_badURL_mapsToBadURL` — stderr `'x' is not a valid URL` → `.failure(.badURL)`.
-- `test_unavailable_mapsToUnavailable` — the unavailable-stderr fixture →
-  `.failure(.unavailable)`.
-- `test_networkFailure_mapsToNetwork` — `Unable to download webpage` +
-  `getaddrinfo` → `.failure(.network)`.
-- `test_exitZeroGarbageJSON_mapsToMalformed`.
-- `test_serialization_secondCallWaits` — start two `probe` calls on a fake
-  runner that records concurrent invocations; assert the runner is never
-  entered twice at once.
+- `test_badURL_mapsToBadURL` — `'x' is not a valid URL` → `.badURL`.
+- `test_unsupported_mapsToUnsupported` — `Unsupported URL: …` → `.unsupported`.
+- `test_unavailable_mapsToUnavailable` — the unavailable-stderr fixture.
+- `test_networkFailure_mapsToNetwork` — `Unable to download webpage` + a macOS
+  resolver phrase → `.network`.
+- `test_exitZeroGarbageJSON_mapsToMalformed`, `test_exitZeroNoTitle_mapsToMalformed`.
+- `test_ytDlpMissing_mapsToYtDlpMissing` — no script for `yt-dlp` → fake exits
+  127, empty stderr → `.ytDlpMissing`.
+- `test_serialization_secondCallWaits` — `runner.perRunDelay = .milliseconds(60)`;
+  two overlapping `probe` calls → `runner.maxConcurrent == 1`.
 
 - [x] **Step 2: Run — verify fail**
 
-Run: `tuist test --test-targets GrabberKitTests/MetadataProbeTests`
+```bash
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/MetadataProbeTests test
+```
 Expected: FAIL — `MetadataProbe` undefined.
 
 - [x] **Step 3: Implement**
 
-- `probe`: build `ProcessLaunch(executableURL: ytDlpURL, arguments: ["-J",
-  "--no-warnings", "--no-playlist", url])`; collect all `.stdout` into one
-  buffer, all `.stderr` into another; `await result()`.
+- `probe`: chain on `tail` (see Serialization), then `runProbe`.
+- `runProbe`: `ProcessLaunch(executableURL: ytDlpURL, arguments: ["-J",
+  "--no-warnings", "--no-playlist", url])`; buffer `.stdout` / `.stderr`
+  separately; `await result()`.
 - exit 0 → `JSONDecoder` into a small `Decodable` (`title`, `duration`,
-  `_type`, `webpage_url`); missing `title` → `.malformedOutput`.
-- non-zero → the stderr mapping above.
-- The actor's own serialization gives the "one at a time" guarantee — no extra
-  lock.
+  `_type`); no `title` → `.malformedOutput`.
+- non-zero → the stderr mapping above; the network check factored into a
+  predicate so swiftformat/swiftlint don't fight over the wrapped `if`.
 
 - [x] **Step 4: Run — verify pass**
 
-Run: `tuist test --test-targets GrabberKitTests/MetadataProbeTests`
-Expected: PASS.
+Same command as Step 2. Expected: PASS.
 
-- [ ] **Step 5: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Download/MetadataProbe.swift \
-        apps/media-grabber/Tests/GrabberKitTests/MetadataProbeTests.swift \
-        apps/media-grabber/Tests/GrabberKitTests/Fixtures/ytdlp-J-*
-git commit -m "feat(media-grabber): MetadataProbe — resolve a URL to a title, typed errors"
-```
 DoD: a fixture `-J` blob parses to `MediaMetadata`; each stderr signature maps
-to its `MetadataError`; concurrent probes serialize. Optional live check
-(`MG_LIVE_TESTS=1`, off in CI): a real URL returns the real title; a known-bad
-URL returns a clean error.
+to its `MetadataError`; concurrent probes serialize (`maxConcurrent == 1`).
+Live check is optional (`MG_LIVE_TESTS=1`, off in CI).
 
 ---
 
@@ -1420,14 +1532,13 @@ probes).
 - Create: `apps/media-grabber/Tests/GrabberKitTests/DownloadEngineTests.swift`
 
 **Interfaces:**
-- Consumes: `ProcessRunning`, `ProcessLine`, `ProcessResult` (Task 2); the
-  resolved `yt-dlp` path (Task 3); `DownloadRequest`, `DownloadJob`, `JobState`,
-  `Progress`, `ErrorClass` (Task 4); `YtDlpArguments.build` (Task 5);
-  `ProgressParser` (Task 6); `MetadataProbe` (Task 9).
+- Consumes: `ProcessRunning`, `ProcessLine`, `ProcessResult` (Task 2); a
+  resolved `yt-dlp` `URL` (Task 3); `DownloadRequest`, `@MainActor DownloadJob`,
+  `JobState`, `Progress`, `ErrorClass` (Task 4); `YtDlpArguments.build` (Task 5);
+  `ProgressParser` (Task 6); `MetadataProbing` / `MetadataProbe` (Task 9).
 - Produces:
   ```swift
   public protocol DownloadEngineProtocol: Sendable {
-      /// Enqueue and return immediately with a .queued job.
       @discardableResult
       func submit(_ request: DownloadRequest) async -> DownloadJob
       func cancel(_ jobID: UUID) async
@@ -1440,15 +1551,16 @@ probes).
       @discardableResult
       public func submit(_ request: DownloadRequest) async -> DownloadJob
       public func cancel(_ jobID: UUID) async
-      /// Every job the engine knows about, in submit order. Phase 1: 0 or 1
-      /// non-terminal at a time. The App observes these (@Observable).
-      public private(set) var jobs: [DownloadJob]
+      public private(set) var jobs: [DownloadJob]   // submit order; Phase 1: ≤1 non-terminal
   }
   ```
-  Task 11's `AppModel` holds a `DownloadEngineProtocol`, calls `submit`, keeps
-  the returned `DownloadJob`, and renders from `job.state` / `job.progress`
-  (all `@Observable`). `submit` never blocks and never reports failure — the
-  job's `state` does.
+  `submit` enqueues and returns immediately with a `.queued` job — it never
+  blocks and never reports failure; the job's `state` does. `DownloadJob` is
+  `@MainActor`, so every mutation `drain()` makes to a job hops to the main
+  actor (`await MainActor.run { … }`); the tests that read `job.state` /
+  `job.progress` are `@MainActor` and poll until the job reaches a terminal
+  state. Task 11's `AppModel` holds a `DownloadEngineProtocol`, keeps the
+  returned job, and renders from it.
 
 **Job lifecycle (`drain()` drives this; tests pin the timeline):**
 1. `submit(request)` → `DownloadJob(request:)` (`state = .queued`), append to
@@ -1483,12 +1595,12 @@ probes).
    line-loop (propagates to `ProcessRunner` → SIGTERM). If `.queued`, just set
    `.cancelled` so `drain()` skips it.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
-`FakeProcessRunner` is scripted with a `[ProcessLine]` sequence + a
-`ProcessResult`. Add a `MetadataProbing` protocol (retro to Task 9) and inject
-a fake conformer. Tests `await` a small helper that polls `job.state` until
-terminal (or a timeout) — since `submit` returns instantly at `.queued`.
+`FakeProcessRunner` (from `Support/`) is scripted with `[ProcessLine]` + a
+`ProcessResult`. Add a `FakeMetadataProbe` (`MetadataProbing`) in `Support/`.
+Tests are `@MainActor` and `await` a helper that polls `job.state` until
+terminal (or a timeout) — `submit` returns instantly at `.queued`.
 
 - `test_submitReturnsQueuedImmediately` — `submit` resolves with
   `state == .queued` before any probe/spawn happens (assert the fake runner and
@@ -1517,55 +1629,45 @@ terminal (or a timeout) — since `submit` returns instantly at `.queued`.
 - `test_outputFilesResolvedOnCompletion` — point `destFolder` at a temp dir
   containing `Clip.mp4`; after `.completed`, `job.outputFiles == [<that URL>]`.
 
-- [ ] **Step 2: Run — verify fail**
-
-Run: `tuist test --test-targets GrabberKitTests/DownloadEngineTests`
-Expected: FAIL — `DownloadEngine` undefined.
-
-- [ ] **Step 3: Implement**
-
-- Actor state: `jobs: [DownloadJob]`, `drainTask: Task<Void, Never>?`,
-  `runningLineTask: Task<Void, Never>?` (the current job's line-loop, for
-  `cancel`).
-- `submit`: append `DownloadJob(.queued)`; if `drainTask == nil || drainTask
-  finished`, start `drainTask = Task { await drain() }`; return the job.
-- `drain()`: `while let job = nextQueued()` → run it through
-  probe → spawn → line-loop → `result()` → terminal state. When `nextQueued()`
-  is nil, set `drainTask = nil` and return (next `submit` restarts it). Skip
-  jobs already `.cancelled`.
-- All `job.*` mutations the UI observes happen on `@MainActor` — mark
-  `DownloadJob` `@MainActor` (it's a UI-facing observable), and the engine
-  hops in via `await MainActor.run { … }` for each transition.
-- Output-file globbing: `FileManager.contentsOfDirectory`, filter by title
-  stem (sanitised the way yt-dlp's `%(title)s` sanitises — strip `/` and
-  control chars), sort by modification date descending.
-- **Phase 2 seam:** `drain()`'s `while let job = nextQueued()` is exactly where
-  the scheduler grows — `nextQueued()` becomes "next job whose host `RateState`
-  is `.normal` and `running < AdaptiveConcurrency.current`", and the body runs
-  jobs concurrently. `submit` / `cancel` / the job model do not change.
-
-- [ ] **Step 4: Run — verify pass**
-
-Run: `tuist test --test-targets GrabberKitTests/DownloadEngineTests`
-Expected: PASS.
-
-- [ ] **Step 5: Live smoke (local only, not CI)**
-
-With `MG_LIVE_TESTS=1`, a hand-run test: `submit` a short real Creative-Commons
-URL to a temp dir → the job reaches `.completed` and the file exists on disk.
-
-- [ ] **Step 6: Commit**
+- [x] **Step 2: Run — verify fail**
 
 ```bash
-git add apps/media-grabber/Sources/GrabberKit/Download/DownloadEngine.swift \
-        apps/media-grabber/Tests/GrabberKitTests/DownloadEngineTests.swift
-git commit -m "feat(media-grabber): DownloadEngine — single job probe→download→terminal, actor"
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' -only-testing:GrabberKitTests/DownloadEngineTests test
 ```
+Expected: FAIL — `DownloadEngine` undefined.
+
+- [x] **Step 3: Implement**
+
+- Actor state: `jobs: [DownloadJob]`, `drainTask: Task<Void, Never>?`,
+  `runningLineTask: Task<Void, Never>?` (the current job's line-loop, for `cancel`).
+- `submit`: append `DownloadJob(.queued)` (constructed on the main actor); start
+  `drainTask` if not running; return the job.
+- `drain()`: `while let job = nextQueued()` → probe → spawn → line-loop →
+  `result()` → terminal state. When `nextQueued()` is nil, clear `drainTask` and
+  return (next `submit` restarts it). Skip jobs already `.cancelled`.
+- Every `job.*` mutation hops to the main actor (`DownloadJob` is `@MainActor`).
+- Output-file globbing: `FileManager.contentsOfDirectory`, filter by the
+  title stem (sanitised as yt-dlp sanitises `%(title)s` — strip `/` and control
+  chars), newest first.
+- **Phase 2 seam:** `nextQueued()` is where the rate-limit-aware scheduler
+  grows; `submit` / `cancel` / the job model don't change.
+
+- [x] **Step 4: Run — verify pass**
+
+Same command as Step 2. Expected: PASS. Run the full suite too.
+
+- [x] **Step 5: Live smoke (local only, not CI)**
+
+With `MG_LIVE_TESTS=1`, a hand-run test: `submit` a short real Creative-Commons
+URL (Wikimedia / archive.org — not YouTube) to a temp dir → the job reaches
+`.completed` and the file exists.
+
 DoD: `submit` returns a `.queued` job with zero work done; `drain()` carries it
 probe → progress → exit 0 → `.completed` with resolved output files; non-zero
-exit classifies; cancelling a running job kills the child and sets
-`.cancelled`; cancelling a queued job means it never runs; two jobs run FIFO
-with no overlap; a real run (live smoke) lands an actual video file.
+exit classifies; cancelling a running job kills the child and sets `.cancelled`;
+cancelling a queued job means it never runs; two jobs run FIFO with no overlap;
+the live smoke lands an actual file.
 
 ---
 
@@ -1587,10 +1689,12 @@ its DoD is the Phase 1 DoD.
 - Create: `apps/media-grabber/Tests/AppUnitTests/AppModelTests.swift`
 
 **Interfaces:**
-- Consumes: `EnvironmentProbe`/`EnvironmentProbing` (T3), `Preferences` (T4),
-  `DownloadRequest`/`DownloadKind`/`DownloadJob`/`JobState` (T4), theming (T7),
-  `OnboardingInstaller` (T8), `MetadataProbe`/`MetadataProbing`/`MediaMetadata`/
-  `MetadataError` (T9), `DownloadEngineProtocol` (T10).
+- Consumes: `EnvironmentProbe` / `EnvironmentProbing` (T3), `Preferences` (T4),
+  `DownloadRequest` / `DownloadKind` / `@MainActor DownloadJob` / `JobState` (T4),
+  `ResolvedTheme(skinKind:paletteKind:)` (T7), `OnboardingInstaller` (T8),
+  `MetadataProbing` / `MediaMetadata` / `MetadataError` (T9),
+  `DownloadEngineProtocol` (T10). The `-MGForceOnboarding` launch argument
+  (noted in T8) is read here.
 - Produces:
   ```swift
   // GrabberKit/Logging
@@ -1645,7 +1749,12 @@ its DoD is the Phase 1 DoD.
   }
   ```
 
-- [ ] **Step 1: `LogWriter` — failing tests**
+Test doubles for this task: `FakeEngine` (`DownloadEngineProtocol`) and
+`FakeMetadataProbe` (`MetadataProbing`, reused from T10) in
+`Tests/AppUnitTests/`, plus a reveal sink so `reveal()` is assertable without
+touching Finder. All `AppModel` tests are `@MainActor`.
+
+- [x] **Step 1: `LogWriter` — failing tests**
 
 `LogWriterTests.swift` (write to a temp dir; inject a fixed `clock`):
 - `test_writesJSONLine_perEvent` — `log(.appLaunched)` → `app.log` has one line,
@@ -1663,7 +1772,7 @@ its DoD is the Phase 1 DoD.
 
 Implement, verify green.
 
-- [ ] **Step 2: `AppModel` — failing tests**
+- [x] **Step 2: `AppModel` — failing tests**
 
 `AppModelTests.swift` uses a `FakeEngine` (`DownloadEngineProtocol` returning a
 job it also lets the test drive) and a `FakeProbe` (`MetadataProbing`).
@@ -1687,7 +1796,7 @@ job it also lets the test drive) and a `FakeProbe` (`MetadataProbing`).
 
 Implement, verify green.
 
-- [ ] **Step 3: `MainWindow` (App, not unit-tested)**
+- [x] **Step 3: `MainWindow` (App, not unit-tested)**
 
 - Brand row: `MotifView(isActive: <any job running>, size: 20)` + "MediaGrabber"
   wordmark (display face) left; nav `Home · Preferences · Diagnostics` right,
@@ -1700,7 +1809,7 @@ Implement, verify green.
 - Window: `.frame(minWidth: 760)`, default 980×720, `.windowFrameAutosaveName`
   so size/position persist (spec §5.11).
 
-- [ ] **Step 4: `HomeView` + `RunwayView` (App, not unit-tested)**
+- [x] **Step 4: `HomeView` + `RunwayView` (App, not unit-tested)**
 
 Follows design-system §4.2.1–4.2.2 and spec §5.3.
 - **First-run state** (no download ever made — track with a
@@ -1741,7 +1850,7 @@ Follows design-system §4.2.1–4.2.2 and spec §5.3.
   labels on the Reveal/Cancel/Choose icon-buttons, reduce-motion honoured, the
   row list scrolls inside its own container, page never scrolls sideways.
 
-- [ ] **Step 5: Wire `MediaGrabberApp` + compose the object graph**
+- [x] **Step 5: Wire `MediaGrabberApp` + compose the object graph**
 
 - `MediaGrabberApp` builds the real graph at launch: resolve `yt-dlp` via
   `EnvironmentProbe`, construct `MetadataProbe(ytDlpURL:)`,
@@ -1755,35 +1864,34 @@ Follows design-system §4.2.1–4.2.2 and spec §5.3.
 - After onboarding's installer flips `canProceedToHome`, `AppModel` re-probes
   (an `onChange` or the installer calling back) and clears `needsOnboarding`.
 
-- [ ] **Step 6: Run the full suite + build**
+- [x] **Step 6: Run the full suite + build**
 
-Run: `cd apps/media-grabber && tuist test && tuist build`
-Expected: all `GrabberKitTests` + `AppUnitTests` pass; app builds.
+```bash
+cd apps/media-grabber
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
+  -destination 'platform=macOS' test
+xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber build
+mise exec -- swiftformat --lint .
+mise exec -- swiftlint lint --strict
+```
+Expected: all `GrabberKitTests` + `AppUnitTests` pass; app builds; lint clean.
 
 - [ ] **Step 7: Manual Phase-1 DoD walkthrough**
 
-On a real machine:
+On a real machine, launch via `mise exec -- tuist generate --no-open` then
+`open` the built app:
 1. (Deps present) launch → Home first-run state, `online` chip green.
-2. Paste a normal video URL → `✓ <title>` appears, runway arms on defaults.
+2. Paste a normal video URL → `✓ <title>`, runway arms on defaults.
 3. Press Grab → step cards vanish, the job row shows a live progress bar.
-4. Bar reaches 100 % → row says **Saved**, **Reveal** opens Finder on the file
-   in `~/Downloads`.
-5. Quit `tuist generate`, rename `yt-dlp` on PATH, relaunch → onboarding takes
-   over and blocks Home; restore `yt-dlp`, hit Re-check → Home returns.
+4. Bar reaches 100% → row says **Saved**, **Reveal** opens Finder on the file.
+5. Rename `yt-dlp` on `PATH`, relaunch → onboarding takes over and blocks Home;
+   restore `yt-dlp`, hit Re-check → Home returns. (This is the launch check
+   Task 8 deferred to here.)
+6. Relaunch with `-MGForceOnboarding` → onboarding shows even with deps present.
 
-- [ ] **Step 8: Commit**
-
-```bash
-git add apps/media-grabber/Sources/GrabberKit/Logging/ \
-        apps/media-grabber/Sources/App/ \
-        apps/media-grabber/Tests/GrabberKitTests/LogWriterTests.swift \
-        apps/media-grabber/Tests/AppUnitTests/AppModelTests.swift
-git commit -m "feat(media-grabber): Phase 1 integration — AppModel, MainWindow, Home, LogWriter"
-git tag phase-1
-```
 DoD: **the phase is done.** Launch → (onboarding if needed) → paste a real URL
 → Grab on defaults → watch the bar → file in `~/Downloads` → "Saved" → Reveal
-opens Finder. `tuist test` green. The manual smoke checklist (Task 12) passes.
+opens Finder. Full suite green, lint clean. The Task 12 smoke checklist passes.
 
 ---
 
@@ -1793,25 +1901,23 @@ opens Finder. `tuist test` green. The manual smoke checklist (Task 12) passes.
 - Create: `apps/media-grabber/README.md`
 - Create: `apps/media-grabber/PRIVACY.md`
 - Create: `apps/media-grabber/ticket-backlog.md`
-- Modify: `BACKLOG.md` — **no change in Phase 1** (spec §14: T-002 and T-006
-  rows unchanged, no new row until v1). Listed here only so the executor
-  doesn't touch it.
 
 **Interfaces:** none (documentation).
 
-- [ ] **Step 1: `README.md`**
+- [x] **Step 1: `README.md`**
 
 Sections: what it is (one paragraph); requirements (macOS 14+, Homebrew — the
 app installs `yt-dlp` + `ffmpeg` for you on first run); build from source
-(`brew install mise`, `mise install`, `tuist generate`, open, run); the
-one-time Gatekeeper step for a downloaded build (System Settings → Privacy &
-Security → **Open Anyway**, or `xattr -dr com.apple.quarantine
-/Applications/MediaGrabber.app`); where files land (`~/Downloads` by default);
-where logs live (`~/Library/Logs/MediaGrabber/`, all local — see PRIVACY.md);
-Phase 1 scope + known gaps (no queue, no resume — a quit mid-download loses it).
-License MIT.
+(`brew install mise`, `mise install`, `mise exec -- tuist generate`, open the
+workspace, run); the one-time Gatekeeper step for a downloaded build (System
+Settings → Privacy & Security → **Open Anyway**, or `xattr -dr
+com.apple.quarantine /Applications/MediaGrabber.app`); where files land
+(`~/Downloads` by default); where logs live (`~/Library/Logs/MediaGrabber/`,
+all local — see PRIVACY.md); Phase 1 scope + known gaps (no queue, no resume — a
+quit mid-download loses it; the Aurora fonts aren't bundled yet so the UI uses
+system faces). License MIT.
 
-- [ ] **Step 2: `PRIVACY.md`**
+- [x] **Step 2: `PRIVACY.md`**
 
 Per spec §8.5. What the logs contain in the clear (video URLs, titles, the
 destination folder as `~/…`). What is always redacted (cookies, proxy
@@ -1819,12 +1925,17 @@ credentials, usernames/passwords, absolute `/Users/<name>/` paths). No
 telemetry, no network egress from logging — ever. Logs never leave the machine
 unless the user manually shares a bundle (not in Phase 1).
 
-- [ ] **Step 3: `ticket-backlog.md`**
+- [x] **Step 3: `ticket-backlog.md`**
 
 Seed the leaf backlog: Phase 2 (queue + real table), Phase 3 (persistence),
-Phases 4–11 as one-liners from spec §12.2, plus any Phase-1 follow-ups the
-build surfaced (e.g. "canary probe in onboarding still stubbed — Task 11 left
-it auto-pass"). Note the deferred product-name decision (spec §14).
+Phases 4–11 as one-liners from spec §12.2, plus the Phase-1 follow-ups the
+build surfaced:
+- **Bundle the Aurora typefaces** (Sora / Inter / JetBrains Mono) under
+  `Sources/App/Resources/Fonts/**` with `ATSApplicationFontsPath`; the app
+  currently falls back to system faces.
+- **Real onboarding canary** — `testRun` is auto-pass; give it a real
+  `MetadataProbe` of a known-stable URL.
+- Deferred product-name decision (spec §14).
 
 - [ ] **Step 4: Run the Phase-1 manual smoke checklist**
 
@@ -1838,73 +1949,65 @@ The full list (spec §11.3 / §12.1 step 12):
 - **quit** mid-download → the child is killed; on relaunch the job is gone
   (no resume yet — a documented Phase 1 gap)
 
-Record pass/fail for each in the commit message.
+Record pass/fail for each.
 
-- [ ] **Step 5: Commit**
+DoD: the smoke checklist passes on a real machine and the result is recorded.
 
-```bash
-git add apps/media-grabber/README.md apps/media-grabber/PRIVACY.md \
-        apps/media-grabber/ticket-backlog.md
-git commit -m "docs(media-grabber): Phase 1 leaf README, PRIVACY, backlog; smoke checklist passed"
-```
-DoD: the smoke checklist passes on a real machine and the result is recorded in
-the commit.
+**`BACKLOG.md` (repo root) is not touched in Phase 1** (spec §14: T-002 / T-006
+rows unchanged, no new row until v1) — noted so the executor leaves it alone.
 
 ---
 
-## Self-Review
+## Spec coverage
 
-**Spec coverage (§12.1 build order → tasks):**
-1 skeleton → T1 · 2 ProcessRunner → T2 · 3 EnvironmentProbe → T3 ·
-4 data types → T4 · 5 YtDlpArguments → T5 · 6 ProgressParser → T6 ·
-7 skin/palette → T7 · 8 OnboardingInstaller+View → T8 · 9 MetadataProbe → T9 ·
-10 DownloadEngine → T10 · 11 HomeView+MainWindow+AppModel+LogWriter → T11 ·
-12 leaf docs + smoke → T12. All twelve covered.
+**§12.1 build order → tasks:** 1 skeleton → T1 · 2 ProcessRunner → T2 ·
+3 EnvironmentProbe → T3 · 4 data types → T4 · 5 YtDlpArguments → T5 ·
+6 ProgressParser → T6 · 7 skin/palette → T7 · 8 OnboardingInstaller+View → T8 ·
+9 MetadataProbe → T9 · 10 DownloadEngine → T10 ·
+11 HomeView+MainWindow+AppModel+LogWriter → T11 · 12 leaf docs + smoke → T12.
 
-**Spec §5.3 / §5.8 / §5.11 UI requirements** → T7 (theme), T8 (onboarding UI),
-T11 (Home first-run/runway/job-row, MainWindow chrome, window autosave, quality
-floor). **§8.1 / §8.5 logging + redaction** → T11 (`LogWriter`). **§9 error
-classes** → T4 (enum) + T6 (classification) + T11 (failure copy). **§10 signing**
-→ T1 (ad-hoc, hardened-runtime-off, sandbox-off build settings). **§11 testing**
-→ every task is TDD; live tests gated `MG_LIVE_TESTS=1` (T9, T10); manual smoke
-in T12.
+**§5.3 / §5.8 / §5.11 UI** → T7 (theme), T8 (onboarding UI), T11 (Home
+first-run/runway/job-row, MainWindow chrome, window autosave, quality floor).
+**§8.1 / §8.5 logging + redaction** → T11 (`LogWriter`). **§9 error classes** →
+T4 (enum) + T6 (classification) + T11 (failure copy). **§10 signing** → T1
+(ad-hoc, hardened-runtime-off, sandbox-off). **§11 testing** → every task is
+TDD; live tests gated `MG_LIVE_TESTS=1` (T9, T10); manual smoke in T12.
 
-**Deviations from spec, all deliberate:**
-- `DownloadEngine.submit` is enqueue-and-return (Option B), not the spec's
-  implied "submit … waits FIFO in-actor". Rationale: it is the correct
-  end-state once Phase 2 adds the scheduler; building it now avoids a rewrite.
-  The FIFO behavior is preserved via `drain()`.
-- `DownloadJob` drops `playlistGroupID` / `playlistProgress` for Phase 1
-  (no playlists); re-added in Phase 7.
-- Onboarding's `testRun` canary is stubbed auto-pass in T8, given a real body
-  in T11 (it needs `MetadataProbe`, which lands in T9).
-- `SkinKind` / `PaletteKind` string enums live in `GrabberKit` (for
-  `Preferences`), the `Color`/`Font`-bearing `Skin` / `Palette` in `App`.
+## Where this plan differs from the spec (by design)
 
-**Type consistency:** `ProcessRunning`/`ProcessLaunch`/`ProcessLine`/
-`ProcessExecution`/`ProcessResult` (T2) used verbatim in T3, T8, T9, T10.
-`EnvironmentProbing` added in T3, consumed T8, T11. `MetadataProbing` added in
-T9, consumed T10, T11. `DownloadEngineProtocol` (T10) consumed T11.
-`ResolvedTheme` / `@Environment(\.theme)` (T7) consumed T8, T11.
-`ErrorClass` / `JobState` / `Progress` (T4) flow through T6, T10, T11.
+- `DownloadEngine.submit` enqueues and returns; a `drain()` task moves each job
+  to a terminal state. This is the end-state shape once Phase 2 adds the
+  scheduler — a queued job has no caller to return a result to. The spec's
+  implied "submit waits FIFO in-actor" is not built.
+- `DownloadJob` omits `playlistGroupID` / `playlistProgress` (no playlists in
+  Phase 1; re-added in Phase 7).
+- Onboarding's `testRun` is auto-pass in T8 and gets a real `MetadataProbe`
+  body in T11.
+- `SkinKind` / `PaletteKind` (string enums) live in `GrabberKit` for
+  `Preferences`; the `Color`/`Font`-bearing `Skin` / `PaletteTokens` live in
+  the `App` target, which `GrabberKit` cannot import.
+- Aurora typefaces are resolved-or-system-fallback, not bundled (leaf-backlog
+  item).
 
-**Placeholder scan:** no "TBD"/"implement later"/"add error handling" left; each
-task carries its interface signatures, its test list, and a concrete DoD.
-Implementation bodies are intentionally sketched (not full code) per the plan
-owner's instruction — the pinned interfaces + test lists make each body
-determinate under TDD.
+## Cross-task type contracts
 
----
+`ProcessRunning` / `ProcessLaunch` / `ProcessLine` / `ProcessExecution` /
+`ProcessResult` (T2) — used verbatim in T3, T8, T9, T10; `ProcessResult` has a
+public memberwise init for the fakes. `EnvironmentProbing` (T3) — consumed by
+T8, T11. `MetadataProbing` (T9) — consumed by T10, T11. `DownloadEngineProtocol`
+(T10) — consumed by T11. `ResolvedTheme` / `@Environment(\.theme)` (T7) —
+consumed by T8, T11. `ErrorClass` / `JobState` / `Progress` (T4) — flow through
+T6, T10, T11. `@MainActor DownloadJob` (T4) — the engine (T10) hops to the main
+actor for every mutation; UI tests that read it are `@MainActor`.
 
-## Execution Handoff
+## Toolchain notes for the executor
 
-Plan complete and saved to
-`docs/superpowers/plans/2026-08-29-media-grabber-phase-1.md`. Two execution
-options:
-
-1. **Subagent-Driven (recommended)** — a fresh subagent per task, review
-   between tasks, fast iteration.
-2. **Inline Execution** — execute tasks in this session using
-   `superpowers:executing-plans`, batched with review checkpoints.
-
-Which approach?
+- Build/test through `xcodebuild` on the generated `MediaGrabber-Workspace`
+  scheme, not `tuist test` (its output filtering hides compiler errors).
+- `.swiftformat` disables `docComments`; `.swiftlint.yml` disables `todo`. When
+  the two disagree on a wrapped `if` condition's brace, extract the condition
+  into a named predicate.
+- Internal locking: `os_unfair_lock` (not `NSLock` in async contexts, not
+  `Mutex` — macOS 15).
+- Live fixtures come from `commons.wikimedia.org` / `archive.org`; YouTube needs
+  a POT provider (out of Phase 1).
