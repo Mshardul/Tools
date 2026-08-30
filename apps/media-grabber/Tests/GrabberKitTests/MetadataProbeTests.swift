@@ -95,6 +95,20 @@ final class MetadataProbeTests: XCTestCase {
         XCTAssertEqual(result, .failure(.malformedOutput))
     }
 
+    func test_botCheck_mapsToBotCheck() async {
+        let runner = FakeProcessRunner()
+        runner.script(
+            .stderr(
+                "ERROR: [youtube] NJ0TQ-pyMDY: The page needs to be reloaded.. "
+                    + "The page needs to be reloaded.",
+                exitCode: 1
+            ),
+            forPathEndingIn: "yt-dlp"
+        )
+        let result = await probe(runner).probe("https://www.youtube.com/watch?v=NJ0TQ-pyMDY")
+        XCTAssertEqual(result, .failure(.botCheck))
+    }
+
     func test_ytDlpMissing_mapsToYtDlpMissing() async {
         let runner = FakeProcessRunner()
         // No script for yt-dlp → fake returns exit 127.

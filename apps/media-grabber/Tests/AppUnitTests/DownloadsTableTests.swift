@@ -55,6 +55,42 @@ final class DownloadsTableTests: XCTestCase {
         XCTAssertEqual(store.visibleRows.map { String($0.id.uuidString.suffix(1)) }, ["1", "2"])
     }
 
+    func test_runningStatusOmitsPercentFromPill() {
+        let progress = Progress(
+            fraction: 0.89,
+            speedBytesPerSec: 1_000_000,
+            etaSeconds: 38,
+            downloadedBytes: 890,
+            totalBytes: 1000
+        )
+        var running = snap(1, state: .running)
+        running = JobSnapshot(
+            id: running.id,
+            url: running.url,
+            title: running.title,
+            state: .running,
+            progress: progress,
+            kind: running.kind,
+            durationSeconds: running.durationSeconds,
+            extractor: running.extractor,
+            addedAt: running.addedAt,
+            finishedAt: running.finishedAt,
+            destFolder: running.destFolder,
+            outputFiles: running.outputFiles,
+            sizeBytes: running.sizeBytes,
+            actualQuality: running.actualQuality,
+            attempt: running.attempt,
+            cooldownUntil: running.cooldownUntil,
+            playerClientUsed: running.playerClientUsed,
+            playlistGroupID: running.playlistGroupID,
+            integrityVerdict: running.integrityVerdict,
+            availableActions: running.availableActions
+        )
+        let row = RowModel(running, queuePosition: nil)
+        XCTAssertEqual(TablePresentation.statusDisplay(for: row), "downloading")
+        XCTAssertEqual(TablePresentation.cellText(for: row, column: .progress), "89%")
+    }
+
     func test_actionBarEnabledDisabledPerState() {
         let queued = RowModel(snap(1, state: .queued), queuePosition: 1)
         let completed = RowModel(snap(2, state: .completed), queuePosition: nil)

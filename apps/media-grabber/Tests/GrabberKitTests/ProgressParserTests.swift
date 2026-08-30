@@ -73,6 +73,27 @@ final class ProgressParserTests: XCTestCase {
         )
     }
 
+    func test_captureOutputPath_downloadDestination() {
+        let url = ProgressParser.captureOutputPath(
+            from: "[download] Destination: /tmp/RASTAFARIANESIMO.mp4"
+        )
+        XCTAssertEqual(url?.path, "/tmp/RASTAFARIANESIMO.mp4")
+    }
+
+    func test_captureOutputPath_mergerDestination() {
+        let url = ProgressParser.captureOutputPath(
+            from: #"[Merger] Merging formats into "/tmp/Clip.mp4""#
+        )
+        XCTAssertEqual(url?.path, "/tmp/Clip.mp4")
+    }
+
+    func test_captureOutputPath_extractAudio() {
+        let url = ProgressParser.captureOutputPath(
+            from: "[ExtractAudio] Destination: /tmp/mg.m4a"
+        )
+        XCTAssertEqual(url?.path, "/tmp/mg.m4a")
+    }
+
     // MARK: - stderr classification
 
     func test_stderr_networkError() {

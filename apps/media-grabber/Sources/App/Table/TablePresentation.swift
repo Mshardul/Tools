@@ -69,7 +69,7 @@ enum TablePresentation {
         switch row.snapshot.state {
         case .queued: return "queued"
         case .probing: return "probing"
-        case .running: return row.statusText.lowercased()
+        case .running: return "downloading"
         case .paused: return "paused"
         case .waitingForNetwork: return "waiting for network"
         case .cooldown: return "cooling down"

@@ -20,6 +20,11 @@ until it reaches v1 (spec §14).
 - **Column header drag-reorder.** `ColumnConfig.moveColumn` and persistence are
   wired; the Downloads table header does not yet support drag-to-reorder.
 - **Multi-select row actions.** The table is single-select only this phase.
+- **Resizable column widths.** Widths are fixed in `ColumnMetrics`; needs drag
+  handles + persist in `ColumnConfig`.
+- **Merged transfer column.** Combine Progress + Speed + ETA into one column
+  (bar background, `speed · eta` overlay) — discussed post-Phase 2; update
+  design-system §4.2.3 when implemented.
 
 ## Phases 3–11 (intent — detailed when reached, from spec §12.1)
 
@@ -34,7 +39,9 @@ are in spec §12.2.
 - **Phase 3 — Preferences screen.** 7-pane `PreferencesView` over the existing
   `Preferences` model. Downloads / Appearance / Logs & privacy panes filled;
   Network / Sign-in & cookies / Updates / Advanced are headers later phases add
-  rows to.
+  rows to. **Appearance pane:** replace native SwiftUI `Menu` dropdowns on the
+  Home runway (and prefs controls) with skinned popover pickers that match the
+  active palette.
 - **Phase 4 — Retry and error classification.** Generic `ErrorClass` cases
   (`rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`,
   `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`) + failure-reason
@@ -63,7 +70,8 @@ are in spec §12.2.
   `--plugin-dirs` wiring; bot-check-shield `HealthStrip` chip + `↻`; YouTube
   `ErrorClass` cases (`botCheck`, `sabrGated`, `formatsMissing`,
   `potProviderDown`) + copy; `potProviderDown` `WarningBanner` case. Needs both
-  Phase 4 and Phase 6.
+  Phase 4 and Phase 6. **Audio language:** prefer original / user-selected
+  language in the format selector (today `bv*+ba` can pick a dubbed track).
 - **Phase 8 — Playlist.** `MetadataProbe` playlist mode (`--flat-playlist`);
   `PlaylistPickerView` modal (checklist, select all/none, filter, live count +
   size); group-header + spine rendering; group actions (pause all / retry
@@ -81,4 +89,6 @@ are in spec §12.2.
   notifications for backgrounded failures; the first-run-cards → table
   transition + emptied-table state; full keyboard-nav + VoiceOver +
   reduced-motion pass over every screen; GitHub-release self-update check (spec
-  §10.2). Last — the a11y pass audits every earlier screen.
+  §10.2). Last — the a11y pass audits every earlier screen. **Row actions:**
+  hide inactive action icons instead of rendering the full disabled bar (Phase 2
+  spec required all glyphs visible; revisit for less visual noise).

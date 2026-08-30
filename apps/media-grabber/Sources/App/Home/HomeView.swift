@@ -36,7 +36,7 @@ struct HomeView: View {
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: Spacing.s5) {
                 hero
-                pasteBlock
+                pasteBlock()
                 stepCards
             }
             .padding(Spacing.s6)
@@ -49,11 +49,9 @@ struct HomeView: View {
     private var tableLayout: some View {
         @Bindable var appModel = appModel
         return VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: Spacing.s4) {
-                pasteBlock
-            }
-            .padding(.horizontal, Spacing.s6)
-            .padding(.top, Spacing.s4)
+            pasteBlock(reserveRunwaySlot: true)
+                .padding(.horizontal, Spacing.s6)
+                .padding(.top, Spacing.s4)
 
             DownloadsTable(
                 store: appModel.rowStore,
@@ -63,6 +61,7 @@ struct HomeView: View {
                     Task { await appModel.handleRowAction(id, action: action) }
                 }
             )
+            .padding(.top, Spacing.s5)
             .frame(maxHeight: .infinity)
         }
     }
@@ -92,53 +91,54 @@ struct HomeView: View {
         }
     }
 
-    private var pasteBlock: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: Spacing.s2) {
-                TextField("", text: $pastedURL)
-                    .textFieldStyle(.plain)
-                    .font(theme.skin.bodyFont(14, .regular))
-                    .foregroundStyle(theme.palette.text)
-                    .onSubmit { Task { await resolve() } }
-                    .onChange(of: pastedURL) { _, new in autoProbe(new) }
-                    .overlay(alignment: .leading) {
-                        if pastedURL.isEmpty {
-                            Text("Paste a link")
-                                .font(theme.skin.bodyFont(14, .regular))
-                                .foregroundStyle(theme.palette.faint)
-                                .allowsHitTesting(false)
+    private func pasteBlock(reserveRunwaySlot: Bool = false) -> some View {
+        VStack(spacing: Spacing.s3) {
+            VStack(spacing: Spacing.s2) {
+                HStack(spacing: Spacing.s2) {
+                    TextField("", text: $pastedURL)
+                        .textFieldStyle(.plain)
+                        .font(theme.skin.bodyFont(14, .regular))
+                        .foregroundStyle(theme.palette.text)
+                        .onSubmit { Task { await resolve() } }
+                        .onChange(of: pastedURL) { _, new in autoProbe(new) }
+                        .overlay(alignment: .leading) {
+                            if pastedURL.isEmpty {
+                                Text("Paste a link")
+                                    .font(theme.skin.bodyFont(14, .regular))
+                                    .foregroundStyle(theme.palette.faint)
+                                    .allowsHitTesting(false)
+                            }
                         }
+                    if appModel.isProbing {
+                        ProgressView().controlSize(.small)
+                    } else if let resolved = appModel.resolved {
+                        Text("\u{2713} \(resolved.title)")
+                            .font(theme.skin.monoFont(12, .regular))
+                            .foregroundStyle(theme.palette.accent)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
-                if appModel.isProbing {
-                    ProgressView().controlSize(.small)
-                } else if let resolved = appModel.resolved {
-                    Text("\u{2713} \(resolved.title)")
-                        .font(theme.skin.monoFont(12, .regular))
-                        .foregroundStyle(theme.palette.accent)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+                }
+
+                if let error = appModel.probeError {
+                    Text(error)
+                        .font(theme.skin.bodyFont(12, .regular))
+                        .foregroundStyle(theme.palette.danger)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .padding(Spacing.s4)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 theme.palette.panel,
-                in: runwayAttached
-                    ? AnyShape(UnevenRoundedRectangle(
-                        topLeadingRadius: theme.skin.cardRadius,
-                        topTrailingRadius: theme.skin.cardRadius
-                    ))
-                    : AnyShape(RoundedRectangle(cornerRadius: theme.skin.cardRadius))
+                in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+                    .stroke(theme.palette.stroke, lineWidth: theme.skin.hairlineWidth)
             )
 
-            if let error = appModel.probeError {
-                Text(error)
-                    .font(theme.skin.bodyFont(12, .regular))
-                    .foregroundStyle(theme.palette.danger)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, Spacing.s2)
-            }
-
-            if runwayAttached {
+            if runwayAttached || reserveRunwaySlot {
                 RunwayView(
                     kindSelector: $kindSelector,
                     maxHeight: $maxHeight,
@@ -147,6 +147,9 @@ struct HomeView: View {
                     canGrab: appModel.resolved != nil,
                     onGrab: grab
                 )
+                .opacity(runwayAttached ? 1 : 0)
+                .allowsHitTesting(runwayAttached)
+                .accessibilityHidden(!runwayAttached)
             }
         }
     }

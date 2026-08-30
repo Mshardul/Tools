@@ -149,12 +149,13 @@ h1.head{font-family:var(--font-display);font-weight:700;font-size:32px;line-heig
 h1.head em{font-style:normal;color:var(--accent)}
 
 /* paste field + runway */
-.field{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card) var(--r-card) 0 0;border-bottom:none;padding:12px;display:flex;gap:10px;align-items:center}
+.paste-stack{display:flex;flex-direction:column;gap:var(--sp-3)}
+.field{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:10px;align-items:center}
 .field input{flex:1;min-width:0;background:transparent;border:none;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none}
 .field input::placeholder{color:var(--faint)}
 .field .status{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap}
 .field .status.err{color:var(--danger)}
-.runway{background:var(--panel-hi);border:var(--border-w) solid var(--stroke);border-radius:0 0 var(--r-card) var(--r-card);padding:12px;display:flex;gap:0;align-items:stretch;box-shadow:var(--console-elev)}
+.runway{background:var(--panel-hi);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:0;align-items:stretch;box-shadow:var(--console-elev);width:100%;box-sizing:border-box}
 .rstep{flex:1;display:flex;flex-direction:column;gap:5px;padding:0 14px;position:relative;min-width:0}
 .rstep + .rstep::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--hair)}
 .rstep .rl{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
@@ -400,6 +401,7 @@ tbody tr:hover td{background:var(--panel)}
       <div class="hero">
         <div class="kicker">Paste a link</div>
         <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+        <div class="paste-stack">
         <div class="field">
           <input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ">
           <span class="status">✓ Big Buck Bunny</span>
@@ -410,6 +412,7 @@ tbody tr:hover td{background:var(--panel)}
           <div class="rstep ok"><span class="rl">Format</span><span class="rv">1080p ▾</span></div>
           <div class="rstep wait"><span class="rl">Save to</span><span class="rv">Choose… ▾</span></div>
           <div class="rgo"><button class="go" disabled>Grab</button></div>
+        </div>
         </div>
       </div>
       <div class="tablewrap">
@@ -499,6 +502,7 @@ tbody tr:hover td{background:var(--panel)}
       <div class="hero">
         <div class="kicker">Paste a link</div>
         <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+        <div class="paste-stack">
         <div class="field"><input value="youtube.com/playlist?list=PLbpi6…"><span class="status">✓ “Focus — deep work” · 24 items</span></div>
         <div class="runway">
           <div class="rstep ok"><span class="rl">Link</span><span class="rv">Playlist · 24</span></div>
@@ -506,6 +510,7 @@ tbody tr:hover td{background:var(--panel)}
           <div class="rstep ok"><span class="rl">Format</span><span class="rv">m4a ▾</span></div>
           <div class="rstep ok"><span class="rl">Save to</span><span class="rv">Music/Rips ▾</span></div>
           <div class="rgo"><button class="go">Choose…</button></div>
+        </div>
         </div>
       </div>
       <div class="tablewrap short"><div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button></div>

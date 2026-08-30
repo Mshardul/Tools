@@ -30,6 +30,7 @@ public enum MetadataError: Error, Sendable, Equatable {
     case ytDlpMissing
     case launchFailed
     case malformedOutput
+    case botCheck
     case unknown(raw: String)
 }
 
@@ -62,7 +63,7 @@ public actor MetadataProbe: MetadataProbing {
     private func runProbe(_ url: String) async -> Result<MediaMetadata, MetadataError> {
         let execution = runner.run(ProcessLaunch(
             executableURL: ytDlpURL,
-            arguments: ["-J", "--no-warnings", "--no-playlist", url]
+            arguments: ["-J", "--no-warnings", "--no-playlist", "--no-update", url]
         ))
 
         var stdout = ""
@@ -135,11 +136,27 @@ public actor MetadataProbe: MetadataProbing {
         if isNetworkFailure(stderr: stderr, errorLine: errorLine) {
             return .network
         }
+        if isBotCheck(stderr) {
+            return .botCheck
+        }
         if errorLine.hasPrefix("ERROR:") {
             return .unknown(raw: errorLine)
         }
         return .unknown(raw: stderr.trimmingCharacters(in: .whitespacesAndNewlines))
     }
+
+    private func isBotCheck(_ stderr: String) -> Bool {
+        botCheckSignatures.contains { stderr.localizedCaseInsensitiveContains($0) }
+    }
+
+    private let botCheckSignatures = [
+        "page needs to be reloaded",
+        "confirm you're not a bot",
+        "Sign in to confirm",
+        "unable to extract uploader id",
+        "HTTP Error 403",
+        "This content isn't available, try again later"
+    ]
 
     private func isNetworkFailure(stderr: String, errorLine: String) -> Bool {
         stderr.contains("Unable to download")

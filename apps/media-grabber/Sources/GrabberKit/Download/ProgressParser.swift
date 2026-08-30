@@ -33,6 +33,34 @@ public enum ProgressParser {
         return nil
     }
 
+    /// Paths yt-dlp prints while downloading — used instead of guessing from the title.
+    public static func captureOutputPath(from line: String) -> URL? {
+        if line.hasPrefix("[download] Destination: ") {
+            return urlFromPath(String(line.dropFirst("[download] Destination: ".count)))
+        }
+        if line.hasPrefix("[ExtractAudio] Destination: ") {
+            return urlFromPath(String(line.dropFirst("[ExtractAudio] Destination: ".count)))
+        }
+        if let path = quotedPath(in: line, marker: "[Merger] Merging formats into \"") {
+            return URL(fileURLWithPath: path)
+        }
+        return nil
+    }
+
+    private static func urlFromPath(_ raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return URL(fileURLWithPath: trimmed)
+    }
+
+    private static func quotedPath(in line: String, marker: String) -> String? {
+        guard let markerRange = line.range(of: marker) else { return nil }
+        let tail = line[markerRange.upperBound...]
+        guard let end = tail.firstIndex(of: "\"") else { return nil }
+        let path = String(tail[..<end])
+        return path.isEmpty ? nil : path
+    }
+
     private static func parseProgress(_ line: String) -> ProgressEvent? {
         let fields = line.components(separatedBy: "|")
         guard fields.count == 6 else { return nil }

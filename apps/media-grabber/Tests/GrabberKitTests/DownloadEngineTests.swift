@@ -191,4 +191,34 @@ final class DownloadEngineTests: XCTestCase {
             ["Clip.mp4"]
         )
     }
+
+    func test_outputFilesCapturedFromDestination_whenTitleSanitized() async throws {
+        let title = "RASTAFARIANESIMO： La Religione che Venera la Pianta della Conoscenza 🇯🇲"
+        let fileName = "RASTAFARIANESIMO La Religione che Venera la Pianta della Conoscenza.mp4"
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("mg-engine-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let outputURL = dir.appendingPathComponent(fileName)
+        try Data("x".utf8).write(to: outputURL)
+
+        let runner = FakeProcessRunner()
+        runner.script(
+            Fix.completingScript([
+                .stdout("[download] Destination: \(outputURL.path)")
+            ]),
+            forPathEndingIn: "yt-dlp"
+        )
+        let probe = FakeMetadataProbe()
+        probe.result(FakeMetadataProbe.success(title: title))
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
+
+        let id = await submitJob(engine, Fix.request(destFolder: dir))
+        await expectState(collector, id) { $0 == .completed }
+        XCTAssertEqual(
+            collector.latestSnapshot()?.jobs.first { $0.id == id }?.outputFiles,
+            [outputURL]
+        )
+    }
 }

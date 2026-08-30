@@ -1,5 +1,9 @@
 # Queue Foundation and Window Chrome (Phase 2) Implementation Plan
 
+> **Phase status:** Tasks 1–16 §1–5 complete (tests + lint green). **Task 16 §6**
+> (12-step manual smoke on a real machine) is the remaining gate before archiving
+> this spec/plan per parent §12.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make `DownloadEngine` own an ordered job list and a multi-slot scheduler, emit `Sendable` value events the UI binds to, and add the Downloads table, row-action bar, force-start, per-job raw logs, persistence across launches, graceful quit, a reusable confirmation dialog, and the `WarningBanner` / `HealthStrip` chrome shells.

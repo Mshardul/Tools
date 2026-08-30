@@ -211,14 +211,14 @@ first-run cards).
 
 The "resolve link & arm Grab" pattern.
 
-- **Field** — full-width. Rounded on all corners when the runway is hidden;
-  rounded top only when the runway is shown (they join into one unit). Holds the
+- **Field** — full-width card (`--panel`). Rounded on all corners. Holds the
   pasted URL. After a successful probe, an inline status appears at the right
   end: `✓ <title>` (or `✓ "<playlist>" · N items`). On probe failure:
-  `--danger` text with the reason.
-- **Runway** — **hidden until a pasted link resolves.** When shown, it is
-  attached directly below the field, rounded bottom only, one visual unit. A row
-  of labelled slots:
+  `--danger` text with the reason, inside the same card below the input.
+- **Runway** — **hidden until a pasted link resolves.** When shown, it is a
+  **separate full-width card** (`--panel-hi`) below the field, with
+  `--sp-3` gap between the two — not a shared border. Rounded on all corners.
+  A row of labelled slots:
   - `Link` — filled when the probe resolves to a downloadable item
   - `Type` — Video / Audio (dropdown; seeded from Preferences default)
   - `Format` — contextual: video heights, or `m4a` / `mp3` (dropdown; Preferences default)

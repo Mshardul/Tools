@@ -37,7 +37,9 @@ enum AppModelDialogs {
         case .network: "No internet connection."
         case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
         case .malformedOutput: "Couldn't read the video details."
-        case let .unknown(raw): raw
+        case .botCheck:
+            "YouTube blocked the lookup. Try again, or update yt-dlp with brew upgrade yt-dlp."
+        case .unknown: "Couldn't read the video details."
         }
     }
 }

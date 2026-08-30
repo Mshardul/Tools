@@ -30,6 +30,8 @@ extension DownloadEngine {
             .unknown(raw: raw)
         case .badURL, .unsupported, .unavailable, .malformedOutput:
             .unknown(raw: "\(error)")
+        case .botCheck:
+            .botCheck
         }
     }
 
@@ -54,6 +56,25 @@ extension DownloadEngine {
     }
 
     func resolveOutputFiles(for job: DownloadJob) -> [URL] {
+        let byTitle = outputFilesMatchingTitle(for: job)
+        if !byTitle.isEmpty {
+            return byTitle
+        }
+        return newestNonPartFiles(in: job.request.destFolder, since: job.startedAt ?? job.addedAt)
+    }
+
+    func finalizedOutputFiles(for job: DownloadJob) -> [URL] {
+        let fileManager = FileManager.default
+        let captured = job.capturedOutputPaths.filter {
+            fileManager.fileExists(atPath: $0.path)
+        }
+        if let last = captured.last {
+            return [last]
+        }
+        return resolveOutputFiles(for: job)
+    }
+
+    private func outputFilesMatchingTitle(for job: DownloadJob) -> [URL] {
         guard let title = job.title else { return [] }
         let stem = Self.titleStem(title)
         let fileManager = FileManager.default
@@ -67,6 +88,27 @@ extension DownloadEngine {
         return entries
             .filter { $0.lastPathComponent.hasPrefix(stem) }
             .sorted { Self.modificationDate($0) > Self.modificationDate($1) }
+    }
+
+    private func newestNonPartFiles(in folder: URL, since: Date) -> [URL] {
+        let fileManager = FileManager.default
+        guard let entries = try? fileManager.contentsOfDirectory(
+            at: folder,
+            includingPropertiesForKeys: [.contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return []
+        }
+        let candidates = entries.filter { url in
+            url.pathExtension != "part"
+                && Self.modificationDate(url) >= since.addingTimeInterval(-2)
+        }
+        guard let newest = candidates.max(by: {
+            Self.modificationDate($0) < Self.modificationDate($1)
+        }) else {
+            return []
+        }
+        return [newest]
     }
 
     private static func modificationDate(_ url: URL) -> Date {

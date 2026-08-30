@@ -55,6 +55,12 @@ extension DownloadEngine {
         emitProgress([id: progress])
     }
 
+    func recordOutputPath(_ id: UUID, _ url: URL) {
+        guard let job = jobs.first(where: { $0.id == id }) else { return }
+        guard !job.capturedOutputPaths.contains(url) else { return }
+        job.capturedOutputPaths.append(url)
+    }
+
     func recordExit(
         _ id: UUID,
         _ result: ProcessResult,
@@ -80,7 +86,7 @@ extension DownloadEngine {
             job.state = .cancelled
             job.finishedAt = .now
         } else if result.exitCode == 0 {
-            job.outputFiles = resolveOutputFiles(for: job)
+            job.outputFiles = finalizedOutputFiles(for: job)
             job.state = .completed
             job.finishedAt = .now
         } else {

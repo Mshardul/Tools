@@ -266,18 +266,24 @@ extension DownloadEngine {
             var launchFailed = false
             for await line in execution.lines {
                 jobLog.append(line)
+                let text: String
                 switch line {
-                case let .stdout(text):
-                    if case let .progress(progress) = ProgressParser.parseStdout(text) {
+                case let .stdout(stdout):
+                    text = stdout
+                    if case let .progress(progress) = ProgressParser.parseStdout(stdout) {
                         await self?.recordProgress(id, progress)
                     }
-                case let .stderr(text):
-                    if text.hasPrefix("launch failed:") {
+                case let .stderr(stderr):
+                    text = stderr
+                    if stderr.hasPrefix("launch failed:") {
                         launchFailed = true
                     }
-                    if let classified = ProgressParser.classifyStderr(text) {
+                    if let classified = ProgressParser.classifyStderr(stderr) {
                         lastError = classified
                     }
+                }
+                if let path = ProgressParser.captureOutputPath(from: text) {
+                    await self?.recordOutputPath(id, path)
                 }
             }
             let result = await processResult

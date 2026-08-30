@@ -1,6 +1,8 @@
 # Queue foundation and window chrome (Phase 2)
 
-**Status:** not started. Parent spec:
+**Status:** shipped (implementation + automated tests complete). Manual smoke
+checklist: plan Task 16 §6 — pending on a real machine. Plan:
+`docs/superpowers/plans/queue-foundation.md`. Parent spec:
 `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §12.1.
 Phase 1 (built, archived): `docs/superpowers/specs/archived/core-download-pipeline.md`.
 

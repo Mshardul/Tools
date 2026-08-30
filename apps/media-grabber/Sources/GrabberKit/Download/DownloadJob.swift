@@ -12,6 +12,7 @@ final class DownloadJob {
     var sizeBytes: Int64?
     var attempt: Int
     var outputFiles: [URL]
+    var capturedOutputPaths: [URL] = []
     let addedAt: Date
     var finishedAt: Date?
     // Force-start evicts the oldest-startedAt running job.

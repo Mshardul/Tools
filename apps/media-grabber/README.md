@@ -66,9 +66,9 @@ A build you compiled yourself is not quarantined and needs neither step.
   - `jobs/<job-id>.log` — one raw `yt-dlp` transcript per download.
   See [PRIVACY.md](PRIVACY.md) for exactly what they contain.
 
-## Phase 2 scope (current)
+## Phase 2 (shipped)
 
-Phase 2 adds a multi-download queue with persistence:
+Phase 2 added a multi-download queue with persistence:
 
 - **Queue + table** — paste URLs, watch several jobs run under
   `Preferences.maxConcurrentDownloads`, pause/resume/cancel/remove/force-start
@@ -85,6 +85,8 @@ Not yet built:
 - **Multi-select row actions**, playlists, cookies, retry/backoff, Preferences
   panes (beyond the model), Diagnostics content. See
   [ticket-backlog.md](ticket-backlog.md).
+
+**Next:** Phase 3 — Preferences screen (7-pane UI).
 
 ## Phase 1 gaps (resolved in Phase 2)
 

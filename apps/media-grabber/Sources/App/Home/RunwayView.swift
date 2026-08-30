@@ -28,6 +28,8 @@ struct RunwayView: View {
                     .truncationMode(.middle)
                     .foregroundStyle(theme.palette.dim)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
             slot("Type", filled: true) { typeMenu }
             slot("Format", filled: true) { formatMenu }
             slot("Save to", filled: true) { saveMenu }
@@ -56,12 +58,14 @@ struct RunwayView: View {
             .accessibilityLabel("Grab")
         }
         .padding(Spacing.s4)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            theme.palette.panel,
-            in: UnevenRoundedRectangle(
-                bottomLeadingRadius: theme.skin.cardRadius,
-                bottomTrailingRadius: theme.skin.cardRadius
-            )
+            theme.palette.panelHi,
+            in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+                .stroke(theme.palette.stroke, lineWidth: theme.skin.hairlineWidth)
         )
     }
 
