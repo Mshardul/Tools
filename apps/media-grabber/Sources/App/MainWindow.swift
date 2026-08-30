@@ -16,13 +16,17 @@ struct MainWindow: View {
         }
         .background(theme.palette.ground)
         .frame(minWidth: 760, minHeight: 480)
+        .overlay {
+            if let request = appModel.pendingConfirmation {
+                ConfirmationDialog(request: request) { confirmed, suppress in
+                    appModel.resolveConfirmation(confirmed, suppressFutures: suppress)
+                }
+            }
+        }
     }
 
     private var jobRunning: Bool {
-        if case .running = appModel.job?.state {
-            return true
-        }
-        return false
+        false
     }
 
     private var brandRow: some View {

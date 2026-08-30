@@ -10,7 +10,12 @@ struct MediaGrabberApp: App {
         let prefs = Preferences()
         let installer = OnboardingInstaller()
         let ytDlpURL = Self.resolveYtDlp()
-        let engine = DownloadEngine(ytDlpURL: ytDlpURL)
+        let log = LogWriter()
+        let persistence = Persistence(log: log)
+        let engine = DownloadEngine(
+            dependencies: .live(ytDlpURL: ytDlpURL, log: log, persistence: persistence),
+            preferences: prefs
+        )
         let probe = MetadataProbe(ytDlpURL: ytDlpURL)
         let forceOnboarding = CommandLine.arguments.contains("-MGForceOnboarding")
 
@@ -20,7 +25,7 @@ struct MediaGrabberApp: App {
             probe: probe,
             installer: installer,
             prefs: prefs,
-            log: LogWriter(),
+            log: log,
             forceOnboarding: forceOnboarding
         ))
     }

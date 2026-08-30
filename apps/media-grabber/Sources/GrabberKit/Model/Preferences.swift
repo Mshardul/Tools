@@ -80,6 +80,12 @@ public final class Preferences: @unchecked Sendable {
         set { defaults.set(min(5, max(1, newValue)), forKey: "mg.maxAutoAttempts") }
     }
 
+    // Gates concurrent downloads only, not probes. DebugFlags.concurrencyCapOverride wins.
+    public var maxConcurrentDownloads: Int {
+        get { intValue(forKey: "maxConcurrentDownloads", default: 3) }
+        set { defaults.set(min(6, max(1, newValue)), forKey: "mg.maxConcurrentDownloads") }
+    }
+
     public var verboseLogging: Bool {
         get { defaults.bool(forKey: "mg.verboseLogging") }
         set { defaults.set(newValue, forKey: "mg.verboseLogging") }

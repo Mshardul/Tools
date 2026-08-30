@@ -5,12 +5,20 @@ public struct MediaMetadata: Sendable, Equatable {
     public let durationSeconds: Int?
     public let isPlaylist: Bool
     public let sourceURL: String
+    public let extractor: String?
 
-    public init(title: String, durationSeconds: Int?, isPlaylist: Bool, sourceURL: String) {
+    public init(
+        title: String,
+        durationSeconds: Int?,
+        isPlaylist: Bool,
+        sourceURL: String,
+        extractor: String? = nil
+    ) {
         self.title = title
         self.durationSeconds = durationSeconds
         self.isPlaylist = isPlaylist
         self.sourceURL = sourceURL
+        self.extractor = extractor
     }
 }
 
@@ -20,6 +28,7 @@ public enum MetadataError: Error, Sendable, Equatable {
     case unavailable
     case network
     case ytDlpMissing
+    case launchFailed
     case malformedOutput
     case unknown(raw: String)
 }
@@ -69,16 +78,24 @@ public actor MetadataProbe: MetadataProbing {
         guard result.exitCode == 0 else {
             return .failure(classify(stderr: stderr, exitCode: result.exitCode))
         }
-        return decode(stdout, sourceURL: url)
+        return Self.decode(stdout, sourceURL: url)
     }
 
-    private func decode(
+    static func decodeForTest(
+        _ stdout: String,
+        sourceURL: String
+    ) -> Result<MediaMetadata, MetadataError> {
+        decode(stdout, sourceURL: sourceURL)
+    }
+
+    private static func decode(
         _ stdout: String,
         sourceURL: String
     ) -> Result<MediaMetadata, MetadataError> {
         struct Payload: Decodable {
             let title: String?
             let duration: Double?
+            let extractor: String?
             // swiftlint:disable:next identifier_name
             let _type: String?
         }
@@ -93,11 +110,15 @@ public actor MetadataProbe: MetadataProbing {
             title: title,
             durationSeconds: payload.duration.map { Int($0.rounded()) },
             isPlaylist: payload._type == "playlist",
-            sourceURL: sourceURL
+            sourceURL: sourceURL,
+            extractor: payload.extractor
         ))
     }
 
-    private func classify(stderr: String, exitCode _: Int32) -> MetadataError {
+    private func classify(stderr: String, exitCode: Int32) -> MetadataError {
+        if exitCode == 127, stderr.contains("launch failed:") {
+            return .launchFailed
+        }
         if stderr.isEmpty {
             return .ytDlpMissing
         }

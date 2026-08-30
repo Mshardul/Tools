@@ -30,6 +30,7 @@ these values; if they disagree, this file wins.
   - [4.5 Onboarding](#45-onboarding)
   - [4.6 Preferences](#46-preferences)
   - [4.7 Diagnostics](#47-diagnostics)
+  - [4.8 Confirmation dialog](#48-confirmation-dialog)
 - [5. Palette token sets](#5-palette-token-sets)
   - [5.1 Token list](#51-token-list)
   - [5.2 Tape Deck palettes (light)](#52-tape-deck-palettes-light)
@@ -234,36 +235,43 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 - **Filter chips** — `All · Downloading · Done · Needs attention`. "Needs attention" shows a count badge when > 0.
 - **`⊞ Columns` button** (right-aligned) — opens a dropdown of checkboxes to show/hide columns.
 
-**Columns:**
+**Columns:** 16, one active sort at a time (`↕` cycles asc → desc → off).
 
 | Column | Default | Hideable | Reorderable | Sort | Filter |
 |---|---|---|---|---|---|
 | Title | ✓ visible | no | yes | yes | yes (text) |
-| Site | ✓ visible | yes | yes | yes | yes (checklist) |
-| Format | ✓ visible | yes | yes | yes | yes (checklist) |
 | Status | ✓ visible | yes | yes | yes | yes (checklist) |
 | Progress | ✓ visible | yes | yes | yes | — |
-| Speed / ETA | ✓ visible | yes | yes | yes | — |
-| Added | hidden | yes | yes | yes | — |
-| Finished | hidden | yes | yes | yes | — |
-| Size | hidden | yes | yes | yes | — |
+| Speed | ✓ visible | yes | yes | yes | — |
+| ETA | ✓ visible | yes | yes | yes | — |
+| Type | ✓ visible | yes | yes | yes | yes (checklist — Audio / Video) |
+| Quality | ✓ visible | yes | yes | yes | yes (checklist — 1080p / 720p / … / m4a / mp3) |
+| Size | ✓ visible | yes | yes | yes | — |
+| Site | hidden | yes | yes | yes | yes (checklist) |
+| Added at | hidden | yes | yes | yes | — |
+| Finished at | hidden | yes | yes | yes | — |
+| Duration | hidden | yes | yes | yes | — |
 | Destination | hidden | yes | yes | yes | yes (checklist) |
 | Attempt | hidden | yes | yes | yes | — |
-| Playlist | hidden | yes | yes | yes | yes (checklist) |
-| Duration | hidden | yes | yes | yes | — |
 | Client used | hidden | yes | yes | yes | yes (checklist) |
 | **Actions** | ✓ visible | **no** | **no (pinned last)** | — | — |
 
 - **Column headers are draggable** to reorder (except Actions, pinned last).
-- Column order, visibility, per-column sort direction, and active filters **persist** as a `ColumnConfig` in `columns.json` (separate from `Preferences`; see spec §4).
-- No per-row expansion. No detail view. Ever.
+- Column order, visibility, the active sort column + direction, and active filters **persist** as a `ColumnConfig` in `columns.json` (separate from `Preferences`; see spec §4).
+- A column whose data source is not yet populated (`Attempt`, `Client used`) shows an em-dash and still sorts; a checklist filter with only a "(none)" option is allowed.
+- Nil values always sort **last**, regardless of direction.
+- There is **no "Playlist" column** — a playlist's membership is shown by the group header + indented child rows + spine (§4.2.4), not a column.
+- No per-row expansion. No detail view. No row selection. Ever — the Actions column is the entire per-row interaction model.
 
 **Cell treatments:**
 - *Title* — motif spinner prefix on an actively-downloading row; playlist children indented with the spine connector (§4.2.4).
-- *Site* — utility face, `--dim`.
-- *Status* — utility-face pill with a leading state dot: `queued` (`--accent-2`), `probing`, `downloading` (`--accent`, glowing dot), `paused`, `waiting for network`, `cooling down` (`--warn`), `saved` (`--dim`), `couldn't verify you` / other failures (`--danger`), `cancelled`. Failure text is the plain-English reason, not an error code.
+- *Status* — utility-face pill with a leading state dot: `queued` (`--accent-2`; shows `queued · #N` position), `probing`, `downloading` (`--accent`, glowing dot), `paused`, `waiting for network`, `cooling down` (`--warn`), `saved` (`--dim`), `couldn't verify you` / other failures (`--danger`), `cancelled`. Failure text is the plain-English reason, not an error code.
 - *Progress* — thin bar (`--bar-fill`), only on active rows; blank otherwise.
-- *Actions* — contextual icon buttons (glyphs per §3.4): pause/resume, cancel, force-start, retry, retry-with-cookies, reveal-in-Finder, open-in-browser, remove, show-log (opens the raw log file in the default text editor — no in-app log view).
+- *Speed*, *ETA* — utility face, `--dim`; blank on non-running rows.
+- *Type* — `Audio` / `Video`. *Quality* — the selector (`1080p` … or `m4a` / `mp3`). Both `--dim`.
+- *Size* — known total; `--dim`; em-dash until known.
+- *Site* — utility face, `--dim`.
+- *Actions* — contextual icon buttons (glyphs per §3.4): pause/resume, cancel, force-start, retry, retry-with-cookies, reveal-in-Finder, open-in-browser, remove, show-log (opens the raw log file in the default text editor — no in-app log view). Every button is laid out; one whose action does not apply to the row's state renders disabled.
 
 #### 4.2.4 Playlist group in the table
 
@@ -378,6 +386,26 @@ New `Preferences` fields this section introduces: `maxAutoAttempts: Int`
 - Runs a canary probe, then shows a **report card** — rows of `key : value`, values coloured by verdict (`--accent` ok, `--warn` attention, `--danger` bad): canary result + time, yt-dlp version + freshness, ffmpeg version, bot-check shield health + port, cookie source + readability, detected client, **player_client rotation order** (read-only), active cooldown, network + VPN status.
 - **Copy report** — puts a redacted plain-text block on the clipboard (redaction per spec §8.5).
 - **Copy diagnostic bundle** — the `DiagnosticBundle` zip (app-log tail + job log + this report). This is the only place it lives (not in Preferences).
+
+---
+
+### 4.8 Confirmation dialog
+
+A reusable modal the app raises a handful of times across its life (duplicate submit, graceful quit, reveal-target-missing, persistence write failure). One host, driven by `AppModel.pendingConfirmation`.
+
+- **Scrim** — the whole window dims behind a `--ground` fill at ~60% alpha; clicks on the scrim do nothing (the choice is explicit).
+- **Card** — centered, `max-width` ~420 px, skin card treatment: `--panel-solid` fill, skin border + `cardRadius` + elevation shadow. Padding `s5` all round, `s4` between rows.
+- **Layout**, top to bottom:
+  - Optional **warning glyph** (§3.4) — shown only when `isDestructive`, tinted `--danger`.
+  - **Title** — `displayFont` 15 semibold, `--headline`.
+  - **Message** — `bodyFont` 13, `--dim`, wraps freely.
+  - Optional **"Don't ask again"** checkbox row — present only when `suppressionKey != nil`; ticking it and confirming persists suppression to `AppStorage` under that key.
+  - **Buttons**, right-aligned, `s2` gap:
+    - **Cancel** — plain / `--panel`, `controlRadius`. Omitted entirely in notice mode (`cancelTitle == nil`).
+    - **Confirm** — filled: `--danger` when `isDestructive`, else `--accent` (skin `--go` gradient on Aurora). `--onAccent` label.
+- **Motion** — card scales/fades in over `--dur` / `--ease`; disabled under reduce-motion (appears instantly).
+- **Keyboard** — Return confirms; Esc cancels (or dismisses a notice). Initial focus is on **Cancel** for a destructive action, **Confirm** otherwise.
+- **VoiceOver** — the card is a modal alert (`.isModal`), focus is trapped inside it, and the message text is read on present.
 
 ---
 

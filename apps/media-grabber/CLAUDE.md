@@ -1,8 +1,58 @@
 # MediaGrabber — agent notes
 
 macOS app. Two targets: `GrabberKit` (headless SPM-style framework, no SwiftUI)
-and `MediaGrabber` (thin SwiftUI app over it). Tuist-generated project. Plan:
-`docs/superpowers/plans/2026-08-29-media-grabber-phase-1.md`.
+and `MediaGrabber` (thin SwiftUI app over it). Tuist-generated project.
+
+Specs: `docs/superpowers/specs/` — parent design `2026-08-28-youtube-downloader-mac-design.md`
+(living), current phase spec alongside it. Built phases' specs + plans move to
+`specs/archived/` and `plans/archived/`. Phase 1: `specs/archived/core-download-pipeline.md`.
+
+## Phase scoping — three rules
+
+Every planning conversation decides, per item raised: IN this phase, or DEFERRED.
+
+1. **In this phase → build it to final-app form.** No stubs to swap later, no
+   "minimum that passes this phase," no shape a later phase must replace. If the
+   confirmation dialog is in scope, it gets its real skinned UI + design-system
+   entry now.
+2. **Deferred → a one-line hint in the phase that owns it.** Don't fully solve
+   it, don't silently drop it. Pick its phase, add the briefest pointer there
+   (a few words — "review X", "plan Y") so it surfaces when that phase starts.
+   Hints live in the parent design spec §12 or the target phase's spec.
+3. **Completed phases are closed.** No blame, no rework to match a later rule,
+   no framing current work as fixing past mistakes. If current work must touch
+   completed-phase code (e.g. the P2 engine rework demoting `DownloadJob`), do
+   it as a plain change the current phase makes. Present and future only.
+4. **Splitting an oversized phase → new sibling phases, renumber.** Never
+   `4a`/`4b`. Insert a phase, shift every later number up. Each result is still
+   an independently buildable working-app increment. Finish the design + spec
+   for the first split phase (dependency order); mark the rest "in progress"
+   for their normal turn. Update §12 + §12.2 numbering in the same pass.
+
+## Design decisions
+
+- **Every code change is made for the app's end state, not the current phase.**
+  The target is the app as envisioned at its final phase (all features:
+  multi-concurrent scheduler, per-host rate limiting, circuit breaker, adaptive
+  concurrency, playlist queues of thousands, retry/backoff, cookies, POT
+  rotation, diagnostics). Pick the structure that serves that. Do NOT build the
+  minimum that passes this phase and plan to replace it later — rewriting/
+  removing working code is wasted effort and is treated as a failure of the
+  design pass, not normal iteration. Shell-and-fill (build the full structure
+  now, a later phase adds cases/wiring without relayout) is the pattern; rip-
+  and-replace is not.
+- Decide architecture on what the app / subsystem should be at its end state.
+  The phase plan (`docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md`
+  §12) is an output — it gets rewritten to match a decision, not treated as fixed
+  scope. Never argue a design choice from "a later phase needs it"; argue from
+  the app-level need, pick the fit, then update the phase list and say so.
+- When weighing an option, walk the concrete future features that would stress
+  it (playlists → thousand-row queues, higher concurrency cap, larger history)
+  and check the option holds. "Sub-millisecond at current scale" is not the
+  test; "still the right shape when the headline feature lands" is.
+- Brainstorming forks: plain-chat prose — the fork, the real tradeoff, a
+  recommendation. Not the AskUserQuestion box. One position at a time; revise on
+  merit, don't pitch-then-collapse.
 
 ## Build & test
 

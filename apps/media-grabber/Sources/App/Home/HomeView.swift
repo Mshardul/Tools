@@ -22,11 +22,8 @@ struct HomeView: View {
                     hero
                 }
                 pasteBlock
-                if !hasGrabbedOnce, appModel.job == nil {
+                if !hasGrabbedOnce, appModel.lastSubmittedJobID == nil {
                     stepCards
-                }
-                if let job = appModel.job {
-                    jobRow(job)
                 }
             }
             .padding(Spacing.s6)
@@ -121,7 +118,7 @@ struct HomeView: View {
     }
 
     private var runwayAttached: Bool {
-        appModel.resolved != nil && appModel.job == nil
+        appModel.resolved != nil && appModel.lastSubmittedJobID == nil
     }
 
     private var stepCards: some View {
@@ -150,84 +147,6 @@ struct HomeView: View {
             theme.palette.panel,
             in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
         )
-    }
-
-    private func jobRow(_ job: DownloadJob) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s2) {
-            HStack(spacing: Spacing.s3) {
-                if case .running = job.state {
-                    MotifView(isActive: true, size: 14)
-                }
-                Text(job.title ?? "Downloading")
-                    .font(theme.skin.bodyFont(13, .medium))
-                    .foregroundStyle(theme.palette.text)
-                Spacer()
-                Text(statusWord(job.state))
-                    .font(theme.skin.monoFont(11, .regular))
-                    .foregroundStyle(statusColor(job.state))
-                rowAction(job)
-            }
-            ProgressView(value: job.progress?.fraction ?? 0)
-                .tint(theme.palette.accent)
-            if case let .failed(errorClass) = job.state, case let .unknown(raw) = errorClass {
-                DisclosureGroup("Details") {
-                    Text(raw)
-                        .font(theme.skin.monoFont(10, .regular))
-                        .foregroundStyle(theme.palette.dim)
-                        .textSelection(.enabled)
-                }
-                .font(theme.skin.bodyFont(11, .regular))
-            }
-        }
-        .padding(Spacing.s3)
-        .background(
-            theme.palette.panel,
-            in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
-        )
-    }
-
-    @ViewBuilder
-    private func rowAction(_ job: DownloadJob) -> some View {
-        switch job.state {
-        case .completed:
-            Button("Reveal") { appModel.reveal() }
-                .accessibilityLabel("Reveal in Finder")
-        case .running:
-            Button("Cancel") { Task { await appModel.cancelJob() } }
-                .accessibilityLabel("Cancel download")
-        default:
-            EmptyView()
-        }
-    }
-
-    private func statusWord(_ state: JobState) -> String {
-        switch state {
-        case .queued: "Queued"
-        case .probing: "Resolving\u{2026}"
-        case .running: "Downloading"
-        case .paused: "Paused"
-        case .waitingForNetwork: "Waiting for network"
-        case .cooldown: "Cooling down"
-        case .completed: "Saved"
-        case .cancelled: "Cancelled"
-        case let .failed(errorClass): "Failed \u{2014} \(Self.failureCopy(errorClass))"
-        }
-    }
-
-    private func statusColor(_ state: JobState) -> Color {
-        switch state {
-        case .completed: theme.palette.accent
-        case .failed: theme.palette.danger
-        default: theme.palette.dim
-        }
-    }
-
-    private static func failureCopy(_ errorClass: ErrorClass) -> String {
-        switch errorClass {
-        case .networkDown: "No internet connection."
-        case .depMissing: "yt-dlp is missing \u{2014} reopen setup."
-        default: "Download failed."
-        }
     }
 
     private func resolve() async {

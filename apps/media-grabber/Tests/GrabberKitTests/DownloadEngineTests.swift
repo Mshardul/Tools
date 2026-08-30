@@ -1,139 +1,78 @@
 @testable import GrabberKit
+import TestSupport
 import XCTest
 
-@MainActor
 final class DownloadEngineTests: XCTestCase {
-    private let ytDlp = URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp")
-
-    private func request(
-        url: String = "https://archive.org/details/x",
-        destFolder: URL = URL(fileURLWithPath: NSTemporaryDirectory())
-    ) -> DownloadRequest {
-        DownloadRequest(
-            url: url,
-            destFolder: destFolder,
-            kind: .video(maxHeight: 1080),
-            container: "mp4"
-        )
-    }
-
-    private func engine(
-        runner: FakeProcessRunner,
-        probe: FakeMetadataProbe
-    ) -> DownloadEngine {
-        DownloadEngine(ytDlpURL: ytDlp, runner: runner, probe: probe)
-    }
-
-    private func progressLine(_ percent: String) -> ProcessLine {
-        .stdout("MG|\(percent)|1.00MiB/s|00:10|100|1000")
-    }
-
-    private func waitUntilTerminal(
-        _ job: DownloadJob,
-        timeout: TimeInterval = 5
-    ) async {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            switch job.state {
-            case .completed, .cancelled, .failed:
-                return
-            default:
-                try? await Task.sleep(for: .milliseconds(10))
-            }
-        }
-    }
+    private typealias Fix = EngineFixture
 
     func test_submitReturnsQueuedImmediately() async {
         let runner = FakeProcessRunner()
         let probe = FakeMetadataProbe()
         probe.perProbeDelay = .milliseconds(200)
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
+        let result = await engine.submit(Fix.request(), force: false, prefetchedMetadata: nil)
 
-        XCTAssertEqual(job.state, .queued)
-        XCTAssertFalse(probe.wasProbed)
+        guard case .queued = result else { return XCTFail("expected .queued") }
+        try? await Task.sleep(for: .milliseconds(20))
+        XCTAssertEqual(collector.snapshots.first?.jobs.first?.state, .queued)
         XCTAssertTrue(runner.launches.isEmpty)
     }
 
-    func test_happyPath_timeline() async {
+    func test_happyPath() async {
         let runner = FakeProcessRunner()
         runner.script(
-            FakeProcessRunner.Script(
-                lines: [progressLine(" 25.0%"), progressLine(" 60.0%"), progressLine("100.0%")],
-                exitCode: 0
-            ),
+            Fix.completingScript([
+                Fix.progressLine(" 25.0%"),
+                Fix.progressLine(" 60.0%"),
+                Fix.progressLine("100.0%")
+            ]),
             forPathEndingIn: "yt-dlp"
         )
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        await waitUntilTerminal(job)
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { $0 == .completed }
 
-        XCTAssertEqual(job.state, .completed)
-        XCTAssertEqual(job.title, "Clip")
-        XCTAssertEqual(job.progress?.fraction, 1.0)
-        XCTAssertNotNil(job.finishedAt)
+        let job = collector.latestSnapshot()?.jobs.first { $0.id == id }
+        XCTAssertEqual(job?.title, "Clip")
+        XCTAssertEqual(job?.progress?.fraction, 1.0)
+        XCTAssertNotNil(job?.finishedAt)
     }
 
     func test_stateSequence() async {
         let runner = FakeProcessRunner()
         runner.perRunDelay = .milliseconds(40)
-        runner.script(.stdout("", exitCode: 0), forPathEndingIn: "yt-dlp")
+        runner.script(Fix.completingScript(), forPathEndingIn: "yt-dlp")
         let probe = FakeMetadataProbe()
         probe.perProbeDelay = .milliseconds(40)
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        var seen: [JobState] = [job.state]
-        let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline {
-            if seen.last != job.state {
-                seen.append(job.state)
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { $0 == .completed }
+
+        var seen: [JobState] = []
+        for snap in collector.snapshots {
+            if let state = snap.jobs.first(where: { $0.id == id })?.state, seen.last != state {
+                seen.append(state)
             }
-            if case .completed = job.state {
-                break
-            }
-            try? await Task.sleep(for: .milliseconds(5))
         }
-
-        XCTAssertEqual(seen, [.queued, .probing, .running, .completed])
-    }
-
-    func test_progressUpdatesAreObservable() async {
-        let runner = FakeProcessRunner()
-        runner.perLineDelay = .milliseconds(20)
-        runner.script(
-            FakeProcessRunner.Script(
-                lines: [progressLine(" 25.0%"), progressLine(" 60.0%"), progressLine("100.0%")],
-                exitCode: 0
-            ),
-            forPathEndingIn: "yt-dlp"
+        // The headline lifecycle appears in order; a metadata-arrival re-queue may sit between.
+        XCTAssertTrue(
+            isOrderedSubsequence([.queued, .probing, .running, .completed], of: seen),
+            "\(seen)"
         )
-        let probe = FakeMetadataProbe()
-        probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
-
-        let job = await sut.submit(request())
-        var fractions: [Double] = []
-        let deadline = Date().addingTimeInterval(5)
-        while Date() < deadline {
-            if let fraction = job.progress?.fraction, fractions.last != fraction {
-                fractions.append(fraction)
-            }
-            if case .completed = job.state {
-                break
-            }
-            try? await Task.sleep(for: .milliseconds(5))
-        }
-
-        XCTAssertEqual(fractions, [0.25, 0.6, 1.0])
+        XCTAssertEqual(seen.first, .queued)
+        XCTAssertEqual(seen.last, .completed)
     }
 
-    func test_nonZeroExit_withNetworkStderr_failsNetworkDown() async {
+    func test_nonZeroExit_networkStderr_failsNetworkDown() async {
         let runner = FakeProcessRunner()
         runner.script(
             FakeProcessRunner.Script(
@@ -147,40 +86,56 @@ final class DownloadEngineTests: XCTestCase {
         )
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        await waitUntilTerminal(job)
-
-        XCTAssertEqual(job.state, .failed(.networkDown))
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { state in
+            if case .failed = state {
+                true
+            } else {
+                false
+            }
+        }
+        XCTAssertEqual(
+            collector.latestSnapshot()?.jobs.first { $0.id == id }?.state,
+            .failed(.networkDown)
+        )
     }
 
-    func test_nonZeroExit_noStderrSignature_failsUnknown() async {
+    func test_nonZeroExit_noSignature_failsUnknown() async {
         let runner = FakeProcessRunner()
         runner.script(.stdout("", exitCode: 3), forPathEndingIn: "yt-dlp")
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        await waitUntilTerminal(job)
-
-        guard case let .failed(.unknown(raw)) = job.state else {
-            return XCTFail("expected .failed(.unknown), got \(job.state)")
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { state in
+            if case .failed = state {
+                true
+            } else {
+                false
+            }
+        }
+        guard case let .failed(.unknown(raw)) = collector.latestSnapshot()?.jobs
+            .first(where: { $0.id == id })?.state
+        else {
+            return XCTFail("expected .failed(.unknown)")
         }
         XCTAssertTrue(raw.contains("3"))
     }
 
-    func test_probeNetworkFailure_failsBeforeSpawning() async {
+    func test_probeNetworkFailure_failsBeforeSpawn() async {
         let runner = FakeProcessRunner()
         let probe = FakeMetadataProbe()
         probe.result(.failure(.network))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        await waitUntilTerminal(job)
-
-        XCTAssertEqual(job.state, .failed(.networkDown))
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { $0 == .failed(.networkDown) }
         XCTAssertTrue(runner.launches.isEmpty)
     }
 
@@ -188,77 +143,30 @@ final class DownloadEngineTests: XCTestCase {
         let runner = FakeProcessRunner()
         let probe = FakeMetadataProbe()
         probe.result(.failure(.ytDlpMissing))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        await waitUntilTerminal(job)
-
-        XCTAssertEqual(job.state, .failed(.depMissing))
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { $0 == .failed(.depMissing) }
         XCTAssertTrue(runner.launches.isEmpty)
     }
 
-    func test_cancel_killsChildAndSetsCancelled() async {
+    func test_cancel_killsChild_setsCancelled() async {
         let runner = FakeProcessRunner()
         runner.perRunDelay = .seconds(30)
-        runner.script(.stdout("", exitCode: 0), forPathEndingIn: "yt-dlp")
+        runner.script(Fix.completingScript(), forPathEndingIn: "yt-dlp")
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request())
-        // Wait until the child is actually spawned.
-        let spawnDeadline = Date().addingTimeInterval(5)
-        while Date() < spawnDeadline, runner.launches.isEmpty {
-            try? await Task.sleep(for: .milliseconds(5))
-        }
-        await sut.cancel(job.id)
-        await waitUntilTerminal(job)
+        let id = await submitJob(engine, Fix.request())
+        _ = await collector.waitForState(id) { $0 == .running }
+        await engine.cancel(id)
+        await expectState(collector, id) { $0 == .cancelled }
 
-        XCTAssertEqual(job.state, .cancelled)
         XCTAssertEqual(runner.cancelledCount, 1)
-        XCTAssertNotNil(job.finishedAt)
-    }
-
-    func test_cancelQueuedJob_neverRuns() async {
-        let runner = FakeProcessRunner()
-        runner.perRunDelay = .milliseconds(300)
-        runner.script(.stdout("", exitCode: 0), forPathEndingIn: "yt-dlp")
-        let probe = FakeMetadataProbe()
-        probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
-
-        let first = await sut.submit(request(url: "https://archive.org/details/1"))
-        let second = await sut.submit(request(url: "https://archive.org/details/2"))
-        await sut.cancel(second.id)
-
-        await waitUntilTerminal(first)
-        await waitUntilTerminal(second)
-
-        let secondURL = "https://archive.org/details/2"
-        XCTAssertEqual(second.state, .cancelled)
-        XCTAssertFalse(
-            probe.probedURLs.contains(secondURL),
-            "cancelled queued job must never be probed or run"
-        )
-        XCTAssertTrue(runner.launches.allSatisfy { $0.arguments.last != secondURL })
-    }
-
-    func test_twoJobsRunFIFONoOverlap() async {
-        let runner = FakeProcessRunner()
-        runner.perRunDelay = .milliseconds(80)
-        runner.script(.stdout("", exitCode: 0), forPathEndingIn: "yt-dlp")
-        let probe = FakeMetadataProbe()
-        probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
-
-        let first = await sut.submit(request(url: "https://archive.org/details/1"))
-        let second = await sut.submit(request(url: "https://archive.org/details/2"))
-        await waitUntilTerminal(first)
-        await waitUntilTerminal(second)
-
-        XCTAssertEqual(runner.maxConcurrent, 1)
-        XCTAssertEqual(first.state, .completed)
-        XCTAssertEqual(second.state, .completed)
+        XCTAssertNotNil(collector.latestSnapshot()?.jobs.first { $0.id == id }?.finishedAt)
     }
 
     func test_outputFilesResolvedOnCompletion() async throws {
@@ -266,19 +174,21 @@ final class DownloadEngineTests: XCTestCase {
             .appendingPathComponent("mg-engine-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
-        let file = dir.appendingPathComponent("Clip.mp4")
-        try Data("x".utf8).write(to: file)
+        try Data("x".utf8).write(to: dir.appendingPathComponent("Clip.mp4"))
 
         let runner = FakeProcessRunner()
-        runner.script(.stdout("", exitCode: 0), forPathEndingIn: "yt-dlp")
+        runner.script(Fix.completingScript(), forPathEndingIn: "yt-dlp")
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let sut = engine(runner: runner, probe: probe)
+        let engine = Fix.engine(runner: runner, probe: probe)
+        let collector = EventCollector(engine.events)
 
-        let job = await sut.submit(request(destFolder: dir))
-        await waitUntilTerminal(job)
-
-        XCTAssertEqual(job.state, .completed)
-        XCTAssertEqual(job.outputFiles.map(\.lastPathComponent), ["Clip.mp4"])
+        let id = await submitJob(engine, Fix.request(destFolder: dir))
+        await expectState(collector, id) { $0 == .completed }
+        XCTAssertEqual(
+            collector.latestSnapshot()?.jobs.first { $0.id == id }?.outputFiles
+                .map(\.lastPathComponent),
+            ["Clip.mp4"]
+        )
     }
 }

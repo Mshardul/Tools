@@ -1,42 +1,24 @@
 import Foundation
 @testable import GrabberKit
 @testable import MediaGrabber
-
-final class LockedBox<Value>: @unchecked Sendable {
-    private var value: Value
-    private let lock: os_unfair_lock_t
-
-    init(_ value: Value) {
-        self.value = value
-        lock = .allocate(capacity: 1)
-        lock.initialize(to: os_unfair_lock())
-    }
-
-    deinit {
-        lock.deinitialize(count: 1)
-        lock.deallocate()
-    }
-
-    func read<T>(_ body: (Value) -> T) -> T {
-        os_unfair_lock_lock(lock)
-        defer { os_unfair_lock_unlock(lock) }
-        return body(value)
-    }
-
-    @discardableResult
-    func mutate<T>(_ body: (inout Value) -> T) -> T {
-        os_unfair_lock_lock(lock)
-        defer { os_unfair_lock_unlock(lock) }
-        return body(&value)
-    }
-}
+import TestSupport
 
 final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     private let box = LockedBox(State())
+    private let continuation: AsyncStream<QueueEvent>.Continuation
+
+    let events: AsyncStream<QueueEvent>
 
     private struct State {
         var submitted: [DownloadRequest] = []
         var cancelled: [UUID] = []
+        var nextResult: SubmitResult?
+    }
+
+    init() {
+        let (stream, continuation) = AsyncStream<QueueEvent>.makeStream()
+        events = stream
+        self.continuation = continuation
     }
 
     var submittedRequests: [DownloadRequest] {
@@ -47,15 +29,43 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.read { $0.cancelled }
     }
 
-    @discardableResult
-    func submit(_ request: DownloadRequest) async -> DownloadJob {
-        box.mutate { $0.submitted.append(request) }
-        return await MainActor.run { DownloadJob(request: request) }
+    func stubNextResult(_ result: SubmitResult) {
+        box.mutate { $0.nextResult = result }
     }
+
+    func emit(_ event: QueueEvent) {
+        continuation.yield(event)
+    }
+
+    func currentSnapshot() async -> QueueSnapshot {
+        QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
+    }
+
+    func hasActiveJobs() async -> Bool {
+        false
+    }
+
+    func submit(
+        _ request: DownloadRequest,
+        force _: Bool,
+        prefetchedMetadata _: MediaMetadata?
+    ) async -> SubmitResult {
+        box.mutate { $0.submitted.append(request) }
+        return box.read { $0.nextResult } ?? .queued(UUID())
+    }
+
+    func restore(active _: [PersistedJob], history _: [PersistedJob]) async {}
+    func revalidate() async {}
+    func pause(_: UUID) async {}
+    func resume(_: UUID) async {}
 
     func cancel(_ jobID: UUID) async {
         box.mutate { $0.cancelled.append(jobID) }
     }
+
+    func remove(_: UUID) async {}
+    func forceStart(_: UUID) async {}
+    func shutdown() async {}
 }
 
 final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {

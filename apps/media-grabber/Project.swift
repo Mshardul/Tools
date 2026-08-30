@@ -48,6 +48,16 @@ let project = Project(
             dependencies: []
         ),
         .target(
+            name: "TestSupport",
+            destinations: .macOS,
+            product: .framework,
+            bundleId: "app.mediagrabber.mac.testsupport",
+            deploymentTargets: .macOS("14.0"),
+            sources: ["Tests/TestSupport/**"],
+            resources: ["Tests/GrabberKitTests/Fixtures/**"],
+            dependencies: [.target(name: "GrabberKit")]
+        ),
+        .target(
             name: "GrabberKitTests",
             destinations: .macOS,
             product: .unitTests,
@@ -55,7 +65,7 @@ let project = Project(
             deploymentTargets: .macOS("14.0"),
             sources: ["Tests/GrabberKitTests/**"],
             resources: ["Tests/GrabberKitTests/Fixtures/**"],
-            dependencies: [.target(name: "GrabberKit")]
+            dependencies: [.target(name: "GrabberKit"), .target(name: "TestSupport")]
         ),
         .target(
             name: "AppUnitTests",
@@ -64,7 +74,7 @@ let project = Project(
             bundleId: "app.mediagrabber.mac.tests",
             deploymentTargets: .macOS("14.0"),
             sources: ["Tests/AppUnitTests/**"],
-            dependencies: [.target(name: "MediaGrabber")]
+            dependencies: [.target(name: "MediaGrabber"), .target(name: "TestSupport")]
         )
     ]
 )

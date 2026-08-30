@@ -111,7 +111,7 @@ apps/media-grabber/
   - `HomeView.swift` — paste field, probe status, runway (Link · Type · Format · Save to), Grab; hosts the Downloads table
   - `RunwaySlot.swift` — one labelled slot (a dropdown or a resolved value) with a filled / hollow state
   - `PlaylistPickerView.swift` — the modal checklist (thumbnail, title, duration; select all / none; filter; live count + size; Add N)
-  - `DownloadsTable.swift` — column-model rendering: show/hide, drag-reorder, per-column sort + filter menus, the playlist group header + spine
+  - `DownloadsTable.swift` — column-model rendering: show/hide, column-header drag-reorder, per-column sort + filter menus, the synced 2-axis scroll, the virtualised row body, the playlist group header + spine (queue-row drag-reorder is deferred — no phase yet)
   - `DownloadRow.swift` — one video row: status pill, progress, contextual action buttons. No expansion.
   - `ColumnsMenu.swift` — the `⊞ Columns` checkbox menu
 - `HealthStrip.swift` — the ambient-state chips (shield, engine freshness, online, per-host cooldown). A chip in a bad state grows a `↻` refresh icon that runs its background fix (restart the POT provider / upgrade yt-dlp / re-poll the network); on success the chip goes green, on failure an error toast explains why and the chip stays bad. The cooldown chip has no `↻` — clicking it opens a why / when-it-clears / Retry-now popover.
@@ -198,26 +198,40 @@ logging surface is unit-tested without launching the app.
 - `playlist: PlaylistSelection` — `.notPlaylist | .all | .items(String)` (yt-dlp range syntax `"1-5,8"`)
 - `outputTemplate: String` — default `%(title)s.%(ext)s`, from Preferences
 
-### DownloadJob (`@Observable`; one per table row)
+### DownloadJob (engine-internal from Phase 2; one per queue entry)
+
+Phase 1 shipped this `@MainActor @Observable`, bound directly by the table.
+Phase 2 demotes it to an engine-internal reference model (actor-isolated, not
+`@Observable`); the engine emits immutable `JobSnapshot` values on its
+`AsyncStream<QueueEvent>` and the UI binds to `RowStore`'s `RowModel`s built
+from those. `JobSnapshot` carries the full field set below and is never edited
+by a later phase — fields a later phase populates ship defaulted.
 
 - `id: UUID`
 - `request: DownloadRequest`
-- `title: String?` — filled by the metadata probe
-- `playlistGroupID: UUID?` and `playlistProgress: (index: Int, total: Int)?`
+- `title: String?`, `extractor: String?`, `durationSeconds: Int?` — from the probe (or from `prefetchedMetadata` at submit); `extractor` is the Site identity
+- `playlistGroupID: UUID?` — Phase 8; playlist rollup is a `RowStore` aggregate (`PlaylistGroup`), not a job field
 - `state: JobState` — `.queued | .probing | .running | .paused | .waitingForNetwork | .cooldown(until:) | .completed | .failed(ErrorClass) | .cancelled`
 - `progress: Progress?` — `fraction`, `speedBytesPerSec?`, `etaSeconds?`, `downloadedBytes`, `totalBytes`
-- `attempt: Int` — `maxAutoAttempts` comes from `Preferences` (1…5, default 5)
-- `playerClientUsed: String?` — which YouTube client the last attempt impersonated
+- `sizeBytes: Int64?` — the current download process's first-reported `total_bytes`; re-set by a fresh process on resume/restart
+- `actualQuality: String?` — Phase 4 (the `IntegrityCheck` ffprobe reads the real resolution)
+- `attempt: Int` — Phase 4; `maxAutoAttempts` from `Preferences`
+- `playerClientUsed: String?` — Phase 7
+- `integrityVerdict: IntegrityVerdict?` — Phase 4
+- `availableActions: Set<RowAction>` — computed by the engine from `state`
 - `outputFiles: [URL]` — resolved on completion (for Reveal in Finder)
-- `logPath: URL` — the per-job raw log
+- `logPath: URL` — the per-job raw log (`JobLog`, exists from Phase 2)
 - `addedAt: Date`, `finishedAt: Date?`
+
+The queue also carries a `QueueSnapshot.queueHalt: QueueHaltReason?`
+(`.depMissing` from Phase 2; `.circuitOpen` / `.networkDown` from Phase 6).
 
 ### Preferences (`@Observable`, UserDefaults-backed)
 
 - `defaultDestFolder: URL` (default `~/Downloads`)
 - `lastUsedDestFolder: URL` — seeds the runway's "Save to" slot
 - `skin: Skin` (default `.aurora`), `palette: Palette` (default Aurora / Mint & Iris)
-- `maxConcurrentDownloads: Int` (default 2, range 1…5)
+- `maxConcurrentDownloads: Int` (default 3, range 1…6 — a conservative ceiling until Phase 6's circuit breaker; Phase 6 may widen it)
 - `defaultKind`, `defaultMaxHeight` (default 1080), `defaultAudioCodec` (default m4a)
 - `outputTemplate: String`
 - `clipboardAutoDetect: Bool` (default true)
@@ -286,14 +300,13 @@ contract.
 
 ### 5.4 Downloads table
 
-- One table, newest on top, **one row per video**.
-- Above it: filter chips (`All · Downloading · Done · Needs attention`, the last with a count badge) and a `⊞ Columns` button (a checkbox menu to show / hide columns).
-- **Default columns:** Title · Site · Format · Status · Progress · Speed/ETA · **Actions**.
-- **Available to add:** Added · Finished · Size · Destination · Attempt · Playlist · Duration · Client used.
-- Columns are **draggable to reorder**. Actions is pinned last and cannot hide or move; Title cannot hide but can move. Column order and visibility persist.
-- Per-column **sort** (`↕` cycles asc → desc → off) and **filter** (`▽` opens a menu) where meaningful; Progress and Speed/ETA are sort-only; Actions is neither.
-- The Status cell shows the plain-language state; a failure shows its reason sentence. The Actions column carries the contextual buttons: pause / resume, cancel, **force-start `⏫`**, retry, retry-with-cookies `🔑`, reveal in Finder, open in browser, remove, and show log (opens the raw log file in the default text editor).
-- **There is no per-row expansion and no detail view.** Failure detail is the status reason plus the row actions plus the external log.
+- One table, newest on top, **one row per video**. The paste field, filter chips, `⊞ Columns` button, and column header row are a fixed region; the rows scroll independently below (rows virtualised — thousands of rows without full materialisation). When visible columns overflow the width the body and the header row scroll horizontally in sync.
+- Above it: filter chips (`All · Downloading · Done · Needs attention`, the last with a count badge; a "Clear filters" button appears when the active filters hide every row) and a `⊞ Columns` button (a checkbox menu, all 16 columns).
+- **16 columns, full table in design-system §4.2.3.** Default-visible: Title · Status · Progress · Speed · ETA · Type · Quality · Size · **Actions**. Hidden by default: Site · Added at · Finished at · Duration · Destination · Attempt · Client used.
+- Columns are **draggable to reorder**. Actions is pinned last and cannot hide or move; Title cannot hide but can move. Column order, visibility, the active sort, and filters persist.
+- **One active sort column** (`↕` cycles asc → desc → off; a new column's `↕` clears the previous); per-column **filter** (`▽` opens a menu) where meaningful; Progress / Speed / ETA / Size are sort-only; Actions is neither. Nil values sort last regardless of direction.
+- The Status cell shows the plain-language state (`queued` shows `· #N` position); a failure shows its reason sentence. The Actions column carries the contextual buttons: pause / resume, cancel, **force-start `⏫`**, retry, retry-with-cookies `🔑`, reveal in Finder, open in browser, remove, and show log (opens the raw log file in the default text editor). Every button is laid out; one that does not apply to the row's state renders disabled.
+- **There is no per-row expansion, no detail view, and no row selection.** Failure detail is the status reason plus the row actions plus the external log.
 
 ### 5.5 Playlist group in the table
 
@@ -601,7 +614,27 @@ smoke checklist passes on a real machine · a commit is tagged `phase-N`.
 When a phase is reached its full detail is written to its own
 `docs/superpowers/specs/<topic>.md`, then a `docs/superpowers/plans/` file, then
 it is built. Later phases are refined by what the earlier ones teach. Phase 1
-(`specs/core-download-pipeline.md`) is built.
+(`specs/archived/core-download-pipeline.md`) is built. A phase's spec and plan
+move to `specs/archived/` and `plans/archived/` once it is built; the living
+reference docs (this file, `apps/media-grabber/docs/design-system.md`) are not
+archived.
+
+**Scoping rule (every phase).** When detailing a phase, each concern that comes
+up is either *in* that phase or *deferred*. If in: it is built to its
+final-app form — no stub a later phase must replace. If deferred: a one-line
+hint (a few words — "review X", "plan Y") is added to the stub of the phase
+that will own it, so it resurfaces when that phase is detailed. A phase already
+marked built is closed — later work may change its code as part of the current
+phase's rework, stated plainly as such, but its past choices are not
+relitigated.
+
+**Splitting a phase.** If a phase grows too large to detail or build as one
+unit, split it into **new sibling phases** — insert a phase and renumber every
+later one up (never `4a` / `4b`). Each resulting phase is still an
+independently buildable, working-app-at-its-boundary increment. Complete the
+design and spec for the first split phase in dependency order; mark the
+remaining ones "in progress" and detail them at their normal turn. Renumber
+this list and §12.2 in the same pass.
 
 Everything non-UI lives in `GrabberKit` and is headless-testable. TDD
 throughout: the test comes before the implementation for every unit.
@@ -616,25 +649,27 @@ item inside it waits on a work item in a later phase. A phase that lays out a
 shell (a banner, a chip strip, a pane, an enum) does so complete; later phases
 add cases and wiring, never relayout — §12.2.
 
-- **Phase 1 — Core download pipeline.** Onboarding installs `yt-dlp` / `ffmpeg` (and, non-blocking, the POT provider `pipx` package); paste one URL → the title resolves → the runway arms on defaults → Grab → a live progress bar → a saved file with Reveal. Aurora / Mint & Iris only, no picker. No queue, persistence, resilience, playlist, cookies, running POT provider, Preferences UI, Diagnostics, toasts, or banner. Built — full detail in `docs/superpowers/specs/core-download-pipeline.md`.
+- **Phase 1 — Core download pipeline.** Onboarding installs `yt-dlp` / `ffmpeg` (and, non-blocking, the POT provider `pipx` package); paste one URL → the title resolves → the runway arms on defaults → Grab → a live progress bar → a saved file with Reveal. Aurora / Mint & Iris only, no picker. No queue, persistence, resilience, playlist, cookies, running POT provider, Preferences UI, Diagnostics, toasts, or banner. Built — full detail in `docs/superpowers/specs/archived/core-download-pipeline.md`.
 
 - **Phase 2 — Queue foundation and window chrome.** The engine owns the queue: `DownloadEngine` holds the ordered job list and the scheduler loop, and emits `Sendable` `JobSnapshot` values on an `AsyncStream`; `AppModel` consumes the stream into `@Observable` row view models the table binds to; user intents (pause, cancel, force-start, reorder, remove) are `async` calls into the engine. The scheduler loop starts a job when `running < Preferences.maxConcurrentDownloads` — one condition, written so later phases add more (`&& host.rateState == .normal && !circuit.isOpen`) rather than rewrite it. The Downloads table (columns, show / hide, drag-reorder, per-column sort + filter, filter chips), the `ColumnConfig` model, the full contextual row-action bar (every button laid out; actions with no engine yet gated by a capability flag), force-start (`⏫`, round-robin). `Persistence` for `queue.json` and `columns.json` (debounced) — on launch the queue reloads and `.running` jobs reset to `.queued` (the yt-dlp `.part` enables resume); graceful quit (confirm dialog → SIGTERM → persist → resume next launch). In `MainWindow`: the empty `WarningBanner` shell (renders a sentence + one button; no cases yet) and the empty `HealthStrip` shell (a row of chips; no chips yet). `ErrorClass` gains `incomplete`, `diskFull`, `permissionDenied` — cases the engine's terminal path can already emit.
 
-- **Phase 3 — Preferences screen.** The 7-pane `PreferencesView` (design-system §4.6) — left rail, `label + control` layout — over the existing `Preferences` model. The panes whose settings already exist are filled: Downloads (destination, concurrency cap, format defaults, output template), Appearance (Skin + Palette pickers), Logs & privacy (verbose toggle). Network, Sign-in & cookies, Updates, and Advanced are present as headers; each later phase adds its own pane's rows. The Home runway already reads its Type / Format / Save-to defaults from the model (Phase 1); this phase gives the user a place to change them.
+- **Phase 3 — Preferences screen.** The 7-pane `PreferencesView` (design-system §4.6) — left rail, `label + control` layout — over the existing `Preferences` model. The panes whose settings already exist are filled: Downloads (destination, concurrency cap, format defaults, output template), Appearance (Skin + Palette pickers), Logs & privacy (verbose toggle). Network, Sign-in & cookies, Updates, and Advanced are present as headers; each later phase adds its own pane's rows. The Home runway already reads its Type / Format / Save-to defaults from the model (Phase 1); this phase gives the user a place to change them. *Hint: concurrency-cap slider — when lowered below the live running count, show an inline note ("running downloads continue; restart to apply now"); the drain behaviour itself is Phase 2.*
 
-- **Phase 4 — Retry and error classification.** The generic `ErrorClass` cases (§9 — `rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`), each with its failure-reason sentence and the row actions it offers; the retry and force-start buttons in the Phase 2 action bar wired live; the per-job auto-retry budget (`Preferences.maxAutoAttempts`, its control added to the Phase 3 Downloads pane); `Backoff` (exponential + full jitter, cap, `Retry-After`); `IntegrityCheck` (ffprobe duration vs metadata → `incomplete`); the always-on download flags (§7.5); `EnvironmentProbe` re-probe on launch, routing a vanished dependency back to onboarding. A `rateLimited` result retries on the `Backoff` schedule — no per-host state yet.
+- **Phase 4 — Retry and error classification.** The generic `ErrorClass` cases (§9 — `rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`), each with its failure-reason sentence and the row actions it offers; the retry button in the Phase 2 action bar wired live (force-start is already live from Phase 2); the per-job auto-retry budget (`Preferences.maxAutoAttempts`, its control added to the Phase 3 Downloads pane); `Backoff` (exponential + full jitter, cap, `Retry-After`) — the first caller of the Phase 2 `deferStart` seam; `IntegrityCheck` (ffprobe duration vs metadata → `incomplete`, populates the Phase 2 `JobSnapshot.integrityVerdict`; the same ffprobe call reads the real resolution into `JobSnapshot.actualQuality` so the Quality column can show `1080p → 720p`); the always-on download flags (§7.5); `EnvironmentProbe` re-probe on launch, routing a vanished dependency back to onboarding. A `rateLimited` result retries on the `Backoff` schedule — no per-host state yet. *Hint: enable the `show-log` row action — `JobLog` files exist per job from Phase 2, and `show-log` must handle a missing file gracefully (reuse the Phase 2 `revealTargetMissing` notice pattern — a log can be gone via external deletion); add the `DeferReason.backoff` case to the Phase 2 log event; populate `JobSnapshot.actualQuality` from the `IntegrityCheck` ffprobe; decide whether retry re-classifies a restored `.failed(.unknown(raw:))` job (Phase 2 persists only the reason string).*
 
 - **Phase 5 — Cookies.** `--cookies-from-browser`; Full Disk Access detection and the System Settings deep link (Safari), plus a Full-Disk-Access `OnboardingStepID` case; Firefox multi-profile enumeration and its picker (the Sign-in & cookies pane, Phase 3); the Chrome app-bound-encryption fallback; `cookieReadFailed` handling (non-fatal); the "retry with cookies" (`🔑`) row action wired into the Phase 2 action bar. Needs Phase 4's `ErrorClass` set and live action bar; does not need rate limiting.
 
-- **Phase 6 — Rate limiting and circuit breaker.** `RateState` per host (`normal | cooldown | circuitOpen`); the cooldown row state; the `WarningBanner` `cooldown` / `circuitOpen` / `depMissing` cases (shell from Phase 2); the circuit breaker → `queue.suspended`; adaptive concurrency (streak up, throttle down — more conditions on the Phase 2 scheduler loop); `NetworkMonitor` → `waitingForNetwork`; the `HealthStrip` engine-freshness / online / per-host-cooldown chips (shell from Phase 2). Smoke test: force a 429 and watch the cooldown UI, the banner, and the circuit breaker (§11.3).
+- **Phase 6 — Rate limiting and circuit breaker.** `RateState` per host (`normal | cooldown | circuitOpen`); the cooldown row state; the `WarningBanner` `cooldown` / `circuitOpen` / `depMissing` `BannerContent` (shell from Phase 2); the circuit breaker → `QueueSnapshot.queueHalt` gains `.circuitOpen` / `.networkDown` (`queueHalt` seam from Phase 2); adaptive concurrency (streak up, throttle down — new fields on the Phase 2 `SchedulerInput`, no loop rewrite); `NetworkMonitor` → `waitingForNetwork`; per-host cooldown = the second `deferStart` caller (seam from Phase 2); the `HealthStrip` engine-freshness / online / per-host-cooldown chips — the Phase 2 `HealthController` produces the chip array (Phase 2 returns one static `online` chip), and `ChipInteraction` gains `.popover(PopoverContent)` for the cooldown chip. Smoke test: force a 429 and watch the cooldown UI, the banner, and the circuit breaker (§11.3).
 
 - **Phase 7 — YouTube hardening.** `player_client` rotation (`tv → ios → tv_embedded → mweb → web_safari`, `PlayerClientRotation.default`); `PotProviderProcess` supervising the `bgutil-pot` server on a free `127.0.0.1` port (health check, restart on crash, stop on quit) + `PotPluginInstaller`; the `--extractor-args` and `--plugin-dirs` wiring; the `bot-check shield` `HealthStrip` chip and its `↻` refresh (added to the Phase 6 strip); the YouTube `ErrorClass` cases — `botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown` — with their failure copy; the `potProviderDown` `WarningBanner` case (added to the Phase 6 banner). This phase needs both Phase 4 (retry attempt context, `ErrorClass` set) and Phase 6 (the banner and strip cases to extend).
 
 - **Phase 8 — Playlist.** `MetadataProbe` playlist mode (`--flat-playlist`, one call); the `PlaylistPickerView` modal (checklist, select all / none, filter, live count + size); the group-header and spine in the table; the group actions (pause all / retry failed / cancel all); `MetadataTokenBucket` (built here — the first phase that bursts metadata requests) and large-playlist drip.
+  - *Hint: `MetadataProbe` needs per-request cancellation here (a job removed while its probe is queued behind others in the tail-chain) — additive to the Phase 2 chain. Group actions ("cancel all") route through the Phase 2 `ConfirmationRequest` component.*
+  - *Hint: the group-header row shows a per-column **aggregate** of the playlist's items (Phase 2 defines `PlaylistGroup` in `RowStore`, leaves `groups` empty): Progress = Σ per-item contribution / total, where contribution is `1.0` if `.completed`, else the item's `progress.fraction` quantized to the nearest 0.1, else `0.0` — `RowStore` recomputes a group only when a child crosses a 10% bucket or a state boundary (tracks last-bucket per active child), never on every progress tick; Status = `M done · K failed · rest queued`; Speed = Σ active speeds; ETA = max active ETA; Size/Duration = Σ known values (blank until items probed); Added at = min; Finished at = max once all done; Site/Type/Quality/Destination/Client = the common value or `mixed`; Attempt = max. `playlistGroupID` on `JobSnapshot` (Phase 2) is the only engine-side hook — grouping is entirely a `RowStore` aggregate, the engine treats playlist items as independent jobs (parent §5.5).*
 
 - **Phase 9 — Add flows.** Clipboard auto-detect on activation, Services / Share ("Download with …"), a URL dragged onto the window or Dock icon, the custom URL scheme (`Info.plist` `CFBundleURLTypes`) — all land in the Home field. Depends only on the Phase 1 Home field; scheduled here because it has nothing downstream and adds no risk to the Phase 2–8 chain.
 
-- **Phase 10 — Diagnostics, staleness, updater.** The Diagnostics page (Run check → report card → Copy report / Copy diagnostic bundle); the `DiagnosticBundle` zip; the yt-dlp staleness banner and daily check; `YtDlpUpdater`; the Updates pane rows (Phase 3). The report card reflects Phase 4 / 6 / 7 state, so it comes after them.
+- **Phase 10 — Diagnostics, staleness, updater.** The Diagnostics page (Run check → report card → Copy report / Copy diagnostic bundle); the `DiagnosticBundle` zip; the yt-dlp staleness banner and daily check; `YtDlpUpdater`; the Updates pane rows (Phase 3). The report card reflects Phase 4 / 6 / 7 state, so it comes after them. *Hint: `DebugFlags` (`-MG*` launch args, struct from Phase 2) has grown across phases — add a Debug menu bound to it here if warranted.*
 
 - **Phase 11 — Polish.** Success and chip-refresh-failure toasts; native macOS notifications for backgrounded failures; the first-run cards → table transition and the emptied-table state; a full keyboard-navigation, VoiceOver, and `prefers-reduced-motion` pass over every screen; the GitHub-release self-update check (§10.2). Last because the a11y pass audits every screen the earlier phases built.
 
@@ -648,11 +683,14 @@ means no screen is built twice.
 
 | Shell | Built complete in | Filled by |
 |---|---|---|
-| Scheduler loop | Phase 2 — one start condition (`running < cap`), structured for more | Phase 6 — adds `rateState` / circuit / adaptive-concurrency conditions to the same loop (no rewrite) |
-| `JobSnapshot` | Phase 2 — the full field set, including `attempt`, `cooldownUntil?`, `playerClientUsed?` (all already on `DownloadJob`), defaulted until their phase populates them | Phase 4 populates `attempt`, Phase 6 `cooldownUntil`, Phase 7 `playerClientUsed` — no struct edit, no test-fixture churn |
-| Downloads-table row-action bar | Phase 2 — every button laid out, no-engine actions gated by a capability flag | Phase 4 (retry, force-start), Phase 5 (retry-with-cookies `🔑`) |
-| `WarningBanner` | Phase 2 — the docked shell, renders a sentence + one button | Phase 6 (`cooldown`, `circuitOpen`, `depMissing`), Phase 7 (`potProviderDown`) |
-| `HealthStrip` | Phase 2 — the chip row | Phase 6 (engine / online / cooldown chips), Phase 7 (bot-check shield chip + `↻`) |
+| Scheduler loop | Phase 2 — event-driven `evaluateSchedule()` after every mutation; two pure decisions, `nextDownloads(SchedulerInput)` (cap-gated) and `nextProbe(SchedulerInput)` (serial-probe-gated, independent of the download cap); a deferred-start seam (sorted `(jobID, notBefore)` list + one dormant sleep-`Task`, `deferStart(_:until:)`, no caller) | Phase 4 — first `deferStart` caller (backoff); Phase 6 — adds `rateState` / circuit / adaptive-concurrency fields to `SchedulerInput`, second `deferStart` caller (host cooldown); neither rewrites the loop |
+| Engine → UI channel | Phase 2 — `AsyncStream<QueueEvent>` (`.snapshot(QueueSnapshot)` on structural change, `.progress` delta on progress ticks); `DownloadJob` demoted to engine-internal model, `JobSnapshot` the only boundary type | not filled later — the shape is final |
+| `JobSnapshot` | Phase 2 — the full field set. Populated now: `progress`, `durationSeconds?`, `extractor?`, `sizeBytes?`, `availableActions`, `outputFiles`, dates. Shipped defaulted: `attempt` (0), `actualQuality?`, `cooldownUntil?`, `playerClientUsed?`, `playlistGroupID?`, `integrityVerdict?` | Phase 4 populates `attempt` + `integrityVerdict` + `actualQuality`, Phase 6 `cooldownUntil`, Phase 7 `playerClientUsed`, Phase 8 `playlistGroupID` — no struct edit, no test-fixture churn |
+| `QueueSnapshot.queueHalt` + `engine.revalidate()` | Phase 2 — `QueueHaltReason?`, `.depMissing` case (scheduler stops, `AppModel` shows Onboarding takeover); `revalidate()` re-checks deps and clears the halt, called on onboarding completion | Phase 6 — adds `.circuitOpen`, `.networkDown` (`queue.suspended`); the `WarningBanner` "Retry now" button and cooldown-chip popover call `revalidate()` |
+| Downloads-table row-action bar | Phase 2 — every `RowAction` button laid out in fixed order; `availableActions: Set<RowAction>` per job from the engine; buttons not in the set render disabled | Phase 4 (`retry`, `showLog` logic), Phase 5 (`retryWithCookies` `🔑`) — the engine adds them to the set, no UI change |
+| `WarningBanner` | Phase 2 — the docked shell + `BannerContent { text, buttonTitle, action }`, always nil | Phase 6 (`cooldown`, `circuitOpen`, `depMissing` content), Phase 7 (`potProviderDown`) |
+| `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction }`, `ChipInteraction` = `none \| refresh(...)`, ships the one static `online` chip | Phase 6 (engine / online / cooldown chips; `ChipInteraction` gains `.popover(PopoverContent)` for the cooldown chip — additive), Phase 7 (bot-check shield chip + `↻`) |
+| `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil`. The `suppressionKey` mechanism is built but unused in P2 | Phase 8 "cancel all" (a suppression candidate) and any later dialog — just call `confirm(...)` |
 | `ErrorClass` enum | Phase 2 (`incomplete`, `diskFull`, `permissionDenied`) · Phase 4 (the generic set + failure UI) | Phase 7 (`botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown`, built with the §7.2 machinery that emits them) |
 | `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Logs filled | Phase 4 (`maxAutoAttempts`), Phase 5 (Firefox profile picker), Phase 6 (proxy / IPv4 / rate-limit), Phase 10 (`autoCheckUpdates`) |
 | Onboarding step list | Phase 1 — `OnboardingView` renders `ForEach(OnboardingStepID.allCases)`; ships `homebrew`, `downloaderTools`, `botCheckShield` (POT `pipx` install), `testRun` | Phase 5 — a Full-Disk-Access case (enum case + title / subtitle / check logic, no layout change) |
@@ -661,6 +699,14 @@ means no screen is built twice.
 deleted. The runway defaults read the `Preferences` model from Phase 1, so
 Phase 3 adds an editor — it does not swap a data source. Nothing a Phase 2+
 phase builds is removed or replaced by a later one.
+
+**Two Phase 2 deletions, both deliberate.** Phase 1's single-drain loop
+(`drain` / `nextQueued` / `ensureDraining` / `drainTask` / `runningLineTask` /
+the separate `queuedJobs`) is replaced by the multi-slot scheduler. Phase 1's
+`DownloadJob` (`@MainActor @Observable`, bound directly by the UI) is demoted to
+an engine-internal model; `JobSnapshot` values on the stream replace direct
+binding. Both are part of the Phase 2 engine rework — the mutation invariant
+that requires them postdates Phase 1.
 
 **Accepted large rework** — the a11y sweep in Phase 11 reopens every screen from
 Phases 1–10 for keyboard / VoiceOver / reduce-motion. This is a chosen tradeoff:

@@ -1,6 +1,6 @@
 # Core download pipeline (Phase 1)
 
-**Status:** built. Plan: `docs/superpowers/plans/2026-08-29-media-grabber-phase-1.md`.
+**Status:** built (archived). Plan: `docs/superpowers/plans/archived/2026-08-29-media-grabber-phase-1.md`.
 Parent spec: `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §12.1.
 
 The load-bearing path everything else layers onto: onboarding → paste → probe →

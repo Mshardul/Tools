@@ -1,22 +1,10 @@
 @testable import GrabberKit
+import TestSupport
 import XCTest
 
 // Real yt-dlp against a Creative-Commons source; gated on MG_LIVE_TESTS=1 (see README).
-@MainActor
 final class DownloadEngineLiveTests: XCTestCase {
     private let ytDlp = URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp")
-
-    private func waitUntilTerminal(_ job: DownloadJob, timeout: TimeInterval) async {
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            switch job.state {
-            case .completed, .cancelled, .failed:
-                return
-            default:
-                try? await Task.sleep(for: .milliseconds(200))
-            }
-        }
-    }
 
     func test_live_realDownloadReachesCompleted() async throws {
         try XCTSkipUnless(
@@ -28,7 +16,12 @@ final class DownloadEngineLiveTests: XCTestCase {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
 
-        let engine = DownloadEngine(ytDlpURL: ytDlp)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: UUID().uuidString))
+        let engine = DownloadEngine(
+            dependencies: .live(ytDlpURL: ytDlp),
+            preferences: Preferences(defaults: defaults)
+        )
+        let collector = EventCollector(engine.events)
         let request = DownloadRequest(
             url: "https://archive.org/details/BigBuckBunny_124",
             destFolder: dir,
@@ -36,12 +29,14 @@ final class DownloadEngineLiveTests: XCTestCase {
             container: "mp4"
         )
 
-        let job = await engine.submit(request)
-        await waitUntilTerminal(job, timeout: 300)
-
-        guard case .completed = job.state else {
-            return XCTFail("expected .completed, got \(job.state)")
+        let result = await engine.submit(request, force: false, prefetchedMetadata: nil)
+        guard case let .queued(id) = result else {
+            return XCTFail("expected .queued")
         }
+        let reached = await collector.waitForState(id, { $0 == .completed }, timeout: 300)
+        XCTAssertTrue(reached)
+
+        let job = try XCTUnwrap(collector.latestSnapshot()?.jobs.first { $0.id == id })
         XCTAssertEqual(job.title, "Big Buck Bunny")
         XCTAssertEqual(job.progress?.fraction, 1.0)
         XCTAssertFalse(job.outputFiles.isEmpty)

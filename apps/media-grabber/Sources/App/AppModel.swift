@@ -31,10 +31,11 @@ final class AppModel {
 
     var page: Page = .home
     private(set) var needsOnboarding = false
-    private(set) var job: DownloadJob?
+    private(set) var lastSubmittedJobID: UUID?
     private(set) var resolved: MediaMetadata?
     private(set) var probeError: String?
     private(set) var isProbing = false
+    var pendingConfirmation: ConfirmationRequest?
 
     let installer: OnboardingInstaller
     let prefs: Preferences
@@ -45,6 +46,8 @@ final class AppModel {
     private let log: LogWriter
     private let forceOnboarding: Bool
     private let revealSink: RevealSink
+    private let suppression: SuppressionStore
+    private var confirmationContinuation: CheckedContinuation<Bool, Never>?
 
     init(
         engine: DownloadEngineProtocol,
@@ -54,7 +57,8 @@ final class AppModel {
         log: LogWriter,
         envProbe: EnvironmentProbing = EnvironmentProbe(),
         forceOnboarding: Bool = false,
-        revealSink: RevealSink = WorkspaceRevealSink()
+        revealSink: RevealSink = WorkspaceRevealSink(),
+        suppression: SuppressionStore = UserDefaultsSuppressionStore()
     ) {
         self.engine = engine
         self.probe = probe
@@ -64,6 +68,7 @@ final class AppModel {
         self.envProbe = envProbe
         self.forceOnboarding = forceOnboarding
         self.revealSink = revealSink
+        self.suppression = suppression
     }
 
     func onAppear() async {
@@ -115,17 +120,40 @@ final class AppModel {
             kind: prefs.defaultKind,
             container: containerForCurrentKind()
         )
-        job = await engine.submit(request)
+        let result = await engine.submit(request, force: false, prefetchedMetadata: nil)
+        if case let .queued(id) = result {
+            lastSubmittedJobID = id
+        }
     }
 
     func reveal() {
-        guard let job else { return }
-        revealSink.reveal(job.outputFiles)
+        revealSink.reveal([])
+    }
+
+    // A suppressed key resolves true without ever showing the dialog.
+    func confirm(_ request: ConfirmationRequest) async -> Bool {
+        if let key = request.suppressionKey, suppression.isSuppressed(key) {
+            return true
+        }
+        pendingConfirmation = request
+        return await withCheckedContinuation { continuation in
+            confirmationContinuation = continuation
+        }
+    }
+
+    func resolveConfirmation(_ confirmed: Bool, suppressFutures: Bool) {
+        if confirmed, suppressFutures, let key = pendingConfirmation?.suppressionKey {
+            suppression.setSuppressed(key)
+        }
+        pendingConfirmation = nil
+        let continuation = confirmationContinuation
+        confirmationContinuation = nil
+        continuation?.resume(returning: confirmed)
     }
 
     func cancelJob() async {
-        guard let job else { return }
-        await engine.cancel(job.id)
+        guard let id = lastSubmittedJobID else { return }
+        await engine.cancel(id)
     }
 
     private func containerForCurrentKind() -> String? {
@@ -141,7 +169,7 @@ final class AppModel {
         case .unsupported: "That site isn't supported."
         case .unavailable: "This video isn't available."
         case .network: "No internet connection."
-        case .ytDlpMissing: "yt-dlp is missing — reopen setup."
+        case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
         case .malformedOutput: "Couldn't read the video details."
         case let .unknown(raw): raw
         }

@@ -1,4 +1,5 @@
 @testable import GrabberKit
+import TestSupport
 import XCTest
 
 final class EnvironmentProbeTests: XCTestCase {

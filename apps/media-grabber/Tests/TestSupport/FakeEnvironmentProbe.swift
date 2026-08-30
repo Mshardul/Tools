@@ -1,25 +1,25 @@
 import Foundation
 @testable import GrabberKit
 
-final class FakeEnvironmentProbe: EnvironmentProbing, @unchecked Sendable {
+public final class FakeEnvironmentProbe: EnvironmentProbing, @unchecked Sendable {
     private let reports: LockedBox<[EnvironmentReport]>
     private let callCount = LockedBox(0)
 
-    init(_ reports: EnvironmentReport...) {
+    public init(_ reports: EnvironmentReport...) {
         precondition(!reports.isEmpty)
         self.reports = LockedBox(reports)
     }
 
-    var probeCount: Int {
+    public var probeCount: Int {
         callCount.read { $0 }
     }
 
-    func setReports(_ next: EnvironmentReport...) {
+    public func setReports(_ next: EnvironmentReport...) {
         reports.mutate { $0 = next }
         callCount.mutate { $0 = 0 }
     }
 
-    func probe() async -> EnvironmentReport {
+    public func probe() async -> EnvironmentReport {
         let index = callCount.mutate { count -> Int in
             let current = count
             count += 1
@@ -31,7 +31,7 @@ final class FakeEnvironmentProbe: EnvironmentProbing, @unchecked Sendable {
     }
 }
 
-extension EnvironmentReport {
+public extension EnvironmentReport {
     static func with(
         brew: Bool = false,
         ytDlp: Bool = false,

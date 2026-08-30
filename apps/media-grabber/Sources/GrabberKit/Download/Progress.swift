@@ -1,5 +1,8 @@
 import Foundation
 
+// Disambiguates from Foundation.Progress at call sites that import both modules.
+public typealias DownloadProgress = Progress
+
 public struct Progress: Sendable, Equatable {
     public var fraction: Double {
         didSet { fraction = Self.clamp(fraction) }

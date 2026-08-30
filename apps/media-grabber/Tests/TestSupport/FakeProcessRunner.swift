@@ -1,24 +1,24 @@
 import Foundation
 @testable import GrabberKit
 
-final class FakeProcessRunner: ProcessRunning, Sendable {
-    struct Script: Sendable {
-        var lines: [ProcessLine]
-        var exitCode: Int32
+public final class FakeProcessRunner: ProcessRunning, Sendable {
+    public struct Script: Sendable {
+        public var lines: [ProcessLine]
+        public var exitCode: Int32
 
-        init(lines: [ProcessLine] = [], exitCode: Int32 = 0) {
+        public init(lines: [ProcessLine] = [], exitCode: Int32 = 0) {
             self.lines = lines
             self.exitCode = exitCode
         }
 
-        static func stdout(_ text: String, exitCode: Int32 = 0) -> Script {
+        public static func stdout(_ text: String, exitCode: Int32 = 0) -> Script {
             let lines = text
                 .split(separator: "\n", omittingEmptySubsequences: false)
                 .map { ProcessLine.stdout(String($0)) }
             return Script(lines: lines, exitCode: exitCode)
         }
 
-        static func stderr(_ text: String, exitCode: Int32 = 1) -> Script {
+        public static func stderr(_ text: String, exitCode: Int32 = 1) -> Script {
             let lines = text
                 .split(separator: "\n", omittingEmptySubsequences: false)
                 .map { ProcessLine.stderr(String($0)) }
@@ -42,39 +42,39 @@ final class FakeProcessRunner: ProcessRunning, Sendable {
 
     private let box = LockedBox(State())
 
-    init() {}
+    public init() {}
 
-    var perRunDelay: Duration {
+    public var perRunDelay: Duration {
         get { box.read { $0.delays.perRun } }
         set { box.mutate { $0.delays.perRun = newValue } }
     }
 
-    var perLineDelay: Duration {
+    public var perLineDelay: Duration {
         get { box.read { $0.delays.perLine } }
         set { box.mutate { $0.delays.perLine = newValue } }
     }
 
-    var launches: [ProcessLaunch] {
+    public var launches: [ProcessLaunch] {
         box.read { $0.launches }
     }
 
-    var maxConcurrent: Int {
+    public var maxConcurrent: Int {
         box.read { $0.maxConcurrent }
     }
 
-    var cancelledCount: Int {
+    public var cancelledCount: Int {
         box.read { $0.cancelledCount }
     }
 
-    func script(_ script: Script, forPathEndingIn suffix: String) {
+    public func script(_ script: Script, forPathEndingIn suffix: String) {
         box.mutate { $0.scripts[suffix] = script }
     }
 
-    func script(_ script: Script, forExactPath path: String) {
+    public func script(_ script: Script, forExactPath path: String) {
         box.mutate { $0.scripts[path] = script }
     }
 
-    func run(_ launch: ProcessLaunch) -> ProcessExecution {
+    public func run(_ launch: ProcessLaunch) -> ProcessExecution {
         let (script, delays) = box.mutate { state -> (Script, Delays) in
             state.launches.append(launch)
             state.currentConcurrent += 1
@@ -135,35 +135,6 @@ final class FakeProcessRunner: ProcessRunning, Sendable {
                 }
             }
         }
-    }
-}
-
-final class LockedBox<Value>: @unchecked Sendable {
-    private var value: Value
-    private let lock: os_unfair_lock_t
-
-    init(_ value: Value) {
-        self.value = value
-        lock = .allocate(capacity: 1)
-        lock.initialize(to: os_unfair_lock())
-    }
-
-    deinit {
-        lock.deinitialize(count: 1)
-        lock.deallocate()
-    }
-
-    func read<T>(_ body: (Value) -> T) -> T {
-        os_unfair_lock_lock(lock)
-        defer { os_unfair_lock_unlock(lock) }
-        return body(value)
-    }
-
-    @discardableResult
-    func mutate<T>(_ body: (inout Value) -> T) -> T {
-        os_unfair_lock_lock(lock)
-        defer { os_unfair_lock_unlock(lock) }
-        return body(&value)
     }
 }
 

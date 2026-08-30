@@ -1,8 +1,8 @@
 import Foundation
 @testable import GrabberKit
 
-final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
-    typealias Outcome = Result<MediaMetadata, MetadataError>
+public final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
+    public typealias Outcome = Result<MediaMetadata, MetadataError>
 
     private struct State {
         var results: [String: Outcome] = [:]
@@ -13,45 +13,48 @@ final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
 
     private let box: LockedBox<State>
 
-    init(default fallback: Outcome = .failure(.malformedOutput)) {
+    public init(default fallback: Outcome = .failure(.malformedOutput)) {
         box = LockedBox(State(fallback: fallback))
     }
 
-    var probedURLs: [String] {
+    public var probedURLs: [String] {
         box.read { $0.probedURLs }
     }
 
-    var wasProbed: Bool {
+    public var wasProbed: Bool {
         box.read { !$0.probedURLs.isEmpty }
     }
 
-    var perProbeDelay: Duration {
+    public var perProbeDelay: Duration {
         get { box.read { $0.perProbeDelay } }
         set { box.mutate { $0.perProbeDelay = newValue } }
     }
 
-    func result(_ result: Outcome, forURL url: String) {
+    public func result(_ result: Outcome, forURL url: String) {
         box.mutate { $0.results[url] = result }
     }
 
-    func result(_ result: Outcome) {
+    public func result(_ result: Outcome) {
         box.mutate { $0.fallback = result }
     }
 
-    static func success(
+    // Defaults are probe-complete so the job downloads after probing.
+    public static func success(
         title: String,
-        durationSeconds: Int? = nil,
+        durationSeconds: Int? = 10,
+        extractor: String? = "youtube",
         sourceURL: String = ""
     ) -> Outcome {
         .success(MediaMetadata(
             title: title,
             durationSeconds: durationSeconds,
             isPlaylist: false,
-            sourceURL: sourceURL
+            sourceURL: sourceURL,
+            extractor: extractor
         ))
     }
 
-    func probe(_ url: String) async -> Outcome {
+    public func probe(_ url: String) async -> Outcome {
         let (result, delay) = box.mutate { state -> (Outcome, Duration) in
             state.probedURLs.append(url)
             return (state.results[url] ?? state.fallback, state.perProbeDelay)

@@ -1,191 +1,305 @@
 import Foundation
 
-public protocol DownloadEngineProtocol: Sendable {
-    @discardableResult
-    func submit(_ request: DownloadRequest) async -> DownloadJob
-    func cancel(_ jobID: UUID) async
-}
-
 public actor DownloadEngine: DownloadEngineProtocol {
-    private let ytDlpURL: URL
-    private let runner: ProcessRunning
-    private let probe: MetadataProbing
+    let dependencies: EngineDependencies
+    let preferences: Preferences
 
-    private var queuedJobs: [DownloadJob] = []
-    public private(set) var jobs: [DownloadJob] = []
-    private var drainTask: Task<Void, Never>?
-    private var runningLineTask: Task<Void, Never>?
+    var jobs: [DownloadJob] = []
+    var revision: UInt64 = 0
+    var queueHalt: QueueHaltReason?
+    var deferrals: [(id: UUID, notBefore: Date)] = []
+    var deferralTask: Task<Void, Never>?
+    var probeInFlight = false
+    var capOverrideForTests: Int?
 
-    public init(
-        ytDlpURL: URL,
-        runner: ProcessRunning = ProcessRunner(),
-        probe: MetadataProbing? = nil
-    ) {
-        self.ytDlpURL = ytDlpURL
-        self.runner = runner
-        self.probe = probe ?? MetadataProbe(ytDlpURL: ytDlpURL, runner: runner)
+    let eventStream: AsyncStream<QueueEvent>
+    let eventContinuation: AsyncStream<QueueEvent>.Continuation
+
+    public nonisolated let events: AsyncStream<QueueEvent>
+
+    public init(dependencies: EngineDependencies, preferences: Preferences) {
+        self.dependencies = dependencies
+        self.preferences = preferences
+        let (stream, continuation) = AsyncStream<QueueEvent>.makeStream()
+        eventStream = stream
+        eventContinuation = continuation
+        events = stream
     }
 
-    @discardableResult
-    public func submit(_ request: DownloadRequest) async -> DownloadJob {
-        let job = await MainActor.run { DownloadJob(request: request) }
-        jobs.append(job)
-        queuedJobs.append(job)
-        ensureDraining()
-        return job
+    // MARK: - Cap
+
+    var cap: Int {
+        if let capOverrideForTests {
+            return capOverrideForTests
+        }
+        return dependencies.debugFlags.concurrencyCapOverride ?? preferences.maxConcurrentDownloads
     }
 
-    public func cancel(_ jobID: UUID) async {
-        guard let job = jobs.first(where: { $0.id == jobID }) else { return }
-        let state = await MainActor.run { job.state }
+    // Test seam: drive cap deterministically without a Preferences round-trip.
+    func setCap(_ value: Int?) {
+        capOverrideForTests = value
+        evaluateSchedule()
+    }
+
+    // MARK: - Queries
+
+    public func currentSnapshot() -> QueueSnapshot {
+        buildSnapshot()
+    }
+
+    public func hasActiveJobs() -> Bool {
+        jobs.contains { isActive($0.state) }
+    }
+
+    private func isActive(_ state: JobState) -> Bool {
         switch state {
-        case .running:
-            runningLineTask?.cancel()
-        case .queued:
-            await MainActor.run { job.state = .cancelled }
+        case .probing, .running: true
+        default: false
+        }
+    }
+
+    // MARK: - Intents
+
+    public func submit(
+        _ request: DownloadRequest,
+        force: Bool,
+        prefetchedMetadata: MediaMetadata?
+    ) async -> SubmitResult {
+        if !force, let existing = jobs.first(where: { $0.request == request }) {
+            return .duplicateExists(
+                existing: existing.id,
+                wasCompleted: existing.state == .completed
+            )
+        }
+        let job = DownloadJob(request: request)
+        if let meta = prefetchedMetadata {
+            job.title = meta.title
+            job.extractor = meta.extractor
+            job.durationSeconds = meta.durationSeconds
+        }
+        jobs.append(job)
+        let position = queuedCount()
+        bump()
+        emitSnapshot()
+        logEvent(.jobEnqueued(id: job.id, url: request.url, queuePosition: position))
+        evaluateSchedule()
+        return .queued(job.id)
+    }
+
+    private(set) var producedJobsOnRestore = false
+
+    public func restore(active: [PersistedJob], history: [PersistedJob]) async {
+        jobs = (active + history).map(Self.downloadJob(from:))
+        producedJobsOnRestore = !jobs.isEmpty
+        if producedJobsOnRestore {
+            bump()
+            emitSnapshot()
+        }
+        evaluateSchedule()
+    }
+
+    public func revalidate() async {
+        let report = await dependencies.envProbe.probe()
+        guard report.isReadyForDownloads else { return }
+        queueHalt = nil
+        bump()
+        emitSnapshot()
+        evaluateSchedule()
+    }
+
+    public func pause(_ id: UUID) async {
+        guard let job = jobs.first(where: { $0.id == id }), job.state == .running else { return }
+        job.state = .paused
+        bump()
+        emitSnapshot()
+        logEvent(.jobPaused(id: id))
+        childTasks[id]?.cancel()
+        evaluateSchedule()
+    }
+
+    public func resume(_ id: UUID) async {
+        guard let index = pausedJobIndex(id) else { return }
+        let job = jobs.remove(at: index)
+        job.state = .queued
+        job.progress = nil
+        job.sizeBytes = nil
+        jobs.append(job)
+        bump()
+        emitSnapshot()
+        logEvent(.jobResumed(id: id))
+        evaluateSchedule()
+    }
+
+    public func cancel(_ id: UUID) async {
+        guard let job = jobs.first(where: { $0.id == id }) else { return }
+        switch job.state {
+        case .running, .probing:
+            cancelChild(id)
+        case .queued, .paused:
+            markCancelled(id)
         default:
             break
         }
     }
 
-    private func ensureDraining() {
-        guard drainTask == nil else { return }
-        drainTask = Task { await self.drain() }
-    }
-
-    private func drain() async {
-        while let job = await nextQueued() {
-            await run(job)
+    public func remove(_ id: UUID) async {
+        guard let index = jobs.firstIndex(where: { $0.id == id }) else { return }
+        let job = jobs[index]
+        let wasRunning = job.state == .running || job.state == .probing
+        if wasRunning {
+            childTasks[id]?.cancel()
         }
-        drainTask = nil
+        deletePartFiles(for: job)
+        dependencies.deleteJobLog?(id)
+        jobs.remove(at: index)
+        childTasks[id] = nil
+        bump()
+        emitSnapshot()
+        logEvent(.jobRemoved(id: id, wasRunning: wasRunning))
+        evaluateSchedule()
     }
 
-    private func nextQueued() async -> DownloadJob? {
-        while !queuedJobs.isEmpty {
-            let job = queuedJobs.removeFirst()
-            if await MainActor.run(body: { job.state }) == .cancelled {
-                continue
-            }
-            return job
+    public func forceStart(_ id: UUID) async {
+        guard let forced = queuedJob(id) else { return }
+
+        let victim = runningJobs().count >= cap ? oldestStartedRunningJob() : nil
+        if let victim {
+            move(victim, toTail: true)
+            victim.state = .queued
+            victim.progress = nil
         }
-        return nil
-    }
+        move(forced, toTail: false)
+        forced.state = .running
+        forced.startedAt = .now
 
-    private func run(_ job: DownloadJob) async {
-        await MainActor.run { job.state = .probing }
-        let metadata = await probe.probe(job.request.url)
+        bump()
+        emitSnapshot()
+        logEvent(.jobForceStarted(id: id, evicted: victim?.id))
 
-        switch metadata {
-        case let .success(meta):
-            await MainActor.run { job.title = meta.title }
-        case let .failure(error):
-            await MainActor.run {
-                job.state = .failed(Self.errorClass(for: error))
-                job.finishedAt = .now
-            }
-            return
+        if let victim {
+            childTasks[victim.id]?.cancel()
         }
-
-        await MainActor.run { job.state = .running }
-
-        let lineTask = Task { await self.pump(job) }
-        runningLineTask = lineTask
-        await lineTask.value
-        runningLineTask = nil
+        launchDownload(id: id)
+        evaluateSchedule()
     }
 
-    private func pump(_ job: DownloadJob) async {
-        let execution = runner.run(ProcessLaunch(
-            executableURL: ytDlpURL,
-            arguments: YtDlpArguments.build(for: job.request)
-        ))
+    public func shutdown() async {
+        for job in jobs where job.state == .running || job.state == .probing {
+            childTasks[job.id]?.cancel()
+        }
+        probeTask?.cancel()
+        deferralTask?.cancel()
+        deferralTask = nil
+        for (_, task) in childTasks {
+            await task.value
+        }
+        if let probeTask {
+            await probeTask.value
+        }
+    }
 
-        async let processResult = execution.result()
+    // MARK: - Detached work handles
 
-        var lastError: ErrorClass?
-        for await line in execution.lines {
-            switch line {
-            case let .stdout(text):
-                if case let .progress(progress) = ProgressParser.parseStdout(text) {
-                    await MainActor.run { job.progress = progress }
+    var childTasks: [UUID: Task<Void, Never>] = [:]
+    var probeTask: Task<Void, Never>?
+
+    private func cancelChild(_ id: UUID) {
+        childTasks[id]?.cancel()
+    }
+
+    private func pausedJobIndex(_ id: UUID) -> Int? {
+        guard let index = jobs.firstIndex(where: { $0.id == id }) else { return nil }
+        return jobs[index].state == .paused ? index : nil
+    }
+
+    func bump() {
+        revision += 1
+    }
+}
+
+// MARK: - Scheduling
+
+extension DownloadEngine {
+    func evaluateSchedule() {
+        guard queueHalt == nil else { return }
+        let input = SchedulerInput(
+            queued: snapshotsForState { $0 == .queued },
+            running: snapshotsForState { $0 == .running },
+            cap: cap,
+            deferredIDs: Set(deferrals.map(\.id)),
+            probeIdle: !probeInFlight
+        )
+        for id in Scheduler.nextDownloads(input) {
+            markRunning(id)
+            launchDownload(id: id)
+        }
+        if !probeInFlight, let probeID = Scheduler.nextProbe(input) {
+            probeInFlight = true
+            markProbing(probeID)
+            launchProbe(id: probeID)
+        }
+    }
+
+    private func snapshotsForState(_ match: (JobState) -> Bool) -> [JobSnapshot] {
+        jobs.filter { match($0.state) }.map { $0.snapshot(availableActions: []) }
+    }
+
+    private func launchDownload(id: UUID) {
+        guard let job = jobs.first(where: { $0.id == id }) else { return }
+        let request = job.request
+        let runner = dependencies.runner
+        let ytDlpURL = dependencies.ytDlpURL
+        let jobLog = JobLog(
+            id: id,
+            request: request,
+            ytDlpVersion: dependencies.ytDlpVersion,
+            dir: dependencies.jobLogDir
+        )
+        let task = Task { [weak self] in
+            let execution = runner.run(ProcessLaunch(
+                executableURL: ytDlpURL,
+                arguments: YtDlpArguments.build(for: request)
+            ))
+            try? jobLog.writeHeader()
+            async let processResult = execution.result()
+            var lastError: ErrorClass?
+            var launchFailed = false
+            for await line in execution.lines {
+                jobLog.append(line)
+                switch line {
+                case let .stdout(text):
+                    if case let .progress(progress) = ProgressParser.parseStdout(text) {
+                        await self?.recordProgress(id, progress)
+                    }
+                case let .stderr(text):
+                    if text.hasPrefix("launch failed:") {
+                        launchFailed = true
+                    }
+                    if let classified = ProgressParser.classifyStderr(text) {
+                        lastError = classified
+                    }
                 }
-            case let .stderr(text):
-                if let classified = ProgressParser.classifyStderr(text) {
-                    lastError = classified
-                }
             }
+            let result = await processResult
+            jobLog.close()
+            await self?.recordExit(
+                id,
+                result,
+                lastError: lastError,
+                launchFailed: launchFailed && result.exitCode == 127
+            )
         }
-
-        let result = await processResult
-        await finish(job, result: result, lastError: lastError)
+        childTasks[id] = task
     }
 
-    private func finish(
-        _ job: DownloadJob,
-        result: ProcessResult,
-        lastError: ErrorClass?
-    ) async {
-        if result.wasCancelled {
-            await MainActor.run {
-                job.state = .cancelled
-                job.finishedAt = .now
-            }
-            return
+    private func launchProbe(id: UUID) {
+        guard let job = jobs.first(where: { $0.id == id }) else { return }
+        let url = job.request.url
+        let probe = dependencies.probe
+        let task = Task { [weak self] in
+            let result = await probe.probe(url)
+            await self?.recordProbeResult(id, result)
         }
-        if result.exitCode == 0 {
-            let files = await resolveOutputFiles(for: job)
-            await MainActor.run {
-                job.outputFiles = files
-                job.state = .completed
-                job.finishedAt = .now
-            }
-            return
-        }
-        let failure = lastError ?? .unknown(raw: "yt-dlp exited \(result.exitCode)")
-        await MainActor.run {
-            job.state = .failed(failure)
-            job.finishedAt = .now
-        }
-    }
-
-    private func resolveOutputFiles(for job: DownloadJob) async -> [URL] {
-        guard let title = await MainActor.run(body: { job.title }) else { return [] }
-        let stem = Self.titleStem(title)
-        let fileManager = FileManager.default
-        guard let entries = try? fileManager.contentsOfDirectory(
-            at: job.request.destFolder,
-            includingPropertiesForKeys: [.contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else {
-            return []
-        }
-        return entries
-            .filter { $0.lastPathComponent.hasPrefix(stem) }
-            .sorted { modificationDate($0) > modificationDate($1) }
-    }
-
-    private func modificationDate(_ url: URL) -> Date {
-        (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
-            .contentModificationDate ?? .distantPast
-    }
-
-    // yt-dlp's %(title)s sanitiser strips path separators and control characters.
-    private static func titleStem(_ title: String) -> String {
-        String(title.unicodeScalars.filter { scalar in
-            scalar != "/" && !CharacterSet.controlCharacters.contains(scalar)
-        })
-    }
-
-    private static func errorClass(for error: MetadataError) -> ErrorClass {
-        switch error {
-        case .network:
-            .networkDown
-        case .ytDlpMissing:
-            .depMissing
-        case let .unknown(raw):
-            .unknown(raw: raw)
-        case .badURL, .unsupported, .unavailable, .malformedOutput:
-            .unknown(raw: "\(error)")
-        }
+        probeTask = task
     }
 }
