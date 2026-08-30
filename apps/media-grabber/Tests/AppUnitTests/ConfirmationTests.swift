@@ -110,11 +110,3 @@ final class ConfirmationTests: XCTestCase {
         XCTAssertTrue(choice.showsCancel)
     }
 }
-
-private struct NullRunner: ProcessRunning {
-    func run(_: ProcessLaunch) -> ProcessExecution {
-        let (stream, continuation) = AsyncStream<ProcessLine>.makeStream()
-        continuation.finish()
-        return ProcessExecution(lines: stream) { ProcessResult(exitCode: 0, wasCancelled: false) }
-    }
-}

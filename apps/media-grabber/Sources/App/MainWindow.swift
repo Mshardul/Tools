@@ -7,15 +7,19 @@ struct MainWindow: View {
 
     var body: some View {
         @Bindable var appModel = appModel
-        VStack(spacing: 0) {
-            brandRow
-            Divider().overlay(theme.palette.hair)
-            healthStrip
-            Divider().overlay(theme.palette.hair)
-            page
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                brandRow
+                Divider().overlay(theme.palette.hair)
+                HealthStrip(chips: appModel.healthChips)
+                Divider().overlay(theme.palette.hair)
+                page
+            }
+            .background(theme.palette.ground)
+            .frame(minWidth: 820, minHeight: 560)
+
+            WarningBanner(content: appModel.bannerContent)
         }
-        .background(theme.palette.ground)
-        .frame(minWidth: 760, minHeight: 480)
         .overlay {
             if let request = appModel.pendingConfirmation {
                 ConfirmationDialog(request: request) { confirmed, suppress in
@@ -26,7 +30,7 @@ struct MainWindow: View {
     }
 
     private var jobRunning: Bool {
-        false
+        appModel.rowStore.rows.contains { $0.snapshot.state == .running }
     }
 
     private var brandRow: some View {
@@ -69,20 +73,6 @@ struct MainWindow: View {
                 )
         }
         .buttonStyle(.plain)
-    }
-
-    private var healthStrip: some View {
-        HStack(spacing: Spacing.s2) {
-            Circle()
-                .fill(theme.palette.accent)
-                .frame(width: 7, height: 7)
-            Text("online")
-                .font(theme.skin.monoFont(11, .regular))
-                .foregroundStyle(theme.palette.dim)
-            Spacer()
-        }
-        .padding(.horizontal, Spacing.s5)
-        .padding(.vertical, Spacing.s2)
     }
 
     @ViewBuilder

@@ -34,6 +34,10 @@ public enum LogEvent: Sendable {
     case persistenceWriteFailed(file: String, error: String)
     case persistenceRecovered(file: String)
     case consumerStreamEnded
+    case revealTargetMissing(jobID: UUID)
+    case jobDuplicateSubmitPrompted(existing: UUID)
+    case jobDuplicateSubmitConfirmed
+    case jobDuplicateSubmitCancelled
 
     var key: String {
         switch self {
@@ -55,6 +59,10 @@ public enum LogEvent: Sendable {
         case .persistenceWriteFailed: "persistence.write_failed"
         case .persistenceRecovered: "persistence.recovered"
         case .consumerStreamEnded: "consumer.stream_ended"
+        case .revealTargetMissing: "reveal.target_missing"
+        case .jobDuplicateSubmitPrompted: "job.duplicate_submit_prompted"
+        case .jobDuplicateSubmitConfirmed: "job.duplicate_submit_confirmed"
+        case .jobDuplicateSubmitCancelled: "job.duplicate_submit_cancelled"
         }
     }
 
@@ -70,6 +78,9 @@ public enum LogEvent: Sendable {
         case .persistenceLoaded, .persistenceCorrupt, .persistenceSchemaAhead,
              .persistenceWriteFailed, .persistenceRecovered: .persistence
         case .consumerStreamEnded: .ui
+        case .revealTargetMissing: .ui
+        case .jobDuplicateSubmitPrompted, .jobDuplicateSubmitConfirmed,
+             .jobDuplicateSubmitCancelled: .ui
         }
     }
 
@@ -83,6 +94,7 @@ public enum LogEvent: Sendable {
         case let .jobRemoved(id, _): id
         case let .jobForceStarted(id, _): id
         case let .jobDeferred(id, _, _): id
+        case let .revealTargetMissing(jobID): jobID
         default: nil
         }
     }
@@ -122,6 +134,12 @@ public enum LogEvent: Sendable {
         case let .persistenceRecovered(file):
             ["file": file]
         case .consumerStreamEnded:
+            [:]
+        case let .revealTargetMissing(jobID):
+            ["job_id": jobID.uuidString]
+        case let .jobDuplicateSubmitPrompted(existing):
+            ["existing": existing.uuidString]
+        case .jobDuplicateSubmitConfirmed, .jobDuplicateSubmitCancelled:
             [:]
         }
     }

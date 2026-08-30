@@ -56,6 +56,7 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 ## Build & test
 
+- Run: `make` (rebuilds, kills any running instance, launches the new build).
 - `mise exec -- tuist generate --no-open` after adding/removing files.
 - Test: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test`
 - Single suite: append `-only-testing:GrabberKitTests/<SuiteName>` (or `AppUnitTests/<SuiteName>`).

@@ -9,8 +9,10 @@ app makes is `yt-dlp` fetching the video you asked for.
 Written to `~/Library/Logs/MediaGrabber/`:
 
 - `app.log` — structured JSON Lines, one event per line (app launch, probe
-  results, job state changes, `yt-dlp` process launch/exit). Rotated at 5 files
+  results, job state changes, duplicate-submit prompts, quit). Rotated at 5 files
   × 5 MB.
+- `jobs/<job-id>.log` — the raw `yt-dlp` stdout/stderr transcript for one
+  download. One file per job; deleted when the job row is removed.
 - Mirrored to the macOS unified log (`log show --predicate 'subsystem ==
   "app.mediagrabber.mac"'`).
 

@@ -22,10 +22,15 @@ public enum QueueHaltReason: Sendable, Equatable {
     case depMissing
 }
 
-public enum RowAction: Sendable, Hashable {
+public enum RowAction: Sendable, Hashable, CaseIterable {
     case pause, resume, cancel, remove, forceStart, reveal, openInBrowser
     // Gated: the engine never puts these in a job's action set yet.
     case retry, retryWithCookies, showLog
+
+    public static let displayOrder: [RowAction] = [
+        .pause, .resume, .cancel, .forceStart, .retry, .retryWithCookies,
+        .reveal, .openInBrowser, .remove, .showLog
+    ]
 }
 
 public struct JobSnapshot: Sendable, Equatable, Identifiable {

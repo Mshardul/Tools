@@ -10,9 +10,15 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     let events: AsyncStream<QueueEvent>
 
     private struct State {
-        var submitted: [DownloadRequest] = []
+        var submitted: [(DownloadRequest, Bool)] = []
         var cancelled: [UUID] = []
-        var nextResult: SubmitResult?
+        var submitResults: [SubmitResult] = []
+        var hasActive = false
+        var snapshot = QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
+        var restoreSnapshot: QueueSnapshot?
+        var restoreCalled = false
+        var revalidateCalled = false
+        var shutdownCalled = false
     }
 
     init() {
@@ -22,15 +28,47 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     }
 
     var submittedRequests: [DownloadRequest] {
-        box.read { $0.submitted }
+        box.read { $0.submitted.map(\.0) }
+    }
+
+    var submittedForces: [Bool] {
+        box.read { $0.submitted.map(\.1) }
     }
 
     var cancelledIDs: [UUID] {
         box.read { $0.cancelled }
     }
 
+    var restoreCalled: Bool {
+        box.read { $0.restoreCalled }
+    }
+
+    var revalidateCalled: Bool {
+        box.read { $0.revalidateCalled }
+    }
+
+    var shutdownCalled: Bool {
+        box.read { $0.shutdownCalled }
+    }
+
     func stubNextResult(_ result: SubmitResult) {
-        box.mutate { $0.nextResult = result }
+        box.mutate { $0.submitResults = [result] }
+    }
+
+    func stubSubmitResults(_ results: SubmitResult...) {
+        box.mutate { $0.submitResults = results }
+    }
+
+    func setHasActiveJobs(_ value: Bool) {
+        box.mutate { $0.hasActive = value }
+    }
+
+    func setSnapshot(_ snapshot: QueueSnapshot) {
+        box.mutate { $0.snapshot = snapshot }
+    }
+
+    func setRestoreSnapshot(_ snapshot: QueueSnapshot) {
+        box.mutate { $0.restoreSnapshot = snapshot }
     }
 
     func emit(_ event: QueueEvent) {
@@ -38,24 +76,44 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     }
 
     func currentSnapshot() async -> QueueSnapshot {
-        QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
+        box.read { $0.snapshot }
     }
 
     func hasActiveJobs() async -> Bool {
-        false
+        box.read { $0.hasActive }
     }
 
     func submit(
         _ request: DownloadRequest,
-        force _: Bool,
+        force: Bool,
         prefetchedMetadata _: MediaMetadata?
     ) async -> SubmitResult {
-        box.mutate { $0.submitted.append(request) }
-        return box.read { $0.nextResult } ?? .queued(UUID())
+        let result: SubmitResult? = box.mutate { state in
+            state.submitted.append((request, force))
+            guard !state.submitResults.isEmpty else { return nil }
+            return state.submitResults.removeFirst()
+        }
+        return result ?? .queued(UUID())
     }
 
-    func restore(active _: [PersistedJob], history _: [PersistedJob]) async {}
-    func revalidate() async {}
+    func restore(active _: [PersistedJob], history _: [PersistedJob]) async {
+        let snapshot = box.mutate { state -> QueueSnapshot? in
+            state.restoreCalled = true
+            if let restoreSnapshot = state.restoreSnapshot {
+                state.snapshot = restoreSnapshot
+                return restoreSnapshot
+            }
+            return nil
+        }
+        if let snapshot {
+            continuation.yield(.snapshot(snapshot))
+        }
+    }
+
+    func revalidate() async {
+        box.mutate { $0.revalidateCalled = true }
+    }
+
     func pause(_: UUID) async {}
     func resume(_: UUID) async {}
 
@@ -65,7 +123,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func remove(_: UUID) async {}
     func forceStart(_: UUID) async {}
-    func shutdown() async {}
+
+    func shutdown() async {
+        box.mutate { $0.shutdownCalled = true }
+    }
 }
 
 final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {

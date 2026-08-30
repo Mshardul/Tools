@@ -105,4 +105,49 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
         columnOrder = columnOrder.filter { known.contains($0) }
         columnFilters = columnFilters.filter { known.contains($0.key) }
     }
+
+    public func orderedVisibleColumns() -> [ColumnID] {
+        columnOrder.filter { visibleColumns.contains($0) }
+    }
+
+    public mutating func cycleSort(on column: ColumnID) {
+        if sortColumn == column {
+            switch sortDirection {
+            case .ascending:
+                sortDirection = .descending
+            case .descending:
+                sortColumn = nil
+                sortDirection = nil
+            case nil:
+                sortDirection = .ascending
+            }
+        } else {
+            sortColumn = column
+            sortDirection = .ascending
+        }
+    }
+
+    public mutating func setColumnVisible(_ column: ColumnID, visible: Bool) {
+        guard column != .actions else { return }
+        if visible {
+            if !visibleColumns.contains(column) {
+                visibleColumns.insert(column, at: max(0, visibleColumns.count - 1))
+            }
+        } else if column != .title {
+            visibleColumns.removeAll { $0 == column }
+        }
+        enforceInvariants()
+    }
+
+    public mutating func moveColumn(from source: ColumnID, to destination: ColumnID) {
+        guard source != .actions, destination != .actions, source != destination else { return }
+        guard let fromIndex = columnOrder.firstIndex(of: source),
+              let toIndex = columnOrder.firstIndex(of: destination)
+        else { return }
+        columnOrder.remove(at: fromIndex)
+        let adjusted = toIndex > fromIndex ? toIndex - 1 : toIndex
+        let insertAt = min(adjusted, max(0, columnOrder.count - 1))
+        columnOrder.insert(source, at: insertAt)
+        enforceInvariants()
+    }
 }

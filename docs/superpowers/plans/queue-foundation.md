@@ -1305,18 +1305,18 @@ struct ColumnConfig: Codable, Equatable {
 - `ColumnsMenu` — the show/hide checklist (all 16); the filter chip row `All · Downloading · Done · Needs attention` ("Needs attention" count badge when > 0); a "Clear filters" text button appearing when the current chip + column filters hide every row (resets chip to `All`, clears column filters); the two empty-body lines — `No downloads — paste a link above.` (empty queue) vs `No downloads match this filter.` (filtered-empty).
 - Persists via `ColumnConfig.didSet → Persistence.saveColumns`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
   - `ColumnConfigTests`: `actionsPinnedLastEnforcedOnLoad`; `actionsAlwaysVisible`; `titleAlwaysVisible`; `unknownColumnDroppedOnLoad`; `omittedKnownColumnAppendedAtDefault`; `sortColumnChangeClearsPrevious`; `roundTripCodable`.
   - `DownloadsTableTests` (headless — drive the view models, assert derived state, no on-screen rendering): `nilFieldRendersEmDash_columnStillSorts`; `actionBarEnabledDisabledPerState` (`.queued` → pause/cancel/forceStart/remove/openInBrowser enabled, rest disabled; `.completed` → reveal/remove/openInBrowser enabled); `filteredEmptyShowsCorrectLine`; `emptyQueueShowsCorrectLine`; `columnConfigChangeWithinDebounceThenFlushNow_isWritten` (fake clock + `FakeQueuePersisting`).
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `xcodebuild … test -only-testing:AppUnitTests/ColumnConfigTests -only-testing:AppUnitTests/DownloadsTableTests`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement** `ColumnConfig` (full), `DownloadsTable`, `DownloadRow`, `ColumnsMenu`, and the `AppModel.columnConfig` `didSet` wiring.
+- [x] **Step 3: Implement** `ColumnConfig` (full), `DownloadsTable`, `DownloadRow`, `ColumnsMenu`, and the `AppModel.columnConfig` `didSet` wiring.
 
-- [ ] **Step 4: Run to verify it passes** + `xcodebuild … test -only-testing:AppUnitTests` + lint.
+- [x] **Step 4: Run to verify it passes** + `xcodebuild … test -only-testing:AppUnitTests` + lint.
 
 **DoD:** every column renders, all controls work, config survives a relaunch (headless round-trip; the on-screen UI check is Task 16's smoke).
 
@@ -1351,20 +1351,20 @@ enum RequestBuilder {
 - `HomeView` restructure: a **fixed header region** (paste field, runway when shown, filter chip row, `⊞ Columns` button, the column header row) + an **independently scrolling table body** filling the remaining height. First-run state (no table): the fixed region is just the paste field + hero + step cards, centered. Replaces Phase 1's single `ScrollView`.
 - Wires the runway `@State` (Type / Format / Save-to) through `grab()` into `overrides` — closing the Phase 1 runway-not-applied gap.
 
-- [ ] **Step 1: Write the failing test** — `RequestBuilderTests`:
+- [x] **Step 1: Write the failing test** — `RequestBuilderTests`:
   - `prefsOnly_noOverrides` — `RunwayOverrides()` → request matches `prefs.defaultKind` + `prefs.lastUsedDestFolder` + `prefs.outputTemplate`.
   - `fullOverride` — both `kind` and `destFolder` set → request uses them, not the prefs.
   - `partialOverride` — only `kind` set → request uses the override kind + the prefs folder.
   - Assert exact `DownloadRequest` equality in each.
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `xcodebuild … test -only-testing:AppUnitTests/RequestBuilderTests`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement** `RequestBuilder` + the `HomeView` restructure + the runway wiring in `grab()`.
+- [x] **Step 3: Implement** `RequestBuilder` + the `HomeView` restructure + the runway wiring in `grab()`.
 
-- [ ] **Step 4: Run to verify it passes** + `xcodebuild … test -only-testing:AppUnitTests` + lint.
+- [x] **Step 4: Run to verify it passes** + `xcodebuild … test -only-testing:AppUnitTests` + lint.
 
 **DoD:** the builder is pure and asserted; Home lays out with and without the table.
 
@@ -1435,7 +1435,7 @@ final class QuitCoordinator: Sendable {
 - `MediaGrabberApp`: `DebugFlags.parse(CommandLine.arguments)` once in `init`; `resetState` → skip the persistence file loads; else load `queue.json` + `history.json` → `engine.restore(active:history:)`, load `columns.json` → `ColumnConfig` (or defaults). If `restore` produced any job → force `@AppStorage("mg.hasGrabbedOnce")` true.
 - Leaf docs: `README.md` + `ticket-backlog.md` + `PRIVACY.md` (the per-job logs at `~/Library/Logs/MediaGrabber/jobs/`) updated for the Phase 2 surface; note the drag-reorder and multi-select deferrals in `ticket-backlog.md`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
   - `QuitCoordinatorTests` (fakes for engine, persistence, confirmer):
     - `activeJobs_promptsConfirm_cancelStopsQuit` — `hasActiveJobs → true`, confirmer → `false`; `requestTerminate()` returns `false`, `shutdown` not called.
     - `activeJobs_confirmProceeds_flushThenShutdownThenTrue` — order asserted (flush before shutdown).
@@ -1451,19 +1451,19 @@ final class QuitCoordinator: Sendable {
     - `restoreProducedJobs_forcesHasGrabbedOnce`.
     - `debugResetState_skipsPersistenceLoads`.
 
-- [ ] **Step 2: Run to verify it fails**
+- [x] **Step 2: Run to verify it fails**
 
 Run: `xcodebuild … test -only-testing:AppUnitTests -only-testing:GrabberKitTests/QuitCoordinatorTests`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement** the shells, `DebugFlags`, `AppDelegate`, `QuitCoordinator`, the `AppModel` rewire, the `MainWindow` hosting, the `MediaGrabberApp` launch resume + window config, the emptied-table state, and the leaf-doc updates.
+- [x] **Step 3: Implement** the shells, `DebugFlags`, `AppDelegate`, `QuitCoordinator`, the `AppModel` rewire, the `MainWindow` hosting, the `MediaGrabberApp` launch resume + window config, the emptied-table state, and the leaf-doc updates.
 
-- [ ] **Step 4: Run to verify it passes**
+- [x] **Step 4: Run to verify it passes**
 
 Run: `mise exec -- tuist generate --no-open` then the full suite: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test`
 Expected: PASS — every suite, both targets.
 
-- [ ] **Step 5: Lint**
+- [x] **Step 5: Lint**
 
 Run: `mise exec -- swiftformat --lint . && mise exec -- swiftlint lint --strict`
 Expected: clean.

@@ -3,31 +3,48 @@ import SwiftUI
 
 @main
 struct MediaGrabberApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appModel: AppModel
     @State private var installer: OnboardingInstaller
 
     init() {
+        let debugFlags = DebugFlags.parse(CommandLine.arguments)
         let prefs = Preferences()
         let installer = OnboardingInstaller()
         let ytDlpURL = Self.resolveYtDlp()
         let log = LogWriter()
-        let persistence = Persistence(log: log)
+        let persistence = Persistence(
+            log: log,
+            debug: PersistenceDebug(resetState: debugFlags.resetState)
+        )
+        let engineFlags = EngineDebugFlags(concurrencyCapOverride: debugFlags
+            .concurrencyCapOverride)
         let engine = DownloadEngine(
-            dependencies: .live(ytDlpURL: ytDlpURL, log: log, persistence: persistence),
+            dependencies: .live(
+                ytDlpURL: ytDlpURL,
+                debugFlags: engineFlags,
+                log: log,
+                persistence: persistence
+            ),
             preferences: prefs
         )
         let probe = MetadataProbe(ytDlpURL: ytDlpURL)
-        let forceOnboarding = CommandLine.arguments.contains("-MGForceOnboarding")
 
-        _installer = State(initialValue: installer)
-        _appModel = State(initialValue: AppModel(
+        let columnConfig = debugFlags.resetState ? ColumnConfig
+            .default : (persistence.loadColumns() ?? .default)
+        let model = AppModel(
             engine: engine,
             probe: probe,
             installer: installer,
             prefs: prefs,
             log: log,
-            forceOnboarding: forceOnboarding
-        ))
+            debugFlags: debugFlags,
+            persistence: persistence,
+            columnConfig: columnConfig
+        )
+
+        _installer = State(initialValue: installer)
+        _appModel = State(initialValue: model)
     }
 
     var body: some Scene {
@@ -39,10 +56,13 @@ struct MediaGrabberApp: App {
                 ))
                 .environment(appModel)
                 .background(WindowFrameAutosave(name: "MediaGrabberMain"))
-                .task { await appModel.onAppear() }
+                .task {
+                    appDelegate.quitCoordinator = appModel.quitCoordinator
+                    await appModel.onAppear()
+                }
         }
         .defaultSize(width: 980, height: 720)
-        .windowResizability(.contentSize)
+        .windowResizability(.contentMinSize)
     }
 
     @ViewBuilder
@@ -51,7 +71,7 @@ struct MediaGrabberApp: App {
             OnboardingView(installer: installer)
                 .onChange(of: installer.canProceedToHome) { _, canProceed in
                     if canProceed {
-                        Task { await appModel.refreshOnboardingState() }
+                        Task { await appModel.onboardingFinished() }
                     }
                 }
         } else {

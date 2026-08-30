@@ -15,22 +15,56 @@ struct HomeView: View {
     @State private var seeded = false
     @State private var probeTask: Task<Void, Never>?
 
+    private var showsTable: Bool {
+        hasGrabbedOnce || !appModel.rowStore.rows.isEmpty
+    }
+
     var body: some View {
-        ScrollView {
+        Group {
+            if showsTable {
+                tableLayout
+            } else {
+                firstRunLayout
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear(perform: seedFromPrefs)
+    }
+
+    private var firstRunLayout: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: Spacing.s5) {
-                if !hasGrabbedOnce {
-                    hero
-                }
+                hero
                 pasteBlock
-                if !hasGrabbedOnce, appModel.lastSubmittedJobID == nil {
-                    stepCards
-                }
+                stepCards
             }
             .padding(Spacing.s6)
             .frame(maxWidth: 760, alignment: .leading)
             .frame(maxWidth: .infinity)
+            Spacer(minLength: 0)
         }
-        .onAppear(perform: seedFromPrefs)
+    }
+
+    private var tableLayout: some View {
+        @Bindable var appModel = appModel
+        return VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: Spacing.s4) {
+                pasteBlock
+            }
+            .padding(.horizontal, Spacing.s6)
+            .padding(.top, Spacing.s4)
+
+            DownloadsTable(
+                store: appModel.rowStore,
+                columnConfig: $appModel.columnConfig,
+                scrollToRowID: $appModel.scrollToRowID,
+                onAction: { id, action in
+                    Task { await appModel.handleRowAction(id, action: action) }
+                }
+            )
+            .frame(maxHeight: .infinity)
+        }
     }
 
     private func seedFromPrefs() {
@@ -118,7 +152,7 @@ struct HomeView: View {
     }
 
     private var runwayAttached: Bool {
-        appModel.resolved != nil && appModel.lastSubmittedJobID == nil
+        appModel.resolved != nil
     }
 
     private var stepCards: some View {
@@ -154,7 +188,6 @@ struct HomeView: View {
         await appModel.resolvePasted(pastedURL)
     }
 
-    // Fire a probe shortly after the field settles, so a paste resolves without Return.
     private func autoProbe(_ value: String) {
         probeTask?.cancel()
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -171,8 +204,23 @@ struct HomeView: View {
 
     private func grab() {
         Task {
-            await appModel.grab()
+            await appModel.grab(overrides: runwayOverrides)
             hasGrabbedOnce = true
+            pastedURL = ""
+            appModel.clearResolved()
+        }
+    }
+
+    private var runwayOverrides: RunwayOverrides {
+        RunwayOverrides(kind: selectedKind, destFolder: destFolder)
+    }
+
+    private var selectedKind: DownloadKind {
+        switch kindSelector {
+        case .video:
+            .video(maxHeight: maxHeight)
+        case .audio:
+            .audio(codec: audioCodec)
         }
     }
 }

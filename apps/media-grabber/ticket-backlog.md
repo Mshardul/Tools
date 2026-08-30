@@ -15,26 +15,22 @@ until it reaches v1 (spec §14).
 - **Product-name decision (spec §14).** `MediaGrabber` / `app.mediagrabber.mac`
   are placeholders; pick the real name and do the find-and-replace.
 
-## Phases 2–11 (intent — detailed when reached, from spec §12.1)
+## Phase 2 deferrals (surfaced during the build)
+
+- **Column header drag-reorder.** `ColumnConfig.moveColumn` and persistence are
+  wired; the Downloads table header does not yet support drag-to-reorder.
+- **Multi-select row actions.** The table is single-select only this phase.
+
+## Phases 3–11 (intent — detailed when reached, from spec §12.1)
 
 Boundaries are dependency cuts: a phase is picked when its inputs exist, and its
 scope is drawn so nothing inside waits on a later phase. Shell-and-fill splits
 are in spec §12.2.
 
-- **Phase 2 — Queue foundation and window chrome.** Engine owns the queue:
-  ordered job list + scheduler loop in `DownloadEngine`, `Sendable` `JobSnapshot`
-  on an `AsyncStream`, `AppModel` consumes it into `@Observable` row VMs, intents
-  (pause/cancel/force-start/reorder/remove) are `async` calls in. Scheduler
-  starts a job when `running < Preferences.maxConcurrentDownloads`, written to
-  take more conditions later. Downloads table (columns, show/hide, drag-reorder,
-  per-column sort + filter, filter chips); `ColumnConfig`; full row-action bar
-  (all buttons; no-engine actions capability-gated); force-start (`⏫`,
-  round-robin). `Persistence` for `queue.json` + `columns.json` (debounced);
-  launch reload + `.running` → `.queued`; graceful quit (confirm → SIGTERM →
-  persist → resume). `MainWindow`: empty `WarningBanner` and `HealthStrip`
-  shells. `ErrorClass` gains `incomplete`, `diskFull`, `permissionDenied`.
-  `JobSnapshot` defined full-shape (incl. `attempt`, `cooldownUntil?`,
-  `playerClientUsed?`, defaulted).
+- **Phase 2 — Queue foundation and window chrome.** *(shipped)* Engine owns the
+  queue; Downloads table with columns, sort, filter chips, and row actions;
+  `Persistence` for queue/history/columns; graceful quit; `MainWindow` chrome
+  shells. Deferred: column drag-reorder UI, multi-select.
 - **Phase 3 — Preferences screen.** 7-pane `PreferencesView` over the existing
   `Preferences` model. Downloads / Appearance / Logs & privacy panes filled;
   Network / Sign-in & cookies / Updates / Advanced are headers later phases add

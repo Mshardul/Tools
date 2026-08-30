@@ -21,6 +21,16 @@ struct WorkspaceRevealSink: RevealSink {
 }
 
 @MainActor
+final class AppModelConfirmer: Confirming, @unchecked Sendable {
+    weak var model: AppModel?
+
+    func confirm(_ request: ConfirmationRequest) async -> Bool {
+        guard let model else { return false }
+        return await model.confirm(request)
+    }
+}
+
+@MainActor
 @Observable
 final class AppModel {
     enum Page {
@@ -36,18 +46,44 @@ final class AppModel {
     private(set) var probeError: String?
     private(set) var isProbing = false
     var pendingConfirmation: ConfirmationRequest?
+    var scrollToRowID: UUID?
+    var bannerContent: BannerContent?
+    let debugFlags: DebugFlags
 
+    var columnConfig: ColumnConfig = .default {
+        didSet {
+            guard columnConfig != oldValue else { return }
+            rowStore.setColumnConfig(columnConfig)
+            persistence?.saveColumns(columnConfig)
+        }
+    }
+
+    let rowStore = RowStore()
     let installer: OnboardingInstaller
     let prefs: Preferences
+    let quitCoordinator: QuitCoordinator
+
+    var rows: [RowModel] {
+        rowStore.rows
+    }
+
+    var healthChips: [HealthChip] {
+        [HealthChip(id: "online", label: "online", dot: .ok, interaction: .none)]
+    }
+
+    var maxConcurrentDownloads: Int {
+        debugFlags.concurrencyCapOverride ?? prefs.maxConcurrentDownloads
+    }
 
     private let engine: DownloadEngineProtocol
     private let probe: MetadataProbing
     private let envProbe: EnvironmentProbing
     private let log: LogWriter
-    private let forceOnboarding: Bool
+    private let persistence: (any QueuePersisting)?
     private let revealSink: RevealSink
     private let suppression: SuppressionStore
     private var confirmationContinuation: CheckedContinuation<Bool, Never>?
+    private var consumerTask: Task<Void, Never>?
 
     init(
         engine: DownloadEngineProtocol,
@@ -56,9 +92,11 @@ final class AppModel {
         prefs: Preferences,
         log: LogWriter,
         envProbe: EnvironmentProbing = EnvironmentProbe(),
-        forceOnboarding: Bool = false,
+        debugFlags: DebugFlags = DebugFlags(),
         revealSink: RevealSink = WorkspaceRevealSink(),
-        suppression: SuppressionStore = UserDefaultsSuppressionStore()
+        suppression: SuppressionStore = UserDefaultsSuppressionStore(),
+        persistence: (any QueuePersisting)? = nil,
+        columnConfig: ColumnConfig = .default
     ) {
         self.engine = engine
         self.probe = probe
@@ -66,18 +104,40 @@ final class AppModel {
         self.prefs = prefs
         self.log = log
         self.envProbe = envProbe
-        self.forceOnboarding = forceOnboarding
+        self.debugFlags = debugFlags
         self.revealSink = revealSink
         self.suppression = suppression
+        self.persistence = persistence
+        self.columnConfig = columnConfig
+        rowStore.setColumnConfig(columnConfig)
+        let confirmer = AppModelConfirmer()
+        quitCoordinator = QuitCoordinator(
+            engine: engine,
+            persistence: persistence ?? NoopPersisting(),
+            confirmer: confirmer
+        )
+        confirmer.model = self
     }
 
     func onAppear() async {
         await log.log(.appLaunched)
+        await performLaunchSetup()
         await refreshOnboardingState()
+        startConsumerIfNeeded()
+    }
+
+    func performLaunchSetup() async {
+        guard !debugFlags.resetState, let persistence else { return }
+        let active = persistence.loadQueue()
+        let history = persistence.loadHistory()
+        await engine.restore(active: active, history: history)
+        let snapshot = await engine.currentSnapshot()
+        rowStore.resync(snapshot)
+        applySnapshot(snapshot)
     }
 
     func refreshOnboardingState() async {
-        if forceOnboarding {
+        if debugFlags.forceOnboarding {
             needsOnboarding = true
             return
         }
@@ -85,8 +145,9 @@ final class AppModel {
         needsOnboarding = !report.isReadyForDownloads
     }
 
-    func onboardingFinished() {
-        needsOnboarding = false
+    func onboardingFinished() async {
+        await engine.revalidate()
+        await refreshOnboardingState()
     }
 
     func resolvePasted(_ url: String) async {
@@ -102,7 +163,7 @@ final class AppModel {
             await log.log(.probeCompleted(url: trimmed, title: meta.title, ok: true))
         case let .failure(error):
             resolved = nil
-            probeError = Self.message(for: error)
+            probeError = AppModelDialogs.probeErrorMessage(for: error)
             await log.log(.probeCompleted(url: trimmed, title: nil, ok: false))
         }
     }
@@ -112,25 +173,64 @@ final class AppModel {
         probeError = nil
     }
 
-    func grab() async {
+    func grab(overrides: RunwayOverrides = RunwayOverrides()) async {
         guard let resolved else { return }
-        let request = DownloadRequest(
-            url: resolved.sourceURL,
-            destFolder: prefs.lastUsedDestFolder,
-            kind: prefs.defaultKind,
-            container: containerForCurrentKind()
-        )
-        let result = await engine.submit(request, force: false, prefetchedMetadata: nil)
-        if case let .queued(id) = result {
+        let request = RequestBuilder.build(from: resolved, prefs: prefs, overrides: overrides)
+        if let folder = overrides.destFolder {
+            prefs.lastUsedDestFolder = folder
+        }
+
+        let result = await engine.submit(request, force: false, prefetchedMetadata: resolved)
+        switch result {
+        case let .queued(id):
             lastSubmittedJobID = id
+            scrollToRowID = id
+        case let .duplicateExists(existing, wasCompleted):
+            await log.log(.jobDuplicateSubmitPrompted(existing: existing))
+            let confirmed = await confirm(AppModelDialogs
+                .duplicateConfirmation(wasCompleted: wasCompleted))
+            if confirmed {
+                await log.log(.jobDuplicateSubmitConfirmed)
+                let forced = await engine.submit(request, force: true, prefetchedMetadata: resolved)
+                if case let .queued(id) = forced {
+                    lastSubmittedJobID = id
+                    scrollToRowID = id
+                }
+            } else {
+                await log.log(.jobDuplicateSubmitCancelled)
+                if wasCompleted {
+                    scrollToRowID = existing
+                }
+            }
         }
     }
 
-    func reveal() {
-        revealSink.reveal([])
+    func handleRowAction(_ id: UUID, action: RowAction) async {
+        switch action {
+        case .pause: await engine.pause(id)
+        case .resume: await engine.resume(id)
+        case .cancel: await engine.cancel(id)
+        case .remove: await engine.remove(id)
+        case .forceStart: await engine.forceStart(id)
+        case .reveal: await reveal(jobID: id)
+        case .openInBrowser: openInBrowser(jobID: id)
+        case .retry, .retryWithCookies, .showLog: break
+        }
     }
 
-    // A suppressed key resolves true without ever showing the dialog.
+    func reveal(jobID: UUID) async {
+        guard let row = rowStore.rows.first(where: { $0.id == jobID }) else { return }
+        let existing = row.snapshot.outputFiles.filter {
+            FileManager.default.fileExists(atPath: $0.path)
+        }
+        if existing.isEmpty {
+            await log.log(.revealTargetMissing(jobID: jobID))
+            _ = await confirm(AppModelDialogs.revealMissingConfirmation())
+        } else {
+            revealSink.reveal(existing)
+        }
+    }
+
     func confirm(_ request: ConfirmationRequest) async -> Bool {
         if let key = request.suppressionKey, suppression.isSuppressed(key) {
             return true
@@ -156,22 +256,39 @@ final class AppModel {
         await engine.cancel(id)
     }
 
-    private func containerForCurrentKind() -> String? {
-        if case .video = prefs.defaultKind {
-            return "mp4"
+    private func startConsumerIfNeeded() {
+        guard consumerTask == nil else { return }
+        consumerTask = Task { [weak self] in
+            await self?.runConsumer()
         }
-        return nil
     }
 
-    private static func message(for error: MetadataError) -> String {
-        switch error {
-        case .badURL: "That doesn't look like a valid link."
-        case .unsupported: "That site isn't supported."
-        case .unavailable: "This video isn't available."
-        case .network: "No internet connection."
-        case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
-        case .malformedOutput: "Couldn't read the video details."
-        case let .unknown(raw): raw
+    private func runConsumer() async {
+        while !Task.isCancelled {
+            for await event in engine.events {
+                rowStore.apply(event)
+                if case let .snapshot(snapshot) = event {
+                    applySnapshot(snapshot)
+                }
+            }
+            await log.log(.consumerStreamEnded)
+            try? await Task.sleep(for: .seconds(1))
+            await rowStore.resync(engine.currentSnapshot())
         }
+    }
+
+    private func applySnapshot(_ snapshot: QueueSnapshot) {
+        if snapshot.queueHalt == .depMissing {
+            needsOnboarding = true
+        }
+    }
+
+    private func openInBrowser(jobID: UUID) {
+        guard let row = rowStore.rows.first(where: { $0.id == jobID }),
+              let url = URL(string: row.snapshot.url)
+        else { return }
+        #if canImport(AppKit)
+            NSWorkspace.shared.open(url)
+        #endif
     }
 }

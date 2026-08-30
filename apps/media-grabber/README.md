@@ -18,23 +18,25 @@ missing.
   on first launch if the tools aren't already on `PATH`; if Homebrew itself is
   missing, onboarding shows the one-line install command to paste into Terminal.
 
-## Build from source
+## Run locally
 
 ```bash
 brew install mise
 cd apps/media-grabber
-mise install                      # pins tuist / swiftformat / swiftlint
-mise exec -- tuist generate       # writes MediaGrabber.xcworkspace (gitignored)
+mise install
+make
 ```
 
-Open `MediaGrabber.xcworkspace` and run the `MediaGrabber` scheme, or from the
-command line:
+`make` (same as `make run`) rebuilds from current sources, kills any running
+MediaGrabber, and opens the new build. Running it again replaces the previous
+instance instead of launching a second copy.
+
+Tests and the Xcode workspace:
 
 ```bash
+mise exec -- tuist generate --no-open
 xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
-  -destination 'platform=macOS' test        # full unit suite
-xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber \
-  -destination 'platform=macOS' build
+  -destination 'platform=macOS' test
 ```
 
 Lint:
@@ -59,19 +61,38 @@ A build you compiled yourself is not quarantined and needs neither step.
 
 - **Downloads:** `~/Downloads` by default (change it per-download in the runway,
   or set a default in Preferences once that pane lands).
-- **Logs:** `~/Library/Logs/MediaGrabber/` — local only, never uploaded. See
-  [PRIVACY.md](PRIVACY.md) for exactly what they contain.
+- **Logs:** `~/Library/Logs/MediaGrabber/` — local only, never uploaded.
+  - `app.log` — app-wide events (launch, probes, duplicate prompts, quit).
+  - `jobs/<job-id>.log` — one raw `yt-dlp` transcript per download.
+  See [PRIVACY.md](PRIVACY.md) for exactly what they contain.
 
-## Phase 1 scope and known gaps
+## Phase 2 scope (current)
 
-Phase 1 is one URL in, one file out. Not yet built:
+Phase 2 adds a multi-download queue with persistence:
 
-- **No queue** — one download at a time.
-- **No persistence / resume** — quitting mid-download loses the job; the partial
-  `.part` file is left on disk.
-- **No retry / backoff / rate-limit handling**, no cookies, no playlists, no
-  clipboard/share/drag add-flows. Preferences and Diagnostics panes are present
-  but empty.
+- **Queue + table** — paste URLs, watch several jobs run under
+  `Preferences.maxConcurrentDownloads`, pause/resume/cancel/remove/force-start
+  from the row action bar.
+- **Persistence** — `queue.json`, `history.json`, and `columns.json` under
+  `~/Library/Application Support/MediaGrabber/`; relaunch restores the queue.
+- **Graceful quit** — confirm when a download is active or the queue is halted,
+  flush persistence, then shut down child processes.
+- **Debug flags** — `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
+
+Not yet built:
+
+- **Column header drag-reorder** — `ColumnConfig.moveColumn` exists; UI deferred.
+- **Multi-select row actions**, playlists, cookies, retry/backoff, Preferences
+  panes (beyond the model), Diagnostics content. See
+  [ticket-backlog.md](ticket-backlog.md).
+
+## Phase 1 gaps (resolved in Phase 2)
+
+- ~~No queue~~ — now multi-download with scheduler.
+- ~~No persistence / resume~~ — queue + history persist; `.part` files resume.
+
+Still open from Phase 1:
+
 - **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the
   UI falls back to system faces. Tracked in
   [ticket-backlog.md](ticket-backlog.md).

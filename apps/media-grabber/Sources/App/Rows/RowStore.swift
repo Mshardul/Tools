@@ -189,10 +189,13 @@ final class RowStore {
 
     private func filterValue(_ row: RowModel, column: ColumnID) -> String {
         switch column {
+        case .title: row.snapshot.title ?? "—"
         case .type: row.typeLabel
         case .quality: row.qualityLabel
         case .site: row.siteLabel
         case .status: row.statusText
+        case .destination: row.snapshot.destFolder.path
+        case .clientUsed: row.snapshot.playerClientUsed ?? "—"
         default: ""
         }
     }
