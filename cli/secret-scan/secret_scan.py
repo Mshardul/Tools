@@ -118,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--json",
         action="store_true",
-        help='print JSON array of {path,line,rule,match}',
+        help="print JSON array of {path,line,rule,match}",
     )
     args = parser.parse_args(argv)
 

@@ -1,0 +1,42 @@
+# Repo-wide tooling config for the Python leaves in cli/ and the Python apps/.
+# Swift/Tuist app apps/media-grabber/ has its own config and is not covered here.
+#
+# Lint rollout is staged: `select` below starts with the rule groups the tree
+# already passes. Later groups are listed but disabled; each rollout step
+# enables one or two, fixes the violations, and commits. Enabling a group is a
+# real edit to `select`, not a config toggle left dormant.
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+extend-exclude = ["archive", ".venv", "downloads"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    # "UP",   # step 2: pyupgrade
+    # "B",    # step 3: flake8-bugbear
+    # "SIM",  # step 4: flake8-simplify
+    # "PTH",  # step 4: flake8-use-pathlib
+    # "RUF",  # step 5: ruff-specific
+    # "DTZ",  # step 5: flake8-datetimez
+    # "TRY",  # step 5: tryceratops
+    # "PLW",  # step 5: pylint warnings
+    # "EXE",  # step 5: flake8-executable
+]
+
+[tool.ruff.lint.isort]
+# Tests import the tool module by bare name (`from base64_tool import ...`),
+# run with the tool dir as CWD. Treat those as first-party so import order is stable.
+known-first-party = ["conftest"]
+
+[tool.ruff.format]
+# defaults
+
+[tool.pytest.ini_options]
+# Each leaf's tests import its module by bare name and are run from the leaf dir
+# (CI does `cd cli/<tool> && pytest`). No repo-wide discovery here on purpose.
+addopts = "-q"

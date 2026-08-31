@@ -13,9 +13,7 @@ from pathlib import Path
 from typing import Any
 
 SLUG = "airdrop-folder"
-AIRDROP_APP = (
-    "/System/Library/CoreServices/Finder.app/Contents/Applications/AirDrop.app"
-)
+AIRDROP_APP = "/System/Library/CoreServices/Finder.app/Contents/Applications/AirDrop.app"
 
 Runner = Callable[..., Any]
 
@@ -38,9 +36,7 @@ def applescript_quote(value: str) -> str:
 
 def build_finder_select_script(paths: Sequence[Path]) -> str:
     """AppleScript: reveal + select paths in Finder (for AirDrop sharing)."""
-    posix_list = ", ".join(
-        f'(POSIX file "{applescript_quote(str(p))}")' for p in paths
-    )
+    posix_list = ", ".join(f'(POSIX file "{applescript_quote(str(p))}")' for p in paths)
     return (
         'tell application "Finder"\n'
         "  activate\n"
@@ -68,7 +64,9 @@ def share_via_airdrop(
         text=True,
     )
     if getattr(result, "returncode", 0) != 0:
-        err = (getattr(result, "stderr", None) or getattr(result, "stdout", None) or "osascript failed")
+        err = (
+            getattr(result, "stderr", None) or getattr(result, "stdout", None) or "osascript failed"
+        )
         raise RuntimeError(str(err).strip())
 
     result = runner(
@@ -77,15 +75,14 @@ def share_via_airdrop(
         text=True,
     )
     if getattr(result, "returncode", 0) != 0:
-        err = (getattr(result, "stderr", None) or getattr(result, "stdout", None) or "open failed")
+        err = getattr(result, "stderr", None) or getattr(result, "stdout", None) or "open failed"
         raise RuntimeError(str(err).strip())
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=(
-            "Open AirDrop and select files/folders in Finder "
-            "(Finder Quick Action helper)."
+            "Open AirDrop and select files/folders in Finder (Finder Quick Action helper)."
         ),
     )
     parser.add_argument(

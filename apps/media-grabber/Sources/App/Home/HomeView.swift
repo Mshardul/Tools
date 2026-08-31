@@ -91,6 +91,21 @@ struct HomeView: View {
         }
     }
 
+    @ViewBuilder
+    private var probeStatus: some View {
+        if appModel.isProbing {
+            ProgressView()
+                .controlSize(.small)
+                .tint(theme.palette.accent)
+        } else if let resolved = appModel.resolved {
+            Text("\u{2713} \(resolved.title)")
+                .font(theme.skin.monoFont(12, .regular))
+                .foregroundStyle(theme.palette.accent)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+    }
+
     private func pasteBlock(reserveRunwaySlot: Bool = false) -> some View {
         VStack(spacing: Spacing.s3) {
             VStack(spacing: Spacing.s2) {
@@ -109,15 +124,7 @@ struct HomeView: View {
                                     .allowsHitTesting(false)
                             }
                         }
-                    if appModel.isProbing {
-                        ProgressView().controlSize(.small)
-                    } else if let resolved = appModel.resolved {
-                        Text("\u{2713} \(resolved.title)")
-                            .font(theme.skin.monoFont(12, .regular))
-                            .foregroundStyle(theme.palette.accent)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
+                    probeStatus
                 }
 
                 if let error = appModel.probeError {

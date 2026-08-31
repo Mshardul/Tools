@@ -20,9 +20,7 @@ from mic_mute import (  # noqa: E402
 
 class ParseVolumeSettingsTests(unittest.TestCase):
     def test_parses_standard_output(self):
-        text = (
-            "output volume:50, input volume:75, alert volume:100, output muted:false"
-        )
+        text = "output volume:50, input volume:75, alert volume:100, output muted:false"
         result = parse_volume_settings(text)
         self.assertEqual(result["output_volume"], 50)
         self.assertEqual(result["input_volume"], 75)
@@ -70,9 +68,7 @@ class OsascriptHelpersTests(unittest.TestCase):
     def test_get_input_volume_uses_osascript(self):
         from mic_mute import get_volume_settings
 
-        text = (
-            "output volume:50, input volume:33, alert volume:100, output muted:false"
-        )
+        text = "output volume:50, input volume:33, alert volume:100, output muted:false"
         with patch("mic_mute.subprocess.run") as run:
             run.return_value = MagicMock(returncode=0, stdout=text, stderr="")
             settings = get_volume_settings()

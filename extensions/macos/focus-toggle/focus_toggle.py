@@ -90,7 +90,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--shortcut",
         default=None,
-        help='override Shortcuts name for on/off/toggle (default: from config)',
+        help="override Shortcuts name for on/off/toggle (default: from config)",
     )
     parser.add_argument(
         "--config",
@@ -128,9 +128,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        name = resolve_shortcut(
-            args.command, config, cli_shortcut=args.shortcut
-        )
+        name = resolve_shortcut(args.command, config, cli_shortcut=args.shortcut)
         run_shortcut(name)
     except (ValueError, RuntimeError) as exc:
         print(f"{SLUG}: {exc}", file=sys.stderr)

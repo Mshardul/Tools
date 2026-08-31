@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 from srt_shifter import detect_format, main, shift_text
 
-
 SRT_SAMPLE = """\
 1
 00:00:01,000 --> 00:00:03,500
@@ -36,7 +35,9 @@ class DetectFormatTests(unittest.TestCase):
         self.assertEqual(detect_format("subs.vtt", ""), "vtt")
 
     def test_content_webvtt(self):
-        self.assertEqual(detect_format("subs.txt", "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHi\n"), "vtt")
+        self.assertEqual(
+            detect_format("subs.txt", "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\nHi\n"), "vtt"
+        )
 
     def test_content_srt_fallback(self):
         self.assertEqual(

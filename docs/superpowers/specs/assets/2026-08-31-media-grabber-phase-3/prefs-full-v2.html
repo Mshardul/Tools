@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preferences — full reference v2 (Phase 3)</title>
+<script src="/helper.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:14px/1.5 -apple-system,"SF Pro Text",system-ui,sans-serif; background:#14171c; color:#d8dbe2; padding:30px 26px 90px; }
+  h1 { font-size:19px; font-weight:650; color:#f2f4f8; margin-bottom:6px; }
+  .lede { color:#99a1b0; font-size:13px; max-width:940px; margin-bottom:16px; }
+  .lede b { color:#cdd3dd; }
+
+  .toolbar { display:flex; gap:8px; align-items:center; margin:0 0 22px; flex-wrap:wrap; }
+  .toolbar .grp { display:flex; gap:4px; background:#1c2026; border:1px solid #2a2f37; border-radius:9px; padding:3px; }
+  .toolbar button { font:inherit; font-size:12px; font-weight:550; color:#9aa2b0; background:transparent; border:0; padding:5px 11px; border-radius:6px; cursor:pointer; }
+  .toolbar button.on { background:#2f3540; color:#f0f2f6; }
+  .toolbar .cap { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#6c7480; }
+
+  .frame { display:flex; justify-content:center; }
+  .win { width:860px; border-radius:14px; overflow:hidden; border:1px solid var(--stroke); background:var(--ground); color:var(--text); box-shadow:0 24px 64px -18px rgba(0,0,0,.6); }
+  .win.tape { box-shadow:9px 9px 0 var(--stroke); border-width:1.5px; }
+  .titlebar { display:flex; align-items:center; gap:7px; padding:10px 14px; border-bottom:1px solid var(--hair); }
+  .titlebar .tl { width:11px; height:11px; border-radius:50%; background:var(--faint); opacity:.5; }
+  .titlebar .name { margin-left:7px; font-size:12px; font-weight:600; color:var(--dim); }
+  .nav { display:flex; gap:3px; margin-left:auto; }
+  .nav b { font-size:11px; font-weight:550; color:var(--dim); padding:3px 9px; border-radius:6px; cursor:pointer; }
+  .nav b.on { background:var(--panel); color:var(--text); }
+
+  /* fixed body height; only .content scrolls */
+  .prefbody { display:flex; height:520px; }
+  .rail { width:172px; flex:none; padding:14px 9px; border-right:1px solid var(--hair); overflow-y:auto; }
+  .rail .grp-cap { font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); padding:9px 8px 4px; }
+  .rail .item { font-size:12.5px; padding:6px 9px; border-radius:7px; color:var(--dim); cursor:pointer; }
+  .rail .item.on { background:var(--panel); color:var(--text); font-weight:550; }
+
+  .content { flex:1; overflow-y:auto; padding:0; }
+  .content-inner { padding:22px 26px 30px; }
+
+  /* clear title hierarchy */
+  .page-title { font-size:20px; font-weight:680; letter-spacing:-.01em; color:var(--headline,var(--text)); margin-bottom:4px; }
+  .page-sub { font-size:12px; color:var(--dim); margin-bottom:8px; }
+  .content hr.head-rule { border:0; border-top:1px solid var(--hair); margin:12px 0 6px; }
+
+  /* two-column rows */
+  .row {
+    display:flex; align-items:flex-start; gap:24px;
+    padding:15px 2px;
+    border-bottom:1px solid var(--hair);
+  }
+  .row:last-child { border-bottom:0; }
+  .row .left { flex:1; min-width:0; padding-top:2px; }
+  .row .rlabel { font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
+  .row .rhelp { font-size:11.5px; color:var(--dim); }
+  .row .right { flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:6px; max-width:300px; }
+
+  .section-cap { font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin:22px 2px 2px; }
+
+  .stepper { display:inline-flex; border-radius:8px; overflow:hidden; border:1px solid var(--stroke); }
+  .win.tape .stepper { border-width:1.5px; }
+  .stepper button { font:inherit; font-size:13px; border:0; background:var(--panel); color:var(--text); padding:6px 12px; cursor:pointer; }
+  .stepper .v { padding:6px 15px; font-size:13px; font-weight:600; background:var(--panel-solid); min-width:44px; text-align:center; }
+
+  .seg { display:inline-flex; border-radius:8px; padding:3px; gap:3px; background:var(--panel); border:1px solid var(--stroke); }
+  .win.tape .seg { border-width:1.5px; }
+  .seg button { font:inherit; font-size:11.5px; font-weight:550; border:0; background:transparent; color:var(--dim); padding:5px 13px; border-radius:5px; cursor:pointer; }
+  .seg button.on { background:var(--panel-solid); color:var(--text); }
+
+  .picker { display:inline-flex; align-items:center; justify-content:space-between; gap:10px; min-width:190px; padding:7px 11px; border-radius:8px; background:var(--panel); border:1px solid var(--stroke); font-size:12.5px; color:var(--text); cursor:pointer; }
+  .win.tape .picker { border-width:1.5px; }
+  .picker .chev { opacity:.55; font-size:10px; }
+
+  .textin { width:230px; padding:7px 10px; border-radius:8px; background:var(--panel); border:1px solid var(--stroke); font:inherit; font-size:12px; color:var(--text); font-family:ui-monospace,Menlo,monospace; }
+  .win.tape .textin { border-width:1.5px; }
+
+  .toggle { width:36px; height:21px; border-radius:21px; background:var(--panel); position:relative; border:1px solid var(--stroke); flex:none; cursor:pointer; }
+  .toggle.on { background:var(--accent); border-color:transparent; }
+  .toggle i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#fff; transition:left .12s; }
+  .toggle.on i { left:17px; }
+
+  .sw3 { display:flex; gap:9px; }
+  .sw { width:98px; border-radius:9px; overflow:hidden; border:1px solid var(--stroke); cursor:pointer; }
+  .win.tape .sw { border-width:1.5px; }
+  .sw .fill { height:36px; display:flex; } .sw .fill i { flex:1; }
+  .sw .nm { font-size:10px; padding:4px 5px; text-align:center; color:var(--text); }
+  .sw.sel { outline:2px solid var(--accent); outline-offset:2px; }
+
+  .note { font-size:11px; color:var(--dim); display:flex; gap:6px; align-items:flex-start; text-align:right; max-width:260px; }
+  .note .g { color:var(--warn); flex:none; }
+
+  .btn { font:inherit; font-size:12px; font-weight:550; padding:6px 13px; border-radius:8px; border:1px solid var(--stroke); background:var(--panel); color:var(--text); cursor:pointer; }
+  .win.tape .btn { border-width:1.5px; }
+  .btn.danger { color:var(--danger); border-color:color-mix(in srgb,var(--danger) 45%,transparent); }
+
+  .headeronly { font-size:12px; color:var(--faint); padding:20px 2px; border-top:1px solid var(--hair); }
+
+  .footer-note { margin-top:26px; font-size:12px; color:#8b93a1; max-width:940px; }
+  .footer-note code { background:#22262e; padding:1px 4px; border-radius:3px; }
+</style>
+</head>
+<body>
+<h1>Preferences v2 — two-column rows, title hierarchy, scrolling content</h1>
+<p class="lede"><b>1</b> rows are label-left / control-right, divider between. <b>2</b> page title is bigger &amp; heavier with a rule under it. <b>3</b> window height is fixed — the right section scrolls on its own (Downloads pane overflows; scroll it).</p>
+
+<div class="toolbar">
+  <span class="cap">Rendered in</span>
+  <div class="grp" id="skinGrp">
+    <button data-skin="aurora" class="on">Aurora</button>
+    <button data-skin="tape">Tape Deck</button>
+  </div>
+  <span class="cap" style="margin-left:8px">Palette</span>
+  <div class="grp" id="palGrp"></div>
+</div>
+
+<div class="frame"><div id="win"></div></div>
+
+<p class="footer-note">
+Concurrency note is live (running = 3; set "At the same time" &lt; 3). Tape Deck <code>--warn</code> darkened for legibility on cream.
+</p>
+
+<script>
+const VARS = {
+  auroraMintIris:{"--ground":"#0C1013","--panel-solid":"#0E1117","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(255,255,255,.12)","--hair":"rgba(255,255,255,.06)","--text":"#EDF0F5","--dim":"#9AA3B2","--faint":"#6B7480","--headline":"#F4F6FA","--accent":"#5EF2C8","--accent-2":"#8B7BFF","--warn":"#FFC24B","--danger":"#FF7A6B"},
+  auroraLimeForest:{"--ground":"#0A0F0C","--panel-solid":"#0C1210","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(190,255,210,.13)","--hair":"rgba(255,255,255,.06)","--text":"#E9F2EC","--dim":"#93A99C","--faint":"#5F7268","--headline":"#F2F8F3","--accent":"#B6F04A","--accent-2":"#4ED6A0","--warn":"#F2C14E","--danger":"#FF6F6F"},
+  auroraMagentaViolet:{"--ground":"#100C14","--panel-solid":"#120E16","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(230,190,255,.14)","--hair":"rgba(255,255,255,.06)","--text":"#F1EAF5","--dim":"#A996B5","--faint":"#7A6B85","--headline":"#F7F2FA","--accent":"#F25C9E","--accent-2":"#9B6BFF","--warn":"#FFC24B","--danger":"#FF6B6B"},
+  tapeDeckA:{"--ground":"#F3E9D8","--panel-solid":"#FBF4E6","--panel":"#F3E9D8","--stroke":"#2B2118","--hair":"rgba(43,33,24,.18)","--text":"#2B2118","--dim":"#8A7A60","--faint":"#8A7A60","--headline":"#2B2118","--accent":"#D2601A","--accent-2":"#0E5C57","--warn":"#9C5A00","--danger":"#B4472A"},
+  tapeDeckB:{"--ground":"#EFE9E9","--panel-solid":"#FBF5F5","--panel":"#EFE9E9","--stroke":"#281E26","--hair":"rgba(40,30,38,.18)","--text":"#281E26","--dim":"#8B8088","--faint":"#8B8088","--headline":"#281E26","--accent":"#E98C89","--accent-2":"#5A2E52","--warn":"#9A6410","--danger":"#C25B57"},
+  tapeDeckC:{"--ground":"#E7E9E7","--panel-solid":"#F5F6F3","--panel":"#E7E9E7","--stroke":"#1B222A","--hair":"rgba(27,34,42,.18)","--text":"#1B222A","--dim":"#7C838A","--faint":"#7C838A","--headline":"#1B222A","--accent":"#2FA69A","--accent-2":"#1F3350","--warn":"#8E6318","--danger":"#D9694C"},
+};
+const SKIN_PALS = { aurora:["auroraMintIris","auroraLimeForest","auroraMagentaViolet"], tape:["tapeDeckA","tapeDeckB","tapeDeckC"] };
+const NAMES = { auroraMintIris:"Mint & Iris",auroraLimeForest:"Lime & Forest",auroraMagentaViolet:"Magenta & Violet",tapeDeckA:"Teal & Rust",tapeDeckB:"Plum & Blush",tapeDeckC:"Navy & Aqua" };
+const PAL_SW = {
+  aurora:[["Mint & Iris","#5EF2C8","#8B7BFF"],["Lime & Forest","#B6F04A","#4ED6A0"],["Magenta & Violet","#F25C9E","#9B6BFF"]],
+  tape:[["Teal & Rust","#D2601A","#0E5C57"],["Plum & Blush","#E98C89","#5A2E52"],["Navy & Aqua","#2FA69A","#1F3350"]],
+};
+let skin="aurora", pal="auroraMintIris", pane="downloads";
+const RUNNING = 3; let conc = 3;
+
+function vstr(){ return Object.entries(VARS[pal]).map(([k,v])=>`${k}:${v}`).join(";"); }
+const RAIL = [
+  ["General", [["downloads","Downloads"],["appearance","Appearance"],["network","Network"]]],
+  ["YouTube", [["cookies","Sign-in & cookies"]]],
+  ["System", [["updates","Updates"],["logs","Logs & privacy"],["advanced","Advanced"]]],
+];
+function railHtml(){
+  return RAIL.map(([cap,items])=>`<div class="grp-cap">${cap}</div>`+
+    items.map(([id,label])=>`<div class="item ${pane===id?'on':''}" data-pane="${id}">${label}</div>`).join("")).join("");
+}
+function stepper(v){ return `<div class="stepper"><button data-d="-1">&ndash;</button><span class="v">${v}</span><button data-d="1">+</button></div>`; }
+function picker(val,w){ return `<div class="picker" ${w?`style="min-width:${w}px"`:''}><span>${val}</span><span class="chev">&#9662;</span></div>`; }
+function seg(opts,on){ return `<div class="seg">${opts.map(o=>`<button class="${o===on?'on':''}">${o}</button>`).join("")}</div>`; }
+function toggle(on){ return `<div class="toggle ${on?'on':''}"><i></i></div>`; }
+function row(label,help,control,extra){
+  return `<div class="row"><div class="left"><div class="rlabel">${label}</div><div class="rhelp">${help}</div></div>
+    <div class="right">${control}${extra||''}</div></div>`;
+}
+
+function paneDownloads(){
+  const note = conc<RUNNING ? `<div class="note"><span class="g">&#9650;</span><span>${RUNNING} running at the old limit &mdash; restart to apply now.</span></div>` : '';
+  return `
+    <div class="page-title">Downloads</div>
+    <div class="page-sub">Where files go and how they're fetched.</div>
+    <hr class="head-rule">
+    ${row("Save to","Default folder for new downloads.",picker("Downloads",210))}
+    ${row("At the same time","The app lowers this on its own if a site starts throttling.",stepper(conc),note)}
+    ${row("If a download fails, try","How many times to retry automatically before asking you. <span style='opacity:.6'>(control lands in Phase 4)</span>",stepper(5))}
+    ${row("Default type","Video or audio-only, unless changed per download.",seg(["Video","Audio"],"Video"))}
+    ${row("Default video quality","A ceiling &mdash; best available up to this.",picker("1080p",150))}
+    ${row("Default audio format","Used when the type is Audio.",seg(["m4a","mp3"],"m4a"))}
+    ${row("File naming","How saved files are named.",picker("Title",210))}
+    ${row("Watch the clipboard","Offer to grab a link when you copy one. <span style='opacity:.6'>(acts in Phase 9)</span>",toggle(true))}`;
+}
+function paneAppearance(){
+  const sw = PAL_SW[skin];
+  return `
+    <div class="page-title">Appearance</div>
+    <div class="page-sub">How the app looks. Changes apply immediately.</div>
+    <hr class="head-rule">
+    ${row("Skin","Aurora is dark and luminous. Tape Deck is warm and light.",seg(["Aurora","Tape Deck"], skin==="aurora"?"Aurora":"Tape Deck"))}
+    ${row("Palette","Accent colours for the "+(skin==="aurora"?"Aurora":"Tape Deck")+" skin.",
+      `<div class="sw3">${sw.map((s,i)=>`<div class="sw ${i===0?'sel':''}"><div class="fill"><i style="background:${s[1]}"></i><i style="background:${s[2]}"></i></div><div class="nm">${s[0]}</div></div>`).join("")}</div>`)}`;
+}
+function paneNetwork(){
+  return `
+    <div class="page-title">Network</div>
+    <div class="page-sub">Connection settings passed to the downloader.</div>
+    <hr class="head-rule">
+    ${row("Proxy","e.g. http://host:port. Leave blank for none.",`<input class="textin" placeholder="http://host:port">`)}
+    ${row("Use IPv4 only","Try this if downloads stall on connection errors.",toggle(false))}
+    ${row("Limit download speed","KB/s. Off = no limit.",stepper("Off"))}`;
+}
+function paneCookies(){
+  return `
+    <div class="page-title">Sign-in &amp; cookies</div>
+    <div class="page-sub">Use your browser's YouTube session for age-restricted or private videos.</div>
+    <hr class="head-rule">
+    <div class="headeronly">&#9679; Filled in Phase 5 &mdash; browser picker, Firefox profile, Full Disk Access, tip text.</div>`;
+}
+function paneUpdates(){
+  return `
+    <div class="page-title">Updates</div>
+    <div class="page-sub">Keep the downloader and app current.</div>
+    <hr class="head-rule">
+    <div class="headeronly">&#9679; Filled in Phase 10 &mdash; yt-dlp / ffmpeg / app versions, check buttons, daily-check toggle.</div>`;
+}
+function paneLogs(){
+  return `
+    <div class="page-title">Logs &amp; privacy</div>
+    <div class="page-sub">Local logs only. Nothing is ever uploaded.</div>
+    <hr class="head-rule">
+    ${row("Open log folder","~/Library/Logs/MediaGrabber",`<button class="btn">Open log folder</button>`)}
+    ${row("Detailed logging","More verbose transcripts. Off unless troubleshooting.",toggle(false))}
+    ${row("What's in the logs","Opens PRIVACY.md.",`<button class="btn">View</button>`)}`;
+}
+function paneAdvanced(){
+  return `
+    <div class="page-title">Advanced</div>
+    <div class="page-sub">Rarely needed.</div>
+    <hr class="head-rule">
+    ${row("Open app data folder","Queue, history, and column state live here.",`<button class="btn">Open</button>`)}
+    ${row("Reset table columns","Restore the default Downloads-table columns and order.",`<button class="btn">Reset columns</button>`)}
+    ${row("Reset all settings","Put every preference back to its default. Asks first.",`<button class="btn danger">Reset all settings</button>`)}`;
+}
+const PANES = { downloads:paneDownloads, appearance:paneAppearance, network:paneNetwork, cookies:paneCookies, updates:paneUpdates, logs:paneLogs, advanced:paneAdvanced };
+
+function render(){
+  const pg=document.getElementById("palGrp"); pg.innerHTML="";
+  SKIN_PALS[skin].forEach(k=>{
+    const b=document.createElement("button"); b.textContent=NAMES[k];
+    b.className=k===pal?"on":""; b.onclick=()=>{pal=k;render();}; pg.appendChild(b);
+  });
+  const tape = skin==="tape";
+  document.getElementById("win").innerHTML = `<div class="win ${tape?'tape':'aurora'}" style="${vstr()}">
+    <div class="titlebar"><span class="tl"></span><span class="tl"></span><span class="tl"></span><span class="name">MediaGrabber</span>
+      <div class="nav"><b>Home</b><b class="on">Preferences</b><b>Diagnostics</b></div></div>
+    <div class="prefbody"><div class="rail">${railHtml()}</div><div class="content"><div class="content-inner">${PANES[pane]()}</div></div></div>
+  </div>`;
+  document.querySelectorAll(".rail .item").forEach(el=>{ el.onclick=()=>{ pane=el.dataset.pane; render(); }; });
+  document.querySelectorAll(".stepper button[data-d]").forEach(btn=>{
+    btn.onclick=(e)=>{ e.stopPropagation(); conc=Math.max(1,Math.min(6,conc+parseInt(btn.dataset.d))); render(); };
+  });
+}
+document.querySelectorAll("#skinGrp button").forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll("#skinGrp button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); skin=b.dataset.skin; pal=SKIN_PALS[skin][0]; render(); };
+});
+render();
+</script>
+</body>
+</html>

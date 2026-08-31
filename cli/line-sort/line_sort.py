@@ -8,9 +8,7 @@ import sys
 from pathlib import Path
 
 
-def process_lines(
-    lines: list[str], *, unique: bool = False, reverse: bool = False
-) -> list[str]:
+def process_lines(lines: list[str], *, unique: bool = False, reverse: bool = False) -> list[str]:
     if unique:
         result = sorted(set(lines))
     else:

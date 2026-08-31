@@ -55,12 +55,7 @@ def should_skip_chapter(name: str, patterns: list[str] | None = None) -> bool:
 def default_vlc_extensions_dir() -> Path:
     """macOS VLC user Lua extensions directory."""
     return (
-        Path.home()
-        / "Library"
-        / "Application Support"
-        / "org.videolan.vlc"
-        / "lua"
-        / "extensions"
+        Path.home() / "Library" / "Application Support" / "org.videolan.vlc" / "lua" / "extensions"
     )
 
 

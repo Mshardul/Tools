@@ -6,11 +6,7 @@ from jwt_decode import decode_jwt
 class JwtDecodeTests(unittest.TestCase):
     def test_decode_header_and_payload(self):
         # {"alg":"none"} . {"sub":"123","name":"Ada"} . sig
-        token = (
-            "eyJhbGciOiJub25lIn0."
-            "eyJzdWIiOiIxMjMiLCJuYW1lIjoiQWRhIn0."
-            "x"
-        )
+        token = "eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMiLCJuYW1lIjoiQWRhIn0.x"
         result = decode_jwt(token)
         self.assertEqual(result["header"], {"alg": "none"})
         self.assertEqual(result["payload"], {"sub": "123", "name": "Ada"})

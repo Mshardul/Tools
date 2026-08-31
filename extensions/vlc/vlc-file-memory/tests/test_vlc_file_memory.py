@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import io
-import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -129,10 +128,7 @@ class DefaultPathsTests(unittest.TestCase):
             got = default_vlc_extensions_dir()
         self.assertEqual(
             got,
-            Path(
-                "/Users/test/Library/Application Support/"
-                "org.videolan.vlc/lua/extensions"
-            ),
+            Path("/Users/test/Library/Application Support/org.videolan.vlc/lua/extensions"),
         )
 
     def test_default_store_beside_extensions(self):
@@ -153,9 +149,7 @@ class InstallUninstallTests(unittest.TestCase):
             dest_dir = Path(tmp) / "extensions"
             src = Path(tmp) / "file_memory.lua"
             src.write_text("-- lua\n", encoding="utf-8")
-            dest = install_lua_extension(
-                source=src, dest_dir=dest_dir, dry_run=True
-            )
+            dest = install_lua_extension(source=src, dest_dir=dest_dir, dry_run=True)
             self.assertEqual(dest, dest_dir / "file_memory.lua")
             self.assertFalse(dest.exists())
 
@@ -164,9 +158,7 @@ class InstallUninstallTests(unittest.TestCase):
             dest_dir = Path(tmp) / "lua" / "extensions"
             src = Path(tmp) / "file_memory.lua"
             src.write_text("-- mem\n", encoding="utf-8")
-            dest = install_lua_extension(
-                source=src, dest_dir=dest_dir, dry_run=False
-            )
+            dest = install_lua_extension(source=src, dest_dir=dest_dir, dry_run=False)
             self.assertTrue(dest.is_file())
             self.assertEqual(dest.read_text(encoding="utf-8"), "-- mem\n")
 

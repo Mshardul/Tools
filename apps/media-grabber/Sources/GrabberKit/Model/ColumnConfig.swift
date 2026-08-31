@@ -6,7 +6,7 @@ public enum ColumnID: String, Codable, Sendable, CaseIterable {
     case actions
 
     public static let defaultVisible: [ColumnID] = [
-        .title, .status, .progress, .speed, .eta, .type, .quality, .size
+        .title, .status, .progress, .speed, .eta, .type, .quality, .size, .addedAt
     ]
 
     public static let defaultOrder: [ColumnID] = [
@@ -30,8 +30,8 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
     public init(
         visibleColumns: [ColumnID] = ColumnID.defaultVisible + [.actions],
         columnOrder: [ColumnID] = ColumnID.defaultOrder,
-        sortColumn: ColumnID? = nil,
-        sortDirection: SortDirection? = nil,
+        sortColumn: ColumnID? = .addedAt,
+        sortDirection: SortDirection? = .descending,
         columnFilters: [ColumnID: [String]] = [:]
     ) {
         self.visibleColumns = visibleColumns

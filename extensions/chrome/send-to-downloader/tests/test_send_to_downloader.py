@@ -146,10 +146,13 @@ class AddListDrainTests(unittest.TestCase):
             add_entry(queue, "https://a.example/1", ts="t1")
             add_entry(queue, "https://b.example/2", ts="t2")
             drained = drain_queue(queue, keep=False)
-            self.assertEqual([e["url"] for e in drained], [
-                "https://a.example/1",
-                "https://b.example/2",
-            ])
+            self.assertEqual(
+                [e["url"] for e in drained],
+                [
+                    "https://a.example/1",
+                    "https://b.example/2",
+                ],
+            )
             self.assertEqual(list_entries(queue), [])
             self.assertTrue(queue.is_file())
             self.assertEqual(queue.read_text(encoding="utf-8"), "")
@@ -184,14 +187,16 @@ class MainCliTests(unittest.TestCase):
             out = io.StringIO()
             err = io.StringIO()
             with patch("sys.stdout", out), patch("sys.stderr", err):
-                code = main([
-                    "--queue",
-                    str(queue),
-                    "add",
-                    "https://youtu.be/xyz",
-                    "--title",
-                    "Clip",
-                ])
+                code = main(
+                    [
+                        "--queue",
+                        str(queue),
+                        "add",
+                        "https://youtu.be/xyz",
+                        "--title",
+                        "Clip",
+                    ]
+                )
             self.assertEqual(code, 0)
             self.assertIn("https://youtu.be/xyz", out.getvalue())
 

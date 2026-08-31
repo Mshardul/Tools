@@ -87,8 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         "--dir",
         dest="snippets_dir",
         default=None,
-        help="snippets directory (default: ./snippets, or "
-        f"${ENV_VAR}, or config snippets_dir)",
+        help=f"snippets directory (default: ./snippets, or ${ENV_VAR}, or config snippets_dir)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

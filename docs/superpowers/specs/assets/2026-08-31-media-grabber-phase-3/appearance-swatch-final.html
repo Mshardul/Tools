@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appearance pane — swatch treatment (V1)</title>
+<script src="/helper.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:14px/1.5 -apple-system,"SF Pro Text",system-ui,sans-serif; background:#14171c; color:#d8dbe2; padding:30px 26px 80px; }
+  h1 { font-size:19px; font-weight:650; color:#f2f4f8; margin-bottom:6px; }
+  .lede { color:#99a1b0; font-size:13px; max-width:880px; margin-bottom:4px; }
+  .lede b { color:#cdd3dd; }
+
+  .toolbar { display:flex; gap:8px; align-items:center; margin:20px 0 24px; flex-wrap:wrap; }
+  .toolbar .grp { display:flex; gap:4px; background:#1c2026; border:1px solid #2a2f37; border-radius:9px; padding:3px; }
+  .toolbar button { font:inherit; font-size:12px; font-weight:550; color:#9aa2b0; background:transparent; border:0; padding:5px 11px; border-radius:6px; cursor:pointer; }
+  .toolbar button.on { background:#2f3540; color:#f0f2f6; }
+  .toolbar .cap { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#6c7480; }
+
+  .threeup { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  @media (max-width:1300px){ .threeup{ grid-template-columns:1fr; } }
+  .variant-h { font-size:13px; font-weight:620; color:#eef0f4; margin-bottom:9px; }
+  .variant-h span { color:#8b93a1; font-weight:400; }
+  .opt { border:1.5px solid #2b313a; border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color .12s; }
+  .opt:hover { border-color:#3d4450; }
+  .opt.selected { border-color:#5EF2C8; box-shadow:0 0 0 3px rgba(94,242,200,.16); }
+  .opt .pad { padding:16px; }
+
+  .win { border-radius:12px; overflow:hidden; border:1px solid var(--stroke); background:var(--ground); color:var(--text); box-shadow:0 20px 50px -18px rgba(0,0,0,.6); }
+  .win.tape { box-shadow:7px 7px 0 var(--stroke); border-width:1.5px; }
+  .titlebar { display:flex; align-items:center; gap:6px; padding:8px 12px; border-bottom:1px solid var(--hair); }
+  .titlebar .tl { width:10px; height:10px; border-radius:50%; background:var(--faint); opacity:.5; }
+  .titlebar .name { margin-left:5px; font-size:11.5px; font-weight:600; color:var(--dim); }
+  .nav { display:flex; gap:3px; margin-left:auto; }
+  .nav b { font-size:10.5px; font-weight:550; color:var(--dim); padding:3px 7px; border-radius:6px; }
+  .nav b.on { background:var(--panel); color:var(--text); }
+  .prefbody { display:flex; min-height:300px; }
+  .rail { width:132px; flex:none; padding:10px 7px; border-right:1px solid var(--hair); }
+  .rail .grp-cap { font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); padding:7px 7px 3px; }
+  .rail .item { font-size:12px; padding:5px 8px; border-radius:6px; color:var(--dim); }
+  .rail .item.on { background:var(--panel); color:var(--text); font-weight:550; }
+  .content { flex:1; padding:16px 18px; }
+  .content h2 { font-size:14.5px; font-weight:640; color:var(--headline,var(--text)); margin-bottom:3px; }
+  .content .h-sub { font-size:11.5px; color:var(--dim); margin-bottom:16px; }
+  .field { margin-bottom:18px; }
+  .field .flabel { font-size:12px; font-weight:600; color:var(--text); margin-bottom:3px; }
+  .field .fhelp { font-size:11px; color:var(--dim); margin-bottom:8px; }
+
+  .seg { display:inline-flex; border-radius:9px; padding:3px; gap:3px; background:var(--panel); border:1px solid var(--stroke); }
+  .win.tape .seg { border-width:1.5px; }
+  .seg button { font:inherit; font-size:11.5px; font-weight:550; border:0; background:transparent; color:var(--dim); padding:5px 13px; border-radius:6px; }
+  .seg button.on { background:var(--panel-solid); color:var(--text); }
+
+  /* T1 split-fill chip */
+  .sw3 { display:flex; gap:8px; }
+  .t1 { width:94px; border-radius:9px; overflow:hidden; border:1px solid var(--stroke); }
+  .win.tape .t1 { border-width:1.5px; }
+  .t1 .fill { height:38px; display:flex; }
+  .t1 .fill i { flex:1; }
+  .t1 .nm { font-size:10px; padding:4px 5px; text-align:center; color:var(--text); }
+  .t1.sel { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* T2 mini-window swatch */
+  .t2 { width:94px; border-radius:9px; overflow:hidden; border:1px solid var(--stroke); padding:6px; background:var(--panel); }
+  .win.tape .t2 { border-width:1.5px; }
+  .t2 .mini { border-radius:5px; overflow:hidden; }
+  .t2 .mini .bar { height:6px; }
+  .t2 .mini .bd { padding:5px; display:flex; flex-direction:column; gap:3px; }
+  .t2 .mini .ln { height:3px; border-radius:2px; }
+  .t2 .mini .bt { height:7px; width:28px; border-radius:2px; margin-top:2px; }
+  .t2 .nm { font-size:10px; text-align:center; margin-top:5px; color:var(--text); }
+  .t2.sel { outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* T3 dot-triad list */
+  .t3wrap { display:flex; flex-direction:column; border-radius:9px; overflow:hidden; border:1px solid var(--stroke); }
+  .win.tape .t3wrap { border-width:1.5px; }
+  .t3 { display:flex; align-items:center; gap:9px; padding:8px 11px; font-size:12.5px; color:var(--text); }
+  .t3 + .t3 { border-top:1px solid var(--hair); }
+  .t3 .dots { display:flex; gap:4px; }
+  .t3 .dots b { width:11px; height:11px; border-radius:50%; display:block; }
+  .t3 .tick { margin-left:auto; color:var(--accent); font-size:11px; }
+  .win.aurora .t3.sel { background:rgba(255,255,255,.05); }
+  .win.tape .t3.sel { background:var(--panel); }
+
+  .footer-note { margin-top:26px; font-size:12px; color:#8b93a1; max-width:880px; }
+</style>
+</head>
+<body>
+<h1>Appearance pane — swatch treatment</h1>
+<p class="lede">V1 layout locked (Skin segmented → palettes for that skin). Three swatch treatments below, each in the full pane. Toolbar re-renders every pane in the chosen skin/palette.</p>
+
+<div class="toolbar">
+  <span class="cap">Rendered in</span>
+  <div class="grp" id="skinGrp">
+    <button data-skin="aurora" class="on">Aurora</button>
+    <button data-skin="tape">Tape Deck</button>
+  </div>
+  <span class="cap" style="margin-left:8px">Palette</span>
+  <div class="grp" id="palGrp"></div>
+</div>
+
+<div class="threeup">
+  <div><div class="variant-h">T1 — Split-fill chip <span>· two accents, name below</span></div><div class="opt" data-choice="t1" onclick="toggleSelect(this)"><div class="pad" id="t1"></div></div></div>
+  <div><div class="variant-h">T2 — Mini window <span>· palette in context</span></div><div class="opt" data-choice="t2" onclick="toggleSelect(this)"><div class="pad" id="t2"></div></div></div>
+  <div><div class="variant-h">T3 — Dot-triad list <span>· matches list fields</span></div><div class="opt" data-choice="t3" onclick="toggleSelect(this)"><div class="pad" id="t3"></div></div></div>
+</div>
+
+<p class="footer-note">
+<b>T1</b>: compact, honest (these are the accent colours), sits well as a horizontal row under the segment. <b>T2</b>: most informative but tiny — the "in context" cue is barely legible at swatch size and it's the most code to keep faithful. <b>T3</b>: consistent with the Picker rows used elsewhere in the pane; vertical, so it reads as "3 named options" rather than a colour row.
+</p>
+
+<script>
+const PAL = {
+  auroraMintIris:{skin:"aurora",name:"Mint & Iris",a:"#5EF2C8",b:"#8B7BFF",c:"#FFC24B"},
+  auroraLimeForest:{skin:"aurora",name:"Lime & Forest",a:"#B6F04A",b:"#4ED6A0",c:"#F2C14E"},
+  auroraMagentaViolet:{skin:"aurora",name:"Magenta & Violet",a:"#F25C9E",b:"#9B6BFF",c:"#FFC24B"},
+  tapeDeckA:{skin:"tape",name:"Teal & Rust",a:"#D2601A",b:"#0E5C57",c:"#E4A11B"},
+  tapeDeckB:{skin:"tape",name:"Plum & Blush",a:"#E98C89",b:"#5A2E52",c:"#E8B24A"},
+  tapeDeckC:{skin:"tape",name:"Navy & Aqua",a:"#2FA69A",b:"#1F3350",c:"#F2B12E"},
+};
+const VARS = {
+  auroraMintIris:{"--ground":"#0C1013","--panel-solid":"#0E1117","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(255,255,255,.12)","--hair":"rgba(255,255,255,.06)","--text":"#EDF0F5","--dim":"#9AA3B2","--faint":"#6B7480","--headline":"#F4F6FA","--accent":"#5EF2C8"},
+  auroraLimeForest:{"--ground":"#0A0F0C","--panel-solid":"#0C1210","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(190,255,210,.13)","--hair":"rgba(255,255,255,.06)","--text":"#E9F2EC","--dim":"#93A99C","--faint":"#5F7268","--headline":"#F2F8F3","--accent":"#B6F04A"},
+  auroraMagentaViolet:{"--ground":"#100C14","--panel-solid":"#120E16","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(230,190,255,.14)","--hair":"rgba(255,255,255,.06)","--text":"#F1EAF5","--dim":"#A996B5","--faint":"#7A6B85","--headline":"#F7F2FA","--accent":"#F25C9E"},
+  tapeDeckA:{"--ground":"#F3E9D8","--panel-solid":"#FBF4E6","--panel":"#F3E9D8","--stroke":"#2B2118","--hair":"rgba(43,33,24,.18)","--text":"#2B2118","--dim":"#8A7A60","--faint":"#8A7A60","--headline":"#2B2118","--accent":"#D2601A"},
+  tapeDeckB:{"--ground":"#EFE9E9","--panel-solid":"#FBF5F5","--panel":"#EFE9E9","--stroke":"#281E26","--hair":"rgba(40,30,38,.18)","--text":"#281E26","--dim":"#8B8088","--faint":"#8B8088","--headline":"#281E26","--accent":"#E98C89"},
+  tapeDeckC:{"--ground":"#E7E9E7","--panel-solid":"#F5F6F3","--panel":"#E7E9E7","--stroke":"#1B222A","--hair":"rgba(27,34,42,.18)","--text":"#1B222A","--dim":"#7C838A","--faint":"#7C838A","--headline":"#1B222A","--accent":"#2FA69A"},
+};
+let skin="aurora", pal="auroraMintIris";
+function forSkin(s){ return Object.entries(PAL).filter(([k,v])=>v.skin===s); }
+function vstr(){ return Object.entries(VARS[pal]).map(([k,v])=>`${k}:${v}`).join(";"); }
+
+function rail(){ return `
+  <div class="grp-cap">General</div>
+  <div class="item">Downloads</div><div class="item on">Appearance</div><div class="item">Network</div>
+  <div class="grp-cap">YouTube</div><div class="item">Sign-in &amp; cookies</div>
+  <div class="grp-cap">System</div><div class="item">Updates</div><div class="item">Logs &amp; privacy</div><div class="item">Advanced</div>`;
+}
+function shell(fieldHtml){
+  const tape = skin==="tape";
+  return `<div class="win ${tape?'tape':'aurora'}" style="${vstr()}">
+    <div class="titlebar"><span class="tl"></span><span class="tl"></span><span class="tl"></span><span class="name">MediaGrabber</span>
+      <div class="nav"><b>Home</b><b class="on">Preferences</b><b>Diagnostics</b></div></div>
+    <div class="prefbody"><div class="rail">${rail()}</div><div class="content">
+      <h2>Appearance</h2><div class="h-sub">How the app looks. Changes apply immediately.</div>
+      <div class="field">
+        <div class="flabel">Skin</div>
+        <div class="fhelp">Aurora is dark and luminous. Tape Deck is warm and light.</div>
+        <div class="seg"><button class="${skin==='aurora'?'on':''}">Aurora</button><button class="${skin==='tape'?'on':''}">Tape Deck</button></div>
+      </div>
+      <div class="field">
+        <div class="flabel">Palette</div>
+        <div class="fhelp">Accent colours for the ${skin==='aurora'?'Aurora':'Tape Deck'} skin.</div>
+        ${fieldHtml}
+      </div>
+    </div></div></div>`;
+}
+function t1(){ return shell(`<div class="sw3">${forSkin(skin).map(([k,v])=>`
+  <div class="t1 ${k===pal?'sel':''}"><div class="fill"><i style="background:${v.a}"></i><i style="background:${v.b}"></i></div><div class="nm">${v.name}</div></div>`).join("")}</div>`); }
+function t2(){ return shell(`<div class="sw3">${forSkin(skin).map(([k,v])=>{
+  const gr = PAL[k].skin==="aurora" ? "#0C1013" : "#F3E9D8";
+  const pn = PAL[k].skin==="aurora" ? "#0E1117" : "#FBF4E6";
+  const tx = PAL[k].skin==="aurora" ? "#EDF0F5" : "#2B2118";
+  return `<div class="t2 ${k===pal?'sel':''}">
+    <div class="mini" style="background:${gr};border:1px solid ${v.b}33">
+      <div class="bar" style="background:linear-gradient(90deg,${v.a},${v.b})"></div>
+      <div class="bd" style="background:${pn}">
+        <div class="ln" style="background:${tx}55;width:78%"></div>
+        <div class="ln" style="background:${tx}33;width:52%"></div>
+        <div class="bt" style="background:${v.a}"></div>
+      </div>
+    </div><div class="nm">${v.name}</div></div>`;
+}).join("")}</div>`); }
+function t3(){ return shell(`<div class="t3wrap">${forSkin(skin).map(([k,v])=>`
+  <div class="t3 ${k===pal?'sel':''}"><span class="dots"><b style="background:${v.a}"></b><b style="background:${v.b}"></b><b style="background:${v.c}"></b></span><span>${v.name}</span>${k===pal?'<span class="tick">✓</span>':''}</div>`).join("")}</div>`); }
+
+function render(){
+  const pg=document.getElementById("palGrp"); pg.innerHTML="";
+  forSkin(skin).forEach(([k,v])=>{
+    const b=document.createElement("button"); b.textContent=v.name;
+    b.className=k===pal?"on":""; b.onclick=()=>{pal=k;render();}; pg.appendChild(b);
+  });
+  document.getElementById("t1").innerHTML=t1();
+  document.getElementById("t2").innerHTML=t2();
+  document.getElementById("t3").innerHTML=t3();
+}
+document.querySelectorAll("#skinGrp button").forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll("#skinGrp button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); skin=b.dataset.skin; pal=forSkin(skin)[0][0]; render(); };
+});
+render();
+</script>
+</body>
+</html>

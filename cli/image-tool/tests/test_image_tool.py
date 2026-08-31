@@ -6,9 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from PIL import Image
-
 from image_tool import compress_image, convert_image, resize_image
+from PIL import Image
 
 
 def _make_png(path: Path, size: tuple[int, int] = (100, 80), color=(255, 0, 0)) -> Path:

@@ -70,10 +70,7 @@ class DefaultVlcExtensionsDirTests(unittest.TestCase):
             got = default_vlc_extensions_dir()
         self.assertEqual(
             got,
-            Path(
-                "/Users/test/Library/Application Support/"
-                "org.videolan.vlc/lua/extensions"
-            ),
+            Path("/Users/test/Library/Application Support/org.videolan.vlc/lua/extensions"),
         )
 
 
@@ -83,9 +80,7 @@ class InstallLuaExtensionTests(unittest.TestCase):
             dest_dir = Path(tmp) / "extensions"
             src = Path(tmp) / "skip_chapter.lua"
             src.write_text("-- lua\n", encoding="utf-8")
-            dest = install_lua_extension(
-                source=src, dest_dir=dest_dir, dry_run=True
-            )
+            dest = install_lua_extension(source=src, dest_dir=dest_dir, dry_run=True)
             self.assertEqual(dest, dest_dir / "skip_chapter.lua")
             self.assertFalse(dest.exists())
             self.assertFalse(dest_dir.exists())
@@ -95,9 +90,7 @@ class InstallLuaExtensionTests(unittest.TestCase):
             dest_dir = Path(tmp) / "org.videolan.vlc" / "lua" / "extensions"
             src = Path(tmp) / "skip_chapter.lua"
             src.write_text("-- skip\n", encoding="utf-8")
-            dest = install_lua_extension(
-                source=src, dest_dir=dest_dir, dry_run=False
-            )
+            dest = install_lua_extension(source=src, dest_dir=dest_dir, dry_run=False)
             self.assertTrue(dest.is_file())
             self.assertEqual(dest.read_text(encoding="utf-8"), "-- skip\n")
 
@@ -131,9 +124,7 @@ class MainCheckCliTests(unittest.TestCase):
         self.assertEqual(payload["patterns"], DEFAULT_PATTERNS)
 
     def test_check_custom_pattern(self):
-        code, out, _ = self._run(
-            ["check", "Preview", "--pattern", "preview", "--json"]
-        )
+        code, out, _ = self._run(["check", "Preview", "--pattern", "preview", "--json"])
         self.assertEqual(code, 0)
         payload = json.loads(out)
         self.assertEqual(payload["decision"], "skip")
@@ -143,12 +134,7 @@ class MainCheckCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
             dest_dir = (
-                home
-                / "Library"
-                / "Application Support"
-                / "org.videolan.vlc"
-                / "lua"
-                / "extensions"
+                home / "Library" / "Application Support" / "org.videolan.vlc" / "lua" / "extensions"
             )
             with mock.patch(
                 "vlc_skip_chapter.default_vlc_extensions_dir",

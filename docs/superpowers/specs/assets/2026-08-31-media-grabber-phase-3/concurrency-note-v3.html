@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurrency change — 5 directions</title>
+<script src="/helper.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font:14px/1.5 -apple-system,"SF Pro Text",system-ui,sans-serif; background:#14171c; color:#d8dbe2; padding:30px 26px 100px; }
+  h1 { font-size:19px; font-weight:650; color:#f2f4f8; margin-bottom:6px; }
+  .lede { color:#99a1b0; font-size:13px; max-width:940px; margin-bottom:4px; }
+  .lede b { color:#cdd3dd; }
+  .toolbar { display:flex; gap:8px; align-items:center; margin:20px 0 12px; flex-wrap:wrap; }
+  .toolbar .grp { display:flex; gap:4px; background:#1c2026; border:1px solid #2a2f37; border-radius:9px; padding:3px; }
+  .toolbar button { font:inherit; font-size:12px; font-weight:550; color:#9aa2b0; background:transparent; border:0; padding:5px 11px; border-radius:6px; cursor:pointer; }
+  .toolbar button.on { background:#2f3540; color:#f0f2f6; }
+  .toolbar .cap { font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:#6c7480; }
+  .hint { font-size:11.5px; color:#7d8590; margin-bottom:22px; }
+  .hint b { color:#cdd3dd; }
+
+  .grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+  @media (max-width:1250px){ .grid2{ grid-template-columns:1fr; } }
+  .variant-h { font-size:13px; font-weight:620; color:#eef0f4; margin-bottom:3px; }
+  .variant-sub { color:#8b93a1; font-weight:400; font-size:11.5px; margin-bottom:9px; }
+  .opt { border:1.5px solid #2b313a; border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color .12s; }
+  .opt:hover { border-color:#3d4450; }
+  .opt.selected { border-color:#5EF2C8; box-shadow:0 0 0 3px rgba(94,242,200,.16); }
+  .opt .pad { padding:16px; display:flex; justify-content:center; }
+
+  .card {
+    width:340px; border-radius:var(--r,14px);
+    background:var(--panel-solid); color:var(--text);
+    border:1px solid var(--stroke); padding:18px 18px 20px; position:relative;
+  }
+  .card.tape { --r:10px; border-width:1.5px; box-shadow:4px 4px 0 var(--stroke); }
+  .card .skin-name { position:absolute; top:8px; right:12px; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; opacity:.5; }
+  .flabel { font-size:12.5px; font-weight:600; color:var(--text); margin-bottom:3px; }
+  .fhelp { font-size:11px; color:var(--dim); margin-bottom:9px; min-height:14px; }
+  .fhelp.swapped { color:var(--warn); }
+
+  .stepper { display:inline-flex; border-radius:8px; overflow:hidden; border:1px solid var(--stroke); vertical-align:middle; }
+  .card.tape .stepper { border-width:1.5px; }
+  .stepper button { font:inherit; font-size:13px; border:0; background:var(--panel); color:var(--text); padding:6px 12px; cursor:pointer; }
+  .stepper .v { padding:6px 15px; font-size:13px; font-weight:600; background:var(--panel-solid); min-width:32px; text-align:center; }
+
+  /* D1 inline note */
+  .d1-note { margin-top:8px; font-size:11px; color:var(--dim); display:flex; gap:6px; align-items:center; }
+  .d1-note .g { color:var(--warn); flex:none; }
+
+  /* D2 badge on the stepper */
+  .d2-wrap { display:flex; align-items:center; gap:9px; }
+  .d2-badge { font-size:10.5px; font-weight:600; color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,transparent); border:1px solid color-mix(in srgb,var(--warn) 38%,transparent); border-radius:20px; padding:3px 9px; display:inline-flex; gap:5px; align-items:center; cursor:help; }
+  .d2-badge .d { width:5px; height:5px; border-radius:50%; background:var(--warn); }
+
+  /* D3 transient confirm */
+  .d3-confirm { margin-top:10px; border-radius:9px; border:1px solid var(--stroke); background:var(--panel); padding:11px 12px; }
+  .card.tape .d3-confirm { border-width:1.5px; }
+  .d3-confirm p { font-size:11.5px; color:var(--text); margin-bottom:9px; }
+  .d3-row { display:flex; gap:7px; }
+  .d3-row button { font:inherit; font-size:11px; font-weight:550; border-radius:6px; padding:5px 10px; cursor:pointer; border:1px solid var(--stroke); background:transparent; color:var(--text); }
+  .d3-row button.primary { background:var(--accent); color:#06120e; border-color:transparent; }
+
+  /* D5 toast */
+  .d5-stage { width:340px; height:150px; border-radius:12px; background:var(--ground); border:1px solid var(--stroke); position:relative; overflow:hidden; }
+  .card.tape ~ * .d5-stage { }
+  .d5-toast { position:absolute; left:14px; right:14px; bottom:14px; border-radius:9px; background:var(--panel-solid); border:1px solid var(--stroke); padding:10px 12px; font-size:11px; color:var(--text); display:flex; gap:8px; align-items:center; box-shadow:0 8px 24px -8px rgba(0,0,0,.5); }
+  .d5-toast .g { color:var(--accent); flex:none; }
+  .d5-hd { padding:10px 14px; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
+
+  .footer-note { margin-top:28px; font-size:12px; color:#8b93a1; max-width:940px; }
+  .footer-note b { color:#cdd3dd; }
+</style>
+</head>
+<body>
+<h1>Lowering "At the same time" while downloads run — 5 directions</h1>
+<p class="lede">User sets the limit to <b>2</b>; <b>3</b> downloads are running. Natural drain (decided): nothing new starts until running ≤ 2. Question: how (or whether) to surface that.</p>
+<div class="hint">Toolbar re-renders in each skin/palette. Steppers are live — drop to &lt;3 to trigger each treatment, raise to ≥3 to clear. <b>D3 buttons are illustrative</b> (the choice they offer conflicts with "natural drain" unless we revisit Q3).</div>
+
+<div class="toolbar">
+  <span class="cap">Rendered in</span>
+  <div class="grp" id="skinGrp">
+    <button data-skin="aurora" class="on">Aurora</button>
+    <button data-skin="tape">Tape Deck</button>
+  </div>
+  <span class="cap" style="margin-left:8px">Palette</span>
+  <div class="grp" id="palGrp"></div>
+</div>
+
+<div class="grid2">
+  <div>
+    <div class="variant-h">D1 — Inline note</div>
+    <div class="variant-sub">Short sentence appears under the stepper. Passive. (the v2 approach)</div>
+    <div class="opt" data-choice="d1" onclick="toggleSelect(this)"><div class="pad" id="d1"></div></div>
+  </div>
+  <div>
+    <div class="variant-h">D2 — Badge on the control</div>
+    <div class="variant-sub">Value shows 2, a pill beside it reads "3 running" until they drain. Hover = explanation. No sentence.</div>
+    <div class="opt" data-choice="d2" onclick="toggleSelect(this)"><div class="pad" id="d2"></div></div>
+  </div>
+  <div>
+    <div class="variant-h">D3 — Transient choice</div>
+    <div class="variant-sub">A small confirm slides in: apply now (stop extras) or let them finish. Turns it into a decision.</div>
+    <div class="opt" data-choice="d3" onclick="toggleSelect(this)"><div class="pad" id="d3"></div></div>
+  </div>
+  <div>
+    <div class="variant-h">D4 — Helper-text swap</div>
+    <div class="variant-sub">The field's own dim helper line briefly becomes the message, then reverts. Zero new elements, no layout shift.</div>
+    <div class="opt" data-choice="d4" onclick="toggleSelect(this)"><div class="pad" id="d4"></div></div>
+  </div>
+  <div>
+    <div class="variant-h">D5 — Toast, pane stays clean</div>
+    <div class="variant-sub">Nothing in the pane. One toast fires once. (Toasts are Phase 11 — would defer this whole note.)</div>
+    <div class="opt" data-choice="d5" onclick="toggleSelect(this)"><div class="pad" id="d5"></div></div>
+  </div>
+  <div>
+    <div class="variant-h">D0 — Nothing at all</div>
+    <div class="variant-sub">No note. Natural drain just happens. Arguably the setting change is self-evident and the queue keeps working.</div>
+    <div class="opt" data-choice="d0" onclick="toggleSelect(this)"><div class="pad" id="d0"></div></div>
+  </div>
+</div>
+
+<p class="footer-note">
+My ranking: <b>D4</b> (invisible until needed, native to the field) &gt; <b>D2</b> (informative, alive, no prose) &gt; D1 &gt; D0. D3 reopens Q3. D5 depends on Phase 11.
+</p>
+
+<script>
+const VARS = {
+  auroraMintIris:{"--ground":"#0C1013","--panel-solid":"#0E1117","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(255,255,255,.12)","--hair":"rgba(255,255,255,.06)","--text":"#EDF0F5","--dim":"#9AA3B2","--faint":"#6B7480","--headline":"#F4F6FA","--accent":"#5EF2C8","--warn":"#FFC24B"},
+  auroraLimeForest:{"--ground":"#0A0F0C","--panel-solid":"#0C1210","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(190,255,210,.13)","--hair":"rgba(255,255,255,.06)","--text":"#E9F2EC","--dim":"#93A99C","--faint":"#5F7268","--headline":"#F2F8F3","--accent":"#B6F04A","--warn":"#F2C14E"},
+  auroraMagentaViolet:{"--ground":"#100C14","--panel-solid":"#120E16","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(230,190,255,.14)","--hair":"rgba(255,255,255,.06)","--text":"#F1EAF5","--dim":"#A996B5","--faint":"#7A6B85","--headline":"#F7F2FA","--accent":"#F25C9E","--warn":"#FFC24B"},
+  tapeDeckA:{"--ground":"#F3E9D8","--panel-solid":"#FBF4E6","--panel":"#F3E9D8","--stroke":"#2B2118","--hair":"rgba(43,33,24,.18)","--text":"#2B2118","--dim":"#8A7A60","--faint":"#8A7A60","--headline":"#2B2118","--accent":"#D2601A","--warn":"#9C5A00"},
+  tapeDeckB:{"--ground":"#EFE9E9","--panel-solid":"#FBF5F5","--panel":"#EFE9E9","--stroke":"#281E26","--hair":"rgba(40,30,38,.18)","--text":"#281E26","--dim":"#8B8088","--faint":"#8B8088","--headline":"#281E26","--accent":"#E98C89","--warn":"#9A6410"},
+  tapeDeckC:{"--ground":"#E7E9E7","--panel-solid":"#F5F6F3","--panel":"#E7E9E7","--stroke":"#1B222A","--hair":"rgba(27,34,42,.18)","--text":"#1B222A","--dim":"#7C838A","--faint":"#7C838A","--headline":"#1B222A","--accent":"#2FA69A","--warn":"#8E6318"},
+};
+const SKIN_PALS = { aurora:["auroraMintIris","auroraLimeForest","auroraMagentaViolet"], tape:["tapeDeckA","tapeDeckB","tapeDeckC"] };
+const NAMES = { auroraMintIris:"Mint & Iris",auroraLimeForest:"Lime & Forest",auroraMagentaViolet:"Magenta & Violet",tapeDeckA:"Teal & Rust",tapeDeckB:"Plum & Blush",tapeDeckC:"Navy & Aqua" };
+let skin="aurora", pal="auroraMintIris";
+const RUNNING = 3;
+let conc = 2;
+const active = () => conc < RUNNING;
+
+function vstr(){ return Object.entries(VARS[pal]).map(([k,v])=>`${k}:${v}`).join(";"); }
+function frame(inner){
+  const tape = skin==="tape";
+  return `<div class="card ${tape?'tape':''}" style="${vstr()}"><span class="skin-name">${skin==='aurora'?'Aurora':'Tape Deck'} · ${NAMES[pal]}</span>${inner}</div>`;
+}
+function stepper(){
+  return `<div class="stepper"><button data-d="-1">&ndash;</button><span class="v">${conc}</span><button data-d="1">+</button></div>`;
+}
+
+function d1(){ return frame(`
+  <div class="flabel">At the same time</div>
+  <div class="fhelp">The app lowers this on its own if a site starts throttling.</div>
+  ${stepper()}
+  ${active()?`<div class="d1-note"><span class="g">&#9650;</span><span>${RUNNING} running at the old limit &mdash; restart to apply now.</span></div>`:``}`); }
+
+function d2(){ return frame(`
+  <div class="flabel">At the same time</div>
+  <div class="fhelp">The app lowers this on its own if a site starts throttling.</div>
+  <div class="d2-wrap">${stepper()}
+    ${active()?`<span class="d2-badge" title="${RUNNING} downloads started before you lowered this. They finish; the new limit applies after."><span class="d"></span>${RUNNING} running</span>`:``}</div>`); }
+
+function d3(){ return frame(`
+  <div class="flabel">At the same time</div>
+  <div class="fhelp">The app lowers this on its own if a site starts throttling.</div>
+  ${stepper()}
+  ${active()?`<div class="d3-confirm"><p>${RUNNING} downloads are running. Apply the lower limit now, or let them finish?</p>
+    <div class="d3-row"><button class="primary">Apply now</button><button>Let them finish</button></div></div>`:``}`); }
+
+function d4(){ return frame(`
+  <div class="flabel">At the same time</div>
+  <div class="fhelp ${active()?'swapped':''}">${active()
+    ? `2 now &mdash; ${RUNNING} still running until they finish or you restart.`
+    : `The app lowers this on its own if a site starts throttling.`}</div>
+  ${stepper()}`); }
+
+function d5(){
+  const tape = skin==="tape";
+  return `<div class="card ${tape?'tape':''}" style="${vstr()};padding:0;width:340px;background:transparent;border:0;box-shadow:none">
+    <div class="d5-hd">Home / Downloads view</div>
+    <div class="d5-stage">
+      ${active()?`<div class="d5-toast"><span class="g">&#10003;</span><span>Limit set to 2. ${RUNNING} downloads finishing at the old one.</span></div>`:`<div style="padding:20px;font-size:11px;color:var(--faint)">Pane is clean. (change stepper below)</div>`}
+    </div>
+    <div style="margin-top:12px">${stepper()}</div>
+  </div>`;
+}
+
+function d0(){ return frame(`
+  <div class="flabel">At the same time</div>
+  <div class="fhelp">The app lowers this on its own if a site starts throttling.</div>
+  ${stepper()}
+  <div style="margin-top:10px;font-size:10.5px;color:var(--faint)">${active()?'(3 running — nothing shown, queue drains naturally)':' '}</div>`); }
+
+function render(){
+  const pg=document.getElementById("palGrp"); pg.innerHTML="";
+  SKIN_PALS[skin].forEach(k=>{
+    const b=document.createElement("button"); b.textContent=NAMES[k];
+    b.className=k===pal?"on":""; b.onclick=()=>{pal=k;render();}; pg.appendChild(b);
+  });
+  document.getElementById("d1").innerHTML=d1();
+  document.getElementById("d2").innerHTML=d2();
+  document.getElementById("d3").innerHTML=d3();
+  document.getElementById("d4").innerHTML=d4();
+  document.getElementById("d5").innerHTML=d5();
+  document.getElementById("d0").innerHTML=d0();
+  document.querySelectorAll(".stepper button[data-d]").forEach(btn=>{
+    btn.onclick=(e)=>{ e.stopPropagation(); conc=Math.max(1,Math.min(6,conc+parseInt(btn.dataset.d))); render(); };
+  });
+}
+document.querySelectorAll("#skinGrp button").forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll("#skinGrp button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); skin=b.dataset.skin; pal=SKIN_PALS[skin][0]; render(); };
+});
+render();
+</script>
+</body>
+</html>

@@ -155,9 +155,7 @@ class MainCliTests(unittest.TestCase):
             (root / "x.txt").write_text("clip me", encoding="utf-8")
             with mock.patch("file_snippets.subprocess.run") as run:
                 run.return_value = mock.Mock(returncode=0)
-                code, out, err = self._run(
-                    ["--dir", str(root), "show", "x", "-c"]
-                )
+                code, out, err = self._run(["--dir", str(root), "show", "x", "-c"])
             self.assertEqual(code, 0)
             self.assertEqual(out, "clip me")
             self.assertEqual(err, "")
@@ -167,9 +165,7 @@ class MainCliTests(unittest.TestCase):
             self.assertEqual(kwargs.get("input"), b"clip me")
 
     def test_missing_dir_exit_2(self):
-        code, out, err = self._run(
-            ["--dir", "/nonexistent/snippets-xyz", "list"]
-        )
+        code, out, err = self._run(["--dir", "/nonexistent/snippets-xyz", "list"])
         self.assertEqual(code, 2)
         self.assertEqual(out, "")
         self.assertIn("file-snippets:", err)

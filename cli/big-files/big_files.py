@@ -95,8 +95,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.json:
         payload = [
-            {"path": str(path), "bytes": size, "human": human_bytes(size)}
-            for path, size in results
+            {"path": str(path), "bytes": size, "human": human_bytes(size)} for path, size in results
         ]
         print(json.dumps(payload, ensure_ascii=False))
         return 0

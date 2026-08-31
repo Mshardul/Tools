@@ -16,9 +16,7 @@ class ParseAndFormatTests(unittest.TestCase):
         self.assertEqual(human_bytes(2048), "2.0 KB")
 
     def test_parse_blob_line(self) -> None:
-        kind, oid, size, path = parse_batch_check_line(
-            "blob abc123 1500000 path/to/big.bin"
-        )
+        kind, oid, size, path = parse_batch_check_line("blob abc123 1500000 path/to/big.bin")
         self.assertEqual(kind, "blob")
         self.assertEqual(oid, "abc123")
         self.assertEqual(size, 1_500_000)

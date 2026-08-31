@@ -1,6 +1,6 @@
 import unittest
 
-from id_gen import generate_id, NANOID_ALPHABET
+from id_gen import NANOID_ALPHABET, generate_id
 
 
 class IdGenTests(unittest.TestCase):

@@ -61,7 +61,9 @@ struct OnboardingView: View {
             Image(systemName: "checkmark")
                 .foregroundStyle(theme.palette.accent)
         case .running:
-            ProgressView().controlSize(.small)
+            ProgressView()
+                .controlSize(.small)
+                .tint(theme.palette.accent)
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(theme.palette.danger)

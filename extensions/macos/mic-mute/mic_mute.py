@@ -94,9 +94,7 @@ def set_input_volume(volume: int) -> None:
 def notify(title: str, message: str) -> None:
     safe_title = title.replace("\\", "\\\\").replace('"', '\\"')
     safe_message = message.replace("\\", "\\\\").replace('"', '\\"')
-    script = (
-        f'display notification "{safe_message}" with title "{safe_title}"'
-    )
+    script = f'display notification "{safe_message}" with title "{safe_title}"'
     subprocess.run(["osascript", "-e", script], check=True, capture_output=True)
 
 

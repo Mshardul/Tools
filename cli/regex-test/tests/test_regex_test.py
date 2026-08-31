@@ -24,9 +24,7 @@ class RegexTestTests(unittest.TestCase):
         self.assertEqual(result["groupdict"], {})
 
     def test_named_groups(self):
-        result = test_regex(
-            r"(?P<user>\w+)@(?P<host>\w+)", "a@b", ignore_case=False
-        )
+        result = test_regex(r"(?P<user>\w+)@(?P<host>\w+)", "a@b", ignore_case=False)
         self.assertEqual(result["groupdict"], {"user": "a", "host": "b"})
 
     def test_ignore_case(self):

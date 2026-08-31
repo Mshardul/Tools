@@ -30,8 +30,8 @@ from pathlib import Path
 from strip_exif import strip_image, strip_file
 
 clean = strip_image(Path("photo.jpg").read_bytes())
-strip_file(Path("photo.jpg"))                  # in place
-strip_file(Path("in.png"), Path("out.png"))    # to dest
+strip_file(Path("photo.jpg"))  # in place
+strip_file(Path("in.png"), Path("out.png"))  # to dest
 ```
 
 ## Test

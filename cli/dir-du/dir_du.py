@@ -62,9 +62,7 @@ def dir_usage(path: Path | str) -> list[tuple[str, int]]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Disk usage of immediate children of a directory."
-    )
+    parser = argparse.ArgumentParser(description="Disk usage of immediate children of a directory.")
     parser.add_argument(
         "dir",
         nargs="?",
@@ -106,8 +104,7 @@ def main(argv: list[str] | None = None) -> int:
         payload = {
             "path": str(root),
             "entries": [
-                {"name": name, "bytes": size, "human": human_bytes(size)}
-                for name, size in display
+                {"name": name, "bytes": size, "human": human_bytes(size)} for name, size in display
             ],
             "total": {"bytes": total, "human": human_bytes(total)},
         }

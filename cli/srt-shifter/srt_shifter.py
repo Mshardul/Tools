@@ -9,9 +9,7 @@ import sys
 from pathlib import Path
 
 # HH:MM:SS,mmm or HH:MM:SS.mmm, and short MM:SS.mmm / MM:SS,mmm
-_TIME_RE = re.compile(
-    r"(?:(\d{2,}):)?(\d{2}):(\d{2})([.,])(\d{3})"
-)
+_TIME_RE = re.compile(r"(?:(\d{2,}):)?(\d{2}):(\d{2})([.,])(\d{3})")
 _ARROW_RE = re.compile(r"\s*-->\s*")
 
 
@@ -81,9 +79,7 @@ def detect_format(path: str | Path, text: str) -> str:
         return "srt"
     if re.search(r"(?:\d{2}:)?\d{2}:\d{2}\.\d{3}\s*-->", text):
         return "vtt"
-    raise ValueError(
-        "cannot detect format (use a .srt/.vtt path or WEBVTT content)"
-    )
+    raise ValueError("cannot detect format (use a .srt/.vtt path or WEBVTT content)")
 
 
 def shift_text(text: str, offset_ms: int, fmt: str) -> str:

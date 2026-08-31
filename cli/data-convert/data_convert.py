@@ -37,9 +37,7 @@ def _normalize_fmt(fmt: str) -> str:
     if key == "yml":
         key = "yaml"
     if key not in ("json", "yaml", "toml", "csv", "env"):
-        raise ValueError(
-            f"unknown format: {fmt!r} (use json, yaml, toml, csv, or env)"
-        )
+        raise ValueError(f"unknown format: {fmt!r} (use json, yaml, toml, csv, or env)")
     return key
 
 
@@ -47,9 +45,7 @@ def _require_yaml():
     try:
         import yaml  # noqa: F401
     except ImportError as exc:
-        raise ValueError(
-            "YAML support requires PyYAML (pip install pyyaml)"
-        ) from exc
+        raise ValueError("YAML support requires PyYAML (pip install pyyaml)") from exc
     return __import__("yaml")
 
 
@@ -123,9 +119,7 @@ def _dump_csv(data: Any) -> str:
         return buf.getvalue()
     if isinstance(data, list) and not data:
         return ""
-    raise ValueError(
-        "CSV dump requires a list of dicts or list of lists (tabular data)"
-    )
+    raise ValueError("CSV dump requires a list of dicts or list of lists (tabular data)")
 
 
 def _load_env(text: str) -> dict[str, str]:
@@ -150,15 +144,9 @@ def _dump_env(data: Any) -> str:
     lines: list[str] = []
     for key, value in data.items():
         if isinstance(value, dict):
-            raise ValueError(
-                "env dump does not support nested dicts "
-                f"(key {key!r} is nested)"
-            )
+            raise ValueError(f"env dump does not support nested dicts (key {key!r} is nested)")
         if isinstance(value, (list, tuple)):
-            raise ValueError(
-                "env dump does not support lists "
-                f"(key {key!r} is a list)"
-            )
+            raise ValueError(f"env dump does not support lists (key {key!r} is a list)")
         if value is None:
             lines.append(f"{key}=")
         elif isinstance(value, bool):
@@ -182,13 +170,17 @@ def dump_toml(obj: Any) -> str:
 
 
 def _toml_escape_str(s: str) -> str:
-    return '"' + (
-        s.replace("\\", "\\\\")
-        .replace('"', '\\"')
-        .replace("\n", "\\n")
-        .replace("\r", "\\r")
-        .replace("\t", "\\t")
-    ) + '"'
+    return (
+        '"'
+        + (
+            s.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )
+        + '"'
+    )
 
 
 def _toml_inline(value: Any) -> str:
@@ -216,9 +208,7 @@ def _toml_inline(value: Any) -> str:
 
 def _toml_key(key: str) -> str:
     if key.isidentifier() or (
-        key
-        and all(c.isalnum() or c in "-_" for c in key)
-        and not key[0].isdigit()
+        key and all(c.isalnum() or c in "-_" for c in key) and not key[0].isdigit()
     ):
         return key
     return _toml_escape_str(key)
@@ -287,8 +277,7 @@ def main(argv: list[str] | None = None) -> int:
         "--from",
         dest="from_fmt",
         metavar="FMT",
-        help="input format (json, yaml, toml, csv, env); "
-        "optional if FILE has a known extension",
+        help="input format (json, yaml, toml, csv, env); optional if FILE has a known extension",
     )
     parser.add_argument(
         "--to",
@@ -314,9 +303,7 @@ def main(argv: list[str] | None = None) -> int:
         from_fmt = args.from_fmt
         if from_fmt is None:
             if args.file is None:
-                raise ValueError(
-                    "provide --from FMT, or a FILE with a known extension"
-                )
+                raise ValueError("provide --from FMT, or a FILE with a known extension")
             from_fmt = detect_format(args.file)
         from_fmt = _normalize_fmt(from_fmt)
         to_fmt = _normalize_fmt(args.to_fmt)

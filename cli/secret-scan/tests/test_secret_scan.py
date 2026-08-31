@@ -95,29 +95,19 @@ class BinaryAndWalkTests(unittest.TestCase):
     def test_scan_path_skips_junk_dirs_and_binary(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "ok.txt").write_text(
-                "AKIA" + ("C" * 16) + "\n", encoding="utf-8"
-            )
+            (root / "ok.txt").write_text("AKIA" + ("C" * 16) + "\n", encoding="utf-8")
             git = root / ".git"
             git.mkdir()
-            (git / "secret").write_text(
-                "AKIA" + ("D" * 16) + "\n", encoding="utf-8"
-            )
+            (git / "secret").write_text("AKIA" + ("D" * 16) + "\n", encoding="utf-8")
             nm = root / "node_modules" / "pkg"
             nm.mkdir(parents=True)
-            (nm / "x.js").write_text(
-                "AKIA" + ("E" * 16) + "\n", encoding="utf-8"
-            )
+            (nm / "x.js").write_text("AKIA" + ("E" * 16) + "\n", encoding="utf-8")
             pc = root / "__pycache__"
             pc.mkdir()
-            (pc / "m.pyc").write_text(
-                "AKIA" + ("F" * 16) + "\n", encoding="utf-8"
-            )
+            (pc / "m.pyc").write_text("AKIA" + ("F" * 16) + "\n", encoding="utf-8")
             venv = root / ".venv" / "lib"
             venv.mkdir(parents=True)
-            (venv / "y.py").write_text(
-                "AKIA" + ("G" * 16) + "\n", encoding="utf-8"
-            )
+            (venv / "y.py").write_text("AKIA" + ("G" * 16) + "\n", encoding="utf-8")
             (root / "blob.bin").write_bytes(b"\x00" + b"AKIA" + (b"H" * 16))
 
             findings = scan_path(root)

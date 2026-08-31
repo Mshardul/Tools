@@ -163,7 +163,12 @@ def _describe_field(raw: str, field: str) -> str | None:
         return None
 
     # Step-only on *: "every 15th"
-    if len(described) == 1 and described[0].startswith("every ") and "/" in parts[0] and parts[0].startswith("*/"):
+    if (
+        len(described) == 1
+        and described[0].startswith("every ")
+        and "/" in parts[0]
+        and parts[0].startswith("*/")
+    ):
         return described[0]
 
     return _join_words(described)
@@ -244,10 +249,7 @@ def explain(expr: str) -> str:
     elif minute_d is None:
         core = f"At every minute past {_hour_phrase(hour_d, hour_r)}"
     else:
-        core = (
-            f"At {_minute_phrase(minute_d, minute_r)} "
-            f"past {_hour_phrase(hour_d, hour_r)}"
-        )
+        core = f"At {_minute_phrase(minute_d, minute_r)} past {_hour_phrase(hour_d, hour_r)}"
 
     # Order: day-of-month, day-of-week, month (matches common cron explainers)
     extras: list[str] = []

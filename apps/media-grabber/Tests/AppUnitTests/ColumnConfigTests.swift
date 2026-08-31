@@ -60,6 +60,16 @@ final class ColumnConfigTests: XCTestCase {
         XCTAssertEqual(config.sortDirection, .ascending)
     }
 
+    func test_defaultSortsByAddedAtDescending() {
+        let config = ColumnConfig.default
+        XCTAssertEqual(config.sortColumn, .addedAt)
+        XCTAssertEqual(config.sortDirection, .descending)
+    }
+
+    func test_addedAtVisibleByDefault() {
+        XCTAssertTrue(ColumnConfig.default.visibleColumns.contains(.addedAt))
+    }
+
     func test_roundTripCodable() throws {
         var original = ColumnConfig.default
         original.sortColumn = .addedAt

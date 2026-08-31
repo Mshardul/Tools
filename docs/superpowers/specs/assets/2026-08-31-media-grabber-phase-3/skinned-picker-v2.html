@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skinned picker — options</title>
+<script src="/helper.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font: 14px/1.5 -apple-system, "SF Pro Text", system-ui, sans-serif;
+    background: #14171c;
+    color: #d8dbe2;
+    padding: 32px 28px 80px;
+  }
+  h1 { font-size: 19px; font-weight: 650; color: #f2f4f8; margin-bottom: 6px; }
+  .lede { color: #99a1b0; font-size: 13px; max-width: 780px; margin-bottom: 4px; }
+  .lede b { color: #cdd3dd; font-weight: 600; }
+
+  .toolbar {
+    display: flex; gap: 8px; align-items: center;
+    margin: 22px 0 26px; flex-wrap: wrap;
+  }
+  .toolbar .grp { display: flex; gap: 4px; background: #1c2026; border: 1px solid #2a2f37; border-radius: 9px; padding: 3px; }
+  .toolbar button {
+    font: inherit; font-size: 12px; font-weight: 550;
+    color: #9aa2b0; background: transparent; border: 0;
+    padding: 5px 11px; border-radius: 6px; cursor: pointer;
+  }
+  .toolbar button.on { background: #2f3540; color: #f0f2f6; }
+  .toolbar .cap { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #6c7480; margin-right: 2px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+  .opt {
+    border: 1.5px solid #2b313a;
+    border-radius: 14px;
+    background: #171a20;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .12s, transform .12s;
+  }
+  .opt:hover { border-color: #3d4450; }
+  .opt.selected { border-color: #5EF2C8; box-shadow: 0 0 0 3px rgba(94,242,200,.16); }
+  .opt-head {
+    padding: 13px 16px 11px;
+    border-bottom: 1px solid #23272f;
+    display: flex; align-items: baseline; gap: 9px;
+  }
+  .opt-head .letter {
+    width: 21px; height: 21px; flex: none;
+    border-radius: 6px; background: #2f3540; color: #eef0f4;
+    font-size: 12px; font-weight: 700;
+    display: grid; place-items: center;
+  }
+  .opt-head h3 { font-size: 14px; font-weight: 620; color: #eef0f4; }
+  .opt-head p { font-size: 12px; color: #8b93a1; margin-top: 2px; }
+  .opt-desc { padding: 12px 16px 4px; font-size: 12px; color: #99a1b0; }
+  .opt-desc ul { margin: 6px 0 0 16px; }
+  .opt-desc li { margin: 3px 0; }
+
+  .stage {
+    padding: 22px 16px 26px;
+    display: flex; flex-direction: column; gap: 20px;
+    align-items: center;
+  }
+  .stage-row { display: flex; gap: 26px; flex-wrap: wrap; justify-content: center; }
+
+  /* ---- skin frames ---- */
+  .skin {
+    width: 268px;
+    border-radius: var(--card-r, 14px);
+    padding: 16px 15px 17px;
+    position: relative;
+  }
+  .skin .field-label {
+    font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+    margin-bottom: 7px; font-weight: 600;
+  }
+  .skin .skin-name {
+    position: absolute; top: 8px; right: 12px;
+    font-size: 10px; letter-spacing: .05em; text-transform: uppercase; opacity: .5;
+  }
+
+  /* Aurora */
+  .aurora {
+    --card-r: 16px;
+    background: var(--panel-solid);
+    border: 1px solid var(--stroke);
+    color: var(--text);
+    box-shadow: 0 0 40px -8px var(--glow-b);
+  }
+  .aurora .field-label { color: var(--dim); }
+  /* Tape Deck */
+  .tape {
+    --card-r: 10px;
+    background: var(--panel-solid);
+    border: 1.5px solid var(--stroke);
+    color: var(--text);
+    box-shadow: 4px 4px 0 var(--stroke);
+  }
+  .tape .field-label { color: var(--dim); }
+
+  /* ===== Option A: trigger button + dropdown popover ===== */
+  .pk-a-trigger {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 11px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+  }
+  .aurora .pk-a-trigger { background: var(--panel); border: 1px solid var(--stroke); color: var(--text); }
+  .tape   .pk-a-trigger { background: var(--panel); border: 1.5px solid var(--stroke); color: var(--text); }
+  .pk-a-trigger .chev { opacity: .6; font-size: 11px; }
+
+  .pk-a-pop {
+    margin-top: 6px;
+    border-radius: 10px;
+    padding: 5px;
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .aurora .pk-a-pop {
+    background: var(--panel-solid);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 12px 34px -8px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03);
+  }
+  .tape .pk-a-pop {
+    background: var(--panel-solid);
+    border: 1.5px solid var(--stroke);
+    box-shadow: 5px 5px 0 var(--stroke);
+  }
+  .pk-a-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 9px; border-radius: 7px;
+    font-size: 13px;
+  }
+  .pk-a-row .tick { font-size: 12px; }
+  .aurora .pk-a-row.hi { background: rgba(94,242,200,.12); }
+  .aurora .pk-a-row .tick { color: var(--accent); }
+  .aurora .pk-a-row.sel { color: var(--text); font-weight: 550; }
+  .tape .pk-a-row.hi { background: var(--panel); }
+  .tape .pk-a-row .tick { color: var(--accent); }
+
+  /* ===== Option B: segmented inline (no popover) ===== */
+  .pk-b {
+    display: flex; width: 100%;
+    border-radius: 9px; padding: 3px; gap: 3px;
+  }
+  .aurora .pk-b { background: var(--panel); border: 1px solid var(--stroke); }
+  .tape   .pk-b { background: var(--panel); border: 1.5px solid var(--stroke); }
+  .pk-b button {
+    flex: 1; font: inherit; font-size: 12px; font-weight: 550;
+    border: 0; background: transparent; cursor: pointer;
+    padding: 6px 4px; border-radius: 6px;
+  }
+  .aurora .pk-b button { color: var(--dim); }
+  .aurora .pk-b button.on { background: var(--panel-solid); color: var(--text); box-shadow: 0 1px 0 rgba(255,255,255,.05); }
+  .tape .pk-b button { color: var(--dim); }
+  .tape .pk-b button.on { background: var(--panel-solid); color: var(--text); box-shadow: 2px 2px 0 var(--stroke); }
+  .pk-b-note { font-size: 11px; margin-top: 7px; }
+  .aurora .pk-b-note { color: var(--faint); }
+  .tape .pk-b-note { color: var(--dim); }
+
+  /* ===== Option C: trigger + rich popover (icon + subtitle rows, accent header) ===== */
+  .pk-c-trigger {
+    width: 100%;
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    cursor: pointer; font-size: 13px;
+  }
+  .aurora .pk-c-trigger { background: var(--panel); border: 1px solid var(--stroke); color: var(--text); }
+  .tape   .pk-c-trigger { background: var(--panel); border: 1.5px solid var(--stroke); color: var(--text); }
+  .pk-c-trigger .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .pk-c-trigger .chev { margin-left: auto; opacity: .5; font-size: 11px; }
+
+  .pk-c-pop {
+    margin-top: 6px; border-radius: 12px; overflow: hidden;
+  }
+  .aurora .pk-c-pop { background: var(--panel-solid); border: 1px solid var(--stroke); box-shadow: 0 16px 40px -10px rgba(0,0,0,.65); }
+  .tape .pk-c-pop { background: var(--panel-solid); border: 1.5px solid var(--stroke); box-shadow: 6px 6px 0 var(--stroke); }
+  .pk-c-cap {
+    font-size: 10px; letter-spacing: .07em; text-transform: uppercase;
+    padding: 8px 12px 6px;
+  }
+  .aurora .pk-c-cap { color: var(--faint); border-bottom: 1px solid var(--stroke); }
+  .tape .pk-c-cap { color: var(--dim); border-bottom: 1.5px solid var(--stroke); }
+  .pk-c-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; font-size: 13px; cursor: pointer;
+  }
+  .pk-c-row .ic { width: 16px; text-align: center; opacity: .8; }
+  .pk-c-row .sub { font-size: 11px; opacity: .6; }
+  .pk-c-row .tick { margin-left: auto; }
+  .aurora .pk-c-row.hi { background: rgba(139,123,255,.14); }
+  .aurora .pk-c-row .tick { color: var(--accent); }
+  .tape .pk-c-row.hi { background: var(--panel); }
+  .tape .pk-c-row .tick { color: var(--accent); }
+
+  .footer-note { margin-top: 30px; font-size: 12px; color: #8b93a1; max-width: 820px; }
+  .footer-note code { background: #22262e; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Skinned picker — pick a direction</h1>
+<p class="lede">Replaces the native <b>Menu</b> dropdowns. Used on the Home runway (Type / Format / Save-to) and in Preferences (Default quality, Audio format, Cookie browser, later Firefox profile).</p>
+<p class="lede">Same three options shown below, each rendered live in the palette you pick in the toolbar. Click a card to select it.</p>
+
+<div class="toolbar">
+  <span class="cap">Skin</span>
+  <div class="grp" id="skinGrp">
+    <button data-skin="aurora" class="on">Aurora (dark)</button>
+    <button data-skin="tape">Tape Deck (light)</button>
+  </div>
+  <span class="cap" style="margin-left:10px">Palette</span>
+  <div class="grp" id="palGrp"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<p class="footer-note">
+All three are keyboard-navigable (arrow keys + Return), Esc-dismissable, VoiceOver-labelled, and palette-matched. The question is the interaction model + how much visual weight the popover carries.
+Firefox-profile list (Phase 5) may be long — options A and C add a scroll cap then; B doesn't scale to long lists.
+</p>
+
+<script>
+const PALETTES = {
+  aurora: {
+    auroraMintIris: { label:"Mint & Iris", t:{ "--ground":"#0C1013","--panel-solid":"#0E1117","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(255,255,255,.12)","--text":"#EDF0F5","--dim":"#9AA3B2","--faint":"#6B7480","--accent":"#5EF2C8","--accent-2":"#8B7BFF","--glow-b":"rgba(139,123,255,.16)" } },
+    auroraLimeForest: { label:"Lime & Forest", t:{ "--ground":"#0A0F0C","--panel-solid":"#0C1210","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(190,255,210,.13)","--text":"#E9F2EC","--dim":"#93A99C","--faint":"#5F7268","--accent":"#B6F04A","--accent-2":"#4ED6A0","--glow-b":"rgba(78,214,160,.14)" } },
+    auroraMagentaViolet: { label:"Magenta & Violet", t:{ "--ground":"#100C14","--panel-solid":"#120E16","--panel":"rgba(255,255,255,.05)","--stroke":"rgba(230,190,255,.14)","--text":"#F1EAF5","--dim":"#A996B5","--faint":"#7A6B85","--accent":"#F25C9E","--accent-2":"#9B6BFF","--glow-b":"rgba(155,107,255,.16)" } },
+  },
+  tape: {
+    tapeDeckA: { label:"Teal & Rust", t:{ "--ground":"#F3E9D8","--panel-solid":"#FBF4E6","--panel":"#F3E9D8","--stroke":"#2B2118","--text":"#2B2118","--dim":"#8A7A60","--faint":"#8A7A60","--accent":"#D2601A","--accent-2":"#0E5C57","--glow-b":"transparent" } },
+    tapeDeckB: { label:"Plum & Blush", t:{ "--ground":"#EFE9E9","--panel-solid":"#FBF5F5","--panel":"#EFE9E9","--stroke":"#281E26","--text":"#281E26","--dim":"#8B8088","--faint":"#8B8088","--accent":"#E98C89","--accent-2":"#5A2E52","--glow-b":"transparent" } },
+    tapeDeckC: { label:"Navy & Aqua", t:{ "--ground":"#E7E9E7","--panel-solid":"#F5F6F3","--panel":"#E7E9E7","--stroke":"#1B222A","--text":"#1B222A","--dim":"#7C838A","--faint":"#7C838A","--accent":"#2FA69A","--accent-2":"#1F3350","--glow-b":"transparent" } },
+  }
+};
+
+let skin = "aurora";
+let pal = "auroraMintIris";
+
+function skinFrame(inner) {
+  const cls = skin === "aurora" ? "aurora" : "tape";
+  const name = PALETTES[skin][pal].label;
+  return `<div class="skin ${cls}" style="${varStr()}"><span class="skin-name">${skin==='aurora'?'Aurora':'Tape Deck'} · ${name}</span>${inner}</div>`;
+}
+function varStr() {
+  const t = PALETTES[skin][pal].t;
+  return Object.entries(t).map(([k,v]) => `${k}:${v}`).join(";");
+}
+
+function optionA() {
+  return skinFrame(`
+    <div class="field-label">Default video quality</div>
+    <div class="pk-a-trigger"><span>1080p</span><span class="chev">▾</span></div>
+    <div class="pk-a-pop">
+      <div class="pk-a-row">2160p (4K)</div>
+      <div class="pk-a-row">1440p</div>
+      <div class="pk-a-row sel hi">1080p <span class="tick">✓</span></div>
+      <div class="pk-a-row">720p</div>
+      <div class="pk-a-row">480p</div>
+      <div class="pk-a-row">Best available</div>
+    </div>`);
+}
+function optionB() {
+  return skinFrame(`
+    <div class="field-label">Default type</div>
+    <div class="pk-b">
+      <button class="on">Video</button>
+      <button>Audio</button>
+    </div>
+    <div class="pk-b-note">Best for 2–3 fixed choices. Everything visible, one tap, no popover.</div>
+    <div class="field-label" style="margin-top:16px">Default audio format</div>
+    <div class="pk-b">
+      <button class="on">m4a</button>
+      <button>mp3</button>
+    </div>`);
+}
+function optionC() {
+  return skinFrame(`
+    <div class="field-label">Use cookies from</div>
+    <div class="pk-c-trigger"><span class="dot" style="background:var(--accent)"></span><span>Safari</span><span class="chev">▾</span></div>
+    <div class="pk-c-pop">
+      <div class="pk-c-cap">Browser</div>
+      <div class="pk-c-row"><span class="ic">⊘</span><span>None</span></div>
+      <div class="pk-c-row hi"><span class="ic">🧭</span><div><div>Safari</div><div class="sub">Needs Full Disk Access</div></div><span class="tick">✓</span></div>
+      <div class="pk-c-row"><span class="ic">🌐</span><span>Chrome</span></div>
+      <div class="pk-c-row"><span class="ic">🦁</span><span>Brave</span></div>
+      <div class="pk-c-row"><span class="ic">🦊</span><span>Firefox</span></div>
+      <div class="pk-c-row"><span class="ic">◆</span><span>Edge</span></div>
+    </div>`);
+}
+
+function render() {
+  // palette group
+  const pg = document.getElementById("palGrp");
+  pg.innerHTML = "";
+  Object.entries(PALETTES[skin]).forEach(([k,v]) => {
+    const b = document.createElement("button");
+    b.textContent = v.label;
+    b.className = k === pal ? "on" : "";
+    b.onclick = () => { pal = k; render(); };
+    pg.appendChild(b);
+  });
+
+  document.getElementById("grid").innerHTML = `
+    <div class="opt" data-choice="a" onclick="toggleSelect(this)">
+      <div class="opt-head"><span class="letter">A</span><div><h3>Trigger + plain dropdown</h3><p>Closest to the current Menu</p></div></div>
+      <div class="opt-desc">Button shows current value. Opens a flat list popover — checkmark on the selected row, hover highlight. Minimal chrome.
+        <ul><li>Familiar, low visual noise</li><li>Scales to long lists with a scroll cap</li></ul></div>
+      <div class="stage">${optionA()}</div>
+    </div>
+    <div class="opt" data-choice="b" onclick="toggleSelect(this)">
+      <div class="opt-head"><span class="letter">B</span><div><h3>Inline segmented</h3><p>No popover at all</p></div></div>
+      <div class="opt-desc">All choices rendered as segments. One tap to switch. Only works for short fixed sets (Type, audio codec).
+        <ul><li>Zero clicks to see options</li><li>Breaks past ~4 items — quality (6) & cookies (6) too wide</li></ul></div>
+      <div class="stage">${optionB()}</div>
+    </div>
+    <div class="opt" data-choice="c" onclick="toggleSelect(this)">
+      <div class="opt-head"><span class="letter">C</span><div><h3>Trigger + rich popover</h3><p>Icons, subtitles, section caption</p></div></div>
+      <div class="opt-desc">Same trigger as A, but rows carry an icon, optional subtitle, and a caption header. More expressive; more to build & maintain.
+        <ul><li>Room for hints ("Needs Full Disk Access")</li><li>Heavier — overkill for Type/Format</li></ul></div>
+      <div class="stage">${optionC()}</div>
+    </div>`;
+}
+
+document.querySelectorAll("#skinGrp button").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll("#skinGrp button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    skin = b.dataset.skin;
+    pal = Object.keys(PALETTES[skin])[0];
+    render();
+  };
+});
+render();
+</script>
+</body>
+</html>

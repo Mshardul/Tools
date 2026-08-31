@@ -54,12 +54,7 @@ def hash_path(uri_or_path: str) -> str:
 def default_vlc_extensions_dir() -> Path:
     """macOS VLC user Lua extensions directory."""
     return (
-        Path.home()
-        / "Library"
-        / "Application Support"
-        / "org.videolan.vlc"
-        / "lua"
-        / "extensions"
+        Path.home() / "Library" / "Application Support" / "org.videolan.vlc" / "lua" / "extensions"
     )
 
 

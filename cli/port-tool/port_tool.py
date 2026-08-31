@@ -36,7 +36,9 @@ def lsof_port(port: int) -> str:
     )
     # lsof exits 1 when nothing matches
     if result.returncode not in (0, 1):
-        raise subprocess.CalledProcessError(result.returncode, result.args, result.stdout, result.stderr)
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, result.stdout, result.stderr
+        )
     return result.stdout
 
 

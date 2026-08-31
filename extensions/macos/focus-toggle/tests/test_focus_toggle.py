@@ -28,7 +28,7 @@ class LoadConfigTests(unittest.TestCase):
             path.write_text(
                 "shortcut_on: My Focus On\n"
                 "shortcut_off: 'My Focus Off'\n"
-                '# comment\n'
+                "# comment\n"
                 "shortcut_toggle: Toggle Focus\n",
                 encoding="utf-8",
             )

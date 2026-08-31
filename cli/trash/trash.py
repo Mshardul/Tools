@@ -48,11 +48,7 @@ def resolve_paths(paths: list[str]) -> list[Path]:
 
 def trash_via_finder(path: Path) -> None:
     posix = str(path).replace('"', '\\"')
-    script = (
-        'tell application "Finder"\n'
-        f'move (POSIX file "{posix}") to trash\n'
-        "end tell"
-    )
+    script = f'tell application "Finder"\nmove (POSIX file "{posix}") to trash\nend tell'
     subprocess.run(["osascript", "-e", script], check=True, capture_output=True)
 
 

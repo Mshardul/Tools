@@ -18,11 +18,7 @@ def list_episodes(folder: Path | str) -> list[str]:
     root = Path(folder)
     if not root.is_dir():
         raise NotADirectoryError(f"not a directory: {root}")
-    names = [
-        p.name
-        for p in root.iterdir()
-        if p.is_file() and p.suffix.lower() in VIDEO_SUFFIXES
-    ]
+    names = [p.name for p in root.iterdir() if p.is_file() and p.suffix.lower() in VIDEO_SUFFIXES]
     return sorted(names, key=lambda s: s.casefold())
 
 

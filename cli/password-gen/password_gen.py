@@ -35,7 +35,9 @@ def generate_password(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate a random password.")
-    parser.add_argument("-l", "--length", type=int, default=20, help="password length (default: 20)")
+    parser.add_argument(
+        "-l", "--length", type=int, default=20, help="password length (default: 20)"
+    )
     parser.add_argument("--no-letters", action="store_true", help="exclude letters")
     parser.add_argument("--no-digits", action="store_true", help="exclude digits")
     parser.add_argument("--no-symbols", action="store_true", help="exclude symbols")

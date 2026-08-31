@@ -12,9 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 SLUG = "send-to-downloader"
-DEFAULT_QUEUE_PATH = (
-    Path.home() / ".config" / "tools" / "send-to-downloader" / "queue.jsonl"
-)
+DEFAULT_QUEUE_PATH = Path.home() / ".config" / "tools" / "send-to-downloader" / "queue.jsonl"
 DEFAULT_CONFIG_PATH = Path.home() / ".config" / "tools" / "send-to-downloader.yaml"
 ENV_CONFIG = "TOOLS_SEND_TO_DOWNLOADER_CONFIG"
 
