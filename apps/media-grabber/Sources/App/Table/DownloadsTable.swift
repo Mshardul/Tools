@@ -38,7 +38,7 @@ struct DownloadsTable: View {
                     .frame(width: tableWidth)
             }
             Text(message)
-                .font(theme.skin.bodyFont(13, .regular))
+                .font(theme.bodyFont(13, .regular))
                 .foregroundStyle(theme.palette.faint)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 .padding(.bottom, 80)
@@ -100,14 +100,14 @@ struct DownloadsTable: View {
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(theme.palette.hair)
-                .frame(height: theme.skin.hairlineWidth)
+                .frame(height: theme.hairlineWidth)
         }
     }
 
     private func headerCell(_ column: ColumnID) -> some View {
         HStack(spacing: Spacing.s1) {
             Text(ColumnMetrics.title(for: column))
-                .font(theme.skin.monoFont(10, .semibold))
+                .font(theme.monoFont(10, .semibold))
                 .foregroundStyle(theme.palette.dim)
                 .lineLimit(1)
             if ColumnMetrics.supportsSort(column) {

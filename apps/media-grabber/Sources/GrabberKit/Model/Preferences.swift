@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-// String-raw identity only; the Color/Font-bearing Skin lives in the App target.
-public enum SkinKind: String, Codable, Sendable, CaseIterable {
+// String-raw identity only; the Color/Font-bearing Theme lives in the App target.
+public enum ThemeKind: String, Codable, Sendable, CaseIterable {
     case tapeDeck
     case aurora
 }
@@ -26,58 +26,56 @@ public final class Preferences: @unchecked Sendable {
 
     // MARK: - Destination
 
-    public var defaultDestFolder: URL {
-        get { url(forKey: "defaultDestFolder", default: Self.downloadsFolder) }
-        set { setURL(newValue, forKey: "defaultDestFolder") }
+    public var defaultDownloadFolder: URL {
+        get { url(forKey: "defaultDownloadFolder", default: Self.downloadsFolder) }
+        set { setURL(newValue, forKey: "defaultDownloadFolder") }
     }
 
-    public var lastUsedDestFolder: URL {
-        get { url(forKey: "lastUsedDestFolder", default: defaultDestFolder) }
-        set { setURL(newValue, forKey: "lastUsedDestFolder") }
+    public var lastUsedDownloadFolder: URL {
+        get { url(forKey: "lastUsedDownloadFolder", default: defaultDownloadFolder) }
+        set { setURL(newValue, forKey: "lastUsedDownloadFolder") }
     }
 
     // MARK: - Format
 
     public var defaultKind: DownloadKind {
-        switch defaultAudioOrVideo {
-        case .video: .video(maxHeight: defaultMaxHeight)
-        case .audio: .audio(codec: defaultAudioCodec)
+        switch defaultMediaType {
+        case .video: .video(maxHeight: defaultVideoHeight)
+        case .audio: .audio(format: defaultAudioFormat)
         }
     }
 
-    private enum KindSelector: String { case video, audio }
-
-    private var defaultAudioOrVideo: KindSelector {
+    public var defaultMediaType: MediaType {
         get {
-            (defaults.string(forKey: "mg.defaultKindSelector"))
-                .flatMap(KindSelector.init) ?? .video
+            (defaults.string(forKey: "mg.defaultMediaType"))
+                .flatMap(MediaType.init) ?? .video
         }
-        set { defaults.set(newValue.rawValue, forKey: "mg.defaultKindSelector") }
+        set { defaults.set(newValue.rawValue, forKey: "mg.defaultMediaType") }
     }
 
-    public var defaultMaxHeight: Int {
-        get { intValue(forKey: "defaultMaxHeight", default: 1080) }
-        set { defaults.set(newValue, forKey: "mg.defaultMaxHeight") }
+    public var defaultVideoHeight: Int {
+        get { intValue(forKey: "defaultVideoHeight", default: 1080) }
+        set { defaults.set(newValue, forKey: "mg.defaultVideoHeight") }
     }
 
-    public var defaultAudioCodec: AudioCodec {
+    public var defaultAudioFormat: AudioFormat {
         get {
-            (defaults.string(forKey: "mg.defaultAudioCodec"))
-                .flatMap(AudioCodec.init) ?? .m4a
+            (defaults.string(forKey: "mg.defaultAudioFormat"))
+                .flatMap(AudioFormat.init) ?? .m4a
         }
-        set { defaults.set(newValue.rawValue, forKey: "mg.defaultAudioCodec") }
+        set { defaults.set(newValue.rawValue, forKey: "mg.defaultAudioFormat") }
     }
 
-    public var outputTemplate: String {
-        get { defaults.string(forKey: "mg.outputTemplate") ?? "%(title)s.%(ext)s" }
-        set { defaults.set(newValue, forKey: "mg.outputTemplate") }
+    public var filenameTemplate: String {
+        get { defaults.string(forKey: "mg.filenameTemplate") ?? "%(title)s.%(ext)s" }
+        set { defaults.set(newValue, forKey: "mg.filenameTemplate") }
     }
 
     // MARK: - Behavior
 
-    public var maxAutoAttempts: Int {
-        get { intValue(forKey: "maxAutoAttempts", default: 5) }
-        set { defaults.set(min(5, max(1, newValue)), forKey: "mg.maxAutoAttempts") }
+    public var maxAutoRetries: Int {
+        get { intValue(forKey: "maxAutoRetries", default: 5) }
+        set { defaults.set(min(5, max(1, newValue)), forKey: "mg.maxAutoRetries") }
     }
 
     // Gates concurrent downloads only, not probes. DebugFlags.concurrencyCapOverride wins.
@@ -91,13 +89,87 @@ public final class Preferences: @unchecked Sendable {
         set { defaults.set(newValue, forKey: "mg.verboseLogging") }
     }
 
+    // MARK: - Clipboard
+
+    public var detectClipboardLinks: Bool {
+        get {
+            defaults.object(forKey: "mg.detectClipboardLinks") == nil
+                ? true
+                : defaults.bool(forKey: "mg.detectClipboardLinks")
+        }
+        set { defaults.set(newValue, forKey: "mg.detectClipboardLinks") }
+    }
+
+    // MARK: - Network
+
+    public var proxyURL: String? {
+        get { defaults.string(forKey: "mg.proxyURL") }
+        set {
+            let trimmed = newValue?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if trimmed.isEmpty {
+                defaults.removeObject(forKey: "mg.proxyURL")
+            } else {
+                defaults.set(trimmed, forKey: "mg.proxyURL")
+            }
+        }
+    }
+
+    public var forceIPv4: Bool {
+        get { defaults.bool(forKey: "mg.forceIPv4") }
+        set { defaults.set(newValue, forKey: "mg.forceIPv4") }
+    }
+
+    public var speedLimitKBps: Int {
+        get { intValue(forKey: "speedLimitKBps", default: 0) }
+        set { defaults.set(min(100_000, max(0, newValue)), forKey: "mg.speedLimitKBps") }
+    }
+
+    // MARK: - Runway last-selected
+
+    public var lastVideoHeight: Int? {
+        get {
+            defaults.object(forKey: "mg.lastVideoHeight") == nil
+                ? nil
+                : defaults.integer(forKey: "mg.lastVideoHeight")
+        }
+        set {
+            guard let value = newValue else {
+                defaults.removeObject(forKey: "mg.lastVideoHeight")
+                return
+            }
+            defaults.set(value, forKey: "mg.lastVideoHeight")
+        }
+    }
+
+    public var lastMediaType: MediaType? {
+        get { defaults.string(forKey: "mg.lastMediaType").flatMap(MediaType.init) }
+        set {
+            guard let value = newValue else {
+                defaults.removeObject(forKey: "mg.lastMediaType")
+                return
+            }
+            defaults.set(value.rawValue, forKey: "mg.lastMediaType")
+        }
+    }
+
+    public var lastAudioFormat: AudioFormat? {
+        get { defaults.string(forKey: "mg.lastAudioFormat").flatMap(AudioFormat.init) }
+        set {
+            guard let value = newValue else {
+                defaults.removeObject(forKey: "mg.lastAudioFormat")
+                return
+            }
+            defaults.set(value.rawValue, forKey: "mg.lastAudioFormat")
+        }
+    }
+
     // MARK: - Theme
 
-    public var skin: SkinKind {
+    public var theme: ThemeKind {
         get {
-            (defaults.string(forKey: "mg.skin")).flatMap(SkinKind.init) ?? .aurora
+            (defaults.string(forKey: "mg.theme")).flatMap(ThemeKind.init) ?? .aurora
         }
-        set { defaults.set(newValue.rawValue, forKey: "mg.skin") }
+        set { defaults.set(newValue.rawValue, forKey: "mg.theme") }
     }
 
     public var palette: PaletteKind {
@@ -107,6 +179,23 @@ public final class Preferences: @unchecked Sendable {
         }
         set { defaults.set(newValue.rawValue, forKey: "mg.palette") }
     }
+
+    // MARK: - Reset
+
+    public func resetToDefaults() {
+        for key in Self.ownedKeys {
+            defaults.removeObject(forKey: key)
+        }
+    }
+
+    private static let ownedKeys = [
+        "mg.defaultDownloadFolder", "mg.lastUsedDownloadFolder", "mg.defaultMediaType",
+        "mg.defaultVideoHeight", "mg.defaultAudioFormat", "mg.filenameTemplate",
+        "mg.maxAutoRetries", "mg.maxConcurrentDownloads", "mg.verboseLogging",
+        "mg.theme", "mg.palette", "mg.detectClipboardLinks", "mg.proxyURL",
+        "mg.forceIPv4", "mg.speedLimitKBps", "mg.lastVideoHeight",
+        "mg.lastMediaType", "mg.lastAudioFormat"
+    ]
 
     // MARK: - Helpers
 

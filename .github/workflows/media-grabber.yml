@@ -1,22 +1,119 @@
 name: media-grabber
+
 on:
   push:
     paths: ['apps/media-grabber/**', '.github/workflows/media-grabber.yml']
   pull_request:
     paths: ['apps/media-grabber/**', '.github/workflows/media-grabber.yml']
+  schedule:
+    - cron: '17 6 * * 1'   # Mon 06:17 UTC — Xcode-latest canary
+
+concurrency:
+  group: media-grabber-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_VERSION: "16.1"
+
+defaults:
+  run:
+    working-directory: apps/media-grabber
+
 jobs:
-  build-test:
+  lint:
     runs-on: macos-14
-    defaults:
-      run:
-        working-directory: apps/media-grabber
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
         with:
           working_directory: apps/media-grabber
-      - run: tuist generate --no-open
-      - run: tuist build
-      - run: tuist test
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
       - run: mise exec -- swiftformat --lint .
       - run: mise exec -- swiftlint lint --strict
+
+  scripts-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: apps/media-grabber/scripts/tests/test_bump_version.sh
+        working-directory: .
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache mise tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/mise
+          key: mise-${{ matrix.os }}-${{ hashFiles('apps/media-grabber/.mise.toml') }}
+          restore-keys: mise-${{ matrix.os }}-
+      - name: Cache SwiftPM / DerivedData
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            apps/media-grabber/.build
+          key: spm-${{ matrix.os }}-${{ hashFiles('apps/media-grabber/**/Package.resolved') }}
+          restore-keys: spm-${{ matrix.os }}-
+      - uses: jdx/mise-action@v2
+        with:
+          working_directory: apps/media-grabber
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ github.event_name == 'schedule' && 'latest' || env.XCODE_VERSION }}
+      - run: mise exec -- tuist generate --no-open
+      - run: mise exec -- tuist test MediaGrabber-Workspace
+      - name: Collect xcresult
+        if: always()
+        run: |
+          r="$(find ~/Library/Developer/Xcode/DerivedData -name '*.xcresult' -path '*MediaGrabber*' \
+            | sort | tail -1)"
+          test -n "$r" || { echo "no xcresult produced" >&2; exit 1; }
+          cp -R "$r" "$RUNNER_TEMP/Result.xcresult"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xcresult-${{ matrix.os }}
+          path: ${{ runner.temp }}/Result.xcresult
+          if-no-files-found: warn
+
+  coverage:
+    needs: test
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: xcresult-macos-14
+          path: ${{ runner.temp }}/xcresult
+      - name: Coverage summary
+        working-directory: .
+        run: |
+          result="$(find "$RUNNER_TEMP/xcresult" -name '*.xcresult' | head -1)"
+          test -n "$result" || { echo "no xcresult" >&2; exit 1; }
+          xcrun xccov view --report --json "$result" > "$RUNNER_TEMP/cov.json"
+          python3 - "$RUNNER_TEMP/cov.json" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          rows = {t["name"]: t for t in d.get("targets", [])}
+          def line(match, label):
+              t = next((v for k, v in rows.items() if k.startswith(match)), None)
+              if not t:
+                  return f"| {match} | _no data_ | | {label} |"
+              pct = t.get("lineCoverage", 0) * 100
+              cov, ex = t.get("coveredLines", 0), t.get("executableLines", 0)
+              return f"| {match} | {pct:.1f}% | {cov}/{ex} | {label} |"
+          print("### MediaGrabber coverage")
+          print()
+          print("| Target | Line coverage | Lines | Note |")
+          print("|---|---|---|---|")
+          print(line("GrabberKit", "**headline**"))
+          print(line("MediaGrabber", "informational (SwiftUI view code)"))
+          PY

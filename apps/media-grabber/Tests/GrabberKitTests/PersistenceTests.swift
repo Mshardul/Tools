@@ -56,7 +56,7 @@ final class PersistenceTests: XCTestCase {
             destFolder: dest,
             kind: kind,
             container: container,
-            outputTemplate: template
+            filenameTemplate: template
         )
     }
 
@@ -102,7 +102,7 @@ final class PersistenceTests: XCTestCase {
                 template: "%(id)s.%(ext)s",
                 dest: deep
             ),
-            request(kind: .audio(codec: .mp3), container: nil, template: "a/%(title)s.%(ext)s")
+            request(kind: .audio(format: .mp3), container: nil, template: "a/%(title)s.%(ext)s")
         ]
         for original in requests {
             let persisted = PersistedJob(

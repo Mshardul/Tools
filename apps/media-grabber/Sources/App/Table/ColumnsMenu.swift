@@ -15,7 +15,7 @@ struct ColumnsMenu: View {
             if showsClearFilters {
                 Button("Clear filters", action: clearFilters)
                     .buttonStyle(.plain)
-                    .font(theme.skin.bodyFont(12, .regular))
+                    .font(theme.bodyFont(12, .regular))
                     .foregroundStyle(theme.palette.accent)
             }
             columnsButton
@@ -50,20 +50,20 @@ struct ColumnsMenu: View {
                 Text(label)
                 if showBadge {
                     Text("\(count)")
-                        .font(theme.skin.monoFont(10, .semibold))
+                        .font(theme.monoFont(10, .semibold))
                         .padding(.horizontal, 5)
                         .padding(.vertical, 1)
                         .background(theme.palette.danger, in: Capsule())
                         .foregroundStyle(theme.palette.onAccent)
                 }
             }
-            .font(theme.skin.bodyFont(12, active ? .semibold : .regular))
+            .font(theme.bodyFont(12, active ? .semibold : .regular))
             .foregroundStyle(active ? theme.palette.text : theme.palette.dim)
             .padding(.horizontal, Spacing.s3)
             .padding(.vertical, Spacing.s1)
             .background(
                 active ? theme.palette.panel : .clear,
-                in: RoundedRectangle(cornerRadius: theme.skin.chipRadius)
+                in: RoundedRectangle(cornerRadius: theme.chipRadius)
             )
         }
         .buttonStyle(.plain)
@@ -90,13 +90,13 @@ struct ColumnsMenu: View {
                 Icon(kind: .columnsMenu, size: 14)
                 Text("Columns")
             }
-            .font(theme.skin.bodyFont(12, .medium))
+            .font(theme.bodyFont(12, .medium))
             .foregroundStyle(theme.palette.dim)
             .padding(.horizontal, Spacing.s3)
             .padding(.vertical, Spacing.s1)
             .background(
                 theme.palette.panel,
-                in: RoundedRectangle(cornerRadius: theme.skin.chipRadius)
+                in: RoundedRectangle(cornerRadius: theme.chipRadius)
             )
         }
         .menuStyle(.borderlessButton)

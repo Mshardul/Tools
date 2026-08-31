@@ -1,5 +1,7 @@
 import ProjectDescription
 
+let mgVersion = Environment.mgVersion.getString(default: "0.0.0")
+
 let project = Project(
     name: "MediaGrabber",
     options: .options(
@@ -9,7 +11,9 @@ let project = Project(
     settings: .settings(
         base: [
             "SWIFT_VERSION": "6.0",
-            "MACOSX_DEPLOYMENT_TARGET": "14.0"
+            "MACOSX_DEPLOYMENT_TARGET": "14.0",
+            "MARKETING_VERSION": .string(mgVersion),
+            "CURRENT_PROJECT_VERSION": .string(mgVersion)
         ],
         configurations: [
             .debug(name: "Debug"),
@@ -26,10 +30,12 @@ let project = Project(
             infoPlist: .extendingDefault(with: [
                 "LSMinimumSystemVersion": "14.0",
                 "CFBundleDisplayName": "MediaGrabber",
-                "NSHumanReadableCopyright": "MIT"
+                "NSHumanReadableCopyright": "MIT",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)"
             ]),
             sources: ["Sources/App/**"],
-            resources: [],
+            resources: ["PRIVACY.md"],
             dependencies: [.target(name: "GrabberKit")],
             settings: .settings(base: [
                 "CODE_SIGN_IDENTITY": "-",
@@ -75,6 +81,20 @@ let project = Project(
             deploymentTargets: .macOS("14.0"),
             sources: ["Tests/AppUnitTests/**"],
             dependencies: [.target(name: "MediaGrabber"), .target(name: "TestSupport")]
+        )
+    ],
+    schemes: [
+        .scheme(
+            name: "MediaGrabber-Workspace",
+            shared: true,
+            buildAction: .buildAction(targets: ["MediaGrabber", "GrabberKit"]),
+            testAction: .targets(
+                ["GrabberKitTests", "AppUnitTests"],
+                options: .options(
+                    coverage: true,
+                    codeCoverageTargets: ["GrabberKit", "MediaGrabber"]
+                )
+            )
         )
     ]
 )

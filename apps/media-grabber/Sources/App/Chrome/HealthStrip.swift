@@ -39,14 +39,14 @@ struct HealthStrip: View {
                 .fill(chip.dot == .ok ? theme.palette.accent : theme.palette.warn)
                 .frame(width: 7, height: 7)
             Text(chip.label)
-                .font(theme.skin.monoFont(11, .regular))
+                .font(theme.monoFont(11, .regular))
                 .foregroundStyle(theme.palette.dim)
         }
         .padding(.horizontal, Spacing.s2)
         .padding(.vertical, Spacing.s1)
         .background(
             theme.palette.panel,
-            in: RoundedRectangle(cornerRadius: theme.skin.chipRadius)
+            in: RoundedRectangle(cornerRadius: theme.chipRadius)
         )
     }
 }

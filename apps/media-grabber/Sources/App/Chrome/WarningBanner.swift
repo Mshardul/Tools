@@ -15,14 +15,14 @@ struct WarningBanner: View {
         if let content {
             HStack(spacing: Spacing.s3) {
                 Text(content.text)
-                    .font(theme.skin.bodyFont(13, .regular))
+                    .font(theme.bodyFont(13, .regular))
                     .foregroundStyle(theme.palette.onAccent)
                 Spacer(minLength: Spacing.s3)
                 Button(content.buttonTitle) {
                     Task { await content.action() }
                 }
                 .buttonStyle(.plain)
-                .font(theme.skin.bodyFont(13, .semibold))
+                .font(theme.bodyFont(13, .semibold))
                 .foregroundStyle(theme.palette.onAccent)
             }
             .padding(.horizontal, Spacing.s4)
@@ -33,7 +33,7 @@ struct WarningBanner: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 ),
-                in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+                in: RoundedRectangle(cornerRadius: theme.cardRadius)
             )
             .padding(.horizontal, Spacing.s4)
             .padding(.bottom, Spacing.s4)

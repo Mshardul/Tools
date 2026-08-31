@@ -95,9 +95,9 @@ final class ConfirmationTests: XCTestCase {
         XCTAssertTrue(request(cancelTitle: "Cancel").showsCancel)
     }
 
-    func test_dialogBuildsInBothSkins() {
-        for skin in [SkinKind.tapeDeck, .aurora] {
-            _ = ResolvedTheme(skinKind: skin, paletteKind: .auroraMintIris)
+    func test_dialogBuildsInBothThemes() {
+        for themeKind in [ThemeKind.tapeDeck, .aurora] {
+            _ = Theme(themeKind: themeKind, paletteKind: .auroraMintIris)
             let dialog = ConfirmationDialog(request: request(destructive: true)) { _, _ in }
             _ = dialog.body
         }

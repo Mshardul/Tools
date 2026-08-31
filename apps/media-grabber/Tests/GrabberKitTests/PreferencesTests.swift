@@ -19,33 +19,101 @@ final class PreferencesTests: XCTestCase {
 
     func test_defaults() {
         let prefs = Preferences(defaults: defaults)
-        XCTAssertEqual(prefs.defaultMaxHeight, 1080)
-        XCTAssertEqual(prefs.defaultAudioCodec, .m4a)
-        XCTAssertEqual(prefs.outputTemplate, "%(title)s.%(ext)s")
-        XCTAssertEqual(prefs.maxAutoAttempts, 5)
+        XCTAssertEqual(prefs.defaultVideoHeight, 1080)
+        XCTAssertEqual(prefs.defaultAudioFormat, .m4a)
+        XCTAssertEqual(prefs.filenameTemplate, "%(title)s.%(ext)s")
+        XCTAssertEqual(prefs.maxAutoRetries, 5)
         XCTAssertFalse(prefs.verboseLogging)
-        XCTAssertEqual(prefs.skin, .aurora)
+        XCTAssertEqual(prefs.theme, .aurora)
         XCTAssertEqual(prefs.palette, .auroraMintIris)
-        XCTAssertTrue(prefs.defaultDestFolder.path.hasSuffix("/Downloads"))
+        XCTAssertTrue(prefs.defaultDownloadFolder.path.hasSuffix("/Downloads"))
     }
 
     func test_setPersistsToDefaults() {
         let prefs = Preferences(defaults: defaults)
-        prefs.defaultMaxHeight = 720
+        prefs.defaultVideoHeight = 720
         let reloaded = Preferences(defaults: defaults)
-        XCTAssertEqual(reloaded.defaultMaxHeight, 720)
+        XCTAssertEqual(reloaded.defaultVideoHeight, 720)
     }
 
-    func test_maxAutoAttemptsClampedTo1through5() {
+    func test_maxAutoRetriesClampedTo1through5() {
         let prefs = Preferences(defaults: defaults)
-        prefs.maxAutoAttempts = 0
-        XCTAssertEqual(prefs.maxAutoAttempts, 1)
-        prefs.maxAutoAttempts = 9
-        XCTAssertEqual(prefs.maxAutoAttempts, 5)
+        prefs.maxAutoRetries = 0
+        XCTAssertEqual(prefs.maxAutoRetries, 1)
+        prefs.maxAutoRetries = 9
+        XCTAssertEqual(prefs.maxAutoRetries, 5)
     }
 
-    func test_lastUsedDefaultsToDefaultDest() {
+    func test_lastUsedDefaultsToDefaultDownloadFolder() {
         let prefs = Preferences(defaults: defaults)
-        XCTAssertEqual(prefs.lastUsedDestFolder, prefs.defaultDestFolder)
+        XCTAssertEqual(prefs.lastUsedDownloadFolder, prefs.defaultDownloadFolder)
+    }
+
+    func test_renamedKeys_oldKeysIgnored() {
+        defaults.set(480, forKey: "mg.defaultMaxHeight")
+        XCTAssertEqual(Preferences(defaults: defaults).defaultVideoHeight, 1080)
+    }
+
+    func test_newFieldDefaults() {
+        let prefs = Preferences(defaults: defaults)
+        XCTAssertTrue(prefs.detectClipboardLinks)
+        XCTAssertNil(prefs.proxyURL)
+        XCTAssertFalse(prefs.forceIPv4)
+        XCTAssertEqual(prefs.speedLimitKBps, 0)
+        XCTAssertNil(prefs.lastVideoHeight)
+        XCTAssertNil(prefs.lastMediaType)
+        XCTAssertNil(prefs.lastAudioFormat)
+    }
+
+    func test_proxyURL_trimAndEmptyToNil() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.proxyURL = "  "
+        XCTAssertNil(Preferences(defaults: defaults).proxyURL)
+        prefs.proxyURL = " http://h:1 "
+        XCTAssertEqual(Preferences(defaults: defaults).proxyURL, "http://h:1")
+    }
+
+    func test_speedLimitKBps_clamp() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.speedLimitKBps = -5
+        XCTAssertEqual(prefs.speedLimitKBps, 0)
+        prefs.speedLimitKBps = 999_999
+        XCTAssertEqual(prefs.speedLimitKBps, 100_000)
+    }
+
+    func test_lastSelected_roundTripIncludingIntMax() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.lastVideoHeight = .max
+        prefs.lastMediaType = .audio
+        prefs.lastAudioFormat = .mp3
+        let reloaded = Preferences(defaults: defaults)
+        XCTAssertEqual(reloaded.lastVideoHeight, .max)
+        XCTAssertEqual(reloaded.lastMediaType, .audio)
+        XCTAssertEqual(reloaded.lastAudioFormat, .mp3)
+    }
+
+    func test_resetToDefaults_restoresEveryField() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.defaultVideoHeight = 480
+        prefs.theme = .tapeDeck
+        prefs.palette = .tapeDeckC
+        prefs.forceIPv4 = true
+        prefs.proxyURL = "http://h:1"
+        prefs.speedLimitKBps = 500
+        prefs.detectClipboardLinks = false
+        prefs.maxConcurrentDownloads = 6
+        prefs.filenameTemplate = "%(id)s.%(ext)s"
+        prefs.lastMediaType = .audio
+        prefs.resetToDefaults()
+        XCTAssertEqual(prefs.defaultVideoHeight, 1080)
+        XCTAssertEqual(prefs.theme, .aurora)
+        XCTAssertEqual(prefs.palette, .auroraMintIris)
+        XCTAssertFalse(prefs.forceIPv4)
+        XCTAssertNil(prefs.proxyURL)
+        XCTAssertEqual(prefs.speedLimitKBps, 0)
+        XCTAssertTrue(prefs.detectClipboardLinks)
+        XCTAssertEqual(prefs.maxConcurrentDownloads, 3)
+        XCTAssertEqual(prefs.filenameTemplate, "%(title)s.%(ext)s")
+        XCTAssertNil(prefs.lastMediaType)
     }
 }

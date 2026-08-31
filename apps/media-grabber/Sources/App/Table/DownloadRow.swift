@@ -21,7 +21,7 @@ struct DownloadRow: View {
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(theme.palette.hair)
-                .frame(height: theme.skin.hairlineWidth)
+                .frame(height: theme.hairlineWidth)
         }
     }
 
@@ -36,7 +36,7 @@ struct DownloadRow: View {
             actionBar
         default:
             Text(TablePresentation.cellText(for: row, column: column))
-                .font(theme.skin.bodyFont(12, .regular))
+                .font(theme.bodyFont(12, .regular))
                 .foregroundStyle(theme.palette.dim)
                 .lineLimit(1)
                 .truncationMode(.tail)
@@ -49,7 +49,7 @@ struct DownloadRow: View {
                 .fill(RowStatusStyle.dotColor(for: row.snapshot.state, palette: theme.palette))
                 .frame(width: 6, height: 6)
             Text(TablePresentation.statusDisplay(for: row))
-                .font(theme.skin.monoFont(11, .medium))
+                .font(theme.monoFont(11, .medium))
                 .foregroundStyle(
                     RowStatusStyle.textColor(for: row.snapshot.state, palette: theme.palette)
                 )

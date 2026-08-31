@@ -65,6 +65,30 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 - Lint: `mise exec -- swiftformat --lint .` and `mise exec -- swiftlint lint --strict`.
 - The `MediaGrabber` scheme only exists because `AppUnitTests` depends on it;
   the workspace-wide scheme is `MediaGrabber-Workspace`.
+- `MediaGrabber-Workspace` is defined explicitly in `Project.swift` (not
+  auto-generated) so it can carry code coverage for `GrabberKit` + `MediaGrabber`.
+
+## Release
+
+- Versions are manual SemVer, pre-1.0. `make release-patch` / `release-minor` /
+  `release-major` computes the next version from the latest `media-grabber-v*`
+  tag, confirms, then tags and pushes. Bare `make release` errors.
+- The **tag** is `media-grabber-vX.Y.Z`; every derived string (`MARKETING_VERSION`,
+  DMG name, `bump-version.sh` I/O) is the bare `X.Y.Z`.
+- The build reads the version from `TUIST_MG_VERSION` (unset → `0.0.0`); the
+  release workflow exports it before `tuist generate`.
+- A tag push runs `.github/workflows/media-grabber-release.yml`: build Release,
+  ad-hoc sign, DMG via the vendored `scripts/create-dmg`, verify the DMG's app
+  version matches the tag, publish a GitHub Release with the `.dmg` + `SHA256SUMS`.
+- To test the release path without publishing: Actions tab → media-grabber-release
+  → Run workflow → set `version`, tick `dry_run`.
+- `XCODE_VERSION` is pinned in an `env:` block at the top of BOTH workflow files;
+  a bump edits both. A weekly scheduled CI run tests against Xcode `latest` so a
+  retired pin surfaces out of band.
+- Notarization, real Developer ID signing, and hardened runtime are not wired —
+  the release workflow's sign step marks where they slot in.
+- `scripts/create-dmg` is vendored (andreyvit) at a pinned SHA with one local
+  patch (support-dir path); see `scripts/support/PROVENANCE`.
 
 ## Toolchain
 

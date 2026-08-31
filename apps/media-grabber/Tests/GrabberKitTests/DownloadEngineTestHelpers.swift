@@ -26,7 +26,8 @@ enum EngineFixture {
     static func engine(
         runner: FakeProcessRunner,
         probe: FakeMetadataProbe,
-        cap: Int = 3
+        cap: Int = 3,
+        preferences: Preferences? = nil
     ) -> DownloadEngine {
         DownloadEngine(
             dependencies: EngineDependencies(
@@ -37,7 +38,8 @@ enum EngineFixture {
                 jobLogDir: scratchLogDir(),
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: cap)
             ),
-            preferences: Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+            preferences: preferences
+                ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
         )
     }
 

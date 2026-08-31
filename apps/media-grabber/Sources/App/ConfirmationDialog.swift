@@ -58,21 +58,20 @@ struct ConfirmationDialog: View {
     private var card: some View {
         VStack(alignment: .leading, spacing: Spacing.s4) {
             if request.isDestructive {
-                Image(systemName: "exclamationmark.triangle.fill")
+                Icon(kind: .warning, size: 20)
                     .foregroundStyle(theme.palette.danger)
-                    .font(.system(size: 20))
             }
             Text(request.title)
-                .font(theme.skin.displayFont(15, .semibold))
+                .font(theme.displayFont(15, .semibold))
                 .foregroundStyle(theme.palette.headline)
             Text(request.message)
-                .font(theme.skin.bodyFont(13, .regular))
+                .font(theme.bodyFont(13, .regular))
                 .foregroundStyle(theme.palette.dim)
                 .fixedSize(horizontal: false, vertical: true)
 
             if request.suppressionKey != nil {
                 Toggle("Don't ask again", isOn: $suppressFutures)
-                    .font(theme.skin.bodyFont(12, .regular))
+                    .font(theme.bodyFont(12, .regular))
                     .foregroundStyle(theme.palette.dim)
             }
 
@@ -98,7 +97,7 @@ struct ConfirmationDialog: View {
         .padding(Spacing.s5)
         .frame(maxWidth: 420)
         .background(theme.palette.panelSolid, in: cardShape)
-        .overlay(cardShape.stroke(theme.palette.stroke, lineWidth: theme.skin.hairlineWidth))
+        .overlay(cardShape.stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth))
         .shadow(color: .black.opacity(0.35), radius: 24, y: 8)
     }
 
@@ -107,10 +106,10 @@ struct ConfirmationDialog: View {
     }
 
     private var rounded: RoundedRectangle {
-        RoundedRectangle(cornerRadius: theme.skin.controlRadius)
+        RoundedRectangle(cornerRadius: theme.controlRadius)
     }
 
     private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+        RoundedRectangle(cornerRadius: theme.cardRadius)
     }
 }

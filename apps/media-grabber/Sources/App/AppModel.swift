@@ -33,9 +33,9 @@ final class AppModelConfirmer: Confirming, @unchecked Sendable {
 @MainActor
 @Observable
 final class AppModel {
-    enum Page {
+    enum Page: Equatable {
         case home
-        case preferences
+        case preferences(PreferencesPane = .downloads)
         case diagnostics
     }
 
@@ -177,7 +177,17 @@ final class AppModel {
         guard let resolved else { return }
         let request = RequestBuilder.build(from: resolved, prefs: prefs, overrides: overrides)
         if let folder = overrides.destFolder {
-            prefs.lastUsedDestFolder = folder
+            prefs.lastUsedDownloadFolder = folder
+        }
+        if let kind = overrides.kind {
+            switch kind {
+            case let .video(maxHeight):
+                prefs.lastMediaType = .video
+                prefs.lastVideoHeight = maxHeight
+            case let .audio(format):
+                prefs.lastMediaType = .audio
+                prefs.lastAudioFormat = format
+            }
         }
 
         let result = await engine.submit(request, force: false, prefetchedMetadata: resolved)
@@ -254,6 +264,10 @@ final class AppModel {
     func cancelJob() async {
         guard let id = lastSubmittedJobID else { return }
         await engine.cancel(id)
+    }
+
+    func resetAllSettings() {
+        prefs.resetToDefaults()
     }
 
     private func startConsumerIfNeeded() {

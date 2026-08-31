@@ -19,7 +19,7 @@ final class YtDlpArgumentsTests: XCTestCase {
             destFolder: dest,
             kind: kind,
             container: container,
-            outputTemplate: template
+            filenameTemplate: template
         )
     }
 
@@ -49,16 +49,16 @@ final class YtDlpArgumentsTests: XCTestCase {
     }
 
     func test_audio_m4a() {
-        let argv = YtDlpArguments.build(for: request(kind: .audio(codec: .m4a)))
+        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .m4a)))
         XCTAssertTrue(hasSubsequence(argv, ["-x", "--audio-format", "m4a"]))
     }
 
     func test_audio_mp3() {
-        let argv = YtDlpArguments.build(for: request(kind: .audio(codec: .mp3)))
+        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .mp3)))
         XCTAssertTrue(hasSubsequence(argv, ["-x", "--audio-format", "mp3"]))
     }
 
-    func test_customOutputTemplate() throws {
+    func test_customFilenameTemplate() throws {
         let argv = YtDlpArguments.build(for: request(
             kind: .video(maxHeight: 1080),
             template: "%(uploader)s - %(title)s.%(ext)s"
@@ -68,7 +68,7 @@ final class YtDlpArgumentsTests: XCTestCase {
     }
 
     func test_urlIsLast() {
-        let argv = YtDlpArguments.build(for: request(kind: .audio(codec: .mp3)))
+        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .mp3)))
         XCTAssertEqual(argv.last, url)
     }
 
@@ -82,8 +82,8 @@ final class YtDlpArgumentsTests: XCTestCase {
         let requests: [DownloadRequest] = [
             request(kind: .video(maxHeight: 1080), container: "mp4"),
             request(kind: .video(maxHeight: 720)),
-            request(kind: .audio(codec: .m4a)),
-            request(kind: .audio(codec: .mp3)),
+            request(kind: .audio(format: .m4a)),
+            request(kind: .audio(format: .mp3)),
             request(kind: .video(maxHeight: 2160), template: "%(id)s.%(ext)s")
         ]
         for req in requests {
@@ -92,6 +92,75 @@ final class YtDlpArgumentsTests: XCTestCase {
                 YtDlpArguments.build(for: req)
             )
         }
+    }
+
+    func test_options_none_noGlobalFlags() {
+        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 1080)))
+        XCTAssertFalse(argv.contains("--proxy"))
+        XCTAssertFalse(argv.contains("-4"))
+        XCTAssertFalse(argv.contains("--limit-rate"))
+    }
+
+    func test_options_proxy() {
+        let options = GlobalDownloadOptions(
+            proxyURL: "http://host:8080",
+            forceIPv4: false,
+            speedLimitKBps: 0
+        )
+        XCTAssertTrue(hasSubsequence(
+            YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), options: options),
+            ["--proxy", "http://host:8080"]
+        ))
+    }
+
+    func test_options_forceIPv4() {
+        let options = GlobalDownloadOptions(proxyURL: nil, forceIPv4: true, speedLimitKBps: 0)
+        XCTAssertTrue(YtDlpArguments
+            .build(for: request(kind: .audio(format: .m4a)), options: options)
+            .contains("-4"))
+    }
+
+    func test_options_speedLimit() {
+        let options = GlobalDownloadOptions(proxyURL: nil, forceIPv4: false, speedLimitKBps: 500)
+        XCTAssertTrue(hasSubsequence(
+            YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), options: options),
+            ["--limit-rate", "500K"]
+        ))
+    }
+
+    func test_options_speedLimit_zeroOmitsFlag() {
+        let options = GlobalDownloadOptions(proxyURL: nil, forceIPv4: false, speedLimitKBps: 0)
+        XCTAssertFalse(YtDlpArguments
+            .build(for: request(kind: .audio(format: .m4a)), options: options)
+            .contains("--limit-rate"))
+    }
+
+    func test_redacted_masksProxyUserinfo() throws {
+        let options = GlobalDownloadOptions(
+            proxyURL: "http://user:secret@host:8080",
+            forceIPv4: false,
+            speedLimitKBps: 0
+        )
+        let argv = YtDlpArguments.redacted(
+            for: request(kind: .audio(format: .m4a)),
+            options: options
+        )
+        let index = try XCTUnwrap(argv.firstIndex(of: "--proxy"))
+        XCTAssertFalse(argv[index + 1].contains("secret"))
+        XCTAssertFalse(argv[index + 1].contains("user:"))
+        XCTAssertTrue(argv[index + 1].contains("host:8080"))
+    }
+
+    func test_redacted_identicalWhenNoProxyCreds() {
+        let options = GlobalDownloadOptions(
+            proxyURL: "http://host:8080",
+            forceIPv4: true,
+            speedLimitKBps: 200
+        )
+        XCTAssertEqual(
+            YtDlpArguments.redacted(for: request(kind: .video(maxHeight: 720)), options: options),
+            YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)), options: options)
+        )
     }
 
     private func hasSubsequence(_ array: [String], _ sub: [String]) -> Bool {

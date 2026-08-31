@@ -8,9 +8,9 @@ struct HomeView: View {
     @AppStorage("mg.hasGrabbedOnce") private var hasGrabbedOnce = false
 
     @State private var pastedURL = ""
-    @State private var kindSelector: RunwayView.KindSelector = .video
-    @State private var maxHeight = 1080
-    @State private var audioCodec: AudioCodec = .m4a
+    @State private var mediaType: MediaType = .video
+    @State private var videoHeight = 1080
+    @State private var audioFormat: AudioFormat = .m4a
     @State private var destFolder = URL(fileURLWithPath: NSHomeDirectory())
     @State private var seeded = false
     @State private var probeTask: Task<Void, Never>?
@@ -69,24 +69,20 @@ struct HomeView: View {
     private func seedFromPrefs() {
         guard !seeded else { return }
         seeded = true
-        switch appModel.prefs.defaultKind {
-        case let .video(height):
-            kindSelector = .video
-            maxHeight = height
-        case let .audio(codec):
-            kindSelector = .audio
-            audioCodec = codec
-        }
-        destFolder = appModel.prefs.lastUsedDestFolder
+        let seed = runwaySeed(from: appModel.prefs)
+        mediaType = seed.mediaType
+        videoHeight = seed.videoHeight
+        audioFormat = seed.audioFormat
+        destFolder = seed.downloadFolder
     }
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: Spacing.s2) {
             Text("PASTE. PICK. GRAB.")
-                .font(theme.skin.monoFont(11, .medium))
+                .font(theme.monoFont(11, .medium))
                 .foregroundStyle(theme.palette.accent)
             Text("One link in. One file out.")
-                .font(theme.skin.displayFont(32, .semibold))
+                .font(theme.displayFont(32, .semibold))
                 .foregroundStyle(theme.palette.headline)
         }
     }
@@ -99,7 +95,7 @@ struct HomeView: View {
                 .tint(theme.palette.accent)
         } else if let resolved = appModel.resolved {
             Text("\u{2713} \(resolved.title)")
-                .font(theme.skin.monoFont(12, .regular))
+                .font(theme.monoFont(12, .regular))
                 .foregroundStyle(theme.palette.accent)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -112,14 +108,14 @@ struct HomeView: View {
                 HStack(spacing: Spacing.s2) {
                     TextField("", text: $pastedURL)
                         .textFieldStyle(.plain)
-                        .font(theme.skin.bodyFont(14, .regular))
+                        .font(theme.bodyFont(14, .regular))
                         .foregroundStyle(theme.palette.text)
                         .onSubmit { Task { await resolve() } }
                         .onChange(of: pastedURL) { _, new in autoProbe(new) }
                         .overlay(alignment: .leading) {
                             if pastedURL.isEmpty {
                                 Text("Paste a link")
-                                    .font(theme.skin.bodyFont(14, .regular))
+                                    .font(theme.bodyFont(14, .regular))
                                     .foregroundStyle(theme.palette.faint)
                                     .allowsHitTesting(false)
                             }
@@ -129,7 +125,7 @@ struct HomeView: View {
 
                 if let error = appModel.probeError {
                     Text(error)
-                        .font(theme.skin.bodyFont(12, .regular))
+                        .font(theme.bodyFont(12, .regular))
                         .foregroundStyle(theme.palette.danger)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -138,18 +134,18 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 theme.palette.panel,
-                in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+                in: RoundedRectangle(cornerRadius: theme.cardRadius)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: theme.skin.cardRadius)
-                    .stroke(theme.palette.stroke, lineWidth: theme.skin.hairlineWidth)
+                RoundedRectangle(cornerRadius: theme.cardRadius)
+                    .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
             )
 
             if runwayAttached || reserveRunwaySlot {
                 RunwayView(
-                    kindSelector: $kindSelector,
-                    maxHeight: $maxHeight,
-                    audioCodec: $audioCodec,
+                    mediaType: $mediaType,
+                    videoHeight: $videoHeight,
+                    audioFormat: $audioFormat,
                     destFolder: $destFolder,
                     canGrab: appModel.resolved != nil,
                     onGrab: grab
@@ -176,20 +172,20 @@ struct HomeView: View {
     private func stepCard(_ index: Int, _ title: String, _ subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s2) {
             Text("\(index)")
-                .font(theme.skin.monoFont(12, .medium))
+                .font(theme.monoFont(12, .medium))
                 .foregroundStyle(theme.palette.faint)
             Text(title)
-                .font(theme.skin.bodyFont(13, .semibold))
+                .font(theme.bodyFont(13, .semibold))
                 .foregroundStyle(theme.palette.text)
             Text(subtitle)
-                .font(theme.skin.bodyFont(12, .regular))
+                .font(theme.bodyFont(12, .regular))
                 .foregroundStyle(theme.palette.dim)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Spacing.s3)
         .background(
             theme.palette.panel,
-            in: RoundedRectangle(cornerRadius: theme.skin.cardRadius)
+            in: RoundedRectangle(cornerRadius: theme.cardRadius)
         )
     }
 
@@ -226,11 +222,11 @@ struct HomeView: View {
     }
 
     private var selectedKind: DownloadKind {
-        switch kindSelector {
+        switch mediaType {
         case .video:
-            .video(maxHeight: maxHeight)
+            .video(maxHeight: videoHeight)
         case .audio:
-            .audio(codec: audioCodec)
+            .audio(format: audioFormat)
         }
     }
 }

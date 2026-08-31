@@ -105,7 +105,7 @@ final class RowStoreTests: XCTestCase {
         let store = RowStore(columnConfig: config)
         store.apply(.snapshot(queueSnapshot([
             snap(1, state: .running, kind: .video(maxHeight: 720)),
-            snap(2, state: .completed, kind: .audio(codec: .mp3)),
+            snap(2, state: .completed, kind: .audio(format: .mp3)),
             snap(3, state: .running, kind: .video(maxHeight: 1080))
         ])))
         store.activeChip = .downloading

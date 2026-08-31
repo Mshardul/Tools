@@ -38,7 +38,7 @@ struct MainWindow: View {
         return HStack(spacing: Spacing.s3) {
             MotifView(isActive: jobRunning, size: 20)
             Text("MediaGrabber")
-                .font(theme.skin.displayFont(17, .semibold))
+                .font(theme.displayFont(17, .semibold))
                 .foregroundStyle(theme.palette.text)
             Spacer()
             nav(for: $appModel.page)
@@ -50,8 +50,15 @@ struct MainWindow: View {
     private func nav(for page: Binding<AppModel.Page>) -> some View {
         HStack(spacing: Spacing.s1) {
             navButton("Home", .home, page)
-            navButton("Preferences", .preferences, page)
+            navButton("Preferences", .preferences(), page)
             navButton("Diagnostics", .diagnostics, page)
+        }
+    }
+
+    private func isActive(_ page: AppModel.Page, _ target: AppModel.Page) -> Bool {
+        switch (page, target) {
+        case (.preferences, .preferences): true
+        default: page == target
         }
     }
 
@@ -60,16 +67,16 @@ struct MainWindow: View {
         _ value: AppModel.Page,
         _ page: Binding<AppModel.Page>
     ) -> some View {
-        let active = page.wrappedValue == value
+        let active = isActive(page.wrappedValue, value)
         return Button { page.wrappedValue = value } label: {
             Text(label)
-                .font(theme.skin.bodyFont(12, .medium))
+                .font(theme.bodyFont(12, .medium))
                 .foregroundStyle(active ? theme.palette.text : theme.palette.dim)
                 .padding(.horizontal, Spacing.s3)
                 .padding(.vertical, Spacing.s1)
                 .background(
                     active ? theme.palette.panel : .clear,
-                    in: RoundedRectangle(cornerRadius: theme.skin.chipRadius)
+                    in: RoundedRectangle(cornerRadius: theme.chipRadius)
                 )
         }
         .buttonStyle(.plain)
@@ -80,8 +87,8 @@ struct MainWindow: View {
         switch appModel.page {
         case .home:
             HomeView()
-        case .preferences:
-            placeholder("Preferences")
+        case let .preferences(pane):
+            PreferencesView(initialPane: pane)
         case .diagnostics:
             placeholder("Diagnostics")
         }
@@ -91,7 +98,7 @@ struct MainWindow: View {
         VStack {
             Spacer()
             Text(title)
-                .font(theme.skin.bodyFont(13, .regular))
+                .font(theme.bodyFont(13, .regular))
                 .foregroundStyle(theme.palette.faint)
             Spacer()
         }

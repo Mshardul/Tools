@@ -6,15 +6,22 @@ enum MotifKind {
     case orb
 }
 
-enum Skin {
-    case tapeDeck
-    case aurora
+struct Theme {
+    let kind: ThemeKind
+    let palette: PaletteTokens
 
-    init(_ kind: SkinKind) {
-        switch kind {
-        case .aurora: self = .aurora
-        case .tapeDeck: self = .tapeDeck
-        }
+    init(_ kind: ThemeKind, palette: PaletteTokens = .auroraMintIris) {
+        self.kind = kind
+        self.palette = palette
+    }
+
+    init(themeKind: ThemeKind, paletteKind: PaletteKind) {
+        kind = themeKind
+        palette = MediaGrabber.palette(for: paletteKind)
+    }
+
+    private var isAurora: Bool {
+        kind == .aurora
     }
 
     var displayFont: (CGFloat, Font.Weight) -> Font {
@@ -51,23 +58,23 @@ enum Skin {
     }
 
     var windowRadius: CGFloat {
-        self == .aurora ? 18 : 10
+        isAurora ? 18 : 10
     }
 
     var cardRadius: CGFloat {
-        self == .aurora ? 14 : 8
+        isAurora ? 14 : 8
     }
 
     var controlRadius: CGFloat {
-        self == .aurora ? 9 : 6
+        isAurora ? 9 : 6
     }
 
     var pillRadius: CGFloat {
-        self == .aurora ? 20 : 14
+        isAurora ? 20 : 14
     }
 
     var chipRadius: CGFloat {
-        self == .aurora ? 7 : 5
+        isAurora ? 7 : 5
     }
 
     var hairlineWidth: CGFloat {
@@ -75,7 +82,7 @@ enum Skin {
     }
 
     var motif: MotifKind {
-        self == .aurora ? .orb : .reel
+        isAurora ? .orb : .reel
     }
 }
 

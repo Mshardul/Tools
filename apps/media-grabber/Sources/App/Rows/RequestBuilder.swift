@@ -20,10 +20,10 @@ enum RequestBuilder {
         let kind = overrides.kind ?? prefs.defaultKind
         return DownloadRequest(
             url: resolved.sourceURL,
-            destFolder: overrides.destFolder ?? prefs.lastUsedDestFolder,
+            destFolder: overrides.destFolder ?? prefs.lastUsedDownloadFolder,
             kind: kind,
             container: container(for: kind),
-            outputTemplate: prefs.outputTemplate
+            filenameTemplate: prefs.filenameTemplate
         )
     }
 

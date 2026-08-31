@@ -1,0 +1,8 @@
+Files in this directory are vendored verbatim from
+github.com/andreyvit/create-dmg @ a2b71d0fda6d0df2a86dc7f67082d4d73e84c59f
+alongside ../create-dmg. Re-vendor all three together to update.
+
+../create-dmg carries one local patch: its support/-directory detection
+(sentinel-file / installed-prefix guessing) is replaced with a fixed
+"$SCRIPT_DIR/support" since the vendored layout always keeps them siblings.
+Re-apply that patch after any re-vendor.

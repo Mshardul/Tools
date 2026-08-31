@@ -11,7 +11,7 @@ struct OnboardingView: View {
             VStack(spacing: Spacing.s5) {
                 header
                 Text("Let's get you set up")
-                    .font(theme.skin.displayFont(26, .semibold))
+                    .font(theme.displayFont(26, .semibold))
                     .foregroundStyle(theme.palette.headline)
                 VStack(spacing: Spacing.s3) {
                     ForEach(OnboardingStepID.allCases, id: \.self, content: row)
@@ -26,7 +26,7 @@ struct OnboardingView: View {
         HStack(spacing: Spacing.s2) {
             MotifView(isActive: true, size: 20)
             Text("MediaGrabber")
-                .font(theme.skin.displayFont(18, .semibold))
+                .font(theme.displayFont(18, .semibold))
                 .foregroundStyle(theme.palette.text)
         }
     }
@@ -40,10 +40,10 @@ struct OnboardingView: View {
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title(for: step))
-                        .font(theme.skin.bodyFont(14, .medium))
+                        .font(theme.bodyFont(14, .medium))
                         .foregroundStyle(theme.palette.text)
                     Text(subtitle(for: step))
-                        .font(theme.skin.bodyFont(12, .regular))
+                        .font(theme.bodyFont(12, .regular))
                         .foregroundStyle(theme.palette.dim)
                     detail(for: step, state: state)
                 }
@@ -51,7 +51,7 @@ struct OnboardingView: View {
             }
         }
         .padding(Spacing.s3)
-        .background(theme.palette.panel, in: RoundedRectangle(cornerRadius: theme.skin.cardRadius))
+        .background(theme.palette.panel, in: RoundedRectangle(cornerRadius: theme.cardRadius))
     }
 
     @ViewBuilder
@@ -69,7 +69,7 @@ struct OnboardingView: View {
                 .foregroundStyle(theme.palette.danger)
         case .pending:
             Text("\(index + 1)")
-                .font(theme.skin.monoFont(12, .medium))
+                .font(theme.monoFont(12, .medium))
                 .foregroundStyle(theme.palette.faint)
         }
     }
@@ -79,7 +79,7 @@ struct OnboardingView: View {
         switch state {
         case let .running(text) where !text.isEmpty:
             Text(text)
-                .font(theme.skin.monoFont(11, .regular))
+                .font(theme.monoFont(11, .regular))
                 .foregroundStyle(theme.palette.dim)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -88,7 +88,7 @@ struct OnboardingView: View {
         case let .failed(reason):
             VStack(alignment: .leading, spacing: Spacing.s2) {
                 Text(reason)
-                    .font(theme.skin.monoFont(11, .regular))
+                    .font(theme.monoFont(11, .regular))
                     .foregroundStyle(theme.palette.danger)
                 Button("Retry") { Task { await installer.start() } }
             }
@@ -100,13 +100,13 @@ struct OnboardingView: View {
     private func homebrewFailure(reason: String) -> some View {
         VStack(alignment: .leading, spacing: Spacing.s2) {
             Text(reason)
-                .font(theme.skin.monoFont(11, .regular))
+                .font(theme.monoFont(11, .regular))
                 .foregroundStyle(theme.palette.text)
                 .textSelection(.enabled)
                 .padding(Spacing.s2)
                 .background(
                     theme.palette.panelHi,
-                    in: RoundedRectangle(cornerRadius: theme.skin.chipRadius)
+                    in: RoundedRectangle(cornerRadius: theme.chipRadius)
                 )
             HStack(spacing: Spacing.s2) {
                 Button("Copy") {

@@ -4,13 +4,13 @@ import XCTest
 final class DownloadRequestTests: XCTestCase {
     private let dest = URL(fileURLWithPath: "/tmp/mg")
 
-    func test_defaultOutputTemplate() {
+    func test_defaultFilenameTemplate() {
         let request = DownloadRequest(
             url: "https://example.com/v",
             destFolder: dest,
             kind: .video(maxHeight: 1080)
         )
-        XCTAssertEqual(request.outputTemplate, "%(title)s.%(ext)s")
+        XCTAssertEqual(request.filenameTemplate, "%(title)s.%(ext)s")
     }
 
     func test_codableRoundTrip_video() throws {
@@ -29,7 +29,7 @@ final class DownloadRequestTests: XCTestCase {
         let request = DownloadRequest(
             url: "https://example.com/a",
             destFolder: dest,
-            kind: .audio(codec: .mp3)
+            kind: .audio(format: .mp3)
         )
         let data = try JSONEncoder().encode(request)
         let decoded = try JSONDecoder().decode(DownloadRequest.self, from: data)

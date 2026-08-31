@@ -33,6 +33,19 @@ final class ValueTypesTests: XCTestCase {
         XCTAssertFalse(snap().availableActions.contains(.retry))
     }
 
+    func test_mediaType_casesAndRawValues() {
+        XCTAssertEqual(MediaType.allCases, [.video, .audio])
+        XCTAssertEqual(MediaType.video.rawValue, "video")
+        XCTAssertEqual(MediaType.audio.rawValue, "audio")
+    }
+
+    func test_mediaType_codableRoundTrip() throws {
+        for value in MediaType.allCases {
+            let data = try JSONEncoder().encode(value)
+            XCTAssertEqual(try JSONDecoder().decode(MediaType.self, from: data), value)
+        }
+    }
+
     func test_mediaMetadataDecodesExtractorFromJBlob() {
         let meta = MetadataProbe.decodeForTest(
             Fixture.text("ytdlp-J-video.json"),

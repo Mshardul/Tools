@@ -22,7 +22,7 @@ struct MotifView: View {
                 .frame(width: size, height: size)
                 .rotationEffect(angle)
                 .overlay(
-                    Circle().stroke(theme.palette.stroke, lineWidth: theme.skin.hairlineWidth)
+                    Circle().stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
                 )
         }
         .frame(width: size, height: size)

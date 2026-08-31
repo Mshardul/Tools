@@ -50,8 +50,8 @@ struct MediaGrabberApp: App {
     var body: some Scene {
         WindowGroup {
             content
-                .theme(ResolvedTheme(
-                    skinKind: appModel.prefs.skin,
+                .theme(Theme(
+                    themeKind: appModel.prefs.theme,
                     paletteKind: appModel.prefs.palette
                 ))
                 .environment(appModel)

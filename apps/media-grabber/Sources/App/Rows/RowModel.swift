@@ -184,7 +184,7 @@ extension RowModel {
     static func quality(for snapshot: JobSnapshot) -> String {
         switch snapshot.kind {
         case let .video(maxHeight): "\(maxHeight)p"
-        case let .audio(codec): codec.rawValue
+        case let .audio(format): format.rawValue
         }
     }
 

@@ -249,6 +249,11 @@ extension DownloadEngine {
         let request = job.request
         let runner = dependencies.runner
         let ytDlpURL = dependencies.ytDlpURL
+        let options = GlobalDownloadOptions(
+            proxyURL: preferences.proxyURL,
+            forceIPv4: preferences.forceIPv4,
+            speedLimitKBps: preferences.speedLimitKBps
+        )
         let jobLog = JobLog(
             id: id,
             request: request,
@@ -258,44 +263,58 @@ extension DownloadEngine {
         let task = Task { [weak self] in
             let execution = runner.run(ProcessLaunch(
                 executableURL: ytDlpURL,
-                arguments: YtDlpArguments.build(for: request)
+                arguments: YtDlpArguments.build(for: request, options: options)
             ))
             try? jobLog.writeHeader()
             async let processResult = execution.result()
-            var lastError: ErrorClass?
-            var launchFailed = false
-            for await line in execution.lines {
-                jobLog.append(line)
-                let text: String
-                switch line {
-                case let .stdout(stdout):
-                    text = stdout
-                    if case let .progress(progress) = ProgressParser.parseStdout(stdout) {
-                        await self?.recordProgress(id, progress)
-                    }
-                case let .stderr(stderr):
-                    text = stderr
-                    if stderr.hasPrefix("launch failed:") {
-                        launchFailed = true
-                    }
-                    if let classified = ProgressParser.classifyStderr(stderr) {
-                        lastError = classified
-                    }
-                }
-                if let path = ProgressParser.captureOutputPath(from: text) {
-                    await self?.recordOutputPath(id, path)
-                }
-            }
+            let outcome = await self?.drainDownload(id: id, lines: execution.lines, jobLog: jobLog)
+                ?? DownloadDrainOutcome()
             let result = await processResult
             jobLog.close()
             await self?.recordExit(
                 id,
                 result,
-                lastError: lastError,
-                launchFailed: launchFailed && result.exitCode == 127
+                lastError: outcome.lastError,
+                launchFailed: outcome.launchFailed && result.exitCode == 127
             )
         }
         childTasks[id] = task
+    }
+
+    private struct DownloadDrainOutcome {
+        var lastError: ErrorClass?
+        var launchFailed = false
+    }
+
+    private func drainDownload(
+        id: UUID,
+        lines: AsyncStream<ProcessLine>,
+        jobLog: JobLog
+    ) async -> DownloadDrainOutcome {
+        var outcome = DownloadDrainOutcome()
+        for await line in lines {
+            jobLog.append(line)
+            let text: String
+            switch line {
+            case let .stdout(stdout):
+                text = stdout
+                if case let .progress(progress) = ProgressParser.parseStdout(stdout) {
+                    recordProgress(id, progress)
+                }
+            case let .stderr(stderr):
+                text = stderr
+                if stderr.hasPrefix("launch failed:") {
+                    outcome.launchFailed = true
+                }
+                if let classified = ProgressParser.classifyStderr(stderr) {
+                    outcome.lastError = classified
+                }
+            }
+            if let path = ProgressParser.captureOutputPath(from: text) {
+                recordOutputPath(id, path)
+            }
+        }
+        return outcome
     }
 
     private func launchProbe(id: UUID) {

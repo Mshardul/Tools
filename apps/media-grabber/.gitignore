@@ -6,3 +6,7 @@ Derived/
 build/
 *.xcuserstate
 xcuserdata/
+
+# Release artifacts — built in CI, never committed
+*.dmg
+/SHA256SUMS

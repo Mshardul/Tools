@@ -81,7 +81,7 @@ final class AppModelTests: XCTestCase {
         let engine = FakeEngine()
         let dest = URL(fileURLWithPath: "/tmp/x")
         let prefs = Preferences(defaults: defaults)
-        prefs.lastUsedDestFolder = dest
+        prefs.lastUsedDownloadFolder = dest
 
         let model = AppModel(
             engine: engine,
@@ -102,6 +102,19 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(request?.kind, .video(maxHeight: 1080))
         XCTAssertEqual(request?.destFolder, dest)
         XCTAssertEqual(request?.container, "mp4")
+    }
+
+    func test_grab_writesLastSelectedFromOverrides() async {
+        let model = makeModel(
+            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta()))
+        )
+        await model.resolvePasted("https://x/y")
+        await model.grab(overrides: RunwayOverrides(
+            kind: .video(maxHeight: 720),
+            destFolder: nil
+        ))
+        XCTAssertEqual(model.prefs.lastMediaType, .video)
+        XCTAssertEqual(model.prefs.lastVideoHeight, 720)
     }
 
     func test_grab_keepsJobReference() async {
@@ -246,6 +259,15 @@ final class AppModelTests: XCTestCase {
 
         XCTAssertTrue(engine.restoreCalled)
         XCTAssertEqual(model.rowStore.rows.count, 1)
+    }
+
+    func test_resetAllSettings_restoresDefaults() {
+        let model = makeModel()
+        model.prefs.defaultVideoHeight = 480
+        model.prefs.theme = .tapeDeck
+        model.resetAllSettings()
+        XCTAssertEqual(model.prefs.defaultVideoHeight, 1080)
+        XCTAssertEqual(model.prefs.theme, .aurora)
     }
 
     func test_debugResetState_skipsPersistenceLoads() async {

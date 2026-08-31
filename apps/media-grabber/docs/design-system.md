@@ -10,10 +10,10 @@ these values; if they disagree, this file wins.
 ---
 
 - [1. Concepts](#1-concepts)
-- [2. Skins](#2-skins)
+- [2. Themes](#2-themes)
   - [2.1 Tape Deck](#21-tape-deck)
   - [2.2 Aurora](#22-aurora)
-- [3. Shared structure (skin-independent)](#3-shared-structure-skin-independent)
+- [3. Shared structure (theme-independent)](#3-shared-structure-theme-independent)
   - [3.1 Spacing scale (4pt)](#31-spacing-scale-4pt)
   - [3.2 Type scale](#32-type-scale)
   - [3.3 Motion](#33-motion)
@@ -31,6 +31,8 @@ these values; if they disagree, this file wins.
   - [4.6 Preferences](#46-preferences)
   - [4.7 Diagnostics](#47-diagnostics)
   - [4.8 Confirmation dialog](#48-confirmation-dialog)
+  - [4.9 SkinnedSegment](#49-skinnedsegment)
+  - [4.10 SkinnedPicker](#410-skinnedpicker)
 - [5. Palette token sets](#5-palette-token-sets)
   - [5.1 Token list](#51-token-list)
   - [5.2 Tape Deck palettes (light)](#52-tape-deck-palettes-light)
@@ -44,17 +46,17 @@ these values; if they disagree, this file wins.
 
 | Term | Meaning |
 |---|---|
-| **Skin** | Visual identity: **Tape Deck** or **Aurora**. Sets type, shape language, elevation style, and the signature motif. |
-| **Palette** | A colour variant *within* a skin. Three per skin. Swaps colour tokens only — type, radii, spacing, motif are unchanged by palette. |
+| **Theme** | Visual identity: **Tape Deck** or **Aurora**. Sets type, shape language, elevation style, and the signature motif. |
+| **Palette** | A colour variant *within* a theme. Three per theme. Swaps colour tokens only — type, radii, spacing, motif are unchanged by palette. |
 
-User picks a skin, then a palette. Default: **Aurora / Mint & Iris**.
+User picks a theme, then a palette. Default: **Aurora / Mint & Iris**.
 
-Light/dark orientation is fixed per skin: **Tape Deck is light**, **Aurora is dark**.
-Every palette declares a complete token set on `:root[data-skin=…][data-palette=…]`.
+Light/dark orientation is fixed per theme: **Tape Deck is light**, **Aurora is dark**.
+Every palette declares a complete token set on `:root[data-theme=…][data-palette=…]`.
 
 ---
 
-## 2. Skins
+## 2. Themes
 
 ### 2.1 Tape Deck
 
@@ -88,10 +90,10 @@ Luminous, calm, premium. Dark-first.
 
 ---
 
-## 3. Shared structure (skin-independent)
+## 3. Shared structure (theme-independent)
 
 Layout, spacing, iconography, copy voice, and component anatomy do **not**
-change between skins — only their surface styling does.
+change between themes — only their surface styling does.
 
 ### 3.1 Spacing scale (4pt)
 
@@ -118,20 +120,20 @@ Spin animations are linear. **All animation is disabled under
 
 ### 3.4 Iconography
 
-Icons are **bundled SVGs, one library per skin** — the only axis where the two
-skins draw from different sources:
+Icons are **bundled SVGs, one library per theme** — the only axis where the two
+themes draw from different sources:
 
 - **Tape Deck → Phosphor Bold** (`@phosphor-icons/core`, MIT). Heavy filled-outline weight; matches the 2px borders.
 - **Aurora → Lucide** (`lucide`, ISC). Clean 2px stroke; matches the hairline borders.
 
-Within a skin every glyph comes from that one library — never mixed. Only the
-~26 glyphs actually used are bundled (≈ 48 SVGs total across both skins), as an
+Within a theme every glyph comes from that one library — never mixed. Only the
+~26 glyphs actually used are bundled (≈ 48 SVGs total across both themes), as an
 asset catalog. A `NOTICE` file credits both libraries.
 
 **Rendering.** Each glyph is a template image tinted with the current context
 colour (`--text`, `--dim`, `--accent`, `--danger`, …). An `Icon` SwiftUI view
-takes a semantic case (`Icon(.pause)`), reads the active skin from
-`SkinEnvironment`, and resolves the right asset. Nominal size 16px in dense
+takes a semantic case (`Icon(.pause)`), reads the active theme from
+`ThemeEnvironment`, and resolves the right asset. Nominal size 16px in dense
 spots (row actions, table headers, chips), 15px in nav, up to 20–22px in the
 banner and onboarding.
 
@@ -169,6 +171,9 @@ banner and onboarding.
 The signature motif (reel / orb) is **not** in this set — it is `MotifView`, a
 drawn SwiftUI shape, not a bundled icon.
 
+The `warning` glyph is reused for the Preferences concurrency note (§4.6) — no
+new glyph is introduced for it.
+
 ---
 
 ## 4. Components
@@ -186,7 +191,7 @@ drawn SwiftUI shape, not a bundled icon.
     | `engine · missing` (dependency gone) | *not a refresh* — routes back to Onboarding; hard block |
   - On success the chip flips green and the icon disappears. On failure an **error toast** shows the reason and the chip stays in its bad state (icon remains).
   - The `cooldown m:ss` chip is not an error — no refresh icon. Clicking it opens a small popover: why the cooldown happened, when it clears, and a **Retry now** button.
-- **Warning banner** — docked to the **bottom** of the window, floating over the table, `left/right: 16`, `bottom: 16`. The table gets bottom padding (≈ 78–82px) so its last row never sits under the banner. Reserved for **engine / host-level** conditions only: cooldown explainer, circuit-breaker open, dependency missing, POT provider down. One sentence + one action button. Skin styles it as a solid warm fill (Tape Deck: `--accent` on `--ink` border; Aurora: `--banner-fill` gradient).
+- **Warning banner** — docked to the **bottom** of the window, floating over the table, `left/right: 16`, `bottom: 16`. The table gets bottom padding (≈ 78–82px) so its last row never sits under the banner. Reserved for **engine / host-level** conditions only: cooldown explainer, circuit-breaker open, dependency missing, POT provider down. One sentence + one action button. The theme styles it as a solid warm fill (Tape Deck: `--accent` on `--ink` border; Aurora: `--banner-fill` gradient).
 
 ### 4.2 Home
 
@@ -220,12 +225,15 @@ The "resolve link & arm Grab" pattern.
   `--sp-3` gap between the two — not a shared border. Rounded on all corners.
   A row of labelled slots:
   - `Link` — filled when the probe resolves to a downloadable item
-  - `Type` — Video / Audio (dropdown; seeded from Preferences default)
-  - `Format` — contextual: video heights, or `m4a` / `mp3` (dropdown; Preferences default)
-  - `Save to` — destination folder (dropdown; Preferences default, last-used remembered, "Choose…" for a new folder)
+  - `Type` — `SkinnedSegment` (§4.9) — Video / Audio; seeded from Preferences
+  - `Format` — contextual: `SkinnedPicker` (§4.10) quality ladder for video, or
+    `SkinnedSegment` `M4A` / `MP3` for audio; seeded from Preferences
+  - `Save to` — `SkinnedPicker`: default folder, last-used (if distinct),
+    "Choose…" for a new folder. Always seeded — never renders unfilled.
   - *(playlist only)* no extra slot — item selection happens in the picker modal (§4.3)
   - Each slot: hollow dot `○` (`--faint`) when unset, filled dot `●` (`--accent`) when set.
-- **Grab button** — at the end of the runway, past a divider. **Disabled** (opacity .3, grayscale) until **every** slot is filled: link resolved *and* downloadable, Type, Format, and Save-to all set. Label: `Grab` (single item) / `Grab all N` / `Add N` (after picker). Skin fill: Tape Deck `--go` solid; Aurora `--go-fill` gradient.
+  - The slots use `SkinnedSegment` / `SkinnedPicker`, not the native `Menu`.
+- **Grab button** — at the end of the runway, past a divider. **Disabled** (opacity .3, grayscale) until **every** slot is filled: link resolved *and* downloadable, Type, Format, and Save-to all set. Label: `Grab` (single item) / `Grab all N` / `Add N` (after picker). Theme fill: Tape Deck `--go` solid; Aurora `--go-fill` gradient.
 
 #### 4.2.3 Downloads table
 
@@ -313,72 +321,82 @@ Opens automatically when a resolved link is a playlist, **before** any rows are 
 ### 4.6 Preferences
 
 - In-app page (nav item). Not a separate macOS Settings window.
-- **Left rail** — grouped categories:
+- **Fixed window height.** The left rail never scrolls (the window is tall
+  enough for every rail item). The right pane scrolls independently.
+- **Left rail** — three group captions, each item highlighted when selected:
   - **General:** Downloads · Appearance · Network
   - **YouTube:** Sign-in & cookies
   - **System:** Updates · Logs & privacy · Advanced
-- **Right pane** — the selected category as a list of `label + control` fields, each with a one-line helper in `--dim`. Plain-language labels ("At the same time" not "maxConcurrentDownloads"; "Watch the clipboard" not "clipboardAutoDetect").
+- **Right pane** — the selected pane. Two-column rows: `label` (13, `--text`,
+  semibold) + optional `helper` (11.5, `--dim`) stacked on the left; control
+  right-aligned; a `--hair` divider between rows. A row with no helper renders
+  label-only. Pane title 20 / heavy in `--headline` with a rule under it, a
+  one-line `--dim` sub above the rule.
+- **Stepless panes** (Sign-in & cookies, Updates) render title + sub + one
+  plain-language "coming in a later update" line — no rows, no controls.
 
-Full contents (control → backing field on `Preferences`, unless noted):
+Rows per pane (control → backing field on `Preferences`, unless noted):
 
-**Downloads**
-| Label | Control | Backs |
-|---|---|---|
-| Save to | folder picker | `defaultDestFolder` |
-| At the same time | stepper 1–5 · "The app lowers this on its own if a site starts throttling." | `maxConcurrentDownloads` |
-| If a download fails, try | stepper 1–5 (default 5) · "How many times to retry automatically before asking you." | `maxAutoAttempts` |
-| Default type | Video / Audio | `defaultKind` |
-| Default video quality | 2160 / 1440 / 1080 / 720 / 480 / Best available | `defaultMaxHeight` |
-| Default audio format | m4a / mp3 | `defaultAudioCodec` |
-| File naming | text (yt-dlp template) | `outputTemplate` |
-| Watch the clipboard | toggle | `clipboardAutoDetect` |
+**Downloads** — sub *"Defaults for new downloads. Change any of these per
+download on the Home screen."*
+| Label | Helper | Control | Backs |
+|---|---|---|---|
+| Downloads folder | — | folder button `~/Downloads`, no chevron → `NSOpenPanel` | `defaultDownloadFolder` |
+| Simultaneous downloads | Automatically reduced if a site rate-limits you. | stepper 1–6 | `maxConcurrentDownloads` |
+| Automatic retries | Attempts before the app asks you what to do. | stepper 1–5 | `maxAutoRetries` |
+| Media type | — | `SkinnedSegment` — Video / Audio | `defaultMediaType` |
+| Video quality | Highest available if the exact height isn't offered. | `SkinnedPicker` — 2160p / 1440p / 1080p / 720p / 480p / Best available | `defaultVideoHeight` (`Int.max` = Best) |
+| Audio format | — | `SkinnedSegment` — M4A / MP3 | `defaultAudioFormat` |
+| Filename format | — | `SkinnedPicker` — Title / Title – channel / Date – title / Custom… | `filenameTemplate` |
+| Clipboard detection | Offer to grab links you copy. | toggle | `detectClipboardLinks` |
 
-**Appearance**
-| Label | Control | Backs |
-|---|---|---|
-| Skin | Aurora / Tape Deck segmented control · "Aurora is dark and luminous. Tape Deck is warm and light." | `skin` |
-| Palette | three swatches for the current skin | `palette` |
+The **concurrency note** renders in the "Simultaneous downloads" row's right
+column, under the stepper, when the new value is below the live running count:
+the warn glyph (§3.4) tinted `--warn` + a `--dim` line
+`"<count> still running — the new limit applies as they finish."` It clears when
+the running count drops to `≤` the new value, or on relaunch.
 
-**Network**
-| Label | Control | Backs |
-|---|---|---|
-| Proxy | text (`http://host:port`) | `proxyURL` |
-| Use IPv4 only | toggle · "Try this if downloads stall on connection errors." | `forceIPv4` |
-| Limit download speed | stepper KB/s with an "off" position | `selfRateLimitKBps` |
+**Appearance** — sub *"Pick a look. Theme sets the personality; palette sets the
+colours."*
+| Label | Helper | Control | Backs |
+|---|---|---|---|
+| Theme | Aurora is dark and luminous. Tape Deck is warm and light. | `SkinnedSegment` — Aurora / Tape Deck | `theme` |
+| Palette | — | 3 split-fill swatches (~38pt, name below; selected has a 2pt `--accent` outline at 2pt offset) for the selected theme | `palette` |
 
-**Sign-in & cookies**
-| Label | Control | Backs |
-|---|---|---|
-| Use cookies from | None / Safari / Chrome / Brave / Firefox / Edge | `cookiesFromBrowser` |
-| Firefox profile | dropdown, shown only when Firefox is selected | `firefoxProfile` |
-| Full Disk Access | status pill + "Open System Settings" button, shown only when Safari is selected and access is not granted | action (System Settings deep link) |
-| *(tip text, always shown)* | "For the best results: a dedicated browser profile signed into YouTube, kept closed while downloading." | — |
+Changing Theme resets `palette` to that theme's default. Both controls apply
+live.
 
-**Updates**
-| Label | Control | Backs / action |
-|---|---|---|
-| Downloader (yt-dlp) | version text + "Check for updates" button | `YtDlpUpdater` |
-| Media tools (ffmpeg) | version text (info only) | — |
-| MediaGrabber | version text + "Check for updates" (opens the GitHub release page if newer) | spec §10.2 |
-| Check automatically | toggle (default on) · "Once a day." | `autoCheckUpdates` |
+**Network** — sub *"Applied to new downloads."*
+| Label | Helper | Control | Backs |
+|---|---|---|---|
+| Proxy server | `http://host:port` — blank for none. | text field | `proxyURL` |
+| Force IPv4 | Can help when connections stall. | toggle | `forceIPv4` |
+| Speed limit | Applies to each download separately. | stepper KB/s, "Off" at 0 | `speedLimitKBps` |
 
-**Logs & privacy**
-| Label | Control | Backs / action |
-|---|---|---|
-| Open log folder | button | `NSWorkspace.open` |
-| Detailed logging | toggle | `verboseLogging` |
-| What's in the logs | link → opens `PRIVACY.md` (or an in-app sheet of the same text) | — |
+**Sign-in & cookies** — stepless. Sub *"Sign in to reach private or
+age-restricted videos."* Body: *"Cookie sign-in is coming in a later update."*
 
-**Advanced**
-| Label | Control | Action |
-|---|---|---|
-| Open app data folder | button | reveal `~/Library/Application Support/MediaGrabber` |
-| Reset table columns | button | clear `columns.json`, restore default column set + order |
-| Reset all settings | button (confirm dialog) | reset `Preferences` to defaults |
+**Updates** — stepless. Sub *"Check for new versions of the app and the
+downloader."* Body: *"Update checks are coming in a later update."*
 
-New `Preferences` fields this section introduces: `maxAutoAttempts: Int`
-(1…5, default 5), `firefoxProfile: String?`, `autoCheckUpdates: Bool`
-(default true).
+**Logs & privacy** — sub *"What the app records, and where to find it."*
+| Label | Helper | Control | Action |
+|---|---|---|---|
+| Log files | — | button "Show in Finder" | reveal `~/Library/Logs/MediaGrabber` |
+| Verbose logging | More detail for troubleshooting. | toggle | `verboseLogging` |
+| Privacy details | — | button "Open" | open the bundled `PRIVACY.md` externally |
+
+**Advanced** — sub *"Reset options. These don't touch your downloaded files."*
+| Label | Helper | Control | Action |
+|---|---|---|---|
+| App data | — | button "Show in Finder" | reveal `~/Library/Application Support/MediaGrabber` |
+| Reset columns | Table layout back to default. | button "Reset" | `columnConfig = .default` |
+| Reset settings | All preferences back to default. Downloads are untouched. | button "Reset…" (`--danger`), confirmation dialog | `Preferences.resetToDefaults()` |
+
+New `Preferences` fields this section introduces: `detectClipboardLinks: Bool`
+(default true), `proxyURL: String?`, `forceIPv4: Bool` (default false),
+`speedLimitKBps: Int` (default 0, clamped 0…100000), `lastVideoHeight: Int?`,
+`lastMediaType: MediaType?`, `lastAudioFormat: AudioFormat?`.
 
 ### 4.7 Diagnostics
 
@@ -394,7 +412,7 @@ New `Preferences` fields this section introduces: `maxAutoAttempts: Int`
 A reusable modal the app raises a handful of times across its life (duplicate submit, graceful quit, reveal-target-missing, persistence write failure). One host, driven by `AppModel.pendingConfirmation`.
 
 - **Scrim** — the whole window dims behind a `--ground` fill at ~60% alpha; clicks on the scrim do nothing (the choice is explicit).
-- **Card** — centered, `max-width` ~420 px, skin card treatment: `--panel-solid` fill, skin border + `cardRadius` + elevation shadow. Padding `s5` all round, `s4` between rows.
+- **Card** — centered, `max-width` ~420 px, theme card treatment: `--panel-solid` fill, theme border + `cardRadius` + elevation shadow. Padding `s5` all round, `s4` between rows.
 - **Layout**, top to bottom:
   - Optional **warning glyph** (§3.4) — shown only when `isDestructive`, tinted `--danger`.
   - **Title** — `displayFont` 15 semibold, `--headline`.
@@ -402,10 +420,76 @@ A reusable modal the app raises a handful of times across its life (duplicate su
   - Optional **"Don't ask again"** checkbox row — present only when `suppressionKey != nil`; ticking it and confirming persists suppression to `AppStorage` under that key.
   - **Buttons**, right-aligned, `s2` gap:
     - **Cancel** — plain / `--panel`, `controlRadius`. Omitted entirely in notice mode (`cancelTitle == nil`).
-    - **Confirm** — filled: `--danger` when `isDestructive`, else `--accent` (skin `--go` gradient on Aurora). `--onAccent` label.
+    - **Confirm** — filled: `--danger` when `isDestructive`, else `--accent` (theme `--go` gradient on Aurora). `--onAccent` label.
 - **Motion** — card scales/fades in over `--dur` / `--ease`; disabled under reduce-motion (appears instantly).
 - **Keyboard** — Return confirms; Esc cancels (or dismisses a notice). Initial focus is on **Cancel** for a destructive action, **Confirm** otherwise.
 - **VoiceOver** — the card is a modal alert (`.isModal`), focus is trapped inside it, and the message text is read on present.
+
+---
+
+### 4.9 SkinnedSegment
+
+A skinned segmented control, `import SwiftUI` only, generic over the option type.
+
+```swift
+struct SkinnedSegment<Option: Hashable>: View {
+    init(_ options: [Option], selection: Binding<Option>, label: @escaping (Option) -> String)
+}
+```
+
+- 2–3 options, all rendered as segments in a `--panel` track with a `--stroke`
+  border; the selected segment gets a `--panel-solid` fill. Radius is the
+  theme's `chipRadius`.
+- **Equal-width segments** within one control (each sized to the widest label).
+  The control as a whole **hugs its content** and sits flush to the row's right
+  edge. Different controls in one pane may have different total widths; all are
+  right-aligned.
+- One tap selects. No popover. Left / Right arrow moves selection when focused;
+  VoiceOver exposes it as a segmented control with the option labels, the
+  selected segment carrying `.isSelected`.
+
+**Used by:** Theme (Appearance), Media type (Downloads + runway), Audio format
+(Downloads + runway).
+
+### 4.10 SkinnedPicker
+
+A skinned dropdown. **It is a popover, not a modal** — picking one value from a
+short list is a lightweight, anchored interaction.
+
+```swift
+struct SkinnedPickerRow<Option: Hashable>: Identifiable {
+    var id: Option
+    var title: String
+    var subtitle: String?   // nil -> single-line row
+}
+
+struct SkinnedPicker<Option: Hashable>: View {
+    init(caption: String,
+         rows: [SkinnedPickerRow<Option>],
+         selection: Binding<Option>,
+         triggerLabel: String? = nil)   // defaults to the selected row's title
+}
+```
+
+- **Trigger** — a button showing the current selection's label + a chevron,
+  `--panel` fill, `--stroke` border, theme `controlRadius`. Only as wide as its
+  own label.
+- **Popover** — opens below the trigger (flips above if no room). `--panel-solid`
+  fill, theme border + `cardRadius` + elevation matching the confirmation-dialog
+  card (glow on Aurora, hard offset shadow on Tape Deck).
+  - **Width** — sized to the picker's widest row (caption / label / subtitle),
+    clamped `[trigger width … 340pt]`. No single global width.
+  - **Caption header** — a `--faint` uppercase label naming what is being
+    chosen, with a hairline `--hair` rule under it.
+  - **Rows** — label; optional second-line **subtitle** in `--dim` (`nil` →
+    single-line row); a checkmark (`--accent`) on the selected row; hover /
+    arrow-key highlight uses a translucent accent wash. **No row icons.**
+- Keyboard: Return / Space opens; Up / Down move the highlight; Return selects;
+  Esc closes without changing. VoiceOver: a pop-up button; the selected row is
+  announced.
+
+**Used by:** Video quality (Downloads + runway), Filename format (Downloads),
+Save to (runway).
 
 ---
 
@@ -448,7 +532,13 @@ Shared: `--ground` is a warm off-white a shade darker than `--surface`
 (`--panel-solid`). `--on-accent` = `--ink`. Elevation = hard shadow, no glow
 tokens used.
 
-**Tape Deck / Teal & Rust**  *(default for this skin)*
+`--warn` is a dark amber (`#9C5A00` / `#9A6410` / `#8E6318`) chosen to hit WCAG
+AA for normal text on each palette's `--panel-solid` — it is used as text and as
+the glyph tint (concurrency note §4.6, cooldown copy). `--go` keeps its lighter
+amber (it is only ever a fill behind `--on-accent`). Aurora `--warn` is
+unchanged.
+
+**Tape Deck / Teal & Rust**  *(default for this theme)*
 | token | value |
 |---|---|
 | --ground | `#F3E9D8` |
@@ -461,7 +551,7 @@ tokens used.
 | --brand (header) | `#0E5C57` |
 | --accent | `#D2601A` |
 | --accent-2 | `#0E5C57` |
-| --warn | `#E4A11B` |
+| --warn | `#9C5A00` |
 | --danger | `#B4472A` |
 | --go | `#E4A11B` |
 | --bar-fill | `#D2601A` |
@@ -481,7 +571,7 @@ tokens used.
 | --brand (header) | `#5A2E52` |
 | --accent | `#E98C89` |
 | --accent-2 | `#5A2E52` |
-| --warn | `#E8B24A` |
+| --warn | `#9A6410` |
 | --danger | `#C25B57` |
 | --go | `#E8B24A` |
 | --bar-fill | `#E98C89` |
@@ -503,7 +593,7 @@ tokens used.
 | --brand (header) | `#1F3350` |
 | --accent | `#2FA69A` |
 | --accent-2 | `#1F3350` |
-| --warn | `#F2B12E` |
+| --warn | `#8E6318` |
 | --danger | `#D9694C` |
 | --go | `#F2B12E` |
 | --bar-fill | `#2FA69A` |
@@ -581,8 +671,8 @@ Shared: `--panel` = `rgba(255,255,255,.05)`, `--panel-hi` =
 ## 6. Implementation notes
 
 - SwiftUI: express palettes as a `Palette` struct of `Color`s selected by
-  `@AppStorage` skin + palette keys; skins differ in more than colour
-  (fonts, corner radii, elevation modifier) so model a `Skin` protocol/enum
+  `@AppStorage` theme + palette keys; themes differ in more than colour
+  (fonts, corner radii, elevation modifier) so model a `Theme` protocol/enum
   with those as properties, not just a colour set.
 - The signature motif (reel / orb) is one small reusable view driven by an
   `isActive` flag; honour `accessibilityReduceMotion`.

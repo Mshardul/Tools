@@ -5,6 +5,7 @@ enum IconKind: String {
     case pause, resume, cancel, forceStart, retry, retryWithCookies
     case reveal, openInBrowser, remove, showLog
     case sortNeutral, sortAsc, sortDesc, filter, columnsMenu
+    case warning
 }
 
 struct Icon: View {
@@ -35,6 +36,7 @@ struct Icon: View {
         case .sortDesc: "chevron.down"
         case .filter: "line.3.horizontal.decrease.circle"
         case .columnsMenu: "tablecells"
+        case .warning: "exclamationmark.triangle.fill"
         }
     }
 }

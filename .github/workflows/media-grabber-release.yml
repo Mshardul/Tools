@@ -1,0 +1,176 @@
+name: media-grabber-release
+
+on:
+  push:
+    tags: ['media-grabber-v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'bare version, e.g. 0.1.0'
+        required: true
+      dry_run:
+        description: 'build and package but do not publish'
+        type: boolean
+        default: false
+      overwrite:
+        description: 'allow replacing an existing release for this version'
+        type: boolean
+        default: false
+
+concurrency:
+  group: media-grabber-release
+  cancel-in-progress: false
+
+env:
+  XCODE_VERSION: "16.1"
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/media-grabber
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive version
+        id: version
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            v="$INPUT_VERSION"
+          else
+            v="${REF_NAME#media-grabber-v}"
+          fi
+          case "$v" in
+            [0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "not a bare N.N.N version: '$v'" >&2; exit 1 ;;
+          esac
+          for p in $(echo "$v" | tr . ' '); do
+            case "$p" in ''|*[!0-9]*) echo "bad component in '$v'" >&2; exit 1 ;; esac
+          done
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Tag commit must be on main
+        working-directory: .
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        run: |
+          git fetch --quiet origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "built commit is not on origin/main" >&2; exit 1; }
+
+      - name: No clobbering an existing release
+        working-directory: .
+        if: ${{ !(github.event_name == 'workflow_dispatch' && (inputs.dry_run || inputs.overwrite)) }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: media-grabber-v${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — re-run with overwrite:true to replace" >&2
+            exit 1
+          fi
+
+      - uses: jdx/mise-action@v2
+        with:
+          working_directory: apps/media-grabber
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
+
+      - name: Build Release
+        env:
+          TUIST_MG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mise exec -- tuist generate --no-open
+          mise exec -- tuist build --configuration Release MediaGrabber
+
+      - name: Locate and sign the app
+        id: app
+        env:
+          MG_SIGN_IDENTITY: ${{ vars.MG_SIGN_IDENTITY }}
+        run: |
+          app="$(find . -name 'MediaGrabber.app' -path '*Release*' -type d | head -1)"
+          test -n "$app" || { echo "MediaGrabber.app not found" >&2; exit 1; }
+          # notarization + --options runtime slot in here together, later
+          codesign --force --sign "${MG_SIGN_IDENTITY:--}" "$app"
+          codesign --verify --strict "$app"
+          echo "path=$app" >> "$GITHUB_OUTPUT"
+
+      - name: Package DMG
+        id: dmg
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          APP: ${{ steps.app.outputs.path }}
+        run: |
+          staging="$(mktemp -d)"
+          cp -R "$APP" "$staging/"
+          dmg="MediaGrabber-${VERSION}.dmg"
+          scripts/create-dmg --volname "MediaGrabber ${VERSION}" "$dmg" "$staging"
+          test -f "$dmg" || { echo "dmg not created" >&2; exit 1; }
+          echo "path=apps/media-grabber/$dmg" >> "$GITHUB_OUTPUT"
+          echo "name=$dmg" >> "$GITHUB_OUTPUT"
+
+      - name: Verify DMG
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          DMG: ${{ steps.dmg.outputs.name }}
+        run: |
+          plist="$(mktemp)"
+          hdiutil attach "$DMG" -nobrowse -noautoopen -plist > "$plist"
+          vol="$(python3 -c '
+          import plistlib, sys
+          d = plistlib.load(open(sys.argv[1], "rb"))
+          for e in d["system-entities"]:
+              if e.get("mount-point"):
+                  print(e["mount-point"]); break
+          ' "$plist")"
+          test -n "$vol" || { echo "could not resolve mount point" >&2; exit 1; }
+          ok=1
+          if [ ! -d "$vol/MediaGrabber.app" ]; then
+            echo "no MediaGrabber.app in dmg" >&2; ok=0
+          else
+            got="$(defaults read "$vol/MediaGrabber.app/Contents/Info" CFBundleShortVersionString)"
+            [ "$got" = "$VERSION" ] || { echo "app version '$got' != tag '$VERSION'" >&2; ok=0; }
+          fi
+          hdiutil detach "$vol"
+          [ "$ok" -eq 1 ]
+
+      - name: Checksums
+        env:
+          DMG: ${{ steps.dmg.outputs.name }}
+        run: |
+          shasum -a 256 "$DMG" > SHA256SUMS
+          shasum -c SHA256SUMS
+
+      - name: Previous release tag exists?
+        id: prev
+        working-directory: .
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          n="$(git tag --list 'media-grabber-v*' | grep -vc "^media-grabber-v${VERSION}$" || true)"
+          if [ "$n" -gt 0 ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Publish release
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: media-grabber-v${{ steps.version.outputs.version }}
+          files: |
+            apps/media-grabber/${{ steps.dmg.outputs.name }}
+            apps/media-grabber/SHA256SUMS
+          generate_release_notes: ${{ steps.prev.outputs.exists }}
+          body: |
+            ${{ steps.prev.outputs.exists == 'true' && '' || 'Initial release.' }}
+
+            MediaGrabber is not yet signed with an Apple Developer ID. On first launch,
+            right-click the app and choose **Open**, or run
+            `xattr -dr com.apple.quarantine /Applications/MediaGrabber.app`.

@@ -83,10 +83,10 @@ public final class JobLog: @unchecked Sendable {
     private static func describe(_ request: DownloadRequest) -> String {
         let kind = switch request.kind {
         case let .video(maxHeight): "video<=\(maxHeight)"
-        case let .audio(codec): "audio:\(codec.rawValue)"
+        case let .audio(format): "audio:\(format.rawValue)"
         }
         let container = request.container ?? "-"
-        return "\(kind) container=\(container) template=\(request.outputTemplate) "
+        return "\(kind) container=\(container) template=\(request.filenameTemplate) "
             + "dest=\(request.destFolder.path)"
     }
 }

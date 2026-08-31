@@ -17,7 +17,7 @@ final class RequestBuilderTests: XCTestCase {
 
     private func prefs() -> Preferences {
         let prefs = Preferences(defaults: UserDefaults(suiteName: "mg.rb.\(UUID().uuidString)")!)
-        prefs.lastUsedDestFolder = dest
+        prefs.lastUsedDownloadFolder = dest
         return prefs
     }
 
@@ -34,7 +34,7 @@ final class RequestBuilderTests: XCTestCase {
                 destFolder: dest,
                 kind: .video(maxHeight: 1080),
                 container: "mp4",
-                outputTemplate: "%(title)s.%(ext)s"
+                filenameTemplate: "%(title)s.%(ext)s"
             )
         )
     }
@@ -44,7 +44,7 @@ final class RequestBuilderTests: XCTestCase {
             from: meta(url: "https://example.com/v"),
             prefs: prefs(),
             overrides: RunwayOverrides(
-                kind: .audio(codec: .mp3),
+                kind: .audio(format: .mp3),
                 destFolder: overrideDest
             )
         )
@@ -53,9 +53,9 @@ final class RequestBuilderTests: XCTestCase {
             DownloadRequest(
                 url: "https://example.com/v",
                 destFolder: overrideDest,
-                kind: .audio(codec: .mp3),
+                kind: .audio(format: .mp3),
                 container: nil,
-                outputTemplate: "%(title)s.%(ext)s"
+                filenameTemplate: "%(title)s.%(ext)s"
             )
         )
     }
@@ -73,7 +73,7 @@ final class RequestBuilderTests: XCTestCase {
                 destFolder: dest,
                 kind: .video(maxHeight: 720),
                 container: "mp4",
-                outputTemplate: "%(title)s.%(ext)s"
+                filenameTemplate: "%(title)s.%(ext)s"
             )
         )
     }

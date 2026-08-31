@@ -3,18 +3,18 @@ import SwiftUI
 import XCTest
 
 final class ThemeTests: XCTestCase {
-    func test_auroraSkin_radii() {
-        let skin = Skin(.aurora)
-        XCTAssertEqual(skin.windowRadius, 18)
-        XCTAssertEqual(skin.cardRadius, 14)
-        XCTAssertEqual(skin.controlRadius, 9)
-        XCTAssertEqual(skin.pillRadius, 20)
-        XCTAssertEqual(skin.chipRadius, 7)
-        XCTAssertEqual(skin.hairlineWidth, 1)
+    func test_auroraTheme_radii() {
+        let theme = Theme(.aurora)
+        XCTAssertEqual(theme.windowRadius, 18)
+        XCTAssertEqual(theme.cardRadius, 14)
+        XCTAssertEqual(theme.controlRadius, 9)
+        XCTAssertEqual(theme.pillRadius, 20)
+        XCTAssertEqual(theme.chipRadius, 7)
+        XCTAssertEqual(theme.hairlineWidth, 1)
     }
 
-    func test_auroraSkin_motifIsOrb() {
-        XCTAssertEqual(Skin(.aurora).motif, .orb)
+    func test_auroraTheme_motifIsOrb() {
+        XCTAssertEqual(Theme(.aurora).motif, .orb)
     }
 
     func test_mintIrisPalette_keyTokens() {
