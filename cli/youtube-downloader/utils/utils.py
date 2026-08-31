@@ -34,7 +34,7 @@ def is_valid_url(url: str) -> bool:
 
 def sanitize_filename(filename: str) -> str:
     """
-    Removes characters from a string that are typically illegal or problematic in file paths across different OSes.
+    Removes characters that are illegal or problematic in file paths across OSes.
 
     Args:
         filename (str): The original filename string, potentially containing invalid characters.

@@ -202,7 +202,8 @@ class YoutubeDownloader:
     # --- Progress Methods ---
     def _create_progress_hook(self, download_id: str):
         """
-        Creates a thread-safe closure for the yt-dlp progress hook that aggregates component progress into a single, file-level percentage.
+        Creates a thread-safe closure for the yt-dlp progress hook that aggregates
+        component progress into a single, file-level percentage.
         """
 
         def progress_hook(d):
@@ -278,7 +279,7 @@ class YoutubeDownloader:
         Safely retrieves a copy of the entire progress store for all downloads.
 
         Returns:
-            Dict[str, Dict]: A dictionary of all known download statuses. {download_ids: progress info}
+            Dict[str, Dict]: all known download statuses, keyed by download id.
         """
         with self.progress_lock:
             return copy.deepcopy(self.progress_store)
@@ -353,7 +354,7 @@ class YoutubeDownloader:
             status = progress.get("status")
             if status not in ["paused", "failed", "cancelled"]:
                 self.logger.warning(
-                    f"Cannot resume '{download_id}': Download is not in a resumable state (status: {status})."
+                    f"Cannot resume '{download_id}': not in a resumable state (status: {status})."
                 )
                 return
 
@@ -362,7 +363,7 @@ class YoutubeDownloader:
         # Create a new config object from the stored dictionary
         original_config = DownloadConfig(**original_config_dict)
 
-        # Start the download again with the same config. yt-dlp will handle resuming from the .part file.
+        # yt-dlp resumes from the .part file on its own.
         self.start_download_task(download_id, original_config)
 
     # --- Proxy Method ---
@@ -391,8 +392,8 @@ class YoutubeDownloader:
     def start_download_task(self, download_id: str, config: DownloadConfig):
         """
         Starts a new download task in a background thread with concurrency control.
-        Validates parameters, prepares yt-dlp options including subtitles, proxies, chapters, and time ranges.
-        Tracks progress and handles cancellation.
+        Validates parameters, prepares yt-dlp options (subtitles, proxies, chapters,
+        time ranges), tracks progress, and handles cancellation.
 
         Args:
             download_id (str): A unique identifier for this download task.
@@ -428,7 +429,7 @@ class YoutubeDownloader:
                 res_num = int("".join(filter(str.isdigit, config.resolution)))
             except ValueError, TypeError:
                 self.logger.warning(
-                    f"Invalid resolution '{config.resolution}', defaulting to {DEFAULT_RESOLUTION_NUM}p."
+                    f"Invalid resolution '{config.resolution}', using {DEFAULT_RESOLUTION_NUM}p."
                 )
                 res_num = DEFAULT_RESOLUTION_NUM
             ytdl_format = f"bestvideo[height<={res_num}]+bestaudio/best[height<={res_num}]"

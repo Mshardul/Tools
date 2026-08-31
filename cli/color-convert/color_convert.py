@@ -58,20 +58,20 @@ def parse_color(value: str, fmt: str) -> tuple[int, int, int]:
         if match:
             h = float(match.group(1))
             s = float(match.group(2))
-            l = float(match.group(3))
+            lum = float(match.group(3))
         else:
             parts = [p.strip() for p in text.split(",")]
             if len(parts) != 3:
                 raise ValueError(f"invalid hsl color: {value!r}")
             h = float(parts[0])
             s = float(parts[1].rstrip("%"))
-            l = float(parts[2].rstrip("%"))
+            lum = float(parts[2].rstrip("%"))
         if not 0 <= h <= 360:
             raise ValueError(f"hue out of range 0-360: {h}")
-        for name, pct in (("saturation", s), ("lightness", l)):
+        for name, pct in (("saturation", s), ("lightness", lum)):
             if not 0 <= pct <= 100:
                 raise ValueError(f"{name} out of range 0-100%: {pct}")
-        return hsl_to_rgb(h, s, l)
+        return hsl_to_rgb(h, s, lum)
     raise ValueError(f"unknown format: {fmt!r}")
 
 
@@ -96,15 +96,15 @@ def rgb_to_hsl(r: int, g: int, b: int) -> tuple[float, float, float]:
     return hue, saturation * 100, lightness * 100
 
 
-def hsl_to_rgb(h: float, s: float, l: float) -> tuple[int, int, int]:
+def hsl_to_rgb(h: float, s: float, lum: float) -> tuple[int, int, int]:
     if not 0 <= h <= 360:
         raise ValueError(f"hue out of range 0-360: {h}")
-    for name, pct in (("saturation", s), ("lightness", l)):
+    for name, pct in (("saturation", s), ("lightness", lum)):
         if not 0 <= pct <= 100:
             raise ValueError(f"{name} out of range 0-100%: {pct}")
     h_norm = (h % 360) / 360
     s_norm = s / 100
-    l_norm = l / 100
+    l_norm = lum / 100
     if s_norm == 0:
         channel = round(l_norm * 255)
         return channel, channel, channel
@@ -148,8 +148,8 @@ def format_color(r: int, g: int, b: int, fmt: str) -> str:
     if fmt == "rgb":
         return f"rgb({r}, {g}, {b})"
     if fmt == "hsl":
-        h, s, l = rgb_to_hsl(r, g, b)
-        return f"hsl({int(round(h))}, {_format_pct(s)}%, {_format_pct(l)}%)"
+        h, s, lum = rgb_to_hsl(r, g, b)
+        return f"hsl({int(round(h))}, {_format_pct(s)}%, {_format_pct(lum)}%)"
     raise ValueError(f"unknown format: {fmt!r}")
 
 

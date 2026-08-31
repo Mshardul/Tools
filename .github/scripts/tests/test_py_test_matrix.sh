@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Tests for py-test-matrix.sh. Runs a throwaway git repo with a known tree so
-# the changed-dir logic is exercised without touching the real repo.
-#
+# Tests for py-test-matrix.sh, run against a throwaway git repo.
 # Run: .github/scripts/tests/test_py_test_matrix.sh
 
 set -euo pipefail
@@ -27,7 +25,8 @@ git init -q
 git config user.email t@t.t
 git config user.name t
 
-mkdir -p cli/alpha/tests cli/beta/tests cli/no-tests apps/gamma/tests apps/swift-app
+mkdir -p cli/alpha/tests cli/beta/tests cli/no-tests apps/gamma/tests apps/swift-app \
+    extensions/macos/delta/tests
 echo 'print(1)' > cli/alpha/alpha.py
 echo 'def test_a(): pass' > cli/alpha/tests/test_alpha.py
 echo 'print(2)' > cli/beta/beta.py
@@ -36,17 +35,19 @@ echo 'print(3)' > cli/no-tests/thing.py
 echo 'print(4)' > apps/gamma/gamma.py
 echo 'def test_g(): pass' > apps/gamma/tests/test_gamma.py
 echo 'let x = 1' > apps/swift-app/Project.swift
+echo 'print(5)' > extensions/macos/delta/delta.py
+echo 'def test_d(): pass' > extensions/macos/delta/tests/test_delta.py
 git add -A
 git commit -qm init
 
-# 1. No refs -> every testable Python leaf, sorted, no-tests and swift excluded.
+# 1. No refs -> every testable Python leaf, sorted; no-tests and swift excluded.
 check "all testable, no refs" \
-    '["apps/gamma","cli/alpha","cli/beta"]' \
+    '["apps/gamma","cli/alpha","cli/beta","extensions/macos/delta"]' \
     "$("$SCRIPT")"
 
 # 2. BASE == HEAD -> same as no refs.
 check "BASE==HEAD is all" \
-    '["apps/gamma","cli/alpha","cli/beta"]' \
+    '["apps/gamma","cli/alpha","cli/beta","extensions/macos/delta"]' \
     "$("$SCRIPT" HEAD HEAD)"
 
 # 3. Change one leaf -> only that leaf.

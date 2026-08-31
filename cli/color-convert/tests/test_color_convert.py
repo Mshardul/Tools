@@ -57,8 +57,8 @@ class ColorConvertTests(unittest.TestCase):
 
     def test_rgb_hsl_roundtrip(self):
         r, g, b = 255, 128, 0
-        h, s, l = rgb_to_hsl(r, g, b)
-        r2, g2, b2 = hsl_to_rgb(h, s, l)
+        h, s, lum = rgb_to_hsl(r, g, b)
+        r2, g2, b2 = hsl_to_rgb(h, s, lum)
         self.assertEqual((r, g, b), (r2, g2, b2))
 
     def test_convert_hex_to_rgb(self):

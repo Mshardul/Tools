@@ -82,9 +82,7 @@ class SessionSummaryTests(unittest.TestCase):
                     {
                         "type": "user",
                         "message": {
-                            "content": [
-                                {"type": "text", "text": "Please fix the flaky test"}
-                            ]
+                            "content": [{"type": "text", "text": "Please fix the flaky test"}]
                         },
                     },
                 ],
@@ -172,9 +170,7 @@ class ExportSessionTests(unittest.TestCase):
                     },
                     {
                         "type": "assistant",
-                        "message": {
-                            "content": [{"type": "text", "text": "Hello from assistant"}]
-                        },
+                        "message": {"content": [{"type": "text", "text": "Hello from assistant"}]},
                     },
                 ],
             )

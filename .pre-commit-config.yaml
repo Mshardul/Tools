@@ -1,8 +1,4 @@
-# Local pre-commit hooks. Install: pip install pre-commit && pre-commit install
-#
-# Mirrors the python-clis CI lint job. Hooks not yet green across the tree are
-# listed but commented; each rollout step uncomments one or two, fixes fallout,
-# and commits.
+# Install: pip install pre-commit && pre-commit install
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -17,6 +13,7 @@ repos:
     hooks:
       - id: check-yaml
       - id: check-added-large-files
+      # Hooks below are enabled one rollout step at a time, matching pyproject.toml select.
       # - id: trailing-whitespace   # step 2
       # - id: end-of-file-fixer     # step 2
       # - id: check-merge-conflict  # step 2

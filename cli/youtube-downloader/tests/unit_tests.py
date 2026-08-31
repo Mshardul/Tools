@@ -1,4 +1,3 @@
-
 import pytest
 from config import DownloadConfig
 from downloader import YoutubeDownloader
@@ -82,7 +81,7 @@ def test_start_download_task_with_mocking(mocker, downloader):
     """Tests that start_download_task calls dependencies correctly."""
     mock_thread = mocker.patch("threading.Thread")
     mock_makedirs = mocker.patch("os.makedirs")
-    mock_yt_dlp = mocker.patch("yt_dlp.YoutubeDL")
+    mocker.patch("yt_dlp.YoutubeDL")
 
     config = DownloadConfig(url="https://www.youtube.com/watch?v=valid")
     download_id = "test-001"
