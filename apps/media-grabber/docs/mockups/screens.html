@@ -8,14 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   MEDIAGRABBER — living mockup for §5 of the design spec
-   Tokens mirror ../design-system.md. Switch skin/palette with the bar
-   at the top of the page (writes data-skin / data-palette on <html>).
+   MEDIAGRABBER — maintained mockup. Target state once Phases 1–3 land.
+   Snapshot, not a changelog. Tokens mirror ../design-system.md.
+   Switch theme/palette with the bar at the top (writes
+   data-theme / data-palette on <html>). This is a meta file — the few
+   phase references in captions are deliberate.
    ===================================================================== */
 
 /* ---------- Aurora palettes (dark) ---------- */
 :root,
-:root[data-skin="aurora"][data-palette="mint"]{
+:root[data-theme="aurora"][data-palette="mint"]{
   --ground:#0C1013; --panel-solid:#0E1117; --panel:rgba(255,255,255,.05); --panel-hi:rgba(255,255,255,.08);
   --stroke:rgba(255,255,255,.12); --hair:rgba(255,255,255,.06);
   --text:#EDF0F5; --dim:#9AA3B2; --faint:#6B7480; --headline:#F4F6FA; --on-accent:#07080B;
@@ -27,7 +29,7 @@
   --glow-a:rgba(94,242,200,.14); --glow-b:rgba(139,123,255,.16);
   --s-dl:transparent; --s-done:transparent; --s-fail:transparent; --s-cool:transparent; --s-queue:transparent;
 }
-:root[data-skin="aurora"][data-palette="lime"]{
+:root[data-theme="aurora"][data-palette="lime"]{
   --ground:#0A0F0C; --panel-solid:#0C1210; --stroke:rgba(190,255,210,.13);
   --text:#E9F2EC; --dim:#93A99C; --faint:#5F7268; --headline:#F2F8F3;
   --accent:#B6F04A; --accent-2:#4ED6A0; --warn:#F2C14E; --danger:#FF6F6F;
@@ -37,7 +39,7 @@
   --banner-fill:linear-gradient(90deg,#FF6F6F,#F2C14E);
   --glow-a:rgba(182,240,74,.16); --glow-b:rgba(78,214,160,.14);
 }
-:root[data-skin="aurora"][data-palette="magenta"]{
+:root[data-theme="aurora"][data-palette="magenta"]{
   --ground:#100C14; --panel-solid:#120E16; --stroke:rgba(230,190,255,.14);
   --text:#F1EAF5; --dim:#A996B5; --faint:#7A6B85; --headline:#F7F2FA;
   --accent:#F25C9E; --accent-2:#9B6BFF; --warn:#FFC24B; --danger:#FF6B6B;
@@ -49,36 +51,36 @@
 }
 
 /* ---------- Tape Deck palettes (light) ---------- */
-:root[data-skin="tapedeck"]{
+:root[data-theme="tapedeck"]{
   --hair:rgba(43,33,24,.18);
   --go-fill:var(--go); --orb:none; --glow-a:transparent; --glow-b:transparent;
   --panel-hi:rgba(0,0,0,.04);
 }
-:root[data-skin="tapedeck"][data-palette="teal"]{
+:root[data-theme="tapedeck"][data-palette="teal"]{
   --ground:#F3E9D8; --panel-solid:#FBF4E6; --panel:#F3E9D8; --stroke:#2B2118;
   --text:#2B2118; --dim:#8A7A60; --faint:#8A7A60; --headline:#2B2118; --on-accent:#2B2118;
-  --brand:#0E5C57; --accent:#D2601A; --accent-2:#0E5C57; --warn:#E4A11B; --danger:#B4472A;
+  --brand:#0E5C57; --accent:#D2601A; --accent-2:#0E5C57; --warn:#9C5A00; --danger:#B4472A;
   --go:#E4A11B; --bar-fill:#D2601A; --banner-fill:#D2601A;
   --s-dl:#CFE3E1; --s-done:#D9E8C8; --s-fail:#F3D2C3; --s-cool:#F6E2B8; --s-queue:#FBF4E6;
 }
-:root[data-skin="tapedeck"][data-palette="plum"]{
+:root[data-theme="tapedeck"][data-palette="plum"]{
   --ground:#EFE9E9; --panel-solid:#FBF5F5; --panel:#EFE9E9; --stroke:#281E26;
   --text:#281E26; --dim:#8B8088; --faint:#8B8088; --headline:#281E26; --on-accent:#281E26;
-  --brand:#5A2E52; --accent:#E98C89; --accent-2:#5A2E52; --warn:#E8B24A; --danger:#C25B57;
+  --brand:#5A2E52; --accent:#E98C89; --accent-2:#5A2E52; --warn:#8C5A0C; --danger:#C25B57;
   --go:#E8B24A; --bar-fill:#E98C89; --banner-fill:#E98C89;
   --hair:rgba(40,30,38,.18);
   --s-dl:#E1DCEC; --s-done:#D8E6D0; --s-fail:#F4D6D6; --s-cool:#F3E3C0; --s-queue:#FBF5F5;
 }
-:root[data-skin="tapedeck"][data-palette="navy"]{
+:root[data-theme="tapedeck"][data-palette="navy"]{
   --ground:#E7E9E7; --panel-solid:#F5F6F3; --panel:#E7E9E7; --stroke:#1B222A;
   --text:#1B222A; --dim:#7C838A; --faint:#7C838A; --headline:#1B222A; --on-accent:#1B222A;
-  --brand:#1F3350; --accent:#2FA69A; --accent-2:#1F3350; --warn:#F2B12E; --danger:#D9694C;
+  --brand:#1F3350; --accent:#2FA69A; --accent-2:#1F3350; --warn:#805C14; --danger:#D9694C;
   --go:#F2B12E; --bar-fill:#2FA69A; --banner-fill:#2FA69A;
   --hair:rgba(27,34,42,.18);
   --s-dl:#D6E6E3; --s-done:#D8E6D0; --s-fail:#F3D8CC; --s-cool:#F6E6B6; --s-queue:#F5F6F3;
 }
 
-/* ---------- skin-dependent surface rules ---------- */
+/* ---------- theme-independent tokens ---------- */
 :root{
   --r-window:18px; --r-card:14px; --r-control:9px; --r-pill:20px; --r-chip:7px;
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:30px; --sp-8:44px;
@@ -87,7 +89,7 @@
   --border-w:1px; --elev-card:0 0 0 1px rgba(255,255,255,.02),0 24px 60px rgba(0,0,0,.6);
   --console-elev:0 0 0 1px var(--glow-a),0 0 32px var(--glow-b);
 }
-:root[data-skin="tapedeck"]{
+:root[data-theme="tapedeck"]{
   --r-window:14px; --r-card:12px; --r-control:8px; --r-chip:6px;
   --font-display:"Bricolage Grotesque",system-ui,sans-serif; --font-body:"DM Sans",system-ui,sans-serif; --font-mono:"DM Mono",monospace;
   --border-w:2px; --elev-card:8px 8px 0 rgba(0,0,0,.35);
@@ -96,56 +98,78 @@
 
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#08090b;font-family:var(--font-body);color:var(--text);padding:24px;-webkit-font-smoothing:antialiased}
-:root[data-skin="tapedeck"] body{background:#d8cdb8}
+:root[data-theme="tapedeck"] body{background:#d8cdb8}
 
 /* switcher */
-.switch{max-width:1180px;margin:0 auto 24px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-family:var(--font-mono);font-size:12px;color:#aaa}
-:root[data-skin="tapedeck"] .switch{color:#4a3f2f}
+.switch{max-width:1060px;margin:0 auto 24px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-family:var(--font-mono);font-size:12px;color:#aaa}
+:root[data-theme="tapedeck"] .switch{color:#4a3f2f}
 .switch b{color:#fff}
-:root[data-skin="tapedeck"] .switch b{color:#2b2118}
+:root[data-theme="tapedeck"] .switch b{color:#2b2118}
 .switch button{font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid #444;background:transparent;color:inherit;cursor:pointer}
 .switch button.on{background:#fff;color:#111;border-color:#fff}
-:root[data-skin="tapedeck"] .switch button{border-color:#8a7a60}
-:root[data-skin="tapedeck"] .switch button.on{background:#2b2118;color:#f3e9d8;border-color:#2b2118}
+:root[data-theme="tapedeck"] .switch button{border-color:#8a7a60}
+:root[data-theme="tapedeck"] .switch button.on{background:#2b2118;color:#f3e9d8;border-color:#2b2118}
 
-.doc{max-width:1180px;margin:0 auto}
-.screen{margin-bottom:46px}
+/* TOC */
+.toc{max-width:1060px;margin:0 auto 40px;padding:18px 22px;border:1px solid #333;border-radius:12px;background:#0e0f12;font-family:var(--font-mono);font-size:12px;line-height:1.9}
+:root[data-theme="tapedeck"] .toc{background:#efe6d4;border-color:#8a7a60;color:#3b3020}
+.toc h2{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#888;margin-bottom:10px}
+:root[data-theme="tapedeck"] .toc h2{color:#6a5c44}
+.toc a{color:#8fd8c4;text-decoration:none}
+:root[data-theme="tapedeck"] .toc a{color:#0E5C57}
+.toc a:hover{text-decoration:underline}
+.toc .grp{color:#ddd;font-weight:500}
+:root[data-theme="tapedeck"] .toc .grp{color:#2b2118}
+.toc .row{display:block}
+
+.doc{max-width:1060px;margin:0 auto}
+.section-head{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8fd8c4;border-bottom:1px solid #333;padding-bottom:8px;margin:56px 0 24px}
+:root[data-theme="tapedeck"] .section-head{color:#0E5C57;border-color:#8a7a60}
+.section-head:first-of-type{margin-top:8px}
+
+.screen{margin-bottom:44px}
 .screen .cap{font-family:var(--font-mono);font-size:12px;color:#ddd;margin-bottom:8px;letter-spacing:.03em}
-:root[data-skin="tapedeck"] .screen .cap{color:#3b3020}
+:root[data-theme="tapedeck"] .screen .cap{color:#3b3020}
 .screen .cap b{color:var(--accent)}
-.screen .sub{font-size:12px;color:#999;margin-bottom:12px;line-height:1.6;max-width:74ch}
-:root[data-skin="tapedeck"] .screen .sub{color:#5a4d38}
+:root[data-theme="tapedeck"] .screen .cap b{color:#0E5C57}
+.screen .sub{font-size:12px;color:#999;margin-bottom:14px;line-height:1.6;max-width:74ch}
+:root[data-theme="tapedeck"] .screen .sub{color:#5a4d38}
+.screen .phase-note{font-family:var(--font-mono);font-size:11px;color:#8a8f98;margin-bottom:12px}
+:root[data-theme="tapedeck"] .screen .phase-note{color:#6a5c44}
 
-/* ============ APP WINDOW ============ */
-.app{background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-window);overflow:hidden;position:relative;box-shadow:var(--elev-card)}
-.hdr{display:flex;align-items:center;gap:var(--sp-3);padding:15px var(--sp-5);border-bottom:var(--border-w) solid var(--stroke)}
-:root[data-skin="tapedeck"] .hdr{background:var(--brand)}
+/* ============ APP WINDOW — fixed 980 x 720, 1 CSS px = 1 pt ============ */
+.app{width:980px;height:720px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-window);overflow:hidden;position:relative;box-shadow:var(--elev-card);display:flex;flex-direction:column}
+.hdr{display:flex;align-items:center;gap:var(--sp-3);padding:15px var(--sp-5);border-bottom:var(--border-w) solid var(--stroke);flex:none}
+:root[data-theme="tapedeck"] .hdr{background:var(--brand)}
 .orb{width:20px;height:20px;border-radius:50%;background:var(--orb);flex:none}
-:root[data-skin="aurora"] .orb{animation:spin 6s linear infinite}
-:root[data-skin="tapedeck"] .orb{background:none;border:3px solid var(--panel-solid);position:relative}
-:root[data-skin="tapedeck"] .orb::before,:root[data-skin="tapedeck"] .orb::after{content:"";position:absolute;inset:0;margin:auto;background:var(--panel-solid)}
-:root[data-skin="tapedeck"] .orb::before{width:3px;height:12px} :root[data-skin="tapedeck"] .orb::after{width:12px;height:3px}
+:root[data-theme="aurora"] .orb{animation:spin 6s linear infinite}
+:root[data-theme="tapedeck"] .orb{background:none;border:3px solid var(--panel-solid);position:relative}
+:root[data-theme="tapedeck"] .orb::before,:root[data-theme="tapedeck"] .orb::after{content:"";position:absolute;inset:0;margin:auto;background:var(--panel-solid)}
+:root[data-theme="tapedeck"] .orb::before{width:3px;height:12px} :root[data-theme="tapedeck"] .orb::after{width:12px;height:3px}
 .wm{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-.02em}
-:root[data-skin="tapedeck"] .wm{color:var(--panel-solid);font-weight:800}
+:root[data-theme="tapedeck"] .wm{color:var(--panel-solid);font-weight:800}
 .nav{margin-left:auto;display:flex;gap:var(--sp-1)}
 .nav a{font-family:var(--font-display);font-size:12px;color:var(--dim);text-decoration:none;padding:7px 12px;border-radius:var(--r-chip)}
-:root[data-skin="tapedeck"] .nav a{color:var(--panel-solid);font-family:var(--font-mono);text-transform:uppercase;font-size:11px;letter-spacing:.06em}
+:root[data-theme="tapedeck"] .nav a{color:var(--panel-solid);font-family:var(--font-mono);text-transform:uppercase;font-size:11px;letter-spacing:.06em}
 .nav a.on{background:var(--panel);color:var(--text)}
-:root[data-skin="tapedeck"] .nav a.on{background:var(--panel-solid);color:var(--brand)}
+:root[data-theme="tapedeck"] .nav a.on{background:var(--panel-solid);color:var(--brand)}
 
-.health{display:flex;gap:9px;padding:11px var(--sp-5);flex-wrap:wrap;border-bottom:var(--border-w) solid var(--stroke)}
-:root[data-skin="tapedeck"] .health{background:var(--ground)}
+.health{display:flex;gap:9px;padding:11px var(--sp-5);flex-wrap:wrap;border-bottom:var(--border-w) solid var(--stroke);flex:none}
+:root[data-theme="tapedeck"] .health{background:var(--ground)}
 .chip{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:var(--r-pill);background:var(--panel);border:1px solid var(--stroke);display:flex;align-items:center;gap:6px;color:var(--dim)}
-:root[data-skin="tapedeck"] .chip{border-width:1.5px;background:var(--panel-solid);color:var(--text)}
+:root[data-theme="tapedeck"] .chip{border-width:1.5px;background:var(--panel-solid);color:var(--text)}
 .chip .dot{width:6px;height:6px;border-radius:50%}
-.chip .dot.ok{background:var(--accent-2)} :root[data-skin="aurora"] .chip .dot.ok{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.chip .dot.warn{background:var(--warn)} :root[data-skin="aurora"] .chip .dot.warn{box-shadow:0 0 8px var(--warn)}
+.chip .dot.ok{background:var(--accent-2)} :root[data-theme="aurora"] .chip .dot.ok{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.chip .dot.warn{background:var(--warn)} :root[data-theme="aurora"] .chip .dot.warn{box-shadow:0 0 8px var(--warn)}
 .chip.warn{color:var(--warn);border-color:var(--warn)}
+
+.body-scroll{flex:1;min-height:0;overflow:auto}
 
 .hero{padding:var(--sp-6) var(--sp-5) var(--sp-5)}
 .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-2)}
+:root[data-theme="tapedeck"] .kicker{color:var(--brand)}
 h1.head{font-family:var(--font-display);font-weight:700;font-size:32px;line-height:1.04;letter-spacing:-.03em;max-width:18ch;margin-bottom:var(--sp-4);color:var(--headline)}
-:root[data-skin="tapedeck"] h1.head{font-weight:800}
+:root[data-theme="tapedeck"] h1.head{font-weight:800}
 h1.head em{font-style:normal;color:var(--accent)}
 
 /* paste field + runway */
@@ -154,18 +178,41 @@ h1.head em{font-style:normal;color:var(--accent)}
 .field input{flex:1;min-width:0;background:transparent;border:none;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none}
 .field input::placeholder{color:var(--faint)}
 .field .status{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap}
+:root[data-theme="tapedeck"] .field .status{color:var(--brand)}
 .field .status.err{color:var(--danger)}
-.runway{background:var(--panel-hi);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:0;align-items:stretch;box-shadow:var(--console-elev);width:100%;box-sizing:border-box}
-.rstep{flex:1;display:flex;flex-direction:column;gap:5px;padding:0 14px;position:relative;min-width:0}
+.runway{background:var(--panel-hi);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:0;align-items:stretch;box-shadow:var(--console-elev);width:100%}
+.rstep{flex:1;display:flex;flex-direction:column;gap:6px;padding:0 14px;position:relative;min-width:0}
 .rstep + .rstep::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--hair)}
 .rstep .rl{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
-.rstep .rv{font-family:var(--font-display);font-size:13px;display:flex;gap:6px;align-items:center;cursor:pointer;white-space:nowrap}
+.rstep .rv{font-family:var(--font-display);font-size:13px;display:flex;gap:6px;align-items:center;white-space:nowrap}
 .rstep.ok .rv::before{content:"●";color:var(--accent);font-size:8px}
 .rstep.wait .rv{color:var(--faint)} .rstep.wait .rv::before{content:"○";color:var(--faint);font-size:8px}
 .rgo{flex:none;display:flex;align-items:center;padding-left:14px;border-left:1px solid var(--hair)}
 .go{background:var(--go-fill);color:var(--on-accent);border:none;border-radius:var(--r-control);padding:0 24px;font-family:var(--font-display);font-weight:700;font-size:14px;cursor:pointer;min-height:44px}
-:root[data-skin="tapedeck"] .go{border:2px solid var(--panel-solid)}
+:root[data-theme="tapedeck"] .go{border:2px solid var(--panel-solid)}
 .go[disabled]{opacity:.3;cursor:not-allowed;filter:grayscale(.5)}
+
+/* skinned segmented control */
+.seg{display:inline-flex;border:var(--border-w) solid var(--stroke);border-radius:var(--r-chip);background:var(--panel);overflow:hidden}
+.seg button{font-family:var(--font-display);font-size:12px;padding:7px 0;min-width:62px;text-align:center;border:none;background:transparent;color:var(--dim);cursor:pointer;border-right:1px solid var(--hair)}
+.seg button:last-child{border-right:none}
+.seg button.on{background:var(--panel-solid);color:var(--text);font-weight:600}
+:root[data-theme="aurora"] .seg button.on{box-shadow:inset 0 0 0 1px var(--stroke)}
+
+/* skinned picker trigger */
+.pick{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:12px;padding:8px 12px;border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);background:var(--panel);color:var(--text);cursor:pointer}
+.pick .cv{color:var(--faint);font-size:10px}
+.pick.nochev{cursor:pointer}
+
+/* skinned picker popover */
+.pop{position:absolute;z-index:30;min-width:200px;max-width:340px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);box-shadow:var(--elev-card);padding:8px;box-sizing:border-box}
+:root[data-theme="aurora"] .pop{box-shadow:0 0 0 1px var(--glow-a),0 0 34px var(--glow-b),0 24px 60px rgba(0,0,0,.6)}
+.pop .ph{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);padding:6px 8px 8px;border-bottom:1px solid var(--hair);margin-bottom:4px}
+.pop .prow{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:var(--r-chip);cursor:pointer}
+.pop .prow:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.pop .prow .pt{font-family:var(--font-body);font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:8px}
+.pop .prow .pt .ck{color:var(--accent);font-size:11px;width:12px;display:inline-block}
+.pop .prow .pst{font-family:var(--font-mono);font-size:10.5px;color:var(--dim)}
 
 /* table */
 .tablewrap{padding:6px var(--sp-5) 82px;position:relative}
@@ -205,30 +252,30 @@ tbody td{padding:11px 8px;border-bottom:1px solid var(--hair);vertical-align:mid
 tbody tr:hover td{background:var(--panel)}
 .ti{display:flex;align-items:center;gap:8px}
 .rr{width:14px;height:14px;border-radius:50%;background:var(--orb);flex:none}
-:root[data-skin="aurora"] .rr{animation:spin 2s linear infinite}
-:root[data-skin="tapedeck"] .rr{background:none;border:2px solid var(--text);position:relative;animation:spin 2s linear infinite}
-:root[data-skin="tapedeck"] .rr::after{content:"";position:absolute;inset:0;margin:auto;width:2px;height:8px;background:var(--text)}
+:root[data-theme="aurora"] .rr{animation:spin 2s linear infinite}
+:root[data-theme="tapedeck"] .rr{background:none;border:2px solid var(--text);position:relative;animation:spin 2s linear infinite}
+:root[data-theme="tapedeck"] .rr::after{content:"";position:absolute;inset:0;margin:auto;width:2px;height:8px;background:var(--text)}
 .site{font-family:var(--font-mono);font-size:12px;color:var(--dim)}
 .st{font-family:var(--font-mono);font-size:10px;padding:3px 9px;border:1px solid var(--stroke);border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:5px}
-:root[data-skin="tapedeck"] .st{border-width:1.5px}
+:root[data-theme="tapedeck"] .st{border-width:1.5px}
 .st::before{content:"";width:5px;height:5px;border-radius:50%}
-.s-dl{color:var(--accent)} .s-dl::before{background:var(--accent)} :root[data-skin="aurora"] .s-dl::before{box-shadow:0 0 6px var(--accent)}
-:root[data-skin="tapedeck"] .s-dl{background:var(--s-dl);color:var(--text)}
-.s-done{color:var(--dim)} .s-done::before{background:var(--dim)} :root[data-skin="tapedeck"] .s-done{background:var(--s-done);color:var(--text)}
-.s-fail{color:var(--danger)} .s-fail::before{background:var(--danger)} :root[data-skin="tapedeck"] .s-fail{background:var(--s-fail);color:var(--text)}
-.s-cool{color:var(--warn)} .s-cool::before{background:var(--warn)} :root[data-skin="tapedeck"] .s-cool{background:var(--s-cool);color:var(--text)}
-.s-queue{color:var(--accent-2)} .s-queue::before{background:var(--accent-2)} :root[data-skin="tapedeck"] .s-queue{background:var(--s-queue);color:var(--text)}
+.s-dl{color:var(--accent)} .s-dl::before{background:var(--accent)} :root[data-theme="aurora"] .s-dl::before{box-shadow:0 0 6px var(--accent)}
+:root[data-theme="tapedeck"] .s-dl{background:var(--s-dl);color:var(--text)}
+.s-done{color:var(--dim)} .s-done::before{background:var(--dim)} :root[data-theme="tapedeck"] .s-done{background:var(--s-done);color:var(--text)}
+.s-fail{color:var(--danger)} .s-fail::before{background:var(--danger)} :root[data-theme="tapedeck"] .s-fail{background:var(--s-fail);color:var(--text)}
+.s-cool{color:var(--warn)} .s-cool::before{background:var(--warn)} :root[data-theme="tapedeck"] .s-cool{background:var(--s-cool);color:var(--text)}
+.s-queue{color:var(--accent-2)} .s-queue::before{background:var(--accent-2)} :root[data-theme="tapedeck"] .s-queue{background:var(--s-queue);color:var(--text)}
 .bar{height:6px;width:110px;overflow:hidden;background:rgba(150,150,150,.18);border-radius:var(--r-pill)}
-:root[data-skin="tapedeck"] .bar{border:1.5px solid var(--stroke);height:7px}
+:root[data-theme="tapedeck"] .bar{border:1.5px solid var(--stroke);height:7px}
 .bar>i{display:block;height:100%;background:var(--bar-fill)}
-:root[data-skin="aurora"] .bar>i{box-shadow:0 0 10px var(--glow-a)}
+:root[data-theme="aurora"] .bar>i{box-shadow:0 0 10px var(--glow-a)}
 .acts{display:flex;gap:4px}
 .acts button{width:27px;height:27px;cursor:pointer;font-size:11px;background:var(--panel);border:1px solid var(--stroke);color:var(--text);border-radius:var(--r-chip)}
-:root[data-skin="tapedeck"] .acts button{border-width:1.5px}
+:root[data-theme="tapedeck"] .acts button{border-width:1.5px}
 
 /* playlist group */
 .ghead td{background:var(--panel-hi);border-bottom:var(--border-w) solid var(--stroke);padding:10px 8px}
-:root[data-skin="aurora"] .ghead td{background:color-mix(in srgb,var(--accent-2) 10%,transparent)}
+:root[data-theme="aurora"] .ghead td{background:color-mix(in srgb,var(--accent-2) 10%,transparent)}
 .gh{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:600;font-size:13px}
 .gh .caret{width:16px;height:16px;border:1px solid var(--stroke);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--dim);cursor:pointer}
 .gh .meta2{font-family:var(--font-mono);font-size:11px;color:var(--dim);font-weight:400;display:flex;align-items:center;gap:8px}
@@ -236,21 +283,20 @@ tbody tr:hover td{background:var(--panel)}
 .gh .gminibar>i{display:block;height:100%;background:var(--bar-fill)}
 .gh .gact{margin-left:auto;display:flex;gap:5px}
 .gh .gact button{font-family:var(--font-display);font-size:10px;padding:4px 9px;border-radius:var(--r-chip);border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer}
-/* spine: continuous vertical line; dividers indented past it */
 .child td:first-child{position:relative;padding-left:28px}
 .child td:first-child::before{content:"";position:absolute;left:12px;top:-11px;bottom:-11px;width:1px;background:var(--stroke)}
 .child:last-of-type td:first-child::before{bottom:50%}
 .child td:first-child::after{content:"";position:absolute;left:12px;top:50%;width:10px;height:1px;background:var(--stroke)}
 .child td{border-bottom-color:transparent}
-.child td:first-child{border-bottom:1px solid var(--hair);margin-left:28px}
+.child td:first-child{border-bottom:1px solid var(--hair)}
 .child td:not(:first-child){border-bottom:1px solid var(--hair)}
 
-/* warning banner — docked bottom */
+/* warning banner */
 .banner{position:absolute;left:16px;right:16px;bottom:16px;padding:12px 16px;display:flex;align-items:center;gap:11px;font-size:13px;border-radius:11px;background:var(--banner-fill);color:#141210;box-shadow:0 10px 34px rgba(0,0,0,.45);z-index:5}
-:root[data-skin="tapedeck"] .banner{border:2px solid var(--stroke);color:var(--panel-solid)}
+:root[data-theme="tapedeck"] .banner{border:2px solid var(--stroke);color:var(--panel-solid)}
 .banner strong{font-family:var(--font-display);font-weight:600}
 .banner button{margin-left:auto;padding:6px 14px;font-weight:600;cursor:pointer;border:none;background:rgba(0,0,0,.16);color:inherit;border-radius:8px;font-size:12px}
-:root[data-skin="tapedeck"] .banner button{background:var(--panel-solid);color:var(--text);border:1.5px solid var(--stroke)}
+:root[data-theme="tapedeck"] .banner button{background:var(--panel-solid);color:var(--text);border:1.5px solid var(--stroke)}
 
 /* toast */
 .toaststack{position:absolute;right:16px;bottom:82px;display:flex;flex-direction:column;gap:8px;z-index:6}
@@ -258,9 +304,9 @@ tbody tr:hover td{background:var(--panel)}
 .toast .tk{color:var(--accent)}
 .toast a{margin-left:auto;color:var(--accent-2);text-decoration:underline;cursor:pointer;font-size:11px}
 
-/* modal */
+/* playlist picker modal */
 .backdrop{position:absolute;inset:0;background:rgba(4,5,7,.55);display:flex;align-items:center;justify-content:center;z-index:8}
-:root[data-skin="tapedeck"] .backdrop{background:rgba(43,33,24,.4)}
+:root[data-theme="tapedeck"] .backdrop{background:rgba(43,33,24,.4)}
 .modal{width:560px;max-width:92%;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-window);box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
 .modal .mh{padding:16px 18px;border-bottom:1px solid var(--stroke)}
 .modal .mt{font-family:var(--font-display);font-weight:600;font-size:15px}
@@ -282,6 +328,17 @@ tbody tr:hover td{background:var(--panel)}
 .modal .mf .sp{margin-left:auto}
 .btn{background:var(--panel);border:1px solid var(--stroke);color:var(--text);border-radius:var(--r-control);padding:9px 16px;font-family:var(--font-display);font-size:12px;cursor:pointer}
 
+/* confirmation dialog */
+.scrim{position:absolute;inset:0;background:color-mix(in srgb,var(--ground) 60%,transparent);display:flex;align-items:center;justify-content:center;z-index:9}
+.cdialog{width:100%;max-width:420px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);box-shadow:var(--elev-card);padding:var(--sp-5)}
+.cdialog .cglyph{font-size:22px;color:var(--danger);margin-bottom:var(--sp-3)}
+.cdialog .ct{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--headline);margin-bottom:var(--sp-3)}
+.cdialog .cm{font-family:var(--font-body);font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:var(--sp-4)}
+.cdialog .cbtns{display:flex;justify-content:flex-end;gap:var(--sp-2)}
+.cdialog .cbtns button{font-family:var(--font-display);font-size:12px;padding:9px 16px;border-radius:var(--r-control);cursor:pointer;border:var(--border-w) solid var(--stroke);background:var(--panel);color:var(--text)}
+.cdialog .cbtns button.focusring{box-shadow:0 0 0 2px var(--accent);outline:none}
+.cdialog .cbtns button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+
 /* onboarding */
 .onb{padding:var(--sp-8) var(--sp-6);max-width:620px;margin:0 auto}
 .onb h1{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.02em;margin-bottom:var(--sp-2);color:var(--headline)}
@@ -297,31 +354,51 @@ tbody tr:hover td{background:var(--panel)}
 .step .body .go{margin-top:10px;padding:8px 16px;min-height:0;font-size:12px}
 
 /* preferences */
-.prefs{display:flex;min-height:520px}
-.prefs .side{width:186px;flex:none;border-right:var(--border-w) solid var(--stroke);padding:var(--sp-4) var(--sp-2)}
+.prefs{display:flex;height:100%}
+.prefs .side{width:200px;flex:none;border-right:var(--border-w) solid var(--stroke);padding:var(--sp-4) var(--sp-2);overflow:hidden}
 .prefs .side a{display:block;font-family:var(--font-display);font-size:13px;color:var(--dim);text-decoration:none;padding:8px 12px;border-radius:var(--r-chip)}
 .prefs .side a.on{background:var(--panel);color:var(--text)}
 .prefs .side .grp{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);padding:14px 12px 6px}
 .prefs .main{flex:1;padding:var(--sp-6);overflow:auto}
-.prefs .main h2{font-family:var(--font-display);font-weight:600;font-size:18px;margin-bottom:var(--sp-2)}
-.prefs .main > p{font-size:12px;color:var(--dim);margin-bottom:var(--sp-5)}
-.field2{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px 0;border-bottom:1px solid var(--hair)}
-.field2 .fl{font-size:13px}
-.field2 .fl small{display:block;color:var(--dim);font-size:11px;margin-top:2px;line-height:1.5}
-.field2 .fc input[type=text],.field2 .fc select{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--r-chip);padding:8px 10px;font-family:var(--font-body);font-size:12px;color:var(--text);min-width:180px}
-.field2 .fc .stepper{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:13px}
-.field2 .fc .stepper button{width:26px;height:26px;border:1px solid var(--stroke);background:var(--panel);color:var(--text);border-radius:6px;cursor:pointer}
+.prefs .main h2{font-family:var(--font-display);font-weight:800;font-size:20px;color:var(--headline);margin-bottom:var(--sp-1)}
+:root[data-theme="aurora"] .prefs .main h2{font-weight:700}
+.prefs .main > p.psub{font-size:12px;color:var(--dim);margin-bottom:var(--sp-3);line-height:1.5}
+.prefs .main .rule{border-bottom:var(--border-w) solid var(--stroke);margin-bottom:var(--sp-3)}
+.field2{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding:14px 0;border-bottom:1px solid var(--hair)}
+.field2 .fl{font-size:13px;font-weight:600;color:var(--text)}
+.field2 .fl small{display:block;color:var(--dim);font-size:11.5px;font-weight:400;margin-top:3px;line-height:1.5;max-width:40ch}
+.field2 .fc{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.field2 .fc input[type=text]{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);padding:8px 10px;font-family:var(--font-mono);font-size:12px;color:var(--text);min-width:220px}
+.field2 .fc input.mono{font-family:var(--font-mono)}
+.stepper{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:13px}
+.stepper .val{min-width:34px;text-align:center}
+.stepper button{width:26px;height:26px;border:var(--border-w) solid var(--stroke);background:var(--panel);color:var(--text);border-radius:6px;cursor:pointer}
 .toggle{width:34px;height:20px;border-radius:20px;background:var(--panel-hi);border:1px solid var(--stroke);position:relative;cursor:pointer;display:inline-block}
 .toggle::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--dim);top:2px;left:2px;transition:all var(--dur)}
 .toggle.on{background:var(--accent)} .toggle.on::after{left:16px;background:var(--on-accent)}
-.swatches{display:flex;gap:10px;margin-top:8px}
-.swatches .sw{width:44px;height:44px;border-radius:10px;border:2px solid var(--stroke);cursor:pointer}
-.swatches .sw.on{border-color:var(--accent)}
+.btn-txt{font-family:var(--font-display);font-size:12px;padding:8px 14px;border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);background:var(--panel);color:var(--text);cursor:pointer}
+.btn-txt.danger{color:var(--danger);border-color:var(--danger)}
+.swatches{display:flex;gap:14px}
+.swatches .sw{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.swatches .sw .tile{width:56px;height:38px;border-radius:8px;border:1px solid var(--stroke);overflow:hidden;display:flex}
+.swatches .sw .tile i{flex:1}
+.swatches .sw.on .tile{outline:2px solid var(--accent);outline-offset:2px}
+.swatches .sw span{font-family:var(--font-body);font-size:10.5px;color:var(--text)}
+.stepless{padding:var(--sp-8) 0;max-width:44ch}
+.stepless p.later{font-size:12.5px;color:var(--faint);margin-top:var(--sp-3);line-height:1.6}
+.note{display:flex;gap:8px;align-items:flex-start;font-family:var(--font-body);font-size:11.5px;color:var(--dim);line-height:1.5;max-width:34ch}
+.note .wg{color:var(--warn);flex:none}
+
+/* control-details fragments */
+.frag{border:1px dashed var(--stroke);border-radius:var(--r-card);padding:var(--sp-4);margin-bottom:var(--sp-4);position:relative;background:var(--panel-solid)}
+.frag .fraglabel{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:var(--sp-3)}
+.frag .field2{border-bottom:1px solid var(--hair)}
+.frag .field2:last-child{border-bottom:none}
 
 /* diagnostics */
 .diag{padding:var(--sp-6) var(--sp-5)}
 .diag .runbtn{background:var(--go-fill);color:var(--on-accent);border:none;border-radius:var(--r-control);padding:12px 22px;font-family:var(--font-display);font-weight:700;font-size:14px;cursor:pointer;margin-bottom:var(--sp-5)}
-:root[data-skin="tapedeck"] .diag .runbtn{border:2px solid var(--panel-solid)}
+:root[data-theme="tapedeck"] .diag .runbtn{border:2px solid var(--panel-solid)}
 .report{border:1px solid var(--stroke);border-radius:var(--r-card);overflow:hidden}
 .report .rrow{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--hair);font-size:13px}
 .report .rrow:last-child{border-bottom:none}
@@ -341,6 +418,12 @@ tbody tr:hover td{background:var(--panel)}
 .field.solo{border-radius:var(--r-card);border-bottom:var(--border-w) solid var(--stroke)}
 .field .paste{background:var(--panel-hi);border:1px solid var(--stroke);color:var(--dim);border-radius:var(--r-control);padding:0 12px;font-family:var(--font-mono);font-size:11px;min-height:40px;cursor:pointer}
 
+/* key structural dimensions — caption under the block, not an overlay */
+.dims{font-family:var(--font-mono);font-size:11px;color:#8a8f98;margin-top:10px;line-height:1.7}
+:root[data-theme="tapedeck"] .dims{color:#6a5c44}
+.dims b{color:#aeb4bd;font-weight:500}
+:root[data-theme="tapedeck"] .dims b{color:#2b2118}
+
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -348,19 +431,49 @@ tbody tr:hover td{background:var(--panel)}
 <body>
 
 <div class="switch">
-  <b>Skin</b>
+  <b>Theme</b>
   <button data-s="aurora" class="on">Aurora</button>
   <button data-s="tapedeck">Tape Deck</button>
   &nbsp;&nbsp;<b>Palette</b>
   <span id="palset"></span>
 </div>
 
+<nav class="toc" aria-label="Contents">
+  <h2>Contents</h2>
+  <span class="row"><span class="grp">§1 Home</span> —
+    <a href="#s1-1">1.1 first run</a> ·
+    <a href="#s1-2">1.2 link resolved</a> ·
+    <a href="#s1-3">1.3 column filter menu open</a></span>
+  <span class="row"><span class="grp">§2 Onboarding</span> —
+    <a href="#s2-1">2.1 first-run setup</a></span>
+  <span class="row"><span class="grp">§3 Preferences</span> —
+    <a href="#s3-1">3.1 Downloads</a> ·
+    <a href="#s3-2">3.2 Appearance</a> ·
+    <a href="#s3-3">3.3 Network</a> ·
+    <a href="#s3-4">3.4 Sign-in &amp; cookies</a> ·
+    <a href="#s3-5">3.5 Updates</a> ·
+    <a href="#s3-6">3.6 Logs &amp; privacy</a> ·
+    <a href="#s3-7">3.7 Advanced</a> ·
+    <a href="#s3-8">3.8 Control details</a></span>
+  <span class="row"><span class="grp">§4 Dialogs</span> —
+    <a href="#s4-1">4.1 confirmation — destructive</a> ·
+    <a href="#s4-2">4.2 confirmation — notice</a></span>
+  <span class="row"><span class="grp">§5 Playlist</span> —
+    <a href="#s5-1">5.1 picker modal</a> ·
+    <a href="#s5-2">5.2 group in table</a></span>
+  <span class="row"><span class="grp">§6 Diagnostics</span> —
+    <a href="#s6-1">6.1 report card</a></span>
+</nav>
+
 <div class="doc" id="doc">
 
-  <!-- 0: HOME — FIRST RUN -->
-  <div class="screen">
-    <div class="cap"><b>0</b> Home — first run (no download ever made)</div>
-    <div class="sub">No table, no runway. See design-system §4.2.1.</div>
+  <!-- ================= §1 HOME ================= -->
+  <div class="section-head">§1 Home</div>
+
+  <!-- 1.1 -->
+  <div class="screen" id="s1-1">
+    <div class="cap"><b>1.1</b> Home — first run (no download ever made)</div>
+    <div class="sub">No table, no runway. Header + paste field + the three step cards fill the body. See design-system §4.2.1.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
@@ -369,26 +482,30 @@ tbody tr:hover td{background:var(--panel)}
         <span class="chip"><span class="dot ok"></span>engine · current</span>
         <span class="chip"><span class="dot ok"></span>online</span>
       </div>
-      <div class="hero">
-        <div class="kicker">Paste a link</div>
-        <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
-        <div class="field solo"><input placeholder="Paste a video, song, or playlist link"><button class="paste">⌘V Paste</button></div>
-      </div>
-      <div class="stepcards">
-        <div class="lead">Three steps, every time</div>
-        <div class="grid3">
-          <div class="c"><div class="n">01</div><h4>Paste a link</h4><p>Copy a video or playlist URL from your browser and paste it above.</p></div>
-          <div class="c"><div class="n">02</div><h4>Pick a format</h4><p>Video or audio, and the quality. We remember your choice next time.</p></div>
-          <div class="c"><div class="n">03</div><h4>Press Grab</h4><p>It downloads to your folder — and this is where your downloads will live.</p></div>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste a link</div>
+          <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+          <div class="field solo"><input placeholder="Paste a video, song, or playlist link"><button class="paste">⌘V Paste</button></div>
+        </div>
+        <div class="stepcards">
+          <div class="lead">Three steps, every time</div>
+          <div class="grid3">
+            <div class="c"><div class="n">01</div><h4>Paste a link</h4><p>Copy a video or playlist URL from your browser and paste it above.</p></div>
+            <div class="c"><div class="n">02</div><h4>Pick a format</h4><p>Video or audio, and the quality. We remember your choice next time.</p></div>
+            <div class="c"><div class="n">03</div><h4>Press Grab</h4><p>It downloads to your folder — and this is where your downloads will live.</p></div>
+          </div>
         </div>
       </div>
     </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720 (the app's <code>.defaultSize</code>), 1 CSS px = 1 pt.</p>
   </div>
 
-  <!-- 1: HOME -->
-  <div class="screen">
-    <div class="cap"><b>1</b> Home — after first download, link resolved</div>
-    <div class="sub">Link resolved → runway + table shown. Warning banner docked bottom; one success toast.</div>
+  <!-- 1.2 -->
+  <div class="screen" id="s1-2">
+    <div class="cap"><b>1.2</b> Home — link resolved (runway + table)</div>
+    <div class="sub">Link resolved → runway shown. Runway Media-type / Format / Save-to render as SkinnedSegment / SkinnedPicker. Quality ladder drops 360, adds "Best available". Save-to always seeded — here to <code>Downloads</code>.</div>
+    <div class="phase-note">(the cooldown health chip + cooldown banner and the success toast arrive in later phases)</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
@@ -398,125 +515,450 @@ tbody tr:hover td{background:var(--panel)}
         <span class="chip"><span class="dot ok"></span>online</span>
         <span class="chip warn"><span class="dot warn"></span>youtube · cooldown 4:12</span>
       </div>
-      <div class="hero">
-        <div class="kicker">Paste a link</div>
-        <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
-        <div class="paste-stack">
-        <div class="field">
-          <input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ">
-          <span class="status">✓ Big Buck Bunny</span>
-        </div>
-        <div class="runway">
-          <div class="rstep ok"><span class="rl">Link</span><span class="rv">Resolved</span></div>
-          <div class="rstep ok"><span class="rl">Type</span><span class="rv">Video ▾</span></div>
-          <div class="rstep ok"><span class="rl">Format</span><span class="rv">1080p ▾</span></div>
-          <div class="rstep wait"><span class="rl">Save to</span><span class="rv">Choose… ▾</span></div>
-          <div class="rgo"><button class="go" disabled>Grab</button></div>
-        </div>
-        </div>
-      </div>
-      <div class="tablewrap">
-        <div class="toolbar">
-          <button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button>
-          <button class="fc">Needs attention <span class="badge">1</span></button>
-          <button class="colbtn">⊞ Columns</button>
-          <div class="colmenu">
-            <div class="fh">Show columns · drag to reorder</div>
-            <label class="locked"><span class="box on">✓</span> Title</label>
-            <label><span class="box on">✓</span> Site</label>
-            <label><span class="box on">✓</span> Format</label>
-            <label><span class="box on">✓</span> Status</label>
-            <label><span class="box on">✓</span> Progress</label>
-            <label><span class="box on">✓</span> Speed / ETA</label>
-            <label><span class="box"></span> Added</label>
-            <label><span class="box"></span> Size</label>
-            <label><span class="box"></span> Destination</label>
-            <label><span class="box"></span> Attempt</label>
-            <label><span class="box"></span> Playlist</label>
-            <label class="locked"><span class="box on">✓</span> Actions</label>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste a link</div>
+          <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+          <div class="paste-stack">
+          <div class="field">
+            <input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ">
+            <span class="status">✓ Big Buck Bunny</span>
+          </div>
+          <div class="runway">
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Resolved</span></div>
+            <div class="rstep ok"><span class="rl">Media type</span>
+              <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
+            <div class="rstep ok"><span class="rl">Quality</span>
+              <span class="pick">1080p <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span>
+              <span class="pick">Downloads <span class="cv">▾</span></span></div>
+            <div class="rgo"><button class="go">Grab</button></div>
+          </div>
           </div>
         </div>
-        <table><thead><tr>
-          <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Speed / ETA <span class="sortbtn">↕</span></span></th>
-          <th>Actions</th></tr></thead><tbody>
-          <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-          <tr><td>Lo-fi beats to study to</td><td class="site">youtube.com</td><td>Audio · m4a</td><td><span class="st s-cool">cooling down</span></td><td></td><td>resumes 4:12</td><td><div class="acts"><button>▶</button><button>✕</button></div></td></tr>
-          <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">couldn’t verify you</span></td><td></td><td>—</td><td><div class="acts"><button>↻</button><button>🔑</button><button>🌐</button><button>✕</button></div></td></tr>
-          <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
-        </tbody></table>
-        <div class="toaststack"><div class="toast"><span class="tk">✓</span> Conference keynote 2024 saved <a>Reveal</a></div></div>
-        <div class="banner"><strong>Cooling down.</strong><span>YouTube asked us to pause. Downloads resume on their own in about 4 minutes.</span><button>Retry now</button></div>
+        <div class="tablewrap">
+          <div class="toolbar">
+            <button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button>
+            <button class="fc">Needs attention <span class="badge">1</span></button>
+            <button class="colbtn">⊞ Columns</button>
+          </div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Speed / ETA <span class="sortbtn">↕</span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td>Lo-fi beats to study to</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-cool">cooling down</span></td><td></td><td>resumes 4:12</td><td><div class="acts"><button>▶</button><button>✕</button></div></td></tr>
+            <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">couldn’t verify you</span></td><td></td><td>—</td><td><div class="acts"><button>↻</button><button>🔑</button><button>🌐</button><button>✕</button></div></td></tr>
+            <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
+          </tbody></table>
+          <div class="toaststack"><div class="toast"><span class="tk">✓</span> Conference keynote 2024 saved <a>Reveal</a></div></div>
+          <div class="banner"><strong>Cooling down.</strong><span>YouTube asked us to pause. Downloads resume on their own in about 4 minutes.</span><button>Retry now</button></div>
+        </div>
       </div>
     </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720. SkinnedPicker trigger ≈ 34 pt tall; runway slots divided by a 1 pt hairline.</p>
   </div>
 
-  <!-- 2: HOME + open filter menu + sort -->
-  <div class="screen">
-    <div class="cap"><b>2</b> Home — Site filter menu open</div>
-    <div class="sub">No link → runway hidden. Column filter menu open; sort + drag-handle per header.</div>
+  <!-- 1.3 -->
+  <div class="screen" id="s1-3">
+    <div class="cap"><b>1.3</b> Home — column filter menu open</div>
+    <div class="sub">No link → runway hidden. Site filter menu open; sort + drag-handle per header.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="hero">
-        <div class="kicker">Paste a link</div>
-        <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
-        <div class="field solo"><input placeholder="Paste a YouTube, Vimeo, SoundCloud… link"><button class="paste">⌘V Paste</button></div>
-      </div>
-      <div class="tablewrap short">
-        <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention</button><button class="colbtn">⊞ Columns</button></div>
-        <table><thead><tr>
-          <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn active">▼</span></span>
-            <div class="fmenu">
-              <div class="fh">Filter · Site</div>
-              <label><span class="box on">✓</span> youtube.com</label>
-              <label><span class="box on">✓</span> vimeo.com</label>
-              <label><span class="box"></span> soundcloud.com</label>
-              <div class="fact"><button>Clear</button><button class="pri">Apply</button></div>
-            </div></th>
-          <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Added <span class="sortbtn">↕</span></span></th>
-          <th>Actions</th></tr></thead><tbody>
-          <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td>just now</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-          <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">couldn’t verify you</span></td><td>5m ago</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
-        </tbody></table>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste a link</div>
+          <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+          <div class="field solo"><input placeholder="Paste a YouTube, Vimeo, SoundCloud… link"><button class="paste">⌘V Paste</button></div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention</button><button class="colbtn">⊞ Columns</button></div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn active">▼</span></span>
+              <div class="fmenu">
+                <div class="fh">Filter · Site</div>
+                <label><span class="box on">✓</span> youtube.com</label>
+                <label><span class="box on">✓</span> vimeo.com</label>
+                <label><span class="box"></span> soundcloud.com</label>
+                <div class="fact"><button>Clear</button><button class="pri">Apply</button></div>
+              </div></th>
+            <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Added <span class="sortbtn">↕</span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td>just now</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">couldn’t verify you</span></td><td>5m ago</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
+          </tbody></table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- 3: PLAYLIST PICKER MODAL -->
-  <div class="screen">
-    <div class="cap"><b>3</b> Playlist link → picker modal (opens before any rows are added)</div>
-    <div class="sub">Playlist link → picker modal, before rows are added. See design-system §4.3.</div>
+  <!-- ================= §2 ONBOARDING ================= -->
+  <div class="section-head">§2 Onboarding</div>
+
+  <div class="screen" id="s2-1">
+    <div class="cap"><b>2.1</b> First-run setup</div>
+    <div class="sub">Full-window takeover, blocks Home until yt-dlp + ffmpeg present. See design-system §4.5.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span></div>
+      <div class="body-scroll">
+        <div class="onb">
+          <div class="kicker">First run</div>
+          <h1>Let’s get you set up.</h1>
+          <p class="lead">MediaGrabber uses a few free command-line tools to do the actual downloading. One-time setup — about two minutes.</p>
+          <div class="step done"><div class="ic">✓</div><div class="body"><h3>Homebrew</h3><p>Found at /opt/homebrew/bin/brew.</p></div></div>
+          <div class="step now"><div class="ic">2</div><div class="body"><h3>Downloader + media tools</h3><p>Installs yt-dlp and ffmpeg. Required.</p><div class="cmd">brew install yt-dlp ffmpeg <button>Copy</button></div><button class="go">Install now</button></div></div>
+          <div class="step"><div class="ic">3</div><div class="body"><h3>Bot-check shield</h3><p>Installs the proof-of-origin helper so YouTube downloads don’t get blocked. Recommended.</p><div class="cmd">pipx install bgutil-ytdlp-pot-provider <button>Copy</button></div></div></div>
+          <div class="step"><div class="ic">4</div><div class="body"><h3>Test run</h3><p>We’ll grab a few seconds of a known video to confirm everything works.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= §3 PREFERENCES ================= -->
+  <div class="section-head">§3 Preferences</div>
+
+  <!-- shared rail markup is repeated per block; active item differs -->
+
+  <!-- 3.1 Downloads -->
+  <div class="screen" id="s3-1">
+    <div class="cap"><b>3.1</b> Preferences — Downloads</div>
+    <div class="sub">Fixed 980×720 window. Rail never scrolls; right pane scrolls independently — shown mid-scroll (top rows clipped). See design-system §4.6.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a class="on">Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main" style="padding-top:0">
+          <div style="height:70px"></div>
+          <h2>Downloads</h2>
+          <p class="psub">Defaults for new downloads. Change any of these per download on the Home screen.</p>
+          <div class="rule"></div>
+          <div class="field2"><div class="fl">Downloads folder</div><div class="fc"><span class="pick nochev">~/Downloads</span></div></div>
+          <div class="field2"><div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span></div></div>
+          <div class="field2"><div class="fl">Automatic retries<small>Attempts before the app asks you what to do.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">3</span><button>+</button></span></div></div>
+          <div class="field2"><div class="fl">Media type</div><div class="fc"><span class="seg"><button class="on">Video</button><button>Audio</button></span></div></div>
+          <div class="field2"><div class="fl">Video quality<small>Highest available if the exact height isn't offered.</small></div><div class="fc"><span class="pick">1080p <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Audio format</div><div class="fc"><span class="seg"><button class="on">M4A</button><button>MP3</button></span></div></div>
+          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick">Title <span class="cv">▾</span></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Clipboard detection<small>Offer to grab links you copy.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+          <div style="height:40px"></div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720 · rail width 200 · pane padding s6 = 30 · row divider 1 px <code>--hair</code> · rail never scrolls, pane region is <code>overflow:auto</code> (shown mid-scroll).</p>
+  </div>
+
+  <!-- 3.2 Appearance -->
+  <div class="screen" id="s3-2">
+    <div class="cap"><b>3.2</b> Preferences — Appearance</div>
+    <div class="sub">Theme = SkinnedSegment; Palette = 3 split-fill swatches, selected one outlined. Both apply live.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a class="on">Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Appearance</h2>
+          <p class="psub">Pick a look. Theme sets the personality; palette sets the colours.</p>
+          <div class="rule"></div>
+          <div class="field2"><div class="fl">Theme<small>Aurora is dark and luminous. Tape Deck is warm and light.</small></div><div class="fc"><span class="seg"><button class="on">Aurora</button><button>Tape Deck</button></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Palette</div><div class="fc"><div class="swatches">
+            <span class="sw on"><span class="tile"><i style="background:#5EF2C8"></i><i style="background:#8B7BFF"></i></span><span>Mint &amp; Iris</span></span>
+            <span class="sw"><span class="tile"><i style="background:#B6F04A"></i><i style="background:#4ED6A0"></i></span><span>Lime &amp; Forest</span></span>
+            <span class="sw"><span class="tile"><i style="background:#F25C9E"></i><i style="background:#9B6BFF"></i></span><span>Magenta &amp; Violet</span></span>
+          </div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.3 Network -->
+  <div class="screen" id="s3-3">
+    <div class="cap"><b>3.3</b> Preferences — Network</div>
+    <div class="sub">Speed limit stepper shows <code>Off</code> at 0. Flags apply to new downloads only.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a class="on">Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Network</h2>
+          <p class="psub">Applied to new downloads.</p>
+          <div class="rule"></div>
+          <div class="field2"><div class="fl">Proxy server<small>http://host:port — blank for none.</small></div><div class="fc"><input type="text" placeholder="http://host:port"></div></div>
+          <div class="field2"><div class="fl">Force IPv4<small>Can help when connections stall.</small></div><div class="fc"><span class="toggle"></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Speed limit<small>Applies to each download separately.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">Off</span><button>+</button></span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.4 Sign-in & cookies -->
+  <div class="screen" id="s3-4">
+    <div class="cap"><b>3.4</b> Preferences — Sign-in &amp; cookies (stepless)</div>
+    <div class="sub">Present in the rail; title + sub + one plain-language line. No rows, no controls.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="stepless"><p class="later">Cookie sign-in is coming in a later update.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.5 Updates -->
+  <div class="screen" id="s3-5">
+    <div class="cap"><b>3.5</b> Preferences — Updates (stepless)</div>
+    <div class="sub">Same stepless shape as 3.4.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a class="on">Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Updates</h2>
+          <p class="psub">Check for new versions of the app and the downloader.</p>
+          <div class="rule"></div>
+          <div class="stepless"><p class="later">Update checks are coming in a later update.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.6 Logs & privacy -->
+  <div class="screen" id="s3-6">
+    <div class="cap"><b>3.6</b> Preferences — Logs &amp; privacy</div>
+    <div class="sub">Three rows; two button actions and a toggle.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a class="on">Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Logs &amp; privacy</h2>
+          <p class="psub">What the app records, and where to find it.</p>
+          <div class="rule"></div>
+          <div class="field2"><div class="fl">Log files</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="field2"><div class="fl">Verbose logging<small>More detail for troubleshooting.</small></div><div class="fc"><span class="toggle"></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Privacy details</div><div class="fc"><button class="btn-txt">Open</button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.7 Advanced -->
+  <div class="screen" id="s3-7">
+    <div class="cap"><b>3.7</b> Preferences — Advanced</div>
+    <div class="sub">Reset options only. "Reset settings" in <code>--danger</code> style.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Advanced</h2>
+          <p class="psub">Reset options. These don't touch your downloaded files.</p>
+          <div class="rule"></div>
+          <div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="field2"><div class="fl">Reset columns<small>Table layout back to default.</small></div><div class="fc"><button class="btn-txt">Reset</button></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Reset settings<small>All preferences back to default. Downloads are untouched.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.8 Control details -->
+  <div class="screen" id="s3-8">
+    <div class="cap"><b>3.8</b> Preferences — control details</div>
+    <div class="sub">Pane-region fragments, not full windows. Concurrency note · custom filename field · open picker popover.</div>
+    <div class="app" style="height:auto;min-height:640px">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="body-scroll" style="padding:var(--sp-6)">
+
+        <div class="frag">
+          <div class="fraglabel">1 · Concurrency note — "Simultaneous downloads" row, expanded</div>
+          <div class="field2" style="border-bottom:none;align-items:flex-start">
+            <div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div>
+            <div class="fc">
+              <span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span>
+              <span class="note"><span class="wg">⚠</span><span>3 still running — the new limit applies as they finish.</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="frag">
+          <div class="fraglabel">2 · Custom filename — "Filename format" row with Custom… selected</div>
+          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick">Custom… <span class="cv">▾</span></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Template</div><div class="fc"><input type="text" class="mono" value="%(title)s - %(id)s.%(ext)s" style="min-width:300px"></div></div>
+        </div>
+
+        <div class="frag" style="min-height:300px">
+          <div class="fraglabel">3 · Open picker popover — "Filename format" SkinnedPicker, popover open</div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Filename format</div><div class="fc"><span class="pick">Title <span class="cv">▾</span></span></div></div>
+          <div class="pop" style="right:22px;top:64px;width:320px">
+            <div class="ph">File naming</div>
+            <div class="prow"><span class="pt"><span class="ck">✓</span>Title</span><span class="pst">Never Gonna Give You Up.mp4</span></div>
+            <div class="prow" style="background:color-mix(in srgb,var(--accent) 12%,transparent)"><span class="pt"><span class="ck"></span>Title – channel</span><span class="pst">Never Gonna Give You Up - Rick Astley.mp4</span></div>
+            <div class="prow"><span class="pt"><span class="ck"></span>Date – title</span><span class="pst">2009-10-25 - Never Gonna Give You Up.mp4</span></div>
+            <div class="prow"><span class="pt"><span class="ck"></span>Custom…</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — file-naming picker popover ≈ 320 pt wide (content-sized, clamped <code>[trigger … 340pt]</code>) · concurrency-note row grows in height, no other row does.</p>
+  </div>
+
+  <!-- ================= §4 DIALOGS ================= -->
+  <div class="section-head">§4 Dialogs</div>
+
+  <!-- 4.1 destructive -->
+  <div class="screen" id="s4-1">
+    <div class="cap"><b>4.1</b> Confirmation — destructive variant</div>
+    <div class="sub">Card max-width 420 over a dimmed Advanced pane. Warn glyph tinted <code>--danger</code>; Reset in <code>--danger</code> fill; initial focus ring on Cancel. See design-system §4.8.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs" style="opacity:.4">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Advanced</h2><p class="psub">Reset options. These don't touch your downloaded files.</p><div class="rule"></div>
+          <div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Reset settings<small>All preferences back to default.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
+        </div>
+      </div>
+      <div class="scrim">
+        <div class="cdialog">
+          <div class="cglyph">⚠</div>
+          <div class="ct">Reset settings?</div>
+          <div class="cm">All preferences go back to their defaults. Your downloads and table columns aren't affected.</div>
+          <div class="cbtns"><button class="focusring">Cancel</button><button class="danger">Reset</button></div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720 · confirmation card max-width 420 · scrim is <code>--ground</code> at 60% · padding s5, s4 between rows.</p>
+  </div>
+
+  <!-- 4.2 notice -->
+  <div class="screen" id="s4-2">
+    <div class="cap"><b>4.2</b> Confirmation — notice variant</div>
+    <div class="sub">Same card, no glyph, single OK button.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs" style="opacity:.4">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Advanced</h2><p class="psub">Reset options. These don't touch your downloaded files.</p><div class="rule"></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+        </div>
+      </div>
+      <div class="scrim">
+        <div class="cdialog">
+          <div class="ct">Those files were moved</div>
+          <div class="cm">The folder this download was saved to isn't where it used to be. Nothing was deleted — you'll need to point the app at the new location.</div>
+          <div class="cbtns"><button class="focusring">OK</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= §5 PLAYLIST ================= -->
+  <div class="section-head">§5 Playlist</div>
+
+  <!-- 5.1 picker modal -->
+  <div class="screen" id="s5-1">
+    <div class="cap"><b>5.1</b> Playlist link → picker modal</div>
+    <div class="sub">Opens before any rows are added. Runway uses the same skinned-control swap as §1. See design-system §4.3.</div>
+    <div class="phase-note">(depiction is refined when this screen's phase is detailed)</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="hero">
-        <div class="kicker">Paste a link</div>
-        <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
-        <div class="paste-stack">
-        <div class="field"><input value="youtube.com/playlist?list=PLbpi6…"><span class="status">✓ “Focus — deep work” · 24 items</span></div>
-        <div class="runway">
-          <div class="rstep ok"><span class="rl">Link</span><span class="rv">Playlist · 24</span></div>
-          <div class="rstep ok"><span class="rl">Type</span><span class="rv">Audio ▾</span></div>
-          <div class="rstep ok"><span class="rl">Format</span><span class="rv">m4a ▾</span></div>
-          <div class="rstep ok"><span class="rl">Save to</span><span class="rv">Music/Rips ▾</span></div>
-          <div class="rgo"><button class="go">Choose…</button></div>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste a link</div>
+          <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+          <div class="paste-stack">
+          <div class="field"><input value="youtube.com/playlist?list=PLbpi6…"><span class="status">✓ “Focus — deep work” · 24 items</span></div>
+          <div class="runway">
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Playlist · 24</span></div>
+            <div class="rstep ok"><span class="rl">Media type</span>
+              <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
+            <div class="rstep ok"><span class="rl">Format</span>
+              <span class="seg"><button class="on">M4A</button><button>MP3</button></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span>
+              <span class="pick">Rips <span class="cv">▾</span></span></div>
+            <div class="rgo"><button class="go">Add 12</button></div>
+          </div>
+          </div>
         </div>
+        <div class="tablewrap short"><div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button></div>
+          <table><thead><tr><th>Title</th><th>Site</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+            <tr><td>Podcast ep. 214</td><td class="site">soundcloud.com</td><td><span class="st s-done">saved</span></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
+          </tbody></table>
         </div>
-      </div>
-      <div class="tablewrap short"><div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button></div>
-        <table><thead><tr><th>Title</th><th>Site</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-          <tr><td>Podcast ep. 214</td><td class="site">soundcloud.com</td><td><span class="st s-done">saved</span></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
-        </tbody></table>
       </div>
       <div class="backdrop">
         <div class="modal">
@@ -536,125 +978,67 @@ tbody tr:hover td{background:var(--panel)}
     </div>
   </div>
 
-  <!-- 4: PLAYLIST GROUP IN TABLE -->
-  <div class="screen">
-    <div class="cap"><b>4</b> Playlist videos in the table — group header + spine</div>
+  <!-- 5.2 group in table -->
+  <div class="screen" id="s5-2">
+    <div class="cap"><b>5.2</b> Playlist videos in the table — group header + spine</div>
     <div class="sub">Group header + continuous spine. See design-system §4.2.4.</div>
+    <div class="phase-note">(depiction is refined when this screen's phase is detailed)</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="tablewrap short" style="padding-top:18px">
-        <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention <span class="badge">1</span></button><button class="colbtn">⊞ Columns</button></div>
-        <table><thead><tr>
-          <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-          <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
-          <th>Actions</th></tr></thead><tbody>
-          <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-
-          <tr class="ghead"><td colspan="6"><div class="gh">
-            <span class="caret">▾</span> Focus — deep work
-            <span class="meta2">· 12 items · 4 done <span class="gminibar"><i style="width:33%"></i></span></span>
-            <span class="gact"><button>⏸ Pause all</button><button>↻ Retry failed</button><button>✕ Cancel all</button></span>
-          </div></td></tr>
-          <tr class="child"><td><span class="ti"><span class="rr"></span>01 — Sunrise Loop</span></td><td class="site">youtube.com</td><td>Audio · m4a</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:80%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-          <tr class="child"><td>02 — Tidewater</td><td class="site">youtube.com</td><td>Audio · m4a</td><td><span class="st s-queue">queued</span></td><td></td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
-          <tr class="child"><td>04 — Long Exposure</td><td class="site">youtube.com</td><td>Audio · m4a</td><td><span class="st s-fail">couldn’t verify you</span></td><td></td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
-          <tr class="child"><td>06 — Slow Ferry</td><td class="site">youtube.com</td><td>Audio · m4a</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
-
-          <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
-        </tbody></table>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5: ONBOARDING -->
-  <div class="screen">
-    <div class="cap"><b>5</b> First run — get set up</div>
-    <div class="sub">Full-window takeover, blocks Home until yt-dlp + ffmpeg present. See design-system §4.5.</div>
-    <div class="app">
-      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span></div>
-      <div class="onb">
-        <div class="kicker">First run</div>
-        <h1>Let’s get you set up.</h1>
-        <p class="lead">MediaGrabber uses a few free command-line tools to do the actual downloading. One-time setup — about two minutes.</p>
-        <div class="step done"><div class="ic">✓</div><div class="body"><h3>Homebrew</h3><p>Found at /opt/homebrew/bin/brew.</p></div></div>
-        <div class="step now"><div class="ic">2</div><div class="body"><h3>Downloader + media tools</h3><p>Installs yt-dlp and ffmpeg. Required.</p><div class="cmd">brew install yt-dlp ffmpeg <button>Copy</button></div><button class="go">Install now</button></div></div>
-        <div class="step"><div class="ic">3</div><div class="body"><h3>Bot-check shield</h3><p>Installs the proof-of-origin helper so YouTube downloads don’t get blocked. Recommended.</p><div class="cmd">pipx install bgutil-ytdlp-pot-provider <button>Copy</button></div></div></div>
-        <div class="step"><div class="ic">4</div><div class="body"><h3>Test run</h3><p>We’ll grab a few seconds of a known video to confirm everything works.</p></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 6: PREFERENCES -->
-  <div class="screen">
-    <div class="cap"><b>6</b> Preferences — in-app page</div>
-    <div class="sub">In-app page, grouped left rail. Full contents in design-system §4.6.</div>
-    <div class="app">
-      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
-      <div class="prefs">
-        <div class="side">
-          <div class="grp">General</div><a class="on">Downloads</a><a>Appearance</a><a>Network</a>
-          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
-        </div>
-        <div class="main">
-          <h2>Downloads</h2>
-          <p>Defaults for every new download. You can still change any of these per download on the Home screen.</p>
-          <div class="field2"><div class="fl">Save to<small>Where finished files go by default.</small></div><div class="fc"><input type="text" value="~/Downloads"></div></div>
-          <div class="field2"><div class="fl">At the same time<small>How many downloads run at once. The app lowers this on its own if a site starts throttling.</small></div><div class="fc"><div class="stepper"><button>–</button>2<button>+</button></div></div></div>
-          <div class="field2"><div class="fl">Default type</div><div class="fc"><select><option>Video</option><option>Audio</option></select></div></div>
-          <div class="field2"><div class="fl">Default video quality</div><div class="fc"><select><option>1080p</option><option>720p</option><option>Best available</option></select></div></div>
-          <div class="field2"><div class="fl">Default audio format</div><div class="fc"><select><option>m4a</option><option>mp3</option></select></div></div>
-          <div class="field2"><div class="fl">File naming<small>Template for saved filenames.</small></div><div class="fc"><input type="text" value="%(title)s.%(ext)s"></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Watch the clipboard<small>Offer to grab a link when you copy one and switch to the app.</small></div><div class="fc"><span class="toggle on"></span></div></div>
-        </div>
-      </div>
-    </div>
-    <div class="sub" style="margin-top:12px">Appearance pane — Skin + Palette pickers.</div>
-    <div class="app">
-      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
-      <div class="prefs">
-        <div class="side">
-          <div class="grp">General</div><a>Downloads</a><a class="on">Appearance</a><a>Network</a>
-          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
-        </div>
-        <div class="main">
-          <h2>Appearance</h2>
-          <p>Pick a look. Skin sets the personality; palette sets the colours.</p>
-          <div class="field2"><div class="fl">Skin<small>Tape Deck is warm and light. Aurora is dark and luminous.</small></div><div class="fc"><select><option>Aurora</option><option>Tape Deck</option></select></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Palette<small>Three colour sets for the Aurora skin.</small></div><div class="fc"><div class="swatches"><span class="sw on" style="background:linear-gradient(135deg,#5EF2C8,#8B7BFF)"></span><span class="sw" style="background:linear-gradient(135deg,#B6F04A,#4ED6A0)"></span><span class="sw" style="background:linear-gradient(135deg,#F25C9E,#9B6BFF)"></span></div></div></div>
+      <div class="body-scroll">
+        <div class="tablewrap short" style="padding-top:18px">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention <span class="badge">1</span></button><button class="colbtn">⊞ Columns</button></div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr class="ghead"><td colspan="6"><div class="gh">
+              <span class="caret">▾</span> Focus — deep work
+              <span class="meta2">· 12 items · 4 done <span class="gminibar"><i style="width:33%"></i></span></span>
+              <span class="gact"><button>⏸ Pause all</button><button>↻ Retry failed</button><button>✕ Cancel all</button></span>
+            </div></td></tr>
+            <tr class="child"><td><span class="ti"><span class="rr"></span>01 — Sunrise Loop</span></td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:80%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>02 — Tidewater</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-queue">queued</span></td><td></td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>04 — Long Exposure</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-fail">couldn’t verify you</span></td><td></td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>06 — Slow Ferry</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
+            <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
+          </tbody></table>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 7: DIAGNOSTICS -->
-  <div class="screen">
-    <div class="cap"><b>7</b> Diagnostics</div>
+  <!-- ================= §6 DIAGNOSTICS ================= -->
+  <div class="section-head">§6 Diagnostics</div>
+
+  <div class="screen" id="s6-1">
+    <div class="cap"><b>6.1</b> Diagnostics — report card</div>
     <div class="sub">Run check → report card. See design-system §4.7.</div>
+    <div class="phase-note">(depiction is refined when this screen's phase is detailed)</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">Diagnostics</a></nav></div>
-      <div class="diag">
-        <button class="runbtn">Run check</button>
-        <div class="report">
-          <div class="rrow"><span class="rk">Canary probe</span><span class="rv ok">passed · 1.2 s</span></div>
-          <div class="rrow"><span class="rk">yt-dlp</span><span class="rv ok">2026.08.19 · current</span></div>
-          <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
-          <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
-          <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
-          <div class="rrow"><span class="rk">Detected client</span><span class="rv">tv</span></div>
-          <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv warn">active · 4:12 left</span></div>
-          <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+      <div class="body-scroll">
+        <div class="diag">
+          <button class="runbtn">Run check</button>
+          <div class="report">
+            <div class="rrow"><span class="rk">Canary probe</span><span class="rv ok">passed · 1.2 s</span></div>
+            <div class="rrow"><span class="rk">yt-dlp</span><span class="rv ok">2026.08.19 · current</span></div>
+            <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
+            <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
+            <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv">tv</span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv warn">active · 4:12 left</span></div>
+            <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+          </div>
+          <button class="copy">Copy report</button>
         </div>
-        <button class="copy">Copy report</button>
       </div>
     </div>
   </div>
@@ -667,19 +1051,19 @@ tbody tr:hover td{background:var(--panel)}
     tapedeck:[["teal","Teal & Rust"],["plum","Plum & Blush"],["navy","Navy & Aqua"]],
   };
   const root = document.documentElement;
-  let skin = "aurora", pal = "mint";
+  let theme = "aurora", pal = "mint";
   function apply(){
-    root.setAttribute("data-skin", skin);
+    root.setAttribute("data-theme", theme);
     root.setAttribute("data-palette", pal);
-    document.querySelectorAll('.switch [data-s]').forEach(b=>b.classList.toggle('on', b.dataset.s===skin));
+    document.querySelectorAll('.switch [data-s]').forEach(b=>b.classList.toggle('on', b.dataset.s===theme));
     const box = document.getElementById('palset'); box.innerHTML = "";
-    PALS[skin].forEach(([id,label])=>{
+    PALS[theme].forEach(([id,label])=>{
       const b=document.createElement('button'); b.textContent=label; b.className = id===pal?'on':'';
       b.onclick=()=>{pal=id;apply()}; box.appendChild(b);
     });
   }
   document.querySelectorAll('.switch [data-s]').forEach(b=>{
-    b.onclick=()=>{skin=b.dataset.s; pal=PALS[skin][0][0]; apply()};
+    b.onclick=()=>{theme=b.dataset.s; pal=PALS[theme][0][0]; apply()};
   });
   apply();
 </script>
