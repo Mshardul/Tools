@@ -64,6 +64,7 @@ extension DownloadEngine {
     func recordExit(
         _ id: UUID,
         _ result: ProcessResult,
+        integrity: IntegrityResult?,
         lastError: ErrorClass?,
         launchFailed: Bool
     ) {
@@ -85,14 +86,64 @@ extension DownloadEngine {
         if result.wasCancelled {
             job.state = .cancelled
             job.finishedAt = .now
-        } else if result.exitCode == 0 {
-            job.outputFiles = finalizedOutputFiles(for: job)
-            job.state = .completed
-            job.finishedAt = .now
-        } else {
-            job.state = .failed(lastError ?? .unknown(raw: "yt-dlp exited \(result.exitCode)"))
-            job.finishedAt = .now
+            finishTerminal()
+            return
         }
+
+        if result.exitCode == 0 {
+            job.actualQuality = integrity?.actualQuality
+            switch integrity?.verdict {
+            case .passed, .skipped, nil:
+                job.integrityVerdict = integrity?.verdict
+                job.outputFiles = finalizedOutputFiles(for: job)
+                job.state = .completed
+                job.finishedAt = .now
+                finishTerminal()
+                return
+            case .failed:
+                job.integrityVerdict = integrity?.verdict
+            }
+        }
+
+        let errorClass = classifyExit(result: result, lastError: lastError)
+        if errorClass.isAutoRetryable, job.attempt < preferences.maxAutoRetries {
+            reQueueForBackoff(job, id: id, errorClass: errorClass)
+            return
+        }
+
+        job.state = .failed(errorClass)
+        job.finishedAt = .now
+        finishTerminal()
+    }
+
+    private func classifyExit(result: ProcessResult, lastError: ErrorClass?) -> ErrorClass {
+        if result.exitCode == 0 {
+            return .incomplete
+        }
+        return lastError ?? .unknown(raw: "yt-dlp exited \(result.exitCode)")
+    }
+
+    // .running -> .queued with attempt bumped and a pending deferral — one sync mutation,
+    // no transient .failed snapshot. nextDownloads skips deferredIDs until the backoff fires.
+    private func reQueueForBackoff(_ job: DownloadJob, id: UUID, errorClass: ErrorClass) {
+        job.attempt += 1
+        job.state = .queued
+        job.progress = nil
+        let deadline = dependencies.clock.now.addingTimeInterval(
+            Backoff.delay(
+                attempt: job.attempt,
+                retryAfter: errorClass.retryAfterSeconds,
+                tuning: dependencies.tuning
+            )
+        )
+        bump()
+        emitSnapshot()
+        logEvent(.jobDeferred(id: id, until: deadline, reason: .backoff(attempt: job.attempt)))
+        deferStart(id, until: deadline)
+        evaluateSchedule()
+    }
+
+    func finishTerminal() {
         enforceTerminalCap()
         bump()
         emitSnapshot()

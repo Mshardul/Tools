@@ -13,6 +13,8 @@ enum AppModelTestHelpers {
         envReady: Bool = true,
         debugFlags: DebugFlags = DebugFlags(),
         revealSink: FakeRevealSink = FakeRevealSink(),
+        openURLSink: FakeOpenURLSink = FakeOpenURLSink(),
+        engineJobLogDir: URL? = nil,
         persistence: FakeQueuePersisting? = nil
     ) -> AppModel {
         AppModel(
@@ -27,6 +29,8 @@ enum AppModelTestHelpers {
             envProbe: FakeEnvironmentProbe(ready: envReady),
             debugFlags: debugFlags,
             revealSink: revealSink,
+            openURLSink: openURLSink,
+            engineJobLogDir: engineJobLogDir ?? logDirectory,
             persistence: persistence
         )
     }

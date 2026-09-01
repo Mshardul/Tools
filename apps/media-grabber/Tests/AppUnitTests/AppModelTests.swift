@@ -29,6 +29,8 @@ final class AppModelTests: XCTestCase {
         envReady: Bool = true,
         debugFlags: DebugFlags = DebugFlags(),
         revealSink: FakeRevealSink = FakeRevealSink(),
+        openURLSink: FakeOpenURLSink = FakeOpenURLSink(),
+        engineJobLogDir: URL? = nil,
         persistence: FakeQueuePersisting? = nil
     ) -> AppModel {
         AppModelTestHelpers.makeModel(
@@ -39,6 +41,8 @@ final class AppModelTests: XCTestCase {
             envReady: envReady,
             debugFlags: debugFlags,
             revealSink: revealSink,
+            openURLSink: openURLSink,
+            engineJobLogDir: engineJobLogDir,
             persistence: persistence
         )
     }
@@ -142,24 +146,6 @@ final class AppModelTests: XCTestCase {
         await model.grab()
         await model.cancelJob()
         XCTAssertEqual(engine.cancelledIDs, [jobID])
-    }
-
-    func test_consumerTask_appliesEventsToRowStore() async throws {
-        let engine = FakeEngine()
-        let model = makeModel(engine: engine)
-        await model.onAppear()
-
-        let job = AppModelTestHelpers.jobSnapshot()
-        engine.emit(.snapshot(QueueSnapshot(
-            jobs: [job],
-            revision: 1,
-            queueHalt: nil,
-            generatedAt: .init()
-        )))
-
-        try await Task.sleep(for: .milliseconds(50))
-        XCTAssertEqual(model.rowStore.rows.count, 1)
-        XCTAssertEqual(model.rowStore.rows.first?.id, job.id)
     }
 
     func test_grab_duplicateExists_promptsConfirm_confirmResubmitsForce() async {

@@ -110,7 +110,10 @@ final class DownloadsTableTests: XCTestCase {
             case .reveal:
                 XCTAssertTrue(completedEnabled, "\(action)")
                 XCTAssertFalse(queuedEnabled, "\(action)")
-            case .resume, .retry, .retryWithCookies, .showLog:
+            case .showLog:
+                XCTAssertTrue(completedEnabled, "\(action)")
+                XCTAssertFalse(queuedEnabled, "\(action)")
+            case .resume, .retry, .retryWithCookies:
                 XCTAssertFalse(queuedEnabled, "\(action)")
                 XCTAssertFalse(completedEnabled, "\(action)")
             }

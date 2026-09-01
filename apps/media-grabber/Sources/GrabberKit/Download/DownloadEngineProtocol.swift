@@ -15,6 +15,7 @@ public protocol DownloadEngineProtocol: Sendable {
 
     func pause(_ id: UUID) async
     func resume(_ id: UUID) async
+    func retry(_ id: UUID) async
     func cancel(_ id: UUID) async
     func remove(_ id: UUID) async
     func forceStart(_ id: UUID) async
@@ -39,6 +40,8 @@ public struct EngineDependencies: Sendable {
     public var ytDlpVersion: String
     public var jobLogDir: URL
     public var debugFlags: EngineDebugFlags
+    public var tuning: EngineTuning
+    public var ffprobeURL: URL?
     public var log: LogWriter?
     public var persistence: any QueuePersisting
     // Called on remove(_:) to delete the job's raw log; defaults to JobLog.delete.
@@ -53,6 +56,8 @@ public struct EngineDependencies: Sendable {
         ytDlpVersion: String = "unknown",
         jobLogDir: URL = JobLog.defaultDir,
         debugFlags: EngineDebugFlags = .init(),
+        tuning: EngineTuning = .default,
+        ffprobeURL: URL? = nil,
         log: LogWriter? = nil,
         persistence: any QueuePersisting = NoopPersisting(),
         deleteJobLog: (@Sendable (UUID) -> Void)? = nil
@@ -65,6 +70,8 @@ public struct EngineDependencies: Sendable {
         self.ytDlpVersion = ytDlpVersion
         self.jobLogDir = jobLogDir
         self.debugFlags = debugFlags
+        self.tuning = tuning
+        self.ffprobeURL = ffprobeURL
         self.log = log
         self.persistence = persistence
         if let deleteJobLog {
@@ -76,6 +83,7 @@ public struct EngineDependencies: Sendable {
 
     public static func live(
         ytDlpURL: URL,
+        ffprobeURL: URL? = nil,
         debugFlags: EngineDebugFlags = .init(),
         log: LogWriter? = nil,
         persistence: (any QueuePersisting)? = nil
@@ -88,9 +96,17 @@ public struct EngineDependencies: Sendable {
             clock: SystemClock(),
             ytDlpURL: ytDlpURL,
             debugFlags: debugFlags,
+            tuning: .resolved(),
+            ffprobeURL: ffprobeURL ?? Self.locateFfprobe(),
             log: log,
             persistence: persistence ?? NoopPersisting()
         )
+    }
+
+    private static func locateFfprobe() -> URL? {
+        ["/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe"]
+            .first { FileManager.default.isExecutableFile(atPath: $0) }
+            .map(URL.init(fileURLWithPath:))
     }
 }
 

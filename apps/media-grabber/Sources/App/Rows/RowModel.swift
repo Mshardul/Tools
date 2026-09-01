@@ -23,17 +23,24 @@ final class RowModel: Identifiable {
     // Test hook: how many times display strings were recomputed.
     private(set) var recomputeCount = 0
 
-    init(_ snapshot: JobSnapshot, queuePosition: Int?) {
+    // The current Preferences.maxAutoRetries — the "attempt N of M" status needs it, and it
+    // must track a live pref change, so AppModel threads it in on every apply.
+    private var maxAutoRetries: Int
+
+    init(_ snapshot: JobSnapshot, queuePosition: Int?, maxAutoRetries: Int = 5) {
         id = snapshot.id
         self.snapshot = snapshot
+        self.maxAutoRetries = maxAutoRetries
         recomputeAll(queuePosition: queuePosition)
     }
 
     // Returns true if a field that affects filter/sort/grouping changed.
     @discardableResult
-    func patch(_ next: JobSnapshot, queuePosition: Int?) -> Bool {
+    func patch(_ next: JobSnapshot, queuePosition: Int?, maxAutoRetries: Int = 5) -> Bool {
         let old = snapshot
         snapshot = next
+        let retriesChanged = self.maxAutoRetries != maxAutoRetries
+        self.maxAutoRetries = maxAutoRetries
 
         let stateChanged = old.state != next.state
         let progressChanged = old.progress != next.progress
@@ -42,16 +49,18 @@ final class RowModel: Identifiable {
         let extractorChanged = old.extractor != next.extractor
         let durationChanged = old.durationSeconds != next.durationSeconds
         let kindChanged = old.kind != next.kind
+        let qualityChanged = old.actualQuality != next.actualQuality
         let badgeChanged = queueBadge != Self.badge(for: next, position: queuePosition)
 
         guard stateChanged || progressChanged || sizeChanged || titleChanged
-            || extractorChanged || durationChanged || kindChanged || badgeChanged
+            || extractorChanged || durationChanged || kindChanged || qualityChanged
+            || badgeChanged || retriesChanged
         else {
             return false
         }
 
-        if stateChanged || progressChanged {
-            statusText = Self.status(for: next)
+        if stateChanged || progressChanged || retriesChanged {
+            statusText = Self.status(for: next, maxAutoRetries: maxAutoRetries)
         }
         if stateChanged || progressChanged {
             speedText = Self.speed(for: next)
@@ -71,7 +80,7 @@ final class RowModel: Identifiable {
         if kindChanged {
             typeLabel = Self.type(for: next)
         }
-        if kindChanged {
+        if kindChanged || qualityChanged {
             qualityLabel = Self.quality(for: next)
         }
         if badgeChanged {
@@ -94,7 +103,7 @@ final class RowModel: Identifiable {
             playerClientUsed: known.playerClientUsed, playlistGroupID: known.playlistGroupID,
             integrityVerdict: known.integrityVerdict, availableActions: known.availableActions
         )
-        statusText = Self.status(for: snapshot)
+        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries)
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -102,7 +111,7 @@ final class RowModel: Identifiable {
     }
 
     private func recomputeAll(queuePosition: Int?) {
-        statusText = Self.status(for: snapshot)
+        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries)
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -118,9 +127,12 @@ final class RowModel: Identifiable {
 // MARK: - Derivations
 
 extension RowModel {
-    static func status(for snapshot: JobSnapshot) -> String {
+    static func status(for snapshot: JobSnapshot, maxAutoRetries: Int = 5) -> String {
         switch snapshot.state {
-        case .queued: "Queued"
+        case .queued:
+            snapshot.attempt > 0
+                ? "Retrying — attempt \(snapshot.attempt + 1) of \(maxAutoRetries)"
+                : "Queued"
         case .probing: "Resolving…"
         case .running:
             snapshot.progress.map { "Downloading \(Int($0.fraction * 100))%" } ?? "Downloading"
@@ -129,19 +141,7 @@ extension RowModel {
         case .cooldown: "Cooling down"
         case .completed: "Saved"
         case .cancelled: "Cancelled"
-        case let .failed(errorClass): "Failed — \(failureReason(errorClass))"
-        }
-    }
-
-    private static func failureReason(_ errorClass: ErrorClass) -> String {
-        switch errorClass {
-        case .networkDown: "no internet connection"
-        case .depMissing: "yt-dlp is missing"
-        case .diskFull: "the disk is full"
-        case .permissionDenied: "the folder isn't writable"
-        case .incomplete: "the download ended early"
-        case let .unknown(raw): raw
-        default: "download failed"
+        case let .failed(errorClass): "Failed — \(errorClass.presentation.sentence)"
         }
     }
 
@@ -182,14 +182,16 @@ extension RowModel {
     }
 
     static func quality(for snapshot: JobSnapshot) -> String {
-        switch snapshot.kind {
+        let request: String = switch snapshot.kind {
         case let .video(maxHeight): "\(maxHeight)p"
         case let .audio(format): format.rawValue
         }
+        guard let actual = snapshot.actualQuality, actual != request else { return request }
+        return "\(request) → \(actual)"
     }
 
     static func badge(for snapshot: JobSnapshot, position: Int?) -> String? {
-        guard snapshot.state == .queued, let position else { return nil }
+        guard snapshot.state == .queued, snapshot.attempt == 0, let position else { return nil }
         return "#\(position)"
     }
 

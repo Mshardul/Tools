@@ -29,6 +29,15 @@ enum AppModelDialogs {
         )
     }
 
+    static func showLogMissingNotice() -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Log unavailable",
+            message: "The log for this download is no longer available.",
+            confirmTitle: "OK",
+            cancelTitle: nil
+        )
+    }
+
     static func probeErrorMessage(for error: MetadataError) -> String {
         switch error {
         case .badURL: "That doesn't look like a valid link."

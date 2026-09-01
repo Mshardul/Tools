@@ -12,6 +12,9 @@ final class DownloadJob {
     var sizeBytes: Int64?
     var attempt: Int
     var outputFiles: [URL]
+    // Runtime-only (not persisted) — set on completion / a failed integrity check.
+    var integrityVerdict: IntegrityVerdict?
+    var actualQuality: String?
     var capturedOutputPaths: [URL] = []
     let addedAt: Date
     var finishedAt: Date?
@@ -30,6 +33,8 @@ final class DownloadJob {
         sizeBytes = nil
         attempt = 0
         outputFiles = []
+        integrityVerdict = nil
+        actualQuality = nil
         finishedAt = nil
         startedAt = nil
     }
@@ -49,12 +54,12 @@ final class DownloadJob {
             destFolder: request.destFolder,
             outputFiles: outputFiles,
             sizeBytes: sizeBytes,
-            actualQuality: nil,
+            actualQuality: actualQuality,
             attempt: attempt,
             cooldownUntil: nil,
             playerClientUsed: nil,
             playlistGroupID: nil,
-            integrityVerdict: nil,
+            integrityVerdict: integrityVerdict,
             availableActions: availableActions
         )
     }

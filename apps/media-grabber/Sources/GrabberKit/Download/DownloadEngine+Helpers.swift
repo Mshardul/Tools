@@ -8,15 +8,17 @@ extension DownloadEngine {
         case .probing:
             [.cancel, .remove, .openInBrowser]
         case .running:
-            [.pause, .cancel, .remove, .openInBrowser]
+            [.pause, .cancel, .remove, .openInBrowser, .showLog]
         case .paused:
-            [.resume, .cancel, .remove, .openInBrowser]
+            [.resume, .cancel, .remove, .openInBrowser, .showLog]
         case .waitingForNetwork, .cooldown:
             [.cancel, .remove, .openInBrowser]
         case .completed:
-            [.reveal, .remove, .openInBrowser]
-        case .cancelled, .failed:
-            [.remove, .openInBrowser]
+            [.reveal, .remove, .openInBrowser, .showLog]
+        case .cancelled:
+            [.remove, .openInBrowser, .showLog]
+        case let .failed(errorClass):
+            errorClass.presentation.offeredActions.union([.remove, .openInBrowser, .showLog])
         }
     }
 
@@ -117,7 +119,7 @@ extension DownloadEngine {
     }
 
     // yt-dlp's %(title)s sanitiser strips path separators and control characters.
-    private static func titleStem(_ title: String) -> String {
+    static func titleStem(_ title: String) -> String {
         String(title.unicodeScalars.filter { scalar in
             scalar != "/" && !CharacterSet.controlCharacters.contains(scalar)
         })

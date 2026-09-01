@@ -28,6 +28,7 @@ public enum LogEvent: Sendable {
     case jobRemoved(id: UUID, wasRunning: Bool)
     case jobForceStarted(id: UUID, evicted: UUID?)
     case jobDeferred(id: UUID, until: Date, reason: DeferReason)
+    case jobRetried(id: UUID)
     case persistenceLoaded(file: String, count: Int)
     case persistenceCorrupt(file: String)
     case persistenceSchemaAhead(file: String)
@@ -35,6 +36,7 @@ public enum LogEvent: Sendable {
     case persistenceRecovered(file: String)
     case consumerStreamEnded
     case revealTargetMissing(jobID: UUID)
+    case showLogTargetMissing(jobID: UUID)
     case jobDuplicateSubmitPrompted(existing: UUID)
     case jobDuplicateSubmitConfirmed
     case jobDuplicateSubmitCancelled
@@ -53,6 +55,7 @@ public enum LogEvent: Sendable {
         case .jobRemoved: "job.removed"
         case .jobForceStarted: "job.force_started"
         case .jobDeferred: "job.deferred"
+        case .jobRetried: "job.retried"
         case .persistenceLoaded: "persistence.loaded"
         case .persistenceCorrupt: "persistence.corrupt"
         case .persistenceSchemaAhead: "persistence.schema_ahead"
@@ -60,6 +63,7 @@ public enum LogEvent: Sendable {
         case .persistenceRecovered: "persistence.recovered"
         case .consumerStreamEnded: "consumer.stream_ended"
         case .revealTargetMissing: "reveal.target_missing"
+        case .showLogTargetMissing: "show_log.target_missing"
         case .jobDuplicateSubmitPrompted: "job.duplicate_submit_prompted"
         case .jobDuplicateSubmitConfirmed: "job.duplicate_submit_confirmed"
         case .jobDuplicateSubmitCancelled: "job.duplicate_submit_cancelled"
@@ -73,12 +77,12 @@ public enum LogEvent: Sendable {
         case .jobStateChanged: .engine
         case .processLaunched, .processExited: .engine
         case .jobEnqueued, .jobStartedByScheduler: .scheduler
-        case .jobPaused, .jobResumed, .jobRemoved: .engine
+        case .jobPaused, .jobResumed, .jobRemoved, .jobRetried: .engine
         case .jobForceStarted, .jobDeferred: .scheduler
         case .persistenceLoaded, .persistenceCorrupt, .persistenceSchemaAhead,
              .persistenceWriteFailed, .persistenceRecovered: .persistence
         case .consumerStreamEnded: .ui
-        case .revealTargetMissing: .ui
+        case .revealTargetMissing, .showLogTargetMissing: .ui
         case .jobDuplicateSubmitPrompted, .jobDuplicateSubmitConfirmed,
              .jobDuplicateSubmitCancelled: .ui
         }
@@ -94,7 +98,9 @@ public enum LogEvent: Sendable {
         case let .jobRemoved(id, _): id
         case let .jobForceStarted(id, _): id
         case let .jobDeferred(id, _, _): id
+        case let .jobRetried(id): id
         case let .revealTargetMissing(jobID): jobID
+        case let .showLogTargetMissing(jobID): jobID
         default: nil
         }
     }
@@ -121,8 +127,10 @@ public enum LogEvent: Sendable {
             ["was_running": wasRunning ? "true" : "false"]
         case let .jobForceStarted(_, evicted):
             ["evicted": evicted?.uuidString ?? ""]
-        case let .jobDeferred(_, until, _):
-            ["until": ISO8601DateFormatter().string(from: until)]
+        case let .jobDeferred(_, until, reason):
+            deferredFields(until: until, reason: reason)
+        case .jobRetried:
+            [:]
         case let .persistenceLoaded(file, count):
             ["file": file, "count": String(count)]
         case let .persistenceCorrupt(file):
@@ -137,11 +145,23 @@ public enum LogEvent: Sendable {
             [:]
         case let .revealTargetMissing(jobID):
             ["job_id": jobID.uuidString]
+        case let .showLogTargetMissing(jobID):
+            ["job_id": jobID.uuidString]
         case let .jobDuplicateSubmitPrompted(existing):
             ["existing": existing.uuidString]
         case .jobDuplicateSubmitConfirmed, .jobDuplicateSubmitCancelled:
             [:]
         }
+    }
+
+    private func deferredFields(until: Date, reason: DeferReason) -> [String: String] {
+        var fields = ["until": ISO8601DateFormatter().string(from: until)]
+        switch reason {
+        case let .backoff(attempt):
+            fields["reason"] = "backoff"
+            fields["attempt"] = String(attempt)
+        }
+        return fields
     }
 }
 

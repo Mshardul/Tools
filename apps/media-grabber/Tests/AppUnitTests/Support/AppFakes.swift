@@ -12,6 +12,7 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     private struct State {
         var submitted: [(DownloadRequest, Bool)] = []
         var cancelled: [UUID] = []
+        var retried: [UUID] = []
         var submitResults: [SubmitResult] = []
         var hasActive = false
         var snapshot = QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
@@ -37,6 +38,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     var cancelledIDs: [UUID] {
         box.read { $0.cancelled }
+    }
+
+    var retriedIDs: [UUID] {
+        box.read { $0.retried }
     }
 
     var restoreCalled: Bool {
@@ -117,6 +122,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func pause(_: UUID) async {}
     func resume(_: UUID) async {}
 
+    func retry(_ jobID: UUID) async {
+        box.mutate { $0.retried.append(jobID) }
+    }
+
     func cancel(_ jobID: UUID) async {
         box.mutate { $0.cancelled.append(jobID) }
     }
@@ -173,5 +182,16 @@ final class FakeRevealSink: RevealSink {
 
     func reveal(_ files: [URL]) {
         revealed = files
+    }
+}
+
+@MainActor
+final class FakeOpenURLSink: OpenURLSink {
+    private(set) var opened: [URL] = []
+
+    nonisolated init() {}
+
+    func open(_ url: URL) {
+        opened.append(url)
     }
 }

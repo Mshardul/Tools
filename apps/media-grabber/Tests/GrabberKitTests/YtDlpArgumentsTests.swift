@@ -23,6 +23,19 @@ final class YtDlpArgumentsTests: XCTestCase {
         )
     }
 
+    private let resilienceFlags = [
+        "--retries", "3",
+        "--fragment-retries", "10",
+        "--socket-timeout", "30",
+        "--retry-sleep", "linear=1:10:2",
+        "--throttled-rate", "100K",
+        "--file-access-retries", "5",
+        "--no-part-hint",
+        "--sleep-requests", "1",
+        "--sleep-interval", "1",
+        "--max-sleep-interval", "5"
+    ]
+
     func test_video1080_mp4() {
         let argv = YtDlpArguments.build(for: request(
             kind: .video(maxHeight: 1080),
@@ -36,9 +49,38 @@ final class YtDlpArgumentsTests: XCTestCase {
             "--merge-output-format", "mp4",
             "--newline", "--progress", "--progress-template", progressTemplate,
             "--no-playlist",
-            "--no-warnings",
-            url
-        ])
+            "--no-warnings"
+        ] + resilienceFlags + [url])
+    }
+
+    func test_alwaysOnResilienceFlagsFromDefaultTuning() {
+        let argv = YtDlpArguments.build(for: request(
+            kind: .video(maxHeight: 1080),
+            container: "mp4"
+        ))
+        XCTAssertTrue(
+            hasSubsequence(argv, resilienceFlags),
+            "argv missing resilience flags: \(argv)"
+        )
+        XCTAssertFalse(argv.contains("infinite"))
+        let retriesIndex = try? XCTUnwrap(argv.firstIndex(of: "--retries"))
+        let urlIndex = try? XCTUnwrap(argv.firstIndex(of: url))
+        XCTAssertNotNil(retriesIndex)
+        XCTAssertNotNil(urlIndex)
+        if let retriesIndex, let urlIndex {
+            XCTAssertLessThan(retriesIndex, urlIndex)
+        }
+    }
+
+    func test_nonDefaultTuningChangesEmittedValues() throws {
+        var tuning = YtDlpTuning.default
+        tuning.retries = 9
+        tuning.throttledRateKBps = 250
+        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)), tuning: tuning)
+        let retriesIndex = try XCTUnwrap(argv.firstIndex(of: "--retries"))
+        XCTAssertEqual(argv[retriesIndex + 1], "9")
+        let rateIndex = try XCTUnwrap(argv.firstIndex(of: "--throttled-rate"))
+        XCTAssertEqual(argv[rateIndex + 1], "250K")
     }
 
     func test_video720_noContainer() {

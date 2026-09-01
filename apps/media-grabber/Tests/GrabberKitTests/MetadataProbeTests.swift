@@ -67,6 +67,21 @@ final class MetadataProbeTests: XCTestCase {
         XCTAssertEqual(result, .failure(.unavailable))
     }
 
+    func test_sharedUnavailableSignaturesAgreeWithDownloadSideTable() async {
+        let shared = [
+            "Video unavailable",
+            "This video is unavailable",
+            "This video is not available"
+        ]
+        for line in shared {
+            XCTAssertEqual(ProgressParser.classifyStderr("ERROR: \(line)"), .unavailable)
+        }
+        let runner = FakeProcessRunner()
+        runner.script(.stderr("ERROR: Video unavailable", exitCode: 1), forPathEndingIn: "yt-dlp")
+        let result = await probe(runner).probe("https://example.com")
+        XCTAssertEqual(result, .failure(.unavailable))
+    }
+
     func test_networkFailure_mapsToNetwork() async {
         let runner = FakeProcessRunner()
         runner.script(

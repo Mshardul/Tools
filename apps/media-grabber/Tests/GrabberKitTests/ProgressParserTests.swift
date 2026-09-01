@@ -112,8 +112,12 @@ final class ProgressParserTests: XCTestCase {
     }
 
     func test_stderr_genericError() {
-        let error = ProgressParser.classifyStderr("ERROR: Video unavailable")
-        XCTAssertEqual(error, .unknown(raw: "ERROR: Video unavailable"))
+        let error = ProgressParser.classifyStderr("ERROR: Something unrecognised happened")
+        XCTAssertEqual(error, .unknown(raw: "ERROR: Something unrecognised happened"))
+    }
+
+    func test_stderr_unavailableSignature() {
+        XCTAssertEqual(ProgressParser.classifyStderr("ERROR: Video unavailable"), .unavailable)
     }
 
     func test_stderr_nonError_returnsNil() {

@@ -72,7 +72,31 @@ final class DownloadEngineTests: XCTestCase {
         XCTAssertEqual(seen.last, .completed)
     }
 
-    func test_nonZeroExit_networkStderr_failsNetworkDown() async {
+    // A single-retry budget with a FakeClock: after the one auto-retry the job goes terminal
+    // with the classified ErrorClass.
+    private func singleRetryEngine(
+        runner: FakeProcessRunner,
+        probe: FakeMetadataProbe,
+        clock: FakeClock
+    ) -> DownloadEngine {
+        let prefs = Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        prefs.maxAutoRetries = 1
+        return DownloadEngine(
+            dependencies: EngineDependencies(
+                runner: runner,
+                probe: probe,
+                envProbe: FakeEnvironmentProbe(.with(ytDlp: true, ffmpeg: true)),
+                clock: clock,
+                ytDlpURL: Fix.ytDlp,
+                jobLogDir: Fix.scratchLogDir(),
+                debugFlags: EngineDebugFlags(concurrencyCapOverride: 1)
+            ),
+            preferences: prefs
+        )
+    }
+
+    func test_nonZeroExit_networkStderr_failsNetworkDownAfterBudget() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
         let runner = FakeProcessRunner()
         runner.script(
             FakeProcessRunner.Script(
@@ -86,10 +110,16 @@ final class DownloadEngineTests: XCTestCase {
         )
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let engine = Fix.engine(runner: runner, probe: probe)
+        let engine = singleRetryEngine(runner: runner, probe: probe, clock: clock)
         let collector = EventCollector(engine.events)
 
         let id = await submitJob(engine, Fix.request())
+        _ = await collector.waitForState(id) { $0 == .running }
+        _ = await collector.waitForState(id) { $0 == .queued }
+        for _ in 0 ..< 3 {
+            clock.advance(by: .seconds(600))
+            try? await Task.sleep(for: .milliseconds(40))
+        }
         await expectState(collector, id) { state in
             if case .failed = state {
                 true
@@ -103,15 +133,22 @@ final class DownloadEngineTests: XCTestCase {
         )
     }
 
-    func test_nonZeroExit_noSignature_failsUnknown() async {
+    func test_nonZeroExit_noSignature_failsUnknownAfterBudget() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
         let runner = FakeProcessRunner()
         runner.script(.stdout("", exitCode: 3), forPathEndingIn: "yt-dlp")
         let probe = FakeMetadataProbe()
         probe.result(FakeMetadataProbe.success(title: "Clip"))
-        let engine = Fix.engine(runner: runner, probe: probe)
+        let engine = singleRetryEngine(runner: runner, probe: probe, clock: clock)
         let collector = EventCollector(engine.events)
 
         let id = await submitJob(engine, Fix.request())
+        _ = await collector.waitForState(id) { $0 == .running }
+        _ = await collector.waitForState(id) { $0 == .queued }
+        for _ in 0 ..< 3 {
+            clock.advance(by: .seconds(600))
+            try? await Task.sleep(for: .milliseconds(40))
+        }
         await expectState(collector, id) { state in
             if case .failed = state {
                 true

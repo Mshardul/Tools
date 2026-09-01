@@ -19,7 +19,8 @@ final class RowStoreTests: XCTestCase {
         progressFraction: Double? = nil,
         kind: DownloadKind = .video(maxHeight: 1080),
         durationSeconds: Int? = nil,
-        sizeBytes: Int64? = nil
+        sizeBytes: Int64? = nil,
+        attempt: Int = 0
     ) -> JobSnapshot {
         JobSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(index)")!,
@@ -36,7 +37,7 @@ final class RowStoreTests: XCTestCase {
             kind: kind, durationSeconds: durationSeconds, extractor: extractor,
             addedAt: Date(timeIntervalSince1970: TimeInterval(index)), finishedAt: nil,
             destFolder: URL(fileURLWithPath: "/tmp"), outputFiles: [], sizeBytes: sizeBytes,
-            actualQuality: nil, attempt: 0, cooldownUntil: nil, playerClientUsed: nil,
+            actualQuality: nil, attempt: attempt, cooldownUntil: nil, playerClientUsed: nil,
             playlistGroupID: nil, integrityVerdict: nil, availableActions: []
         )
     }
@@ -157,5 +158,14 @@ final class RowStoreTests: XCTestCase {
         XCTAssertNil(store.rows[0].queueBadge)
         XCTAssertEqual(store.rows[1].queueBadge, "#1")
         XCTAssertEqual(store.rows[2].queueBadge, "#2")
+    }
+
+    func test_maxAutoRetriesReachesRowModelStatus() {
+        let store = RowStore()
+        store.apply(
+            .snapshot(queueSnapshot([snap(1, state: .queued, attempt: 2)])),
+            maxAutoRetries: 4
+        )
+        XCTAssertEqual(store.rows.first?.statusText, "Retrying — attempt 3 of 4")
     }
 }

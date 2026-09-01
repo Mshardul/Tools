@@ -54,6 +54,7 @@ struct MediaGrabberApp: App {
                     themeKind: appModel.prefs.theme,
                     paletteKind: appModel.prefs.palette
                 ))
+                .preferredColorScheme(appModel.prefs.theme == .aurora ? .dark : .light)
                 .environment(appModel)
                 .background(WindowFrameAutosave(name: "MediaGrabberMain"))
                 .task {

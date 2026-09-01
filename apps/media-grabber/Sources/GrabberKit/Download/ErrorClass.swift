@@ -1,5 +1,5 @@
 public enum ErrorClass: Sendable, Equatable {
-    case rateLimited
+    case rateLimited(retryAfterSeconds: Int? = nil)
     case botCheck
     case sabrGated
     case formatsMissing

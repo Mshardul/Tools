@@ -249,6 +249,7 @@ extension DownloadEngine {
         let request = job.request
         let runner = dependencies.runner
         let ytDlpURL = dependencies.ytDlpURL
+        let tuning = dependencies.tuning
         let options = GlobalDownloadOptions(
             proxyURL: preferences.proxyURL,
             forceIPv4: preferences.forceIPv4,
@@ -260,10 +261,15 @@ extension DownloadEngine {
             ytDlpVersion: dependencies.ytDlpVersion,
             dir: dependencies.jobLogDir
         )
+        let ffprobeURL = dependencies.ffprobeURL
         let task = Task { [weak self] in
             let execution = runner.run(ProcessLaunch(
                 executableURL: ytDlpURL,
-                arguments: YtDlpArguments.build(for: request, options: options)
+                arguments: YtDlpArguments.build(
+                    for: request,
+                    options: options,
+                    tuning: tuning.ytDlp
+                )
             ))
             try? jobLog.writeHeader()
             async let processResult = execution.result()
@@ -271,14 +277,38 @@ extension DownloadEngine {
                 ?? DownloadDrainOutcome()
             let result = await processResult
             jobLog.close()
+
+            let integrity = await self?.runIntegrityCheck(
+                id: id,
+                result: result,
+                runner: runner,
+                ffprobeURL: ffprobeURL
+            ) ?? nil
+
             await self?.recordExit(
                 id,
                 result,
+                integrity: integrity,
                 lastError: outcome.lastError,
                 launchFailed: outcome.launchFailed && result.exitCode == 127
             )
         }
         childTasks[id] = task
+    }
+
+    // Runs strictly after the process exits and the output file resolves — IntegrityCheck
+    // needs the finalized file, never a file being written.
+    func runIntegrityCheck(
+        id: UUID,
+        result: ProcessResult,
+        runner: ProcessRunning,
+        ffprobeURL: URL?
+    ) async -> IntegrityResult? {
+        guard result.exitCode == 0, !result.wasCancelled else { return nil }
+        guard let job = jobs.first(where: { $0.id == id }) else { return nil }
+        guard let file = finalizedOutputFiles(for: job).first else { return nil }
+        return await IntegrityCheck(runner: runner, ffprobeURL: ffprobeURL)
+            .verify(file: file, expectedDurationSeconds: job.durationSeconds)
     }
 
     private struct DownloadDrainOutcome {

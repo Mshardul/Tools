@@ -7,22 +7,26 @@ public enum YtDlpArguments {
 
     public static func build(
         for request: DownloadRequest,
-        options: GlobalDownloadOptions = .none
+        options: GlobalDownloadOptions = .none,
+        tuning: YtDlpTuning = .default
     ) -> [String] {
-        baseArgv(for: request) + globalFlags(options, proxyURL: options.proxyURL) + [request.url]
+        baseArgv(for: request, tuning: tuning)
+            + globalFlags(options, proxyURL: options.proxyURL)
+            + [request.url]
     }
 
     // Proxy userinfo is masked in the returned proxy URL; identical to build() otherwise.
     public static func redacted(
         for request: DownloadRequest,
-        options: GlobalDownloadOptions = .none
+        options: GlobalDownloadOptions = .none,
+        tuning: YtDlpTuning = .default
     ) -> [String] {
-        baseArgv(for: request)
+        baseArgv(for: request, tuning: tuning)
             + globalFlags(options, proxyURL: options.proxyURL.map(maskUserinfo(in:)))
             + [request.url]
     }
 
-    private static func baseArgv(for request: DownloadRequest) -> [String] {
+    private static func baseArgv(for request: DownloadRequest, tuning: YtDlpTuning) -> [String] {
         var argv: [String] = []
         argv += ["-P", request.destFolder.path]
         argv += ["-o", request.filenameTemplate]
@@ -30,7 +34,25 @@ public enum YtDlpArguments {
         argv += ["--newline", "--progress", "--progress-template", progressTemplate]
         argv += ["--no-playlist"]
         argv += ["--no-warnings"]
+        argv += resilienceFlags(tuning)
         return argv
+    }
+
+    // Bounded, never infinite — a hard failure must exit yt-dlp and reach the classifier
+    // within a knowable time rather than hang inside yt-dlp.
+    private static func resilienceFlags(_ tuning: YtDlpTuning) -> [String] {
+        [
+            "--retries", "\(tuning.retries)",
+            "--fragment-retries", "\(tuning.fragmentRetries)",
+            "--socket-timeout", "\(tuning.socketTimeout)",
+            "--retry-sleep", tuning.retrySleep,
+            "--throttled-rate", "\(tuning.throttledRateKBps)K",
+            "--file-access-retries", "\(tuning.fileAccessRetries)",
+            "--no-part-hint",
+            "--sleep-requests", "\(tuning.sleepRequests)",
+            "--sleep-interval", "\(tuning.sleepInterval)",
+            "--max-sleep-interval", "\(tuning.maxSleepInterval)"
+        ]
     }
 
     private static func globalFlags(

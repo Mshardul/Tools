@@ -21,6 +21,19 @@ struct WorkspaceRevealSink: RevealSink {
 }
 
 @MainActor
+protocol OpenURLSink {
+    func open(_ url: URL)
+}
+
+struct WorkspaceOpenURLSink: OpenURLSink {
+    func open(_ url: URL) {
+        #if canImport(AppKit)
+            NSWorkspace.shared.open(url)
+        #endif
+    }
+}
+
+@MainActor
 final class AppModelConfirmer: Confirming, @unchecked Sendable {
     weak var model: AppModel?
 
@@ -75,12 +88,14 @@ final class AppModel {
         debugFlags.concurrencyCapOverride ?? prefs.maxConcurrentDownloads
     }
 
-    private let engine: DownloadEngineProtocol
+    let engine: DownloadEngineProtocol
     private let probe: MetadataProbing
     private let envProbe: EnvironmentProbing
-    private let log: LogWriter
+    let log: LogWriter
     private let persistence: (any QueuePersisting)?
-    private let revealSink: RevealSink
+    let revealSink: RevealSink
+    let openURLSink: OpenURLSink
+    let engineJobLogDir: URL
     private let suppression: SuppressionStore
     private var confirmationContinuation: CheckedContinuation<Bool, Never>?
     private var consumerTask: Task<Void, Never>?
@@ -94,6 +109,8 @@ final class AppModel {
         envProbe: EnvironmentProbing = EnvironmentProbe(),
         debugFlags: DebugFlags = DebugFlags(),
         revealSink: RevealSink = WorkspaceRevealSink(),
+        openURLSink: OpenURLSink = WorkspaceOpenURLSink(),
+        engineJobLogDir: URL = JobLog.defaultDir,
         suppression: SuppressionStore = UserDefaultsSuppressionStore(),
         persistence: (any QueuePersisting)? = nil,
         columnConfig: ColumnConfig = .default
@@ -106,6 +123,8 @@ final class AppModel {
         self.envProbe = envProbe
         self.debugFlags = debugFlags
         self.revealSink = revealSink
+        self.openURLSink = openURLSink
+        self.engineJobLogDir = engineJobLogDir
         self.suppression = suppression
         self.persistence = persistence
         self.columnConfig = columnConfig
@@ -132,7 +151,7 @@ final class AppModel {
         let history = persistence.loadHistory()
         await engine.restore(active: active, history: history)
         let snapshot = await engine.currentSnapshot()
-        rowStore.resync(snapshot)
+        rowStore.resync(snapshot, maxAutoRetries: prefs.maxAutoRetries)
         applySnapshot(snapshot)
     }
 
@@ -215,32 +234,6 @@ final class AppModel {
         }
     }
 
-    func handleRowAction(_ id: UUID, action: RowAction) async {
-        switch action {
-        case .pause: await engine.pause(id)
-        case .resume: await engine.resume(id)
-        case .cancel: await engine.cancel(id)
-        case .remove: await engine.remove(id)
-        case .forceStart: await engine.forceStart(id)
-        case .reveal: await reveal(jobID: id)
-        case .openInBrowser: openInBrowser(jobID: id)
-        case .retry, .retryWithCookies, .showLog: break
-        }
-    }
-
-    func reveal(jobID: UUID) async {
-        guard let row = rowStore.rows.first(where: { $0.id == jobID }) else { return }
-        let existing = row.snapshot.outputFiles.filter {
-            FileManager.default.fileExists(atPath: $0.path)
-        }
-        if existing.isEmpty {
-            await log.log(.revealTargetMissing(jobID: jobID))
-            _ = await confirm(AppModelDialogs.revealMissingConfirmation())
-        } else {
-            revealSink.reveal(existing)
-        }
-    }
-
     func confirm(_ request: ConfirmationRequest) async -> Bool {
         if let key = request.suppressionKey, suppression.isSuppressed(key) {
             return true
@@ -280,14 +273,17 @@ final class AppModel {
     private func runConsumer() async {
         while !Task.isCancelled {
             for await event in engine.events {
-                rowStore.apply(event)
+                rowStore.apply(event, maxAutoRetries: prefs.maxAutoRetries)
                 if case let .snapshot(snapshot) = event {
                     applySnapshot(snapshot)
                 }
             }
             await log.log(.consumerStreamEnded)
             try? await Task.sleep(for: .seconds(1))
-            await rowStore.resync(engine.currentSnapshot())
+            await rowStore.resync(
+                engine.currentSnapshot(),
+                maxAutoRetries: prefs.maxAutoRetries
+            )
         }
     }
 
@@ -295,14 +291,5 @@ final class AppModel {
         if snapshot.queueHalt == .depMissing {
             needsOnboarding = true
         }
-    }
-
-    private func openInBrowser(jobID: UUID) {
-        guard let row = rowStore.rows.first(where: { $0.id == jobID }),
-              let url = URL(string: row.snapshot.url)
-        else { return }
-        #if canImport(AppKit)
-            NSWorkspace.shared.open(url)
-        #endif
     }
 }

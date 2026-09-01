@@ -27,6 +27,15 @@ public enum ProgressParser {
         if line.contains("Unable to download"), containsNetworkSignature(line) {
             return .networkDown
         }
+        if line.hasPrefix("ERROR:"), containsNetworkSignature(line) {
+            return .networkDown
+        }
+        if let matched = ErrorSignatures.firstMatch(in: line) {
+            if case .rateLimited = matched {
+                return .rateLimited(retryAfterSeconds: ErrorSignatures.retryAfterSeconds(in: line))
+            }
+            return matched
+        }
         if line.hasPrefix("ERROR:") {
             return .unknown(raw: line)
         }

@@ -10,5 +10,8 @@ public enum PersistedState: Sendable, Equatable, Codable {
     case failed(reason: String)
 }
 
-// Deliberately caseless for now — the deferred-start seam has no caller yet.
-public enum DeferReason: Sendable, Equatable {}
+// The log discriminator for a deferred start. A per-host cooldown case joins this
+// enum when that deferral source is built; the jobDeferred event already carries it.
+public enum DeferReason: Sendable, Equatable {
+    case backoff(attempt: Int)
+}

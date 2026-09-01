@@ -49,9 +49,14 @@ final class RowStore {
         recomputeVisible()
     }
 
+    // The current Preferences.maxAutoRetries, forwarded to RowModel so the retry-state status
+    // reads it live. Defaulted so RowStore stays Preferences-free.
+    private var maxAutoRetries = 5
+
     // MARK: - Event ingestion
 
-    func apply(_ event: QueueEvent) {
+    func apply(_ event: QueueEvent, maxAutoRetries: Int = 5) {
+        self.maxAutoRetries = maxAutoRetries
         switch event {
         case let .snapshot(snapshot):
             applySnapshot(snapshot)
@@ -67,7 +72,8 @@ final class RowStore {
         }
     }
 
-    func resync(_ snapshot: QueueSnapshot) {
+    func resync(_ snapshot: QueueSnapshot, maxAutoRetries: Int = 5) {
+        self.maxAutoRetries = maxAutoRetries
         modelsByID.removeAll()
         rows = []
         applySnapshot(snapshot)
@@ -94,11 +100,15 @@ final class RowStore {
                 position = nil
             }
             if let existing = modelsByID[job.id] {
-                let changed = existing.patch(job, queuePosition: position)
+                let changed = existing.patch(
+                    job,
+                    queuePosition: position,
+                    maxAutoRetries: maxAutoRetries
+                )
                 structuralChange = structuralChange || changed
                 newRows.append(existing)
             } else {
-                let model = RowModel(job, queuePosition: position)
+                let model = RowModel(job, queuePosition: position, maxAutoRetries: maxAutoRetries)
                 modelsByID[job.id] = model
                 newRows.append(model)
                 structuralChange = true

@@ -170,12 +170,18 @@ public actor MetadataProbe: MetadataProbing {
             .map(String.init) ?? stderr
     }
 
-    private let unavailableSignatures = [
-        "Video unavailable",
-        "This video is unavailable",
-        "This video is not available",
-        "Private video",
-        "blocked it in your country",
-        "The web client only works when logged-in"
-    ]
+    // The shared strings come from the one ErrorSignatures table so the probe-side and
+    // download-side classifiers agree; "logged-in" is probe-only, no download equivalent.
+    private var unavailableSignatures: [String] {
+        Self.sharedUnavailableSignatures + ["The web client only works when logged-in"]
+    }
+
+    private static let sharedUnavailableSignatures: [String] = ErrorSignatures.table
+        .filter { entry in
+            switch entry.errorClass {
+            case .unavailable, .private, .geoBlocked: true
+            default: false
+            }
+        }
+        .flatMap(\.substrings)
 }

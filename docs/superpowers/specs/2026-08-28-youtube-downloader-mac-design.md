@@ -454,9 +454,19 @@ as `cookieReadFailed` only if the download then fails.
 
 ### 7.5 Download-level flags (always)
 
-`--retries infinite --fragment-retries infinite --retry-sleep exp=1:120 --throttled-rate 100K --file-access-retries 5 --no-part-hint`,
-plus `--sleep-requests 1` and a small random `--sleep-interval` before each
-download.
+`yt-dlp`'s in-invocation retry / pacing controls, on every download.
+**Bounded**, not infinite — a hard failure must exit `yt-dlp` and reach the
+engine's classifier + `Backoff` within a knowable time (~45 s worst case)
+rather than hang inside `yt-dlp`. The values are a tuning constant
+(`YtDlpTuning`, env-overridable via `MG_YTDLP_*`, no UI), defaulting to:
+
+`--retries 3 --fragment-retries 10 --socket-timeout 30 --retry-sleep linear=1:10:2 --throttled-rate 100K --file-access-retries 5 --no-part-hint --sleep-requests 1 --sleep-interval 1 --max-sleep-interval 5`
+
+`--retries 3` (not `infinite`) so a transient error becomes a non-zero exit the
+classifier can act on; `--socket-timeout 30` so a dead link fails instead of
+hanging; a `--throttled-rate` abort classifies as `rateLimited` and takes the
+backoff schedule. This layer composes with the per-job `maxAutoRetries` (§7.9,
+which re-invokes `yt-dlp` after an exit) rather than one hiding the other.
 
 ### 7.6 Download-level flags (adaptive)
 
@@ -531,7 +541,7 @@ output is copyable.
 
 - `ProcessRunner` never throws into the UI — every failure becomes a `JobState.failed(ErrorClass)` plus a `LogEvent`.
 - `ErrorClass` enum: `rateLimited`, `botCheck`, `sabrGated`, `formatsMissing`, `cookieReadFailed`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `networkDown`, `diskFull`, `permissionDenied`, `incomplete`, `depMissing`, `potProviderDown`, `unknown(raw)`. Drives the UI copy and which actions are offered.
-- The enum is built in three parts (§12.2). Phase 2 adds `incomplete`, `diskFull`, `permissionDenied` — cases the engine's terminal path already produces. Phase 4 adds the rest of the generic set — `rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown(raw)` — each with its failure-reason sentence and row actions. Phase 7 adds the YouTube-specific cases — `botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown` — built with the §7.2 machinery that produces them, so no failure copy exists for a state nothing can emit.
+- The enum ships whole (Phase 1); its *emit paths* and *failure UI* are staged (§12.2). Phase 2 wires the terminal path to emit `incomplete`, `diskFull`, `permissionDenied`. Phase 4 adds the classifier signatures for the generic set — `rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `networkDown` — and the `FailurePresentation` model: a value keyed off `ErrorClass` giving each case its plain-English reason sentence and the row actions it offers (one switch). `rateLimited` carries an optional `Retry-After`. Phase 5 wires `cookieReadFailed`; Phase 7 adds the YouTube-specific cases — `botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown` — with the §7.2 machinery that emits them and four more `FailurePresentation` arms, so no failure copy exists for a state nothing can emit.
 - Engine-level: the circuit breaker → `queue.suspended` banner, no auto-retry.
 - App crash mid-download: the `.part` on disk plus the persisted `.queued`-on-relaunch → resume.
 - Disk full / permission denied on the destination → classified, actionable message.
@@ -655,12 +665,49 @@ add cases and wiring, never relayout — §12.2.
 
 - **Phase 3 — Preferences screen (shipped).** The 7-pane `PreferencesView` (design-system §4.6) over the `@Observable Preferences` model — fixed-height window, left rail never scrolls, right pane scrolls. Filled panes: Downloads (folder, concurrency 1–6, retries, media type, video quality, audio format, filename-format presets + custom, clipboard toggle), Appearance (Theme + Palette as `SkinnedSegment` / swatches), Network (proxy / Force IPv4 / speed limit), Logs & privacy, Advanced (reveal folders, reset columns, reset settings via the confirmation dialog). Sign-in & cookies and Updates ship as stepless panes (title + sub + one "coming in a later update" line). Two reusable skinned controls built this phase — `SkinnedSegment` (equal-width, hug-content, flush-right) and `SkinnedPicker` (popover, not a modal; content-sized width clamped to 340pt) — also replace the native `Menu` dropdowns on the Home runway. New `Preferences` fields: `detectClipboardLinks`, `proxyURL`, `forceIPv4`, `speedLimitKBps` (Int, default 0), `lastVideoHeight` / `lastMediaType` / `lastAudioFormat` (runway last-selected, seeded via `runwaySeed(from:)`). `GlobalDownloadOptions` in `GrabberKit` + `YtDlpArguments` wiring for `--proxy` / `-4` / `--limit-rate`, read off `preferences` by `DownloadEngine` at spawn. Concurrency note (warn glyph + `--dim` line) when the cap is lowered below the live running count — no new drain logic, the Phase 2 scheduler drains on its own. `AppModel.Page.preferences(PreferencesPane = .downloads)` deep-link seam. Pre-release vocabulary sweep: `Skin` → `Theme` end to end (`SkinKind` → `ThemeKind`, `ResolvedTheme` collapsed into `Theme`), `AudioCodec` → `AudioFormat`, `KindSelector` → public `MediaType`, and the `Preferences` field renames (`defaultDestFolder` → `defaultDownloadFolder`, `defaultMaxHeight` → `defaultVideoHeight`, `outputTemplate` → `filenameTemplate`, `maxAutoRetries` → `maxAutoRetries`, etc.). Tape Deck `--warn` darkened to WCAG AA (`#9C5A00` / `#9A6410` / `#8E6318`).
 
-- **Phase 4 — Retry and error classification.** The generic `ErrorClass` cases (§9 — `rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`), each with its failure-reason sentence and the row actions it offers; the retry button in the Phase 2 action bar wired live (force-start is already live from Phase 2); the per-job auto-retry budget (`Preferences.maxAutoRetries`, its control added to the Phase 3 Downloads pane); `Backoff` (exponential + full jitter, cap, `Retry-After`) — the first caller of the Phase 2 `deferStart` seam; `IntegrityCheck` (ffprobe duration vs metadata → `incomplete`, populates the Phase 2 `JobSnapshot.integrityVerdict`; the same ffprobe call reads the real resolution into `JobSnapshot.actualQuality` so the Quality column can show `1080p → 720p`); the always-on download flags (§7.5); `EnvironmentProbe` re-probe on launch, routing a vanished dependency back to onboarding. A `rateLimited` result retries on the `Backoff` schedule — no per-host state yet. *Hint: enable the `show-log` row action — `JobLog` files exist per job from Phase 2, and `show-log` must handle a missing file gracefully (reuse the Phase 2 `revealTargetMissing` notice pattern — a log can be gone via external deletion); add the `DeferReason.backoff` case to the Phase 2 log event; populate `JobSnapshot.actualQuality` from the `IntegrityCheck` ffprobe; decide whether retry re-classifies a restored `.failed(.unknown(raw:))` job (Phase 2 persists only the reason string).*
+- **Phase 4 — Retry and error classification (shipped).** Spec + plan:
+  `docs/superpowers/specs/2026-09-01-media-grabber-phase-4.md`,
+  `docs/superpowers/plans/2026-09-01-media-grabber-phase-4.md`. The generic
+  `ErrorClass` cases (§9 — `rateLimited`, `geoBlocked`, `private`, `unavailable`,
+  `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`)
+  modelled as a `FailurePresentation` value keyed off `ErrorClass` — a
+  plain-English reason sentence and the row actions each case offers, one switch
+  extended by Phase 7's YouTube cases with no relayout; `ErrorClass` also gains a
+  stable `key` string. `rateLimited` widens to carry an optional `Retry-After`.
+  The `retry` and `show-log` row actions wired live in the Phase 2 action bar
+  (force-start already live from Phase 2); `show-log` opens the per-job `JobLog`
+  and reuses the `revealTargetMissing` notice pattern for a gone file. The
+  per-job auto-retry budget (`Preferences.maxAutoRetries`, its control shipped
+  Phase 3): an auto-retryable failure (`rateLimited`, `networkDown`,
+  `incomplete`, `unknown`) with `attempt < budget` re-queues on the `Backoff`
+  schedule; `diskFull` / `permissionDenied` / `cookieReadFailed` offer a manual
+  Retry only; the rest are non-recoverable. The Retry button splits in the
+  engine: a usable `.part` plus a transient class (`networkDown` / `incomplete`
+  / `unknown`) **resumes** (keeps `.part` and `attempt`, logs `jobResumed`);
+  otherwise it **retries** from scratch (deletes `.part`, resets `attempt`, logs
+  `jobRetried` — the event the diagnostics report counts). `Backoff` (full
+  jitter over a ladder + cap, integer `Retry-After`) — the first caller of the
+  Phase 2 `deferStart` seam, logged via `DeferReason.backoff(attempt:)`. Every
+  retry / pacing number — the ladder, the cap, the §7.5 `yt-dlp` flags — lives
+  in one env-overridable `EngineTuning` constant (no UI, `MG_*` keys for
+  testing). `IntegrityCheck`
+  (ffprobe duration vs the probe's `durationSeconds` → `incomplete` when
+  materially short — consuming a retry attempt; populates
+  `JobSnapshot.integrityVerdict`; the same call reads the real resolution into
+  `JobSnapshot.actualQuality` so the Quality column shows `1080p → 720p`);
+  degrades to `IntegrityVerdict.skipped` when ffprobe or the expected duration is
+  missing. `EnvironmentReport` gains
+  `ffprobe` (derived from the `ffmpeg` location, non-blocking); the every-launch
+  re-probe is the Phase 2 path. A restored `.failed(.unknown(raw:))` job is
+  **not** re-classified on retry — the re-queue is itself the fresh attempt. A
+  `rateLimited` result retries on the plain `Backoff` schedule — no per-host
+  state (Phase 6).
 
 - **Phase 5 — Cookies.** `--cookies-from-browser`; Full Disk Access detection and the System Settings deep link (Safari), plus a Full-Disk-Access `OnboardingStepID` case; Firefox multi-profile enumeration and its picker (the Sign-in & cookies pane, Phase 3); the Chrome app-bound-encryption fallback; `cookieReadFailed` handling (non-fatal); the "retry with cookies" (`🔑`) row action wired into the Phase 2 action bar. Needs Phase 4's `ErrorClass` set and live action bar; does not need rate limiting.
   - *Hint: update the `screens.html` mockup — the Sign-in & cookies pane fills (browser `SkinnedPicker`, Firefox-profile picker with its scroll cap, Full Disk Access status row, tip text), and the Onboarding screen gains the Full Disk Access step. Both render header-only / stepless in the current snapshot.*
 
 - **Phase 6 — Rate limiting and circuit breaker.** `RateState` per host (`normal | cooldown | circuitOpen`); the cooldown row state; the `WarningBanner` `cooldown` / `circuitOpen` / `depMissing` `BannerContent` (shell from Phase 2); the circuit breaker → `QueueSnapshot.queueHalt` gains `.circuitOpen` / `.networkDown` (`queueHalt` seam from Phase 2); adaptive concurrency (streak up, throttle down — new fields on the Phase 2 `SchedulerInput`, no loop rewrite); `NetworkMonitor` → `waitingForNetwork`; per-host cooldown = the second `deferStart` caller (seam from Phase 2); the `HealthStrip` engine-freshness / online / per-host-cooldown chips — the Phase 2 `HealthController` produces the chip array (Phase 2 returns one static `online` chip), and `ChipInteraction` gains `.popover(PopoverContent)` for the cooldown chip. Smoke test: force a 429 and watch the cooldown UI, the banner, and the circuit breaker (§11.3).
+  - *Hint: the Status cell's live `m:ss` backoff / cooldown countdown lands here — Phase 4 shows a static `Retrying — attempt N of M` and leaves `JobSnapshot.cooldownUntil` nil; this phase reads `cooldownUntil` (for the host cooldown and, retroactively, the backoff wait) and drives the per-second re-render alongside the cooldown-chip popover.*
 
 - **Phase 7 — YouTube hardening.** `player_client` rotation (`tv → ios → tv_embedded → mweb → web_safari`, `PlayerClientRotation.default`); `PotProviderProcess` supervising the `bgutil-pot` server on a free `127.0.0.1` port (health check, restart on crash, stop on quit) + `PotPluginInstaller`; the `--extractor-args` and `--plugin-dirs` wiring; the `bot-check shield` `HealthStrip` chip and its `↻` refresh (added to the Phase 6 strip); the YouTube `ErrorClass` cases — `botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown` — with their failure copy; the `potProviderDown` `WarningBanner` case (added to the Phase 6 banner). This phase needs both Phase 4 (retry attempt context, `ErrorClass` set) and Phase 6 (the banner and strip cases to extend).
   - *Hint: restrict the runway quality picker (`SkinnedPicker`, built Phase 3) to probe-reported available heights — needs format-list parsing on `MetadataProbe`. The runway seed then resolves `lastVideoHeight` → if available use it → else `defaultVideoHeight` if available → else the best available height (Phase 3 `runwaySeed(from:)` currently does the unconditional `last ?? default` fallback).*
@@ -690,11 +737,11 @@ means no screen is built twice.
 | Engine → UI channel | Phase 2 — `AsyncStream<QueueEvent>` (`.snapshot(QueueSnapshot)` on structural change, `.progress` delta on progress ticks); `DownloadJob` demoted to engine-internal model, `JobSnapshot` the only boundary type | not filled later — the shape is final |
 | `JobSnapshot` | Phase 2 — the full field set. Populated now: `progress`, `durationSeconds?`, `extractor?`, `sizeBytes?`, `availableActions`, `outputFiles`, dates. Shipped defaulted: `attempt` (0), `actualQuality?`, `cooldownUntil?`, `playerClientUsed?`, `playlistGroupID?`, `integrityVerdict?` | Phase 4 populates `attempt` + `integrityVerdict` + `actualQuality`, Phase 6 `cooldownUntil`, Phase 7 `playerClientUsed`, Phase 8 `playlistGroupID` — no struct edit, no test-fixture churn |
 | `QueueSnapshot.queueHalt` + `engine.revalidate()` | Phase 2 — `QueueHaltReason?`, `.depMissing` case (scheduler stops, `AppModel` shows Onboarding takeover); `revalidate()` re-checks deps and clears the halt, called on onboarding completion | Phase 6 — adds `.circuitOpen`, `.networkDown` (`queue.suspended`); the `WarningBanner` "Retry now" button and cooldown-chip popover call `revalidate()` |
-| Downloads-table row-action bar | Phase 2 — every `RowAction` button laid out in fixed order; `availableActions: Set<RowAction>` per job from the engine; buttons not in the set render disabled | Phase 4 (`retry`, `showLog` logic), Phase 5 (`retryWithCookies` `🔑`) — the engine adds them to the set, no UI change |
+| Downloads-table row-action bar | Phase 2 — every `RowAction` button laid out in fixed order; `availableActions: Set<RowAction>` per job from the engine; buttons not in the set render disabled | Phase 4 (`retry`, `showLog` — the `.failed` arm reads `ErrorClass.presentation.offeredActions`; `showLog` on every run state), Phase 5 (`retryWithCookies` `🔑`) — the engine adds them to the set, no UI change |
 | `WarningBanner` | Phase 2 — the docked shell + `BannerContent { text, buttonTitle, action }`, always nil | Phase 6 (`cooldown`, `circuitOpen`, `depMissing` content), Phase 7 (`potProviderDown`) |
 | `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction }`, `ChipInteraction` = `none \| refresh(...)`, ships the one static `online` chip | Phase 6 (engine / online / cooldown chips; `ChipInteraction` gains `.popover(PopoverContent)` for the cooldown chip — additive), Phase 7 (bot-check shield chip + `↻`) |
 | `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil`. The `suppressionKey` mechanism is built but unused in P2 | Phase 8 "cancel all" (a suppression candidate) and any later dialog — just call `confirm(...)` |
-| `ErrorClass` enum | Phase 2 (`incomplete`, `diskFull`, `permissionDenied`) · Phase 4 (the generic set + failure UI) | Phase 7 (`botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown`, built with the §7.2 machinery that emits them) |
+| `ErrorClass` emit paths + failure UI | Phase 2 wires `incomplete` / `diskFull` / `permissionDenied` · Phase 4 the generic-set classifier signatures + the `FailurePresentation` model (`{ sentence, offeredActions }` keyed off `ErrorClass`, one switch) + `ErrorClass.key` | Phase 5 (`cookieReadFailed`) · Phase 7 (`botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown` — four `FailurePresentation` arms, built with the §7.2 machinery that emits them) |
 | `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Network / Logs & privacy / Advanced filled, Sign-in & cookies + Updates stepless | Phase 4 (retry engine consuming `maxAutoRetries`), Phase 5 (Firefox profile picker), Phase 10 (`autoCheckUpdates`) |
 | Onboarding step list | Phase 1 — `OnboardingView` renders `ForEach(OnboardingStepID.allCases)`; ships `homebrew`, `downloaderTools`, `botCheckShield` (POT `pipx` install), `testRun` | Phase 5 — a Full-Disk-Access case (enum case + title / subtitle / check logic, no layout change) |
 

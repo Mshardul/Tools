@@ -13,25 +13,46 @@ final class AvailableActionsTests: XCTestCase {
         XCTAssertEqual(actions(.queued), [.pause, .cancel, .forceStart, .remove, .openInBrowser])
     }
 
-    func test_probing_hasNoPause() {
+    func test_probing_hasNoPauseOrShowLog() {
         XCTAssertEqual(actions(.probing), [.cancel, .remove, .openInBrowser])
     }
 
-    func test_running() {
-        XCTAssertEqual(actions(.running), [.pause, .cancel, .remove, .openInBrowser])
+    func test_running_hasShowLog() {
+        XCTAssertEqual(actions(.running), [.pause, .cancel, .remove, .openInBrowser, .showLog])
     }
 
-    func test_paused() {
-        XCTAssertEqual(actions(.paused), [.resume, .cancel, .remove, .openInBrowser])
+    func test_paused_hasShowLog() {
+        XCTAssertEqual(actions(.paused), [.resume, .cancel, .remove, .openInBrowser, .showLog])
     }
 
-    func test_completed() {
-        XCTAssertEqual(actions(.completed), [.reveal, .remove, .openInBrowser])
+    func test_completed_hasShowLog() {
+        XCTAssertEqual(actions(.completed), [.reveal, .remove, .openInBrowser, .showLog])
     }
 
-    func test_cancelled_and_failed() {
-        XCTAssertEqual(actions(.cancelled), [.remove, .openInBrowser])
-        XCTAssertEqual(actions(.failed(.networkDown)), [.remove, .openInBrowser])
+    func test_cancelled_hasShowLog() {
+        XCTAssertEqual(actions(.cancelled), [.remove, .openInBrowser, .showLog])
+    }
+
+    func test_failedActionsFromPresentation_rateLimited() {
+        let set = actions(.failed(.rateLimited()))
+        XCTAssertTrue(set.isSuperset(of: [.retry, .showLog, .remove, .openInBrowser]))
+        XCTAssertFalse(set.contains(.pause))
+        XCTAssertFalse(set.contains(.forceStart))
+    }
+
+    func test_failedActions_geoBlockedHasNoRetry() {
+        let set = actions(.failed(.geoBlocked))
+        XCTAssertFalse(set.contains(.retry))
+        XCTAssertTrue(set.isSuperset(of: [.showLog, .remove, .openInBrowser]))
+    }
+
+    func test_showLogInEveryRunState_notBeforeARun() {
+        for state: JobState in [.running, .paused, .completed, .cancelled] {
+            XCTAssertTrue(actions(state).contains(.showLog), "\(state)")
+        }
+        for state: JobState in [.queued, .probing] {
+            XCTAssertFalse(actions(state).contains(.showLog), "\(state)")
+        }
     }
 
     func test_waitingForNetwork_and_cooldown() {
@@ -42,14 +63,14 @@ final class AvailableActionsTests: XCTestCase {
         )
     }
 
-    func test_noGatedActionsEverIncluded() {
+    func test_retryWithCookiesNeverIncluded() {
         let states: [JobState] = [
             .queued, .probing, .running, .paused, .completed, .cancelled,
-            .failed(.networkDown), .waitingForNetwork, .cooldown(until: .init())
+            .failed(.networkDown), .failed(.geoBlocked),
+            .waitingForNetwork, .cooldown(until: .init())
         ]
         for state in states {
-            let set = actions(state)
-            XCTAssertTrue(set.isDisjoint(with: [.retry, .retryWithCookies, .showLog]), "\(state)")
+            XCTAssertFalse(actions(state).contains(.retryWithCookies), "\(state)")
         }
     }
 

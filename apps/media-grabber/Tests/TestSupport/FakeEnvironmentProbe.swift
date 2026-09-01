@@ -35,7 +35,8 @@ public extension EnvironmentReport {
     static func with(
         brew: Bool = false,
         ytDlp: Bool = false,
-        ffmpeg: Bool = false
+        ffmpeg: Bool = false,
+        ffprobe: Bool = false
     ) -> EnvironmentReport {
         func tool(_ name: String, _ present: Bool) -> ToolInfo? {
             present
@@ -45,7 +46,8 @@ public extension EnvironmentReport {
         return EnvironmentReport(
             brew: tool("brew", brew),
             ytDlp: tool("yt-dlp", ytDlp),
-            ffmpeg: tool("ffmpeg", ffmpeg)
+            ffmpeg: tool("ffmpeg", ffmpeg),
+            ffprobe: tool("ffprobe", ffprobe)
         )
     }
 }

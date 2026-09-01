@@ -83,6 +83,46 @@ final class EnvironmentProbeTests: XCTestCase {
         )
     }
 
+    func test_ffprobeResolvedAsFfmpegSibling() async {
+        let runner = FakeProcessRunner()
+        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
+        runner.script(.stdout("ffmpeg version 8.0 Copyright\n"), forPathEndingIn: "ffmpeg")
+        runner.script(.stdout("ffprobe version 8.0 Copyright\n"), forPathEndingIn: "ffprobe")
+        let sut = probe(
+            runner: runner,
+            present: [
+                "/opt/homebrew/bin/yt-dlp",
+                "/opt/homebrew/bin/ffmpeg",
+                "/opt/homebrew/bin/ffprobe"
+            ]
+        )
+        let report = await sut.probe()
+        XCTAssertEqual(report.ffprobe?.path, URL(fileURLWithPath: "/opt/homebrew/bin/ffprobe"))
+        XCTAssertEqual(report.ffprobe?.version, "8.0")
+    }
+
+    func test_ffmpegPresentNoSiblingFfprobe_reportNilButStillReady() async {
+        let runner = FakeProcessRunner()
+        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
+        runner.script(.stdout("ffmpeg version 8.0 Copyright\n"), forPathEndingIn: "ffmpeg")
+        let sut = probe(
+            runner: runner,
+            present: ["/opt/homebrew/bin/yt-dlp", "/opt/homebrew/bin/ffmpeg"]
+        )
+        let report = await sut.probe()
+        XCTAssertNil(report.ffprobe)
+        XCTAssertTrue(report.isReadyForDownloads)
+    }
+
+    func test_ffmpegAbsent_bothNil() async {
+        let runner = FakeProcessRunner()
+        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
+        let sut = probe(runner: runner, present: ["/opt/homebrew/bin/yt-dlp"])
+        let report = await sut.probe()
+        XCTAssertNil(report.ffmpeg)
+        XCTAssertNil(report.ffprobe)
+    }
+
     func test_noRealBrewOrNetwork() async {
         let runner = FakeProcessRunner()
         runner.script(.stdout("Homebrew 4.3.0\n"), forPathEndingIn: "brew")

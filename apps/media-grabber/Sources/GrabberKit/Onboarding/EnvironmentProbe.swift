@@ -14,11 +14,15 @@ public struct EnvironmentReport: Sendable, Equatable {
     public let brew: ToolInfo?
     public let ytDlp: ToolInfo?
     public let ffmpeg: ToolInfo?
+    // Resolved from the ffmpeg location, not an independent PATH search — ffprobe ships
+    // inside the ffmpeg formula. A missing ffprobe degrades IntegrityCheck, never blocks.
+    public let ffprobe: ToolInfo?
 
-    public init(brew: ToolInfo?, ytDlp: ToolInfo?, ffmpeg: ToolInfo?) {
+    public init(brew: ToolInfo?, ytDlp: ToolInfo?, ffmpeg: ToolInfo?, ffprobe: ToolInfo? = nil) {
         self.brew = brew
         self.ytDlp = ytDlp
         self.ffmpeg = ffmpeg
+        self.ffprobe = ffprobe
     }
 
     public var isReadyForDownloads: Bool {
@@ -77,7 +81,31 @@ public struct EnvironmentProbe: EnvironmentProbing {
             versionArgs: ["-version"],
             parse: Self.parseFfmpeg
         )
-        return await EnvironmentReport(brew: brew, ytDlp: ytDlp, ffmpeg: ffmpeg)
+        let ffmpegInfo = await ffmpeg
+        let ffprobeInfo = await resolveFfprobe(besideFfmpeg: ffmpegInfo)
+        return await EnvironmentReport(
+            brew: brew,
+            ytDlp: ytDlp,
+            ffmpeg: ffmpegInfo,
+            ffprobe: ffprobeInfo
+        )
+    }
+
+    private func resolveFfprobe(besideFfmpeg ffmpeg: ToolInfo?) async -> ToolInfo? {
+        guard let ffmpeg else { return nil }
+        let candidate = ffmpeg.path.deletingLastPathComponent().appendingPathComponent("ffprobe")
+        guard isExecutable(candidate) else { return nil }
+        let execution = runner.run(ProcessLaunch(executableURL: candidate, arguments: ["-version"]))
+        var output = ""
+        for await line in execution.lines {
+            switch line {
+            case let .stdout(text), let .stderr(text):
+                output += text + "\n"
+            }
+        }
+        let result = await execution.result()
+        guard result.exitCode == 0, let version = Self.parseFfmpeg(output) else { return nil }
+        return ToolInfo(path: candidate, version: version)
     }
 
     private func locate(_ name: String) -> URL? {
