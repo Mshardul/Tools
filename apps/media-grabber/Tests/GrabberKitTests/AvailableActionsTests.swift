@@ -63,15 +63,39 @@ final class AvailableActionsTests: XCTestCase {
         )
     }
 
-    func test_retryWithCookiesNeverIncluded() {
-        let states: [JobState] = [
+    func test_retryWithCookies_onlyForCookieRelevantFailures() {
+        let without: [JobState] = [
             .queued, .probing, .running, .paused, .completed, .cancelled,
-            .failed(.networkDown), .failed(.geoBlocked),
+            .failed(.networkDown), .failed(.geoBlocked), .failed(.unavailable),
             .waitingForNetwork, .cooldown(until: .init())
         ]
-        for state in states {
+        for state in without {
             XCTAssertFalse(actions(state).contains(.retryWithCookies), "\(state)")
         }
+        for state: JobState in [
+            .failed(.cookieReadFailed),
+            .failed(.private),
+            .failed(.ageRestricted)
+        ] {
+            XCTAssertTrue(actions(state).contains(.retryWithCookies), "\(state)")
+        }
+    }
+
+    func test_failedCookieReadFailed_includesRetryWithCookies() {
+        let set = actions(.failed(.cookieReadFailed))
+        XCTAssertTrue(set.isSuperset(of: [
+            .retry,
+            .retryWithCookies,
+            .showLog,
+            .remove,
+            .openInBrowser
+        ]))
+    }
+
+    func test_failedPrivate_hasRetryWithCookies_notRetry() {
+        let set = actions(.failed(.private))
+        XCTAssertTrue(set.contains(.retryWithCookies))
+        XCTAssertFalse(set.contains(.retry))
     }
 
     func test_transitionUpdatesTheSet() async {

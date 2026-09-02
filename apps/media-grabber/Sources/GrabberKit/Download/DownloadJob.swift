@@ -11,6 +11,7 @@ final class DownloadJob {
     var progress: Progress?
     var sizeBytes: Int64?
     var attempt: Int
+    var forceCookies: Bool
     var outputFiles: [URL]
     // Runtime-only (not persisted) — set on completion / a failed integrity check.
     var integrityVerdict: IntegrityVerdict?
@@ -32,6 +33,7 @@ final class DownloadJob {
         progress = nil
         sizeBytes = nil
         attempt = 0
+        forceCookies = false
         outputFiles = []
         integrityVerdict = nil
         actualQuality = nil

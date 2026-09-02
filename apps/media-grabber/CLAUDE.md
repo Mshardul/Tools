@@ -5,7 +5,12 @@ and `MediaGrabber` (thin SwiftUI app over it). Tuist-generated project.
 
 Specs: `docs/superpowers/specs/` — parent design `2026-08-28-youtube-downloader-mac-design.md`
 (living), current phase spec alongside it. Built phases' specs + plans move to
-`specs/archived/` and `plans/archived/`. Phase 1: `specs/archived/core-download-pipeline.md`.
+`specs/archived/` and `plans/archived/`. Shipped: Phase 1
+`core-download-pipeline.md`, Phase 2 `queue-foundation.md` (not archived — kept
+in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
+`2026-09-01-media-grabber-phase-4.md`, Phase 5 `2026-09-02-media-grabber-phase-5.md`
+(spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
+not this app-local one). Next: Phase 6 (rate limiting + circuit breaker).
 
 ## Phase scoping — three rules
 

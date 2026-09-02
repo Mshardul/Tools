@@ -16,6 +16,7 @@ public protocol DownloadEngineProtocol: Sendable {
     func pause(_ id: UUID) async
     func resume(_ id: UUID) async
     func retry(_ id: UUID) async
+    func retryWithCookies(_ id: UUID) async
     func cancel(_ id: UUID) async
     func remove(_ id: UUID) async
     func forceStart(_ id: UUID) async
@@ -33,6 +34,7 @@ public struct EngineDebugFlags: Sendable {
 
 public struct EngineDependencies: Sendable {
     public var runner: ProcessRunning
+    public var fileManager: FileManaging
     public var probe: MetadataProbing
     public var envProbe: EnvironmentProbing
     public var clock: any Clock
@@ -46,9 +48,12 @@ public struct EngineDependencies: Sendable {
     public var persistence: any QueuePersisting
     // Called on remove(_:) to delete the job's raw log; defaults to JobLog.delete.
     public var deleteJobLog: (@Sendable (UUID) -> Void)?
+    // Injected so a test can resolve the cookie argument against a scripted home.
+    public var cookieResolverHome: URL?
 
     public init(
         runner: ProcessRunning,
+        fileManager: FileManaging = FoundationFileManager(),
         probe: MetadataProbing,
         envProbe: EnvironmentProbing,
         clock: any Clock = SystemClock(),
@@ -60,9 +65,11 @@ public struct EngineDependencies: Sendable {
         ffprobeURL: URL? = nil,
         log: LogWriter? = nil,
         persistence: any QueuePersisting = NoopPersisting(),
-        deleteJobLog: (@Sendable (UUID) -> Void)? = nil
+        deleteJobLog: (@Sendable (UUID) -> Void)? = nil,
+        cookieResolverHome: URL? = nil
     ) {
         self.runner = runner
+        self.fileManager = fileManager
         self.probe = probe
         self.envProbe = envProbe
         self.clock = clock
@@ -79,6 +86,7 @@ public struct EngineDependencies: Sendable {
         } else {
             self.deleteJobLog = { id in JobLog.delete(id: id, dir: jobLogDir) }
         }
+        self.cookieResolverHome = cookieResolverHome
     }
 
     public static func live(

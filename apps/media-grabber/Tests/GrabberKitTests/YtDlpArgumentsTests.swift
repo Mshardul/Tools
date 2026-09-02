@@ -205,6 +205,34 @@ final class YtDlpArgumentsTests: XCTestCase {
         )
     }
 
+    func test_cookieArgument_emittedBeforeURL() throws {
+        let argv = YtDlpArguments.build(
+            for: request(kind: .video(maxHeight: 720)),
+            cookieArgument: "safari"
+        )
+        let idx = try XCTUnwrap(argv.firstIndex(of: "--cookies-from-browser"))
+        XCTAssertEqual(argv[idx + 1], "safari")
+        XCTAssertLessThan(idx, try XCTUnwrap(argv.firstIndex(of: url)))
+    }
+
+    func test_cookieArgument_nil_omitsBothTokens() {
+        let argv = YtDlpArguments.build(
+            for: request(kind: .video(maxHeight: 720)),
+            cookieArgument: nil
+        )
+        XCTAssertFalse(argv.contains("--cookies-from-browser"))
+    }
+
+    func test_redacted_masksCookieSpec() throws {
+        let argv = YtDlpArguments.redacted(
+            for: request(kind: .video(maxHeight: 720)),
+            cookieArgument: "firefox:work"
+        )
+        let idx = try XCTUnwrap(argv.firstIndex(of: "--cookies-from-browser"))
+        XCTAssertEqual(argv[idx + 1], "<redacted>")
+        XCTAssertFalse(argv.contains("firefox:work"))
+    }
+
     private func hasSubsequence(_ array: [String], _ sub: [String]) -> Bool {
         guard let start = array.firstIndex(of: sub[0]) else { return false }
         guard start + sub.count <= array.count else { return false }

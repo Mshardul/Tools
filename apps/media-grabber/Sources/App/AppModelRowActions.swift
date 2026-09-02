@@ -17,7 +17,16 @@ extension AppModel {
         case .openInBrowser: openInBrowser(jobID: id)
         case .retry: await engine.retry(id)
         case .showLog: await showLog(jobID: id)
-        case .retryWithCookies: break
+        case .retryWithCookies: await retryWithCookies(id)
+        }
+    }
+
+    private func retryWithCookies(_ id: UUID) async {
+        if prefs.cookiesFromBrowser.isNone {
+            setPendingCookieRetry(id)
+            page = .preferences(.cookies)
+        } else {
+            await engine.retryWithCookies(id)
         }
     }
 

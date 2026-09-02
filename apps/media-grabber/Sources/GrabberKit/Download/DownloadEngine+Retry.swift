@@ -33,6 +33,34 @@ extension DownloadEngine {
         evaluateSchedule()
     }
 
+    // The 🔑 action: force a browser sign-in onto a from-scratch retry. Never resumes —
+    // a cookieless .part is not what the user is retrying for. forceCookies sticks for
+    // the job's life, so a re-fail keeps its cookies.
+    public func retryWithCookies(_ id: UUID) async {
+        guard let job = jobs.first(where: { $0.id == id }),
+              case let .failed(errorClass) = job.state,
+              errorClass.presentation.offeredActions.contains(.retryWithCookies)
+        else {
+            return
+        }
+
+        job.forceCookies = true
+        job.attempt = 0
+        job.state = .queued
+        job.finishedAt = nil
+        job.progress = nil
+        job.sizeBytes = nil
+        job.integrityVerdict = nil
+        job.actualQuality = nil
+        deletePartFiles(for: job)
+        move(job, toTail: true)
+        logEvent(.jobRetried(id: id))
+
+        bump()
+        emitSnapshot()
+        evaluateSchedule()
+    }
+
     private func shouldResume(_ job: DownloadJob, errorClass: ErrorClass) -> Bool {
         let transient = switch errorClass {
         case .networkDown, .incomplete, .unknown: true

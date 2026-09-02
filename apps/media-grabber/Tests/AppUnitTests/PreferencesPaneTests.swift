@@ -1,3 +1,4 @@
+@testable import GrabberKit
 @testable import MediaGrabber
 import XCTest
 
@@ -21,5 +22,23 @@ final class PreferencesPaneTests: XCTestCase {
     func test_titles() {
         XCTAssertEqual(PreferencesPane.cookies.title, "Sign-in & cookies")
         XCTAssertEqual(PreferencesPane.logsPrivacy.title, "Logs & privacy")
+    }
+
+    func test_cookieSourceDisplayNames() {
+        XCTAssertEqual(SignInCookiesPane.displayName(for: .none), "None")
+        XCTAssertEqual(SignInCookiesPane.displayName(for: .safari), "Safari")
+        XCTAssertEqual(SignInCookiesPane.displayName(for: .edge), "Microsoft Edge")
+        XCTAssertEqual(SignInCookiesPane.displayName(for: .firefox(profile: nil)), "Firefox")
+    }
+
+    func test_pendingBannerText() {
+        XCTAssertEqual(
+            SignInCookiesPane.pendingBannerText(jobTitle: "My Clip"),
+            "Pick a browser to retry \"My Clip\" with your sign-in."
+        )
+        XCTAssertEqual(
+            SignInCookiesPane.pendingBannerText(jobTitle: nil),
+            "Pick a browser to retry \"this download\" with your sign-in."
+        )
     }
 }

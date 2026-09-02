@@ -43,7 +43,16 @@ public struct FailurePresentation: Sendable, Equatable {
         "geo_blocked", "private", "unavailable", "age_restricted", "dep_missing"
     ]
 
+    // A browser sign-in is what unblocks these — the row offers Retry-with-cookies.
+    private static let cookieRetryKeys: Set<String> = [
+        "cookie_read_failed", "age_restricted", "private"
+    ]
+
     private static func actions(for errorClass: ErrorClass) -> Set<RowAction> {
-        noRetryKeys.contains(errorClass.key) ? [] : [.retry]
+        var actions: Set<RowAction> = noRetryKeys.contains(errorClass.key) ? [] : [.retry]
+        if cookieRetryKeys.contains(errorClass.key) {
+            actions.insert(.retryWithCookies)
+        }
+        return actions
     }
 }

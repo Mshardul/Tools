@@ -52,7 +52,15 @@ final class AppModel {
         case diagnostics
     }
 
-    var page: Page = .home
+    var page: Page = .home {
+        didSet {
+            if page != .preferences(.cookies), pendingCookieRetryJobID != nil {
+                pendingCookieRetryJobID = nil
+            }
+        }
+    }
+
+    private(set) var pendingCookieRetryJobID: UUID?
     private(set) var needsOnboarding = false
     private(set) var lastSubmittedJobID: UUID?
     private(set) var resolved: MediaMetadata?
@@ -261,6 +269,16 @@ final class AppModel {
 
     func resetAllSettings() {
         prefs.resetToDefaults()
+    }
+
+    func resolveCookieRetry() async {
+        guard let id = pendingCookieRetryJobID else { return }
+        pendingCookieRetryJobID = nil
+        await engine.retryWithCookies(id)
+    }
+
+    func setPendingCookieRetry(_ id: UUID?) {
+        pendingCookieRetryJobID = id
     }
 
     private func startConsumerIfNeeded() {

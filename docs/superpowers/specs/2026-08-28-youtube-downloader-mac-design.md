@@ -235,8 +235,7 @@ The queue also carries a `QueueSnapshot.queueHalt: QueueHaltReason?`
 - `defaultKind`, `defaultMaxHeight` (default 1080), `defaultAudioCodec` (default m4a)
 - `outputTemplate: String`
 - `clipboardAutoDetect: Bool` (default true)
-- `cookiesFromBrowser: BrowserChoice` — `.none | .safari | .chrome | .brave | .firefox | .edge` (default `.safari`)
-- `firefoxProfile: String?` — used only when `cookiesFromBrowser == .firefox`
+- `cookiesFromBrowser: CookieSource` — `.none | .safari | .chrome | .brave | .edge | .firefox(profile:)` (default `.none`). Cookies are opt-in: nothing reads a browser's sign-in unless the user picks one here or presses Retry-with-cookies on a failed row. The Firefox profile rides inside `.firefox(profile:)`.
 - `proxyURL: String?`
 - `forceIPv4: Bool` (default false)
 - `selfRateLimitKBps: Int?` — optional `--limit-rate`
@@ -430,18 +429,27 @@ fetches it from a small hosted JSON):
 `web` (plain) and `android` are skipped (SABR-crippled / frequently blocked).
 `job.playerClientUsed` records the winner.
 
-**Cookies from browser** — `--cookies-from-browser <choice>`, default `.safari`.
-On an unreadable cookie database, fall back to no cookies, log it, and classify
-as `cookieReadFailed` only if the download then fails.
+**Cookies from browser** — `--cookies-from-browser <choice>`, opt-in, default
+`.none`. `cookieReadFailed` fires on a direct user-requested cookie read that
+failed — a chosen browser in Preferences, or the Retry-with-cookies (`🔑`)
+action on a failed row. `CookieResolver` resolves the argument at spawn time
+(Firefox `profiles.ini` enumeration, a Safari Full-Disk-Access probe-read) and
+`YtDlpArguments` redacts the spec in logs.
+
+> A later always-on-cookies model would default `cookiesFromBrowser` to
+> `.safari`, attempt the cookie read on every download, silently fall back to no
+> cookies on a read failure, and classify `cookieReadFailed` only if the
+> cookieless download then also fails. `CookieResolver` is built to support that
+> unchanged.
 
 **User-Agent** — aligned to the chosen client; a small rotating pool.
 
 ### 7.3 Cookie edge cases
 
-- **Safari** — needs the app to have **Full Disk Access** (it reads the Safari container's `Cookies.binarycookies`). Detect the permission failure and prompt with a System Settings deep link to the Full Disk Access pane.
-- **Chrome / Brave / Edge** — cookies are Keychain-encrypted; the first use triggers a Keychain prompt. Chrome 127+ **app-bound encryption** can defeat `--cookies-from-browser` → detect, fall back, and tell the user to use a different browser profile or Safari / Firefox.
+- **Safari** — needs the app to have **Full Disk Access** (it reads the Safari container's `Cookies.binarycookies`). The check is a just-in-time probe-read from the Preferences pane — a failed read shows a `--warn` status row with a System Settings deep link to the Full Disk Access pane. No onboarding step.
+- **Chrome / Brave / Edge** — cookies are Keychain-encrypted; the first use triggers a Keychain prompt. Chrome 127+ **app-bound encryption** prints no error — it is detected from a `Extracted 0 cookies` line on a run that carried a cookie argument and then failed downstream → `cookieReadFailed`; the "Learn more" link covers the fix (a different profile, or Safari / Firefox).
 - **Firefox** — reads `cookies.sqlite`; multiple profiles need `firefox:PROFILE`. Enumerate the profiles and let the user pick in Preferences.
-- **Locked database** — an open browser can lock it; yt-dlp usually copies first but can fail → `cookieReadFailed`, fall back, don't hard-fail.
+- **Locked database** — an open browser can lock it; yt-dlp usually copies first but can fail → `cookieReadFailed`, with a manual Retry / Retry-with-cookies on the row.
 - **Recommended setup** (surfaced as a Preferences tip): a dedicated browser profile signed into YouTube, kept closed while downloading.
 
 ### 7.4 Scheduler and pacing
@@ -666,8 +674,8 @@ add cases and wiring, never relayout — §12.2.
 - **Phase 3 — Preferences screen (shipped).** The 7-pane `PreferencesView` (design-system §4.6) over the `@Observable Preferences` model — fixed-height window, left rail never scrolls, right pane scrolls. Filled panes: Downloads (folder, concurrency 1–6, retries, media type, video quality, audio format, filename-format presets + custom, clipboard toggle), Appearance (Theme + Palette as `SkinnedSegment` / swatches), Network (proxy / Force IPv4 / speed limit), Logs & privacy, Advanced (reveal folders, reset columns, reset settings via the confirmation dialog). Sign-in & cookies and Updates ship as stepless panes (title + sub + one "coming in a later update" line). Two reusable skinned controls built this phase — `SkinnedSegment` (equal-width, hug-content, flush-right) and `SkinnedPicker` (popover, not a modal; content-sized width clamped to 340pt) — also replace the native `Menu` dropdowns on the Home runway. New `Preferences` fields: `detectClipboardLinks`, `proxyURL`, `forceIPv4`, `speedLimitKBps` (Int, default 0), `lastVideoHeight` / `lastMediaType` / `lastAudioFormat` (runway last-selected, seeded via `runwaySeed(from:)`). `GlobalDownloadOptions` in `GrabberKit` + `YtDlpArguments` wiring for `--proxy` / `-4` / `--limit-rate`, read off `preferences` by `DownloadEngine` at spawn. Concurrency note (warn glyph + `--dim` line) when the cap is lowered below the live running count — no new drain logic, the Phase 2 scheduler drains on its own. `AppModel.Page.preferences(PreferencesPane = .downloads)` deep-link seam. Pre-release vocabulary sweep: `Skin` → `Theme` end to end (`SkinKind` → `ThemeKind`, `ResolvedTheme` collapsed into `Theme`), `AudioCodec` → `AudioFormat`, `KindSelector` → public `MediaType`, and the `Preferences` field renames (`defaultDestFolder` → `defaultDownloadFolder`, `defaultMaxHeight` → `defaultVideoHeight`, `outputTemplate` → `filenameTemplate`, `maxAutoRetries` → `maxAutoRetries`, etc.). Tape Deck `--warn` darkened to WCAG AA (`#9C5A00` / `#9A6410` / `#8E6318`).
 
 - **Phase 4 — Retry and error classification (shipped).** Spec + plan:
-  `docs/superpowers/specs/2026-09-01-media-grabber-phase-4.md`,
-  `docs/superpowers/plans/2026-09-01-media-grabber-phase-4.md`. The generic
+  `docs/superpowers/specs/archived/2026-09-01-media-grabber-phase-4.md`,
+  `docs/superpowers/plans/archived/2026-09-01-media-grabber-phase-4.md`. The generic
   `ErrorClass` cases (§9 — `rateLimited`, `geoBlocked`, `private`, `unavailable`,
   `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`)
   modelled as a `FailurePresentation` value keyed off `ErrorClass` — a
@@ -703,8 +711,9 @@ add cases and wiring, never relayout — §12.2.
   `rateLimited` result retries on the plain `Backoff` schedule — no per-host
   state (Phase 6).
 
-- **Phase 5 — Cookies.** `--cookies-from-browser`; Full Disk Access detection and the System Settings deep link (Safari), plus a Full-Disk-Access `OnboardingStepID` case; Firefox multi-profile enumeration and its picker (the Sign-in & cookies pane, Phase 3); the Chrome app-bound-encryption fallback; `cookieReadFailed` handling (non-fatal); the "retry with cookies" (`🔑`) row action wired into the Phase 2 action bar. Needs Phase 4's `ErrorClass` set and live action bar; does not need rate limiting.
-  - *Hint: update the `screens.html` mockup — the Sign-in & cookies pane fills (browser `SkinnedPicker`, Firefox-profile picker with its scroll cap, Full Disk Access status row, tip text), and the Onboarding screen gains the Full Disk Access step. Both render header-only / stepless in the current snapshot.*
+- **Phase 5 — Cookies (shipped).** Spec + plan:
+  `docs/superpowers/specs/archived/2026-09-02-media-grabber-phase-5.md`,
+  `docs/superpowers/plans/archived/2026-09-02-media-grabber-phase-5.md`. `CookieSource` (`.none | .safari | .chrome | .brave | .edge | .firefox(profile:)`) and `CookieResolver` (Firefox `profiles.ini` enumeration, a Safari Full-Disk-Access probe-read, spawn-time argument resolution) in a self-contained `GrabberKit/Cookies/` unit. Opt-in — `Preferences.cookiesFromBrowser` default `.none`. The Sign-in & cookies pane filled: browser picker, Firefox-profile picker (shown at 2+ profiles), a just-in-time Full Disk Access status row + System Settings deep link (Safari only), a "Learn more" link, the recommended-setup tip. `--cookies-from-browser` threaded through `YtDlpArguments` and redacted in logs. `cookieReadFailed` classifier — stderr signatures plus an `Extracted 0 cookies` + downstream-failure override (the Chrome app-bound-encryption case). The `🔑` Retry-with-cookies row action, offered on `cookieReadFailed` / `ageRestricted` / `private`; `engine.retryWithCookies` does a from-scratch retry with a persisted `job.forceCookies`. `CookieHelpURL`. No Full-Disk-Access onboarding step — onboarding stays 4 steps. Needs Phase 4's `ErrorClass` set and live action bar; does not need rate limiting.
 
 - **Phase 6 — Rate limiting and circuit breaker.** `RateState` per host (`normal | cooldown | circuitOpen`); the cooldown row state; the `WarningBanner` `cooldown` / `circuitOpen` / `depMissing` `BannerContent` (shell from Phase 2); the circuit breaker → `QueueSnapshot.queueHalt` gains `.circuitOpen` / `.networkDown` (`queueHalt` seam from Phase 2); adaptive concurrency (streak up, throttle down — new fields on the Phase 2 `SchedulerInput`, no loop rewrite); `NetworkMonitor` → `waitingForNetwork`; per-host cooldown = the second `deferStart` caller (seam from Phase 2); the `HealthStrip` engine-freshness / online / per-host-cooldown chips — the Phase 2 `HealthController` produces the chip array (Phase 2 returns one static `online` chip), and `ChipInteraction` gains `.popover(PopoverContent)` for the cooldown chip. Smoke test: force a 429 and watch the cooldown UI, the banner, and the circuit breaker (§11.3).
   - *Hint: the Status cell's live `m:ss` backoff / cooldown countdown lands here — Phase 4 shows a static `Retrying — attempt N of M` and leaves `JobSnapshot.cooldownUntil` nil; this phase reads `cooldownUntil` (for the host cooldown and, retroactively, the backoff wait) and drives the per-second re-render alongside the cooldown-chip popover.*
@@ -742,8 +751,8 @@ means no screen is built twice.
 | `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction }`, `ChipInteraction` = `none \| refresh(...)`, ships the one static `online` chip | Phase 6 (engine / online / cooldown chips; `ChipInteraction` gains `.popover(PopoverContent)` for the cooldown chip — additive), Phase 7 (bot-check shield chip + `↻`) |
 | `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil`. The `suppressionKey` mechanism is built but unused in P2 | Phase 8 "cancel all" (a suppression candidate) and any later dialog — just call `confirm(...)` |
 | `ErrorClass` emit paths + failure UI | Phase 2 wires `incomplete` / `diskFull` / `permissionDenied` · Phase 4 the generic-set classifier signatures + the `FailurePresentation` model (`{ sentence, offeredActions }` keyed off `ErrorClass`, one switch) + `ErrorClass.key` | Phase 5 (`cookieReadFailed`) · Phase 7 (`botCheck`, `sabrGated`, `formatsMissing`, `potProviderDown` — four `FailurePresentation` arms, built with the §7.2 machinery that emits them) |
-| `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Network / Logs & privacy / Advanced filled, Sign-in & cookies + Updates stepless | Phase 4 (retry engine consuming `maxAutoRetries`), Phase 5 (Firefox profile picker), Phase 10 (`autoCheckUpdates`) |
-| Onboarding step list | Phase 1 — `OnboardingView` renders `ForEach(OnboardingStepID.allCases)`; ships `homebrew`, `downloaderTools`, `botCheckShield` (POT `pipx` install), `testRun` | Phase 5 — a Full-Disk-Access case (enum case + title / subtitle / check logic, no layout change) |
+| `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Network / Logs & privacy / Advanced filled, Sign-in & cookies + Updates stepless | Phase 4 (retry engine consuming `maxAutoRetries`), Phase 5 (the whole Sign-in & cookies pane — browser picker, Firefox-profile picker, Full Disk Access row, Learn more, tip), Phase 10 (`autoCheckUpdates`) |
+| Onboarding step list | Phase 1 — `OnboardingView` renders `ForEach(OnboardingStepID.allCases)`; ships `homebrew`, `downloaderTools`, `botCheckShield` (POT `pipx` install), `testRun` | — (stays 4 steps; cookies use a just-in-time Full Disk Access request from the Preferences pane) |
 
 **No accepted throwaway.** The Phase 2 scheduler is extended in Phase 6, not
 deleted. The runway defaults read the `Preferences` model from Phase 1, so

@@ -136,6 +136,7 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func pause(_: UUID) async {}
     func resume(_: UUID) async {}
     func retry(_: UUID) async {}
+    func retryWithCookies(_: UUID) async {}
     func cancel(_: UUID) async {}
     func remove(_: UUID) async {}
     func forceStart(_: UUID) async {}

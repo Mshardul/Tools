@@ -46,6 +46,7 @@ extension DownloadEngine {
             durationSeconds: job.durationSeconds,
             state: PersistedState.persisted(from: job.state),
             attempt: job.attempt,
+            forceCookies: job.forceCookies,
             playlistGroupID: nil,
             addedAt: job.addedAt,
             finishedAt: job.finishedAt
@@ -62,6 +63,7 @@ extension DownloadEngine {
         job.extractor = persisted.extractor
         job.durationSeconds = persisted.durationSeconds
         job.attempt = persisted.attempt
+        job.forceCookies = persisted.forceCookies
         job.state = persisted.state.restoredJobState
         job.finishedAt = persisted.finishedAt
         return job

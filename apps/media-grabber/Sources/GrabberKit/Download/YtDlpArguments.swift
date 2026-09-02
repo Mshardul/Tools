@@ -8,22 +8,31 @@ public enum YtDlpArguments {
     public static func build(
         for request: DownloadRequest,
         options: GlobalDownloadOptions = .none,
-        tuning: YtDlpTuning = .default
+        tuning: YtDlpTuning = .default,
+        cookieArgument: String? = nil
     ) -> [String] {
         baseArgv(for: request, tuning: tuning)
+            + cookieFlags(cookieArgument, redact: false)
             + globalFlags(options, proxyURL: options.proxyURL)
             + [request.url]
     }
 
-    // Proxy userinfo is masked in the returned proxy URL; identical to build() otherwise.
+    // Proxy userinfo is masked in the returned proxy URL; the cookie spec is masked too.
     public static func redacted(
         for request: DownloadRequest,
         options: GlobalDownloadOptions = .none,
-        tuning: YtDlpTuning = .default
+        tuning: YtDlpTuning = .default,
+        cookieArgument: String? = nil
     ) -> [String] {
         baseArgv(for: request, tuning: tuning)
+            + cookieFlags(cookieArgument, redact: true)
             + globalFlags(options, proxyURL: options.proxyURL.map(maskUserinfo(in:)))
             + [request.url]
+    }
+
+    private static func cookieFlags(_ argument: String?, redact: Bool) -> [String] {
+        guard let argument else { return [] }
+        return ["--cookies-from-browser", redact ? "<redacted>" : argument]
     }
 
     private static func baseArgv(for request: DownloadRequest, tuning: YtDlpTuning) -> [String] {

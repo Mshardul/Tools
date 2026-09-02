@@ -26,6 +26,19 @@ until it reaches v1 (spec §14).
   (bar background, `speed · eta` overlay) — discussed post-Phase 2; update
   design-system §4.2.3 when implemented.
 
+## Phase 6 deferrals (surfaced during design)
+
+- **Per-host adaptive concurrency.** Phase 6 ships one global adaptive cap: it
+  starts at 2, climbs by 1 per clean streak of 5 up to the Preferences cap, and
+  drops to 1 on any rate-limit / throttle from any host. A throttle on one site
+  therefore briefly slows every other site. Moving to a cap per `RateHost` would
+  keep healthy sites fast while a throttled site eases back alone. Deferred
+  because it rewrites `Scheduler.nextDownloads` into per-host slot accounting
+  (two capping layers — per-host adaptive plus the global Preferences cap — and
+  their interaction), and rate limiting is mostly per-IP anyway so the global
+  cap is the right default. The scheduler already receives `blockedHostIDs`, so
+  this is an additive change to an existing seam, not a rewrite of Phase 6 work.
+
 ## Phases 3–11 (intent — detailed when reached, from spec §12.1)
 
 Boundaries are dependency cuts: a phase is picked when its inputs exist, and its

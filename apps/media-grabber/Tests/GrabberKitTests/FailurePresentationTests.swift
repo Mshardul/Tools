@@ -21,12 +21,15 @@ final class FailurePresentationTests: XCTestCase {
     func test_offeredActionsMatchSpec() {
         XCTAssertEqual(ErrorClass.rateLimited().presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.geoBlocked.presentation.offeredActions, [])
-        XCTAssertEqual(ErrorClass.private.presentation.offeredActions, [])
+        XCTAssertEqual(ErrorClass.private.presentation.offeredActions, [.retryWithCookies])
         XCTAssertEqual(ErrorClass.unavailable.presentation.offeredActions, [])
-        XCTAssertEqual(ErrorClass.ageRestricted.presentation.offeredActions, [])
+        XCTAssertEqual(ErrorClass.ageRestricted.presentation.offeredActions, [.retryWithCookies])
         XCTAssertEqual(ErrorClass.depMissing.presentation.offeredActions, [])
         XCTAssertEqual(ErrorClass.networkDown.presentation.offeredActions, [.retry])
-        XCTAssertEqual(ErrorClass.cookieReadFailed.presentation.offeredActions, [.retry])
+        XCTAssertEqual(
+            ErrorClass.cookieReadFailed.presentation.offeredActions,
+            [.retry, .retryWithCookies]
+        )
         XCTAssertEqual(ErrorClass.diskFull.presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.permissionDenied.presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.incomplete.presentation.offeredActions, [.retry])

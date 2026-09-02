@@ -1,6 +1,7 @@
 # Retry and error classification (Phase 4)
 
-**Status:** design complete. Plan: not yet written. Parent spec:
+**Status:** shipped. Plan:
+`docs/superpowers/plans/archived/2026-09-01-media-grabber-phase-4.md`. Parent spec:
 `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §12.1.
 Phase 2 (shipped): `docs/superpowers/specs/queue-foundation.md`.
 Phase 3 (shipped): `docs/superpowers/specs/archived/2026-08-31-media-grabber-phase-3.md`.

@@ -92,6 +92,30 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(reloaded.lastAudioFormat, .mp3)
     }
 
+    func test_cookiesFromBrowser_defaultsToNone() {
+        XCTAssertEqual(Preferences(defaults: defaults).cookiesFromBrowser, .none)
+    }
+
+    func test_cookiesFromBrowser_roundTripsFirefoxProfile() {
+        Preferences(defaults: defaults).cookiesFromBrowser = .firefox(profile: "work")
+        XCTAssertEqual(
+            Preferences(defaults: defaults).cookiesFromBrowser,
+            .firefox(profile: "work")
+        )
+    }
+
+    func test_cookiesFromBrowser_malformedData_decodesToNone() {
+        defaults.set(Data("not json".utf8), forKey: "mg.cookiesFromBrowser")
+        XCTAssertEqual(Preferences(defaults: defaults).cookiesFromBrowser, .none)
+    }
+
+    func test_resetToDefaults_clearsCookiesFromBrowser() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.cookiesFromBrowser = .safari
+        prefs.resetToDefaults()
+        XCTAssertEqual(prefs.cookiesFromBrowser, .none)
+    }
+
     func test_resetToDefaults_restoresEveryField() {
         let prefs = Preferences(defaults: defaults)
         prefs.defaultVideoHeight = 480

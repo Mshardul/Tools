@@ -27,16 +27,20 @@ enum EngineFixture {
         runner: FakeProcessRunner,
         probe: FakeMetadataProbe,
         cap: Int = 3,
-        preferences: Preferences? = nil
+        preferences: Preferences? = nil,
+        fileManager: FileManaging = FoundationFileManager(),
+        resolverHome: URL? = nil
     ) -> DownloadEngine {
         DownloadEngine(
             dependencies: EngineDependencies(
                 runner: runner,
+                fileManager: fileManager,
                 probe: probe,
                 envProbe: FakeEnvironmentProbe(.with(ytDlp: true, ffmpeg: true)),
                 ytDlpURL: ytDlp,
                 jobLogDir: scratchLogDir(),
-                debugFlags: EngineDebugFlags(concurrencyCapOverride: cap)
+                debugFlags: EngineDebugFlags(concurrencyCapOverride: cap),
+                cookieResolverHome: resolverHome
             ),
             preferences: preferences
                 ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)

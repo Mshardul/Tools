@@ -8,8 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   MEDIAGRABBER — maintained mockup. Target state once Phases 1–3 land.
-   Snapshot, not a changelog. Tokens mirror ../design-system.md.
+   MEDIAGRABBER — maintained mockup. Snapshot of shipped screens
+   (Phases 1–5) plus later-phase pages left as drawn until those
+   phases are planned. Tokens mirror ../design-system.md.
    Switch theme/palette with the bar at the top (writes
    data-theme / data-palette on <html>). This is a meta file — the few
    phase references in captions are deliberate.
@@ -175,11 +176,14 @@ h1.head em{font-style:normal;color:var(--accent)}
 /* paste field + runway */
 .paste-stack{display:flex;flex-direction:column;gap:var(--sp-3)}
 .field{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:10px;align-items:center}
+.field.col{flex-direction:column;align-items:stretch;gap:8px}
+.field-row{display:flex;gap:10px;align-items:center}
 .field input{flex:1;min-width:0;background:transparent;border:none;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none}
 .field input::placeholder{color:var(--faint)}
 .field .status{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap}
 :root[data-theme="tapedeck"] .field .status{color:var(--brand)}
 .field .status.err{color:var(--danger)}
+.probe-err{font-size:12px;color:var(--danger);line-height:1.4}
 .runway{background:var(--panel-hi);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:0;align-items:stretch;box-shadow:var(--console-elev);width:100%}
 .rstep{flex:1;display:flex;flex-direction:column;gap:6px;padding:0 14px;position:relative;min-width:0}
 .rstep + .rstep::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--hair)}
@@ -217,11 +221,16 @@ h1.head em{font-style:normal;color:var(--accent)}
 /* table */
 .tablewrap{padding:6px var(--sp-5) 82px;position:relative}
 .tablewrap.short{padding-bottom:24px}
-.toolbar{display:flex;gap:var(--sp-2);margin:var(--sp-4) 0 var(--sp-3);flex-wrap:wrap;align-items:center}
+.toolbar{display:flex;gap:var(--sp-2);margin:var(--sp-4) 0 var(--sp-3);flex-wrap:wrap;align-items:center;position:relative}
 .toolbar .fc{font-family:var(--font-display);font-size:11px;padding:6px 12px;border-radius:var(--r-pill);border:1px solid var(--stroke);background:transparent;color:var(--dim);cursor:pointer}
 .toolbar .fc.on{background:var(--panel);color:var(--text)}
 .toolbar .fc .badge{background:var(--danger);color:#fff;border-radius:20px;padding:0 5px;font-size:9px;margin-left:5px}
 .toolbar .colbtn{margin-left:auto;font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:var(--r-chip);border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer}
+.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.toolbar-right .colbtn{margin-left:0}
+.toolbar .clear{font-family:var(--font-body);font-size:12px;padding:6px 4px;border:none;background:transparent;color:var(--accent);cursor:pointer}
+.empty-table{flex:1;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:13px;padding:80px 24px;text-align:center}
+.tablewrap.fill{display:flex;flex-direction:column;flex:1;min-height:0}
 
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead th{text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);padding:8px;border-bottom:var(--border-w) solid var(--stroke);white-space:nowrap;position:relative}
@@ -265,6 +274,7 @@ tbody tr:hover td{background:var(--panel)}
 .s-fail{color:var(--danger)} .s-fail::before{background:var(--danger)} :root[data-theme="tapedeck"] .s-fail{background:var(--s-fail);color:var(--text)}
 .s-cool{color:var(--warn)} .s-cool::before{background:var(--warn)} :root[data-theme="tapedeck"] .s-cool{background:var(--s-cool);color:var(--text)}
 .s-queue{color:var(--accent-2)} .s-queue::before{background:var(--accent-2)} :root[data-theme="tapedeck"] .s-queue{background:var(--s-queue);color:var(--text)}
+.s-pause{color:var(--dim)} .s-pause::before{background:var(--dim)}
 .bar{height:6px;width:110px;overflow:hidden;background:rgba(150,150,150,.18);border-radius:var(--r-pill)}
 :root[data-theme="tapedeck"] .bar{border:1.5px solid var(--stroke);height:7px}
 .bar>i{display:block;height:100%;background:var(--bar-fill)}
@@ -339,6 +349,7 @@ tbody tr:hover td{background:var(--panel)}
 .cdialog .cbtns button{font-family:var(--font-display);font-size:12px;padding:9px 16px;border-radius:var(--r-control);cursor:pointer;border:var(--border-w) solid var(--stroke);background:var(--panel);color:var(--text)}
 .cdialog .cbtns button.focusring{box-shadow:0 0 0 2px var(--accent);outline:none}
 .cdialog .cbtns button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.cdialog .cbtns button.ok{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 
 /* onboarding */
 .onb{padding:var(--sp-8) var(--sp-6);max-width:620px;margin:0 auto}
@@ -353,6 +364,8 @@ tbody tr:hover td{background:var(--panel)}
 .step .body .cmd{font-family:var(--font-mono);font-size:11px;background:var(--ground);border:1px solid var(--stroke);border-radius:var(--r-chip);padding:8px 10px;margin-top:8px;color:var(--dim);display:flex;align-items:center;gap:8px}
 .step .body .cmd button{margin-left:auto;font-family:var(--font-display);font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer}
 .step .body .go{margin-top:10px;padding:8px 16px;min-height:0;font-size:12px}
+.step .body .rowbtns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.step.fail .ic{border-color:var(--danger);color:var(--danger)}
 
 /* preferences */
 .prefs{display:flex;height:100%}
@@ -389,6 +402,8 @@ tbody tr:hover td{background:var(--panel)}
 .stepless p.later{font-size:12.5px;color:var(--faint);margin-top:var(--sp-3);line-height:1.6}
 .note{display:flex;gap:8px;align-items:flex-start;font-family:var(--font-body);font-size:11.5px;color:var(--dim);line-height:1.5;max-width:34ch}
 .note .wg{color:var(--warn);flex:none}
+.pending{display:flex;align-items:flex-start;gap:8px;padding:12px 0 4px;font-size:12px;color:var(--text);line-height:1.5}
+.pending .wg{color:var(--warn);flex:none}
 
 /* control-details fragments */
 .frag{border:1px dashed var(--stroke);border-radius:var(--r-card);padding:var(--sp-4);margin-bottom:var(--sp-4);position:relative;background:var(--panel-solid)}
@@ -553,8 +568,8 @@ tbody tr:hover td{background:var(--panel)}
             <th>Actions</th></tr></thead><tbody>
             <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr><td>Lo-fi beats to study to</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-cool">cooling down</span></td><td></td><td>resumes 4:12</td><td><div class="acts"><button>▶</button><button>✕</button></div></td></tr>
-            <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">couldn’t verify you</span></td><td></td><td>—</td><td><div class="acts"><button>↻</button><button>🔑</button><button>🌐</button><button>✕</button><button>📄</button></div></td></tr>
-            <tr><td>How the engine was built</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-fail">This video is private.</span></td><td></td><td>—</td><td><div class="acts"><button disabled>↻</button><button disabled>🔑</button><button>🌐</button><button>✕</button><button>📄</button></div></td></tr>
+            <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td></td><td>—</td><td><div class="acts"><button>↻</button><button>🔑</button><button>🌐</button><button>✕</button><button>📄</button></div></td></tr>
+            <tr><td>How the engine was built</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-fail">This video is private.</span></td><td></td><td>—</td><td><div class="acts"><button disabled>↻</button><button>🔑</button><button>🌐</button><button>✕</button><button>📄</button></div></td></tr>
             <tr><td>Field recording — dawn chorus</td><td class="site">archive.org</td><td>Audio · M4A</td><td><span class="st s-dl">Retrying — attempt 3 of 5</span></td><td></td><td>—</td><td><div class="acts"><button>✕</button><button>📄</button></div></td></tr>
             <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p → 720p</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td><div class="acts"><button>📂</button><button>✕</button><button>📄</button></div></td></tr>
           </tbody></table>
@@ -597,7 +612,7 @@ tbody tr:hover td{background:var(--panel)}
             <th><span class="thc"><span class="grip">⠿</span>Added <span class="sortbtn">↕</span></span></th>
             <th>Actions</th></tr></thead><tbody>
             <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td>just now</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-            <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">couldn’t verify you</span></td><td>5m ago</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
+            <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td>5m ago</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
           </tbody></table>
         </div>
       </div>
@@ -722,8 +737,8 @@ tbody tr:hover td{background:var(--panel)}
 
   <!-- 3.4 Sign-in & cookies -->
   <div class="screen" id="s3-4">
-    <div class="cap"><b>3.4</b> Preferences — Sign-in &amp; cookies (stepless)</div>
-    <div class="sub">Present in the rail; title + sub + one plain-language line. No rows, no controls.</div>
+    <div class="cap"><b>3.4</b> Preferences — Sign-in &amp; cookies</div>
+    <div class="sub">Opt-in. Browser picker; the Firefox-profile picker shows at 2+ profiles; the Full Disk Access row shows only for Safari.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
@@ -738,7 +753,32 @@ tbody tr:hover td{background:var(--panel)}
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="stepless"><p class="later">Cookie sign-in is coming in a later update.</p></div>
+          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">Firefox <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="pick">default-release <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Safari state</b> — browser = Safari, Full Disk Access not yet granted:</p>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">Safari <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl"><span class="dot warn"></span> Full Disk Access<small>MediaGrabber needs Full Disk Access to read Safari's sign-in.</small></div><div class="fc"><button class="btn-txt">Open System Settings</button></div></div>
+          <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
         </div>
       </div>
     </div>
@@ -747,7 +787,7 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 3.5 Updates -->
   <div class="screen" id="s3-5">
     <div class="cap"><b>3.5</b> Preferences — Updates (stepless)</div>
-    <div class="sub">Same stepless shape as 3.4.</div>
+    <div class="sub">Stepless — title, sub, one plain-language line.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
@@ -1008,7 +1048,7 @@ tbody tr:hover td{background:var(--panel)}
             </div></td></tr>
             <tr class="child"><td><span class="ti"><span class="rr"></span>01 — Sunrise Loop</span></td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:80%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr class="child"><td>02 — Tidewater</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-queue">queued</span></td><td></td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
-            <tr class="child"><td>04 — Long Exposure</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-fail">couldn’t verify you</span></td><td></td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>04 — Long Exposure</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td></td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
             <tr class="child"><td>06 — Slow Ferry</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
             <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
           </tbody></table>

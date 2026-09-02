@@ -66,7 +66,9 @@ extension DownloadEngine {
         _ result: ProcessResult,
         integrity: IntegrityResult?,
         lastError: ErrorClass?,
-        launchFailed: Bool
+        launchFailed: Bool,
+        cookiesRequested: Bool = false,
+        extractedZeroCookies: Bool = false
     ) {
         childTasks[id] = nil
         guard let job = jobs.first(where: { $0.id == id }) else {
@@ -105,7 +107,12 @@ extension DownloadEngine {
             }
         }
 
-        let errorClass = classifyExit(result: result, lastError: lastError)
+        let errorClass = classifiedFailure(
+            result: result,
+            lastError: lastError,
+            cookiesRequested: cookiesRequested,
+            extractedZeroCookies: extractedZeroCookies
+        )
         if errorClass.isAutoRetryable, job.attempt < preferences.maxAutoRetries {
             reQueueForBackoff(job, id: id, errorClass: errorClass)
             return
@@ -114,6 +121,20 @@ extension DownloadEngine {
         job.state = .failed(errorClass)
         job.finishedAt = .now
         finishTerminal()
+    }
+
+    // A user-requested cookie read that yielded nothing and then failed downstream is the
+    // cookie problem, not whatever the download hit next (the Chrome app-bound case).
+    private func classifiedFailure(
+        result: ProcessResult,
+        lastError: ErrorClass?,
+        cookiesRequested: Bool,
+        extractedZeroCookies: Bool
+    ) -> ErrorClass {
+        if result.exitCode != 0, cookiesRequested, extractedZeroCookies {
+            return .cookieReadFailed
+        }
+        return classifyExit(result: result, lastError: lastError)
     }
 
     private func classifyExit(result: ProcessResult, lastError: ErrorClass?) -> ErrorClass {

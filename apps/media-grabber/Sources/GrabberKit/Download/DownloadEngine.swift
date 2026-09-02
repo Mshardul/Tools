@@ -255,6 +255,16 @@ extension DownloadEngine {
             forceIPv4: preferences.forceIPv4,
             speedLimitKBps: preferences.speedLimitKBps
         )
+        let cookieArgument = resolveCookieArgument(for: job)
+        let launch = ProcessLaunch(
+            executableURL: ytDlpURL,
+            arguments: YtDlpArguments.build(
+                for: request,
+                options: options,
+                tuning: tuning.ytDlp,
+                cookieArgument: cookieArgument
+            )
+        )
         let jobLog = JobLog(
             id: id,
             request: request,
@@ -262,15 +272,8 @@ extension DownloadEngine {
             dir: dependencies.jobLogDir
         )
         let ffprobeURL = dependencies.ffprobeURL
-        let task = Task { [weak self] in
-            let execution = runner.run(ProcessLaunch(
-                executableURL: ytDlpURL,
-                arguments: YtDlpArguments.build(
-                    for: request,
-                    options: options,
-                    tuning: tuning.ytDlp
-                )
-            ))
+        childTasks[id] = Task { [weak self] in
+            let execution = runner.run(launch)
             try? jobLog.writeHeader()
             async let processResult = execution.result()
             let outcome = await self?.drainDownload(id: id, lines: execution.lines, jobLog: jobLog)
@@ -279,10 +282,7 @@ extension DownloadEngine {
             jobLog.close()
 
             let integrity = await self?.runIntegrityCheck(
-                id: id,
-                result: result,
-                runner: runner,
-                ffprobeURL: ffprobeURL
+                id: id, result: result, runner: runner, ffprobeURL: ffprobeURL
             ) ?? nil
 
             await self?.recordExit(
@@ -290,10 +290,19 @@ extension DownloadEngine {
                 result,
                 integrity: integrity,
                 lastError: outcome.lastError,
-                launchFailed: outcome.launchFailed && result.exitCode == 127
+                launchFailed: outcome.launchFailed && result.exitCode == 127,
+                cookiesRequested: cookieArgument != nil,
+                extractedZeroCookies: outcome.extractedZeroCookies
             )
         }
-        childTasks[id] = task
+    }
+
+    private func resolveCookieArgument(for job: DownloadJob) -> String? {
+        let home = dependencies.cookieResolverHome
+            ?? FileManager.default.homeDirectoryForCurrentUser
+        return CookieResolver(fileManager: dependencies.fileManager, home: home)
+            .resolve(source: preferences.cookiesFromBrowser, jobOverride: job.forceCookies)
+            .argument
     }
 
     // Runs strictly after the process exits and the output file resolves — IntegrityCheck
@@ -314,6 +323,7 @@ extension DownloadEngine {
     private struct DownloadDrainOutcome {
         var lastError: ErrorClass?
         var launchFailed = false
+        var extractedZeroCookies = false
     }
 
     private func drainDownload(
@@ -342,6 +352,9 @@ extension DownloadEngine {
             }
             if let path = ProgressParser.captureOutputPath(from: text) {
                 recordOutputPath(id, path)
+            }
+            if text.contains("Extracted 0 cookies") {
+                outcome.extractedZeroCookies = true
             }
         }
         return outcome

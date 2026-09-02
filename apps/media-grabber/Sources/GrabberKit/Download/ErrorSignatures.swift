@@ -35,11 +35,31 @@ public enum ErrorSignatures {
         ])
     ]
 
+    // AND within a group, OR across groups. Checked before `table` so a cookie-read error
+    // on a private video classifies as the cookie problem, not the video state.
+    static let cookieReadFailedGroups: [[String]] = [
+        ["could not find", "cookies database"],
+        ["permission denied", "cookies"],
+        ["failed to decrypt"],
+        ["unable to open database file", "cookies"],
+        ["could not copy", "cookie"],
+        ["you must provide at least one", "cookies"]
+    ]
+
     static func firstMatch(in line: String) -> ErrorClass? {
         let lowered = line.lowercased()
+        if matchesCookieReadFailed(lowered) {
+            return .cookieReadFailed
+        }
         return table.first { entry in
             entry.substrings.contains { lowered.contains($0.lowercased()) }
         }?.errorClass
+    }
+
+    private static func matchesCookieReadFailed(_ lowered: String) -> Bool {
+        cookieReadFailedGroups.contains { group in
+            group.allSatisfy { lowered.contains($0) }
+        }
     }
 
     // A trailing "Retry-After: <int>" — integer seconds only; an HTTP-date value yields nil.

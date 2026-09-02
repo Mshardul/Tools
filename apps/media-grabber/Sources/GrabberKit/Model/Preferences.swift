@@ -124,6 +124,26 @@ public final class Preferences: @unchecked Sendable {
         set { defaults.set(min(100_000, max(0, newValue)), forKey: "mg.speedLimitKBps") }
     }
 
+    // MARK: - Cookies
+
+    public var cookiesFromBrowser: CookieSource {
+        get {
+            guard let data = defaults.data(forKey: "mg.cookiesFromBrowser"),
+                  let decoded = try? JSONDecoder().decode(CookieSource.self, from: data)
+            else {
+                return .none
+            }
+            return decoded
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else {
+                defaults.removeObject(forKey: "mg.cookiesFromBrowser")
+                return
+            }
+            defaults.set(data, forKey: "mg.cookiesFromBrowser")
+        }
+    }
+
     // MARK: - Runway last-selected
 
     public var lastVideoHeight: Int? {
@@ -194,7 +214,7 @@ public final class Preferences: @unchecked Sendable {
         "mg.maxAutoRetries", "mg.maxConcurrentDownloads", "mg.verboseLogging",
         "mg.theme", "mg.palette", "mg.detectClipboardLinks", "mg.proxyURL",
         "mg.forceIPv4", "mg.speedLimitKBps", "mg.lastVideoHeight",
-        "mg.lastMediaType", "mg.lastAudioFormat"
+        "mg.lastMediaType", "mg.lastAudioFormat", "mg.cookiesFromBrowser"
     ]
 
     // MARK: - Helpers

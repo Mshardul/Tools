@@ -13,6 +13,7 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var submitted: [(DownloadRequest, Bool)] = []
         var cancelled: [UUID] = []
         var retried: [UUID] = []
+        var retriedWithCookies: [UUID] = []
         var submitResults: [SubmitResult] = []
         var hasActive = false
         var snapshot = QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
@@ -42,6 +43,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     var retriedIDs: [UUID] {
         box.read { $0.retried }
+    }
+
+    var retriedWithCookiesIDs: [UUID] {
+        box.read { $0.retriedWithCookies }
     }
 
     var restoreCalled: Bool {
@@ -124,6 +129,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func retry(_ jobID: UUID) async {
         box.mutate { $0.retried.append(jobID) }
+    }
+
+    func retryWithCookies(_ jobID: UUID) async {
+        box.mutate { $0.retriedWithCookies.append(jobID) }
     }
 
     func cancel(_ jobID: UUID) async {

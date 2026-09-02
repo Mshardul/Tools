@@ -53,6 +53,27 @@ final class ErrorSignaturesTests: XCTestCase {
         XCTAssertNil(classify("[download] 42% of 10MiB"))
     }
 
+    func test_cookieReadFailed_eachFragmentGroupClassifies() {
+        let lines = [
+            "ERROR: could not find chrome cookies database in \"...\"",
+            "ERROR: Permission denied while opening Cookies for Safari",
+            "ERROR: Failed to decrypt with DPAPI",
+            "ERROR: unable to open database file (cookies)",
+            "ERROR: could not copy Chrome's cookie database",
+            "ERROR: You must provide at least one --cookies or --cookies-from-browser"
+        ]
+        for line in lines {
+            XCTAssertEqual(classify(line), .cookieReadFailed, line)
+        }
+    }
+
+    func test_cookieReadFailed_winsOverPrivate_whenBothPresent() {
+        XCTAssertEqual(
+            classify("ERROR: Private video. could not find firefox cookies database"),
+            .cookieReadFailed
+        )
+    }
+
     func test_retryAfterIntegerParsedIntoRateLimited() {
         XCTAssertEqual(
             classify("ERROR: HTTP Error 429: Too Many Requests. Retry-After: 90"),
