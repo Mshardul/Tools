@@ -87,9 +87,10 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
   version matches the tag, publish a GitHub Release with the `.dmg` + `SHA256SUMS`.
 - To test the release path without publishing: Actions tab → media-grabber-release
   → Run workflow → set `version`, tick `dry_run`.
-- `XCODE_VERSION` is pinned in an `env:` block at the top of BOTH workflow files;
-  a bump edits both. A weekly scheduled CI run tests against Xcode `latest` so a
-  retired pin surfaces out of band.
+- Xcode is pinned in `.xcode-version` (single source of truth): each CI job
+  reads it into a step output for `setup-xcode`, and `xcodes` reads it locally.
+  A bump edits that one file. A weekly scheduled CI run tests against Xcode
+  `latest` so a retired pin surfaces out of band.
 - Notarization, real Developer ID signing, and hardened runtime are not wired —
   the release workflow's sign step marks where they slot in.
 - `scripts/create-dmg` is vendored (andreyvit) at a pinned SHA with one local
@@ -99,6 +100,11 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 - `mise` pins tuist / swiftformat / swiftlint to exact versions in `.mise.toml`.
   Don't run `mise use <tool>@latest` — it rewrites the pin.
+- Xcode is pinned in `.xcode-version` (currently `26.3`, the newest on the
+  macos-15 CI image). tuist 4.205.0's `ProjectDescription` is built for the
+  Swift 6.2 SDK — Xcode < 26 fails `tuist generate` with a compiler/SDK
+  mismatch. Any local Xcode 26.x works; `xcodes select "$(cat .xcode-version)"`
+  to match CI exactly.
 - `.swiftformat` has `--disable docComments`; `.swiftlint.yml` has
   `disabled_rules: [todo]`. Both exclude `Derived/`.
 

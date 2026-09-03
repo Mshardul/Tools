@@ -12,24 +12,24 @@ concurrency:
   group: media-grabber-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  XCODE_VERSION: "16.1"
-
 defaults:
   run:
     working-directory: apps/media-grabber
 
 jobs:
   lint:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+      - id: xcodever
+        working-directory: .
+        run: echo "v=$(cat apps/media-grabber/.xcode-version)" >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@v2
         with:
           working_directory: apps/media-grabber
       - uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: ${{ env.XCODE_VERSION }}
+          xcode-version: ${{ steps.xcodever.outputs.v }}
       - run: mise exec -- swiftformat --lint .
       - run: mise exec -- swiftlint lint --strict
 
@@ -44,10 +44,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15]
+        os: [macos-15]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - id: xcodever
+        working-directory: .
+        run: echo "v=$(cat apps/media-grabber/.xcode-version)" >> "$GITHUB_OUTPUT"
       - name: Cache mise tools
         uses: actions/cache@v4
         with:
@@ -67,7 +70,7 @@ jobs:
           working_directory: apps/media-grabber
       - uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: ${{ github.event_name == 'schedule' && 'latest' || env.XCODE_VERSION }}
+          xcode-version: ${{ github.event_name == 'schedule' && 'latest' || steps.xcodever.outputs.v }}
       - run: mise exec -- tuist generate --no-open
       - run: mise exec -- tuist test MediaGrabber-Workspace
       - name: Collect xcresult
@@ -86,12 +89,12 @@ jobs:
 
   coverage:
     needs: test
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: xcresult-macos-14
+          name: xcresult-macos-15
           path: ${{ runner.temp }}/xcresult
       - name: Coverage summary
         working-directory: .
