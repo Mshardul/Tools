@@ -11,8 +11,10 @@ extension DownloadEngine {
             [.pause, .cancel, .remove, .openInBrowser, .showLog]
         case .paused:
             [.resume, .cancel, .remove, .openInBrowser, .showLog]
-        case .waitingForNetwork, .cooldown:
+        case .waitingForNetwork:
             [.cancel, .remove, .openInBrowser]
+        case .cooldown:
+            [.forceStart, .cancel, .remove, .openInBrowser]
         case .completed:
             [.reveal, .remove, .openInBrowser, .showLog]
         case .cancelled:

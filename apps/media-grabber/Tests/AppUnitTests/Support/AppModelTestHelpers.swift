@@ -47,6 +47,7 @@ enum AppModelTestHelpers {
         JobSnapshot(
             id: id,
             url: "https://example.com/v",
+            rateHost: RateHost(urlString: "https://example.com/v"),
             title: "Clip",
             state: state,
             progress: nil,

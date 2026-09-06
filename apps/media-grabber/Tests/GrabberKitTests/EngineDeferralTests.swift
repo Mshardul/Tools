@@ -146,4 +146,46 @@ final class EngineDeferralTests: XCTestCase {
         await engine.shutdown()
         XCTAssertLessThan(Date(), deadline)
     }
+
+    func testCancelDeferralRemovesEntry() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
+        let runner = heldRunner()
+        let probe = FakeMetadataProbe()
+        probedJob(probe)
+        let engine = engine(clock: clock, runner: runner, probe: probe, cap: 0)
+        let collector = EventCollector(engine.events)
+        let id = await submitJob(engine, Fix.request())
+        _ = await collector.waitForState(id) { $0 == .queued }
+        await engine.deferStartForTest(id, until: Date(timeIntervalSince1970: 3600))
+        await engine.cancelDeferralForTest(id)
+        await engine.setCap(1)
+        _ = await collector.waitForState(id) { $0 == .running }
+        XCTAssertEqual(job(collector, id)?.state, .running)
+    }
+
+    func testDueCooldownJobReturnsToQueued() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
+        let runner = heldRunner()
+        let probe = FakeMetadataProbe()
+        probedJob(probe)
+        let engine = engine(clock: clock, runner: runner, probe: probe, cap: 0)
+        let collector = EventCollector(engine.events)
+        let id = await submitJob(engine, Fix.request())
+        _ = await collector.waitForState(id) { $0 == .queued }
+        await engine.enterCooldownForTest(id, until: Date(timeIntervalSince1970: 30))
+        let reachedCooldown = await collector.waitForState(id) { state in
+            if case .cooldown = state {
+                return true
+            }
+            return false
+        }
+        XCTAssertTrue(reachedCooldown)
+        clock.advance(by: .seconds(30))
+        let backToQueued = await collector.waitForState(id) { $0 == .queued }
+        XCTAssertTrue(backToQueued)
+    }
+
+    private func job(_ collector: EventCollector, _ id: UUID) -> JobSnapshot? {
+        collector.latestSnapshot()?.jobs.first { $0.id == id }
+    }
 }

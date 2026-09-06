@@ -44,6 +44,8 @@ public struct EngineDependencies: Sendable {
     public var debugFlags: EngineDebugFlags
     public var tuning: EngineTuning
     public var ffprobeURL: URL?
+    // Injected so a test can drive the integrity path without a real ffprobe on disk.
+    public var ffprobeIsExecutable: @Sendable (URL) -> Bool
     public var log: LogWriter?
     public var persistence: any QueuePersisting
     // Called on remove(_:) to delete the job's raw log; defaults to JobLog.delete.
@@ -63,6 +65,9 @@ public struct EngineDependencies: Sendable {
         debugFlags: EngineDebugFlags = .init(),
         tuning: EngineTuning = .default,
         ffprobeURL: URL? = nil,
+        ffprobeIsExecutable: @escaping @Sendable (URL) -> Bool = { url in
+            FileManager.default.isExecutableFile(atPath: url.path)
+        },
         log: LogWriter? = nil,
         persistence: any QueuePersisting = NoopPersisting(),
         deleteJobLog: (@Sendable (UUID) -> Void)? = nil,
@@ -79,6 +84,7 @@ public struct EngineDependencies: Sendable {
         self.debugFlags = debugFlags
         self.tuning = tuning
         self.ffprobeURL = ffprobeURL
+        self.ffprobeIsExecutable = ffprobeIsExecutable
         self.log = log
         self.persistence = persistence
         if let deleteJobLog {

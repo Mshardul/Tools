@@ -13,6 +13,7 @@ final class RowModelStatusTests: XCTestCase {
         JobSnapshot(
             id: UUID(),
             url: "https://archive.org/details/x",
+            rateHost: RateHost(urlString: "https://archive.org/details/x"),
             title: "Clip",
             state: state,
             progress: nil,

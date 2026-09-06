@@ -14,6 +14,7 @@ final class DownloadsTableTests: XCTestCase {
         JobSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(index)")!,
             url: "https://archive.org/details/\(index)",
+            rateHost: RateHost(urlString: "https://archive.org/details/\(index)"),
             title: "Clip \(index)",
             state: state,
             progress: nil,
@@ -36,7 +37,10 @@ final class DownloadsTableTests: XCTestCase {
     }
 
     private func queueSnapshot(_ jobs: [JobSnapshot]) -> QueueSnapshot {
-        QueueSnapshot(jobs: jobs, revision: 1, queueHalt: nil, generatedAt: .init())
+        QueueSnapshot(
+            jobs: jobs, revision: 1, queueHalt: nil, generatedAt: .init(),
+            hostRateSummary: [:], isOnline: true
+        )
     }
 
     func test_nilFieldRendersEmDash_columnStillSorts() {
@@ -67,6 +71,7 @@ final class DownloadsTableTests: XCTestCase {
         running = JobSnapshot(
             id: running.id,
             url: running.url,
+            rateHost: running.rateHost,
             title: running.title,
             state: .running,
             progress: progress,

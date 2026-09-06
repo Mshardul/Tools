@@ -204,7 +204,9 @@ final class AppModelTests: XCTestCase {
             jobs: [AppModelTestHelpers.jobSnapshot(id: jobID, outputFiles: [missingFile])],
             revision: 1,
             queueHalt: nil,
-            generatedAt: .init()
+            generatedAt: .init(),
+            hostRateSummary: [:],
+            isOnline: true
         )))
         try await Task.sleep(for: .milliseconds(50))
 
@@ -237,7 +239,9 @@ final class AppModelTests: XCTestCase {
             jobs: [job],
             revision: 1,
             queueHalt: nil,
-            generatedAt: .init()
+            generatedAt: .init(),
+            hostRateSummary: [:],
+            isOnline: true
         ))
         let model = makeModel(engine: engine, persistence: persistence)
 
@@ -263,7 +267,9 @@ final class AppModelTests: XCTestCase {
             jobs: [AppModelTestHelpers.jobSnapshot()],
             revision: 1,
             queueHalt: nil,
-            generatedAt: .init()
+            generatedAt: .init(),
+            hostRateSummary: [:],
+            isOnline: true
         ))
         let model = makeModel(
             engine: engine,

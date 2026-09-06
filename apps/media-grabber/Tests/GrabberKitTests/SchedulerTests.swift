@@ -5,7 +5,8 @@ final class SchedulerTests: XCTestCase {
     private func job(_ index: Int, state: JobState = .queued, probed: Bool = true) -> JobSnapshot {
         JobSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(index)")!,
-            url: "u\(index)", title: probed ? "t" : nil, state: state, progress: nil,
+            url: "u\(index)", rateHost: RateHost(urlString: "u\(index)"),
+            title: probed ? "t" : nil, state: state, progress: nil,
             kind: .video(maxHeight: 1080),
             durationSeconds: probed ? 10 : nil, extractor: probed ? "youtube" : nil,
             addedAt: Date(timeIntervalSince1970: TimeInterval(index)), finishedAt: nil,

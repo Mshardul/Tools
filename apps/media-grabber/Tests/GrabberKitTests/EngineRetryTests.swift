@@ -26,7 +26,8 @@ final class EngineRetryTests: XCTestCase {
                 jobLogDir: Fix.scratchLogDir(),
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: 1),
                 tuning: tuning,
-                ffprobeURL: ffprobeURL
+                ffprobeURL: ffprobeURL,
+                ffprobeIsExecutable: { _ in true }
             ),
             preferences: prefs
         )
@@ -141,7 +142,7 @@ final class EngineRetryTests: XCTestCase {
         probe.result(FakeMetadataProbe.success(title: "Clip", durationSeconds: 600))
         let engine = engine(
             runner, probe, clock: clock,
-            ffprobeURL: URL(fileURLWithPath: "/opt/homebrew/bin/ffprobe")
+            ffprobeURL: URL(fileURLWithPath: "/sentinel/ffprobe")
         )
         let collector = EventCollector(engine.events)
 
@@ -169,7 +170,7 @@ final class EngineRetryTests: XCTestCase {
         probe.result(FakeMetadataProbe.success(title: "Clip", durationSeconds: 600))
         let engine = engine(
             runner, probe, clock: clock,
-            ffprobeURL: URL(fileURLWithPath: "/opt/homebrew/bin/ffprobe")
+            ffprobeURL: URL(fileURLWithPath: "/sentinel/ffprobe")
         )
         let collector = EventCollector(engine.events)
 

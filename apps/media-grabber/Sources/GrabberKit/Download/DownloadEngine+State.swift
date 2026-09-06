@@ -8,7 +8,9 @@ extension DownloadEngine {
             jobs: jobs.map { $0.snapshot(availableActions: Self.availableActions(for: $0.state)) },
             revision: revision,
             queueHalt: queueHalt,
-            generatedAt: .now
+            generatedAt: .now,
+            hostRateSummary: [:],
+            isOnline: true
         )
     }
 

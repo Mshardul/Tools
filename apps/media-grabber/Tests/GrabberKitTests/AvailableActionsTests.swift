@@ -59,8 +59,21 @@ final class AvailableActionsTests: XCTestCase {
         XCTAssertEqual(actions(.waitingForNetwork), [.cancel, .remove, .openInBrowser])
         XCTAssertEqual(
             actions(.cooldown(until: Date(timeIntervalSince1970: 0))),
-            [.cancel, .remove, .openInBrowser]
+            [.forceStart, .cancel, .remove, .openInBrowser]
         )
+    }
+
+    func testCooldownOffersForceStart() {
+        let set = DownloadEngine.availableActions(for: .cooldown(until: .now))
+        XCTAssertTrue(set.contains(.forceStart))
+        XCTAssertTrue(set.isSuperset(of: [.cancel, .remove, .openInBrowser]))
+        XCTAssertFalse(set.contains(.pause))
+    }
+
+    func testWaitingForNetworkHasNoForceStart() {
+        let set = DownloadEngine.availableActions(for: .waitingForNetwork)
+        XCTAssertFalse(set.contains(.forceStart))
+        XCTAssertEqual(set, [.cancel, .remove, .openInBrowser])
     }
 
     func test_retryWithCookies_onlyForCookieRelevantFailures() {

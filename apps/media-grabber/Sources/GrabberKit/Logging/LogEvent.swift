@@ -160,6 +160,10 @@ public enum LogEvent: Sendable {
         case let .backoff(attempt):
             fields["reason"] = "backoff"
             fields["attempt"] = String(attempt)
+        case let .hostCooldown(host, strikes):
+            fields["reason"] = "host_cooldown"
+            fields["host"] = host
+            fields["strikes"] = String(strikes)
         }
         return fields
     }

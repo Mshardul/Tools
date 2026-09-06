@@ -16,7 +16,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var retriedWithCookies: [UUID] = []
         var submitResults: [SubmitResult] = []
         var hasActive = false
-        var snapshot = QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
+        var snapshot = QueueSnapshot(
+            jobs: [], revision: 0, queueHalt: nil, generatedAt: .init(),
+            hostRateSummary: [:], isOnline: true
+        )
         var restoreSnapshot: QueueSnapshot?
         var restoreCalled = false
         var revalidateCalled = false

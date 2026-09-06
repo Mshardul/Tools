@@ -25,6 +25,7 @@ final class RowStoreTests: XCTestCase {
         JobSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(index)")!,
             url: "https://archive.org/details/\(index)",
+            rateHost: RateHost(urlString: "https://archive.org/details/\(index)"),
             title: title, state: state,
             progress: progressFraction.map {
                 DownloadProgress(
@@ -44,7 +45,10 @@ final class RowStoreTests: XCTestCase {
 
     private func queueSnapshot(_ jobs: [JobSnapshot]) -> QueueSnapshot {
         revision += 1
-        return QueueSnapshot(jobs: jobs, revision: revision, queueHalt: nil, generatedAt: .init())
+        return QueueSnapshot(
+            jobs: jobs, revision: revision, queueHalt: nil, generatedAt: .init(),
+            hostRateSummary: [:], isOnline: true
+        )
     }
 
     private func progressEvent(_ id: Int, fraction: Double) -> QueueEvent {

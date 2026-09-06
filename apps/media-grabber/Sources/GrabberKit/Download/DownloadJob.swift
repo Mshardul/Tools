@@ -9,6 +9,8 @@ final class DownloadJob {
     var durationSeconds: Int?
     var state: JobState
     var progress: Progress?
+    // Set in the re-queue paths when a host cooldown defers this job.
+    var cooldownUntil: Date?
     var sizeBytes: Int64?
     var attempt: Int
     var forceCookies: Bool
@@ -31,6 +33,7 @@ final class DownloadJob {
         durationSeconds = nil
         state = .queued
         progress = nil
+        cooldownUntil = nil
         sizeBytes = nil
         attempt = 0
         forceCookies = false
@@ -45,6 +48,7 @@ final class DownloadJob {
         JobSnapshot(
             id: id,
             url: request.url,
+            rateHost: RateHost(urlString: request.url),
             title: title,
             state: state,
             progress: progress,
@@ -58,7 +62,7 @@ final class DownloadJob {
             sizeBytes: sizeBytes,
             actualQuality: actualQuality,
             attempt: attempt,
-            cooldownUntil: nil,
+            cooldownUntil: cooldownUntil,
             playerClientUsed: nil,
             playlistGroupID: nil,
             integrityVerdict: integrityVerdict,

@@ -23,7 +23,8 @@ final class EngineRetryIntentTests: XCTestCase {
                 ytDlpURL: Fix.ytDlp,
                 jobLogDir: Fix.scratchLogDir(),
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: 1),
-                ffprobeURL: ffprobeURL
+                ffprobeURL: ffprobeURL,
+                ffprobeIsExecutable: { _ in true }
             ),
             preferences: prefs
         )
@@ -133,7 +134,7 @@ final class EngineRetryIntentTests: XCTestCase {
         probe.result(FakeMetadataProbe.success(title: "Clip", durationSeconds: 600))
         let engine = engine(
             runner, probe, clock: clock,
-            ffprobeURL: URL(fileURLWithPath: "/opt/homebrew/bin/ffprobe")
+            ffprobeURL: URL(fileURLWithPath: "/sentinel/ffprobe")
         )
         let collector = EventCollector(engine.events)
 

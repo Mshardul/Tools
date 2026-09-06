@@ -47,7 +47,9 @@ final class AppModelRowActionTests: XCTestCase {
             jobs: [job],
             revision: 1,
             queueHalt: nil,
-            generatedAt: .init()
+            generatedAt: .init(),
+            hostRateSummary: [:],
+            isOnline: true
         )))
 
         try await Task.sleep(for: .milliseconds(50))

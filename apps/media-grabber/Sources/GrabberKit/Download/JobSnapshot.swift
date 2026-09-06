@@ -20,6 +20,8 @@ public enum IntegrityVerdict: Sendable, Equatable {
 
 public enum QueueHaltReason: Sendable, Equatable {
     case depMissing
+    case networkDown
+    case circuitOpen
 }
 
 public enum RowAction: Sendable, Hashable, CaseIterable {
@@ -36,6 +38,7 @@ public enum RowAction: Sendable, Hashable, CaseIterable {
 public struct JobSnapshot: Sendable, Equatable, Identifiable {
     public let id: UUID
     public let url: String
+    public let rateHost: RateHost
     public let title: String?
     public let state: JobState
     public let progress: Progress?
@@ -59,6 +62,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
     public init(
         id: UUID,
         url: String,
+        rateHost: RateHost,
         title: String?,
         state: JobState,
         progress: Progress?,
@@ -80,6 +84,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
     ) {
         self.id = id
         self.url = url
+        self.rateHost = rateHost
         self.title = title
         self.state = state
         self.progress = progress

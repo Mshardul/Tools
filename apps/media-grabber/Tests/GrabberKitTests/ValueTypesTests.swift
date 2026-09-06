@@ -6,7 +6,9 @@ final class ValueTypesTests: XCTestCase {
     private func snap(fraction: Double? = nil) -> JobSnapshot {
         JobSnapshot(
             id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
-            url: "https://archive.org/details/x", title: nil, state: .queued,
+            url: "https://archive.org/details/x",
+            rateHost: RateHost(urlString: "https://archive.org/details/x"),
+            title: nil, state: .queued,
             progress: fraction.map { Progress(fraction: $0, downloadedBytes: 0) },
             kind: .video(maxHeight: 1080),
             durationSeconds: nil, extractor: nil, addedAt: Date(timeIntervalSince1970: 0),
@@ -52,5 +54,32 @@ final class ValueTypesTests: XCTestCase {
             sourceURL: "https://x"
         )
         XCTAssertEqual(try meta.get().extractor, "archive.org")
+    }
+
+    func testJobSnapshotCarriesRateHost() {
+        let snapshot = JobSnapshot(
+            id: UUID(), url: "https://youtu.be/x",
+            rateHost: RateHost(urlString: "https://youtu.be/x"),
+            title: nil, state: .queued, progress: nil, kind: .video(maxHeight: 1080),
+            durationSeconds: nil, extractor: nil, addedAt: .now, finishedAt: nil,
+            destFolder: URL(fileURLWithPath: "/tmp"), outputFiles: [], sizeBytes: nil,
+            actualQuality: nil, attempt: 0, cooldownUntil: nil, playerClientUsed: nil,
+            playlistGroupID: nil, integrityVerdict: nil, availableActions: []
+        )
+        XCTAssertEqual(snapshot.rateHost.canonical, "youtube")
+    }
+
+    func testQueueHaltReasonNewCases() {
+        XCTAssertNotEqual(QueueHaltReason.networkDown, QueueHaltReason.circuitOpen)
+        XCTAssertNotEqual(QueueHaltReason.depMissing, QueueHaltReason.networkDown)
+    }
+
+    func testQueueSnapshotNewFields() {
+        let snap = QueueSnapshot(
+            jobs: [], revision: 0, queueHalt: nil, generatedAt: .now,
+            hostRateSummary: [:], isOnline: false
+        )
+        XCTAssertFalse(snap.isOnline)
+        XCTAssertTrue(snap.hostRateSummary.isEmpty)
     }
 }

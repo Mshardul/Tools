@@ -33,6 +33,8 @@ public final class FakeProcessRunner: ProcessRunning, Sendable {
 
     private struct State {
         var scripts: [String: Script] = [:]
+        var orderedScripts: [String: [Script]] = [:]
+        var orderedIndex: [String: Int] = [:]
         var launches: [ProcessLaunch] = []
         var maxConcurrent = 0
         var currentConcurrent = 0
@@ -74,17 +76,44 @@ public final class FakeProcessRunner: ProcessRunning, Sendable {
         box.mutate { $0.scripts[path] = script }
     }
 
+    public func scripts(_ scripts: [Script], forPathEndingIn suffix: String) {
+        box.mutate {
+            $0.orderedScripts[suffix] = scripts
+            $0.orderedIndex[suffix] = 0
+        }
+    }
+
     public func run(_ launch: ProcessLaunch) -> ProcessExecution {
         let (script, delays) = box.mutate { state -> (Script, Delays) in
             state.launches.append(launch)
             state.currentConcurrent += 1
             state.maxConcurrent = max(state.maxConcurrent, state.currentConcurrent)
-            let script = state.scripts[launch.executableURL.path]
-                ?? state.scripts[launch.executableURL.lastPathComponent]
-                ?? Script(exitCode: 127)
-            return (script, state.delays)
+            return (resolveScript(launch, &state), state.delays)
         }
         return makeExecution(script: script, delays: delays)
+    }
+
+    private func resolveScript(_ launch: ProcessLaunch, _ state: inout State) -> Script {
+        if let exact = state.scripts[launch.executableURL.path] {
+            return exact
+        }
+        if let key = orderedKey(for: launch, in: state), let list = nonEmptyList(key, state) {
+            let index = min(state.orderedIndex[key] ?? 0, list.count - 1)
+            state.orderedIndex[key] = (state.orderedIndex[key] ?? 0) + 1
+            return list[index]
+        }
+        return state.scripts[launch.executableURL.lastPathComponent] ?? Script(exitCode: 127)
+    }
+
+    private func orderedKey(for launch: ProcessLaunch, in state: State) -> String? {
+        state.orderedScripts.keys.first {
+            launch.executableURL.path.hasSuffix($0) || launch.executableURL.lastPathComponent == $0
+        }
+    }
+
+    private func nonEmptyList(_ key: String, _ state: State) -> [Script]? {
+        guard let list = state.orderedScripts[key], !list.isEmpty else { return nil }
+        return list
     }
 
     private func makeExecution(script: Script, delays: Delays) -> ProcessExecution {

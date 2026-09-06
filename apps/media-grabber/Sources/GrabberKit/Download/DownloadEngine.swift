@@ -272,6 +272,7 @@ extension DownloadEngine {
             dir: dependencies.jobLogDir
         )
         let ffprobeURL = dependencies.ffprobeURL
+        let ffprobeIsExecutable = dependencies.ffprobeIsExecutable
         childTasks[id] = Task { [weak self] in
             let execution = runner.run(launch)
             try? jobLog.writeHeader()
@@ -282,7 +283,8 @@ extension DownloadEngine {
             jobLog.close()
 
             let integrity = await self?.runIntegrityCheck(
-                id: id, result: result, runner: runner, ffprobeURL: ffprobeURL
+                id: id, result: result, runner: runner,
+                ffprobeURL: ffprobeURL, ffprobeIsExecutable: ffprobeIsExecutable
             ) ?? nil
 
             await self?.recordExit(
@@ -311,13 +313,16 @@ extension DownloadEngine {
         id: UUID,
         result: ProcessResult,
         runner: ProcessRunning,
-        ffprobeURL: URL?
+        ffprobeURL: URL?,
+        ffprobeIsExecutable: @escaping @Sendable (URL) -> Bool
     ) async -> IntegrityResult? {
         guard result.exitCode == 0, !result.wasCancelled else { return nil }
         guard let job = jobs.first(where: { $0.id == id }) else { return nil }
         guard let file = finalizedOutputFiles(for: job).first else { return nil }
-        return await IntegrityCheck(runner: runner, ffprobeURL: ffprobeURL)
-            .verify(file: file, expectedDurationSeconds: job.durationSeconds)
+        return await IntegrityCheck(
+            runner: runner, ffprobeURL: ffprobeURL, isExecutable: ffprobeIsExecutable
+        )
+        .verify(file: file, expectedDurationSeconds: job.durationSeconds)
     }
 
     private struct DownloadDrainOutcome {

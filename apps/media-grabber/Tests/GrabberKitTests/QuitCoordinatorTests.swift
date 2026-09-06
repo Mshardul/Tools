@@ -43,7 +43,9 @@ final class QuitCoordinatorTests: XCTestCase {
             jobs: [],
             revision: 1,
             queueHalt: .depMissing,
-            generatedAt: .init()
+            generatedAt: .init(),
+            hostRateSummary: [:],
+            isOnline: true
         ))
         let confirmer = FakeConfirmer(answering: false)
         let coordinator = makeCoordinator(engine: engine, confirmer: confirmer)
@@ -93,7 +95,10 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     private struct State {
         var hasActive = false
-        var snapshot = QueueSnapshot(jobs: [], revision: 0, queueHalt: nil, generatedAt: .init())
+        var snapshot = QueueSnapshot(
+            jobs: [], revision: 0, queueHalt: nil, generatedAt: .init(),
+            hostRateSummary: [:], isOnline: true
+        )
         var shutdownCalled = false
     }
 

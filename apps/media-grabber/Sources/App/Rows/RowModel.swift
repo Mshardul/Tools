@@ -94,7 +94,8 @@ final class RowModel: Identifiable {
     func patchProgress(fraction progress: DownloadProgress) {
         let known = snapshot
         snapshot = JobSnapshot(
-            id: known.id, url: known.url, title: known.title, state: known.state,
+            id: known.id, url: known.url, rateHost: known.rateHost, title: known.title,
+            state: known.state,
             progress: progress, kind: known.kind, durationSeconds: known.durationSeconds,
             extractor: known.extractor, addedAt: known.addedAt, finishedAt: known.finishedAt,
             destFolder: known.destFolder, outputFiles: known.outputFiles,

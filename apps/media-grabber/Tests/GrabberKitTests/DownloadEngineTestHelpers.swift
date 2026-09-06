@@ -11,9 +11,18 @@ enum EngineFixture {
             .appendingPathComponent("mg-joblogs-\(UUID().uuidString)")
     }
 
+    // A fresh subdirectory per call — tests share NSTemporaryDirectory() otherwise, so
+    // concurrent runs can cross-contaminate .part/output file lookups by title stem.
+    static func scratchDestFolder() -> URL {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("mg-dest-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
     static func request(
         url: String = "https://archive.org/details/x",
-        destFolder: URL = URL(fileURLWithPath: NSTemporaryDirectory())
+        destFolder: URL = EngineFixture.scratchDestFolder()
     ) -> DownloadRequest {
         DownloadRequest(
             url: url,
