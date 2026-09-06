@@ -1,9 +1,7 @@
 import Foundation
 
 extension DownloadEngine {
-    // The row "Retry" button: resume keeps the .part and the attempt count; retry restarts
-    // clean with the full auto-retry budget restored. Both re-enqueue at the tail with no
-    // deferral — the user chose the moment.
+    // "Retry" restarts clean with the full auto-retry budget restored, re-enqueued at the tail with no deferral.
     public func retry(_ id: UUID) async {
         guard let job = jobs.first(where: { $0.id == id }),
               case let .failed(errorClass) = job.state,
@@ -33,9 +31,7 @@ extension DownloadEngine {
         evaluateSchedule()
     }
 
-    // The 🔑 action: force a browser sign-in onto a from-scratch retry. Never resumes —
-    // a cookieless .part is not what the user is retrying for. forceCookies sticks for
-    // the job's life, so a re-fail keeps its cookies.
+    // Forces browser cookies onto a from-scratch retry; forceCookies sticks for the job's life so a re-fail keeps them.
     public func retryWithCookies(_ id: UUID) async {
         guard let job = jobs.first(where: { $0.id == id }),
               case let .failed(errorClass) = job.state,

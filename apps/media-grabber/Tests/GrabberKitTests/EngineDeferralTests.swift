@@ -25,8 +25,7 @@ final class EngineDeferralTests: XCTestCase {
         )
     }
 
-    // Submits a placeholder that occupies the single slot, plus the deferral target which
-    // stays .queued. Returns (blockerID, targetID).
+    // A blocker that occupies the single slot plus a deferral target that stays .queued; returns (blockerID, targetID).
     private func blockedTarget(
         _ engine: DownloadEngine,
         _ collector: EventCollector,

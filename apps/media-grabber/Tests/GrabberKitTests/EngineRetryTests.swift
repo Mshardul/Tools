@@ -37,8 +37,7 @@ final class EngineRetryTests: XCTestCase {
         collector.latestSnapshot()?.jobs.first { $0.id == id }
     }
 
-    // A real output file plus the Destination line yt-dlp prints, so the engine's
-    // finalized-file resolution finds something for IntegrityCheck to probe.
+    // A real output file plus the Destination line, so finalized-file resolution finds something for IntegrityCheck.
     private func requestWithRealOutput() -> (DownloadRequest, URL) {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("mg-out-\(UUID().uuidString)", isDirectory: true)

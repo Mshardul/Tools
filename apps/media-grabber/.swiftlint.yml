@@ -12,7 +12,7 @@ opt_in_rules:
   - closure_spacing
   - explicit_init
 line_length:
-  warning: 100
+  warning: 120
   error: 140
 identifier_name:
   min_length: 2

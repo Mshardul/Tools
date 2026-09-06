@@ -1,4 +1,3 @@
 #!/bin/bash
-# Replaces itself with sleep so a SIGTERM to the child reaches sleep directly.
-# Used for the cancellation test.
+# Cancellation-test fixture: exec's sleep so a SIGTERM to the child reaches sleep directly.
 exec sleep 60

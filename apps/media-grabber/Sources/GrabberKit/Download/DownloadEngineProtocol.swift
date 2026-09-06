@@ -20,6 +20,8 @@ public protocol DownloadEngineProtocol: Sendable {
     func cancel(_ id: UUID) async
     func remove(_ id: UUID) async
     func forceStart(_ id: UUID) async
+    func resetCircuit(_ host: RateHost) async
+    func resetAllCircuits() async
 
     func shutdown() async
 }
@@ -52,6 +54,7 @@ public struct EngineDependencies: Sendable {
     public var deleteJobLog: (@Sendable (UUID) -> Void)?
     // Injected so a test can resolve the cookie argument against a scripted home.
     public var cookieResolverHome: URL?
+    public var networkMonitor: any NetworkPathMonitoring
 
     public init(
         runner: ProcessRunning,
@@ -71,7 +74,8 @@ public struct EngineDependencies: Sendable {
         log: LogWriter? = nil,
         persistence: any QueuePersisting = NoopPersisting(),
         deleteJobLog: (@Sendable (UUID) -> Void)? = nil,
-        cookieResolverHome: URL? = nil
+        cookieResolverHome: URL? = nil,
+        networkMonitor: (any NetworkPathMonitoring)? = nil
     ) {
         self.runner = runner
         self.fileManager = fileManager
@@ -93,6 +97,7 @@ public struct EngineDependencies: Sendable {
             self.deleteJobLog = { id in JobLog.delete(id: id, dir: jobLogDir) }
         }
         self.cookieResolverHome = cookieResolverHome
+        self.networkMonitor = networkMonitor ?? AlwaysOnlineMonitor()
     }
 
     public static func live(
@@ -103,6 +108,7 @@ public struct EngineDependencies: Sendable {
         persistence: (any QueuePersisting)? = nil
     ) -> EngineDependencies {
         let runner = ProcessRunner()
+        let tuning = EngineTuning.resolved()
         return EngineDependencies(
             runner: runner,
             probe: MetadataProbe(ytDlpURL: ytDlpURL, runner: runner),
@@ -110,10 +116,14 @@ public struct EngineDependencies: Sendable {
             clock: SystemClock(),
             ytDlpURL: ytDlpURL,
             debugFlags: debugFlags,
-            tuning: .resolved(),
+            tuning: tuning,
             ffprobeURL: ffprobeURL ?? Self.locateFfprobe(),
             log: log,
-            persistence: persistence ?? NoopPersisting()
+            persistence: persistence ?? NoopPersisting(),
+            networkMonitor: NWPathNetworkMonitor(
+                offlineGrace: TimeInterval(tuning.networkOfflineGraceSeconds),
+                onlineSettle: TimeInterval(tuning.networkOnlineSettleSeconds)
+            )
         )
     }
 

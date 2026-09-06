@@ -49,8 +49,7 @@ final class RowStore {
         recomputeVisible()
     }
 
-    // The current Preferences.maxAutoRetries, forwarded to RowModel so the retry-state status
-    // reads it live. Defaulted so RowStore stays Preferences-free.
+    // Live Preferences.maxAutoRetries forwarded to RowModel; defaulted so RowStore stays Preferences-free.
     private var maxAutoRetries = 5
 
     // MARK: - Event ingestion
@@ -90,6 +89,7 @@ final class RowStore {
         var newRows: [RowModel] = []
         newRows.reserveCapacity(snapshot.jobs.count)
 
+        let summary = snapshot.hostRateSummary
         var queuePosition = 0
         for job in snapshot.jobs {
             let position: Int?
@@ -99,16 +99,23 @@ final class RowStore {
             } else {
                 position = nil
             }
+            let rate = summary[job.rateHost]
             if let existing = modelsByID[job.id] {
                 let changed = existing.patch(
                     job,
                     queuePosition: position,
-                    maxAutoRetries: maxAutoRetries
+                    maxAutoRetries: maxAutoRetries,
+                    rate: rate
                 )
                 structuralChange = structuralChange || changed
                 newRows.append(existing)
             } else {
-                let model = RowModel(job, queuePosition: position, maxAutoRetries: maxAutoRetries)
+                let model = RowModel(
+                    job,
+                    queuePosition: position,
+                    maxAutoRetries: maxAutoRetries,
+                    rate: rate
+                )
                 modelsByID[job.id] = model
                 newRows.append(model)
                 structuralChange = true

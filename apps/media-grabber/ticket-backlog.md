@@ -39,6 +39,44 @@ until it reaches v1 (spec §14).
   cap is the right default. The scheduler already receives `blockedHostIDs`, so
   this is an additive change to an existing seam, not a rewrite of Phase 6 work.
 
+## Test infrastructure
+
+- **`EngineDeferralTests.testDueCooldownJobReturnsToQueued` flakes under load.**
+  Passes isolated and in a GrabberKitTests-only run (~0.03s); times out at 5s
+  when the full GrabberKitTests + AppUnitTests run back-to-back, roughly half
+  the time as of Phase 6 Task 17. Root cause: the `FakeClock` continuation that
+  `clock.advance(by:)` resumes to run `fireDueDeferrals` starves under CPU
+  contention, so the `.cooldown → .queued` flip lands after the collector's
+  `waitForState` deadline. Not a product bug — the deferral logic is correct.
+  Options: give `FakeClock` a deterministic "drain due deferrals now" seam the
+  test can await instead of racing the continuation; or raise
+  `EventCollector.waitForState`'s timeout for this suite. Pick one when this
+  ticket is worked.
+
+## Documentation
+
+- **Job / rate-limit state-flow diagram.** The job lifecycle now spans `queued →
+  probing → running → cooldown → queued → failed/completed`, with the engine's
+  `RateLimiter` running a parallel per-host `normal → cooldown → circuitOpen`
+  machine and a global adaptive-concurrency cap on top. Add-flow entry points,
+  network offline/online parking, force-start overrides, and the auto-retry
+  budget all feed in. This is too tangled to explain from the code. Under this
+  ticket: (1) enumerate every job state, every host `RateState`, and each
+  transition + trigger; (2) note what is deferred (per-host adaptive cap, POT
+  rotation states, playlist-group states) so the diagram has room; (3) write an
+  md file with a mermaid state diagram (or two — one for the job, one for the
+  host) and a short prose walk-through. Keep it beside the specs. Revisit
+  whenever a phase adds a state.
+
+- **HLD / LLD architecture doc.** A single md file with a high-level design
+  (component boxes — App / GrabberKit engine / RateLimiter / Scheduler /
+  ProcessRunner / Persistence / probes — and how requests and snapshots flow
+  between them) and a low-level design (the key types, their ownership, the
+  async seams, the actor boundary, the event stream). All in mermaid
+  (flowchart + sequence + class diagrams). Discuss scope when the ticket is
+  picked — decide HLD-only vs both, and how much of the future phases to sketch.
+  Pairs with the state-flow diagram above; keep them in one `docs/` area.
+
 ## Phases 3–11 (intent — detailed when reached, from spec §12.1)
 
 Boundaries are dependency cuts: a phase is picked when its inputs exist, and its

@@ -47,8 +47,7 @@ public struct YtDlpTuning: Sendable, Equatable {
     )
 }
 
-// Every retry / pacing number in one env-overridable place, so the values can be tuned or
-// A/B'd through the environment without a build. Not exposed in the UI.
+// Every retry / pacing number in one env-overridable place, tunable without a build and not exposed in the UI.
 public struct EngineTuning: Sendable, Equatable {
     public var ytDlp: YtDlpTuning
     public var backoffLadder: [Int]

@@ -1,7 +1,6 @@
 import Foundation
 
-// One raw stdout/stderr transcript per job at <dir>/<id>.log, redacted per §8.5.
-// A single launcher task owns each instance, so no internal synchronisation is needed.
+// One redacted stdout/stderr transcript per job at <dir>/<id>.log, owned by a single launcher task.
 public final class JobLog: @unchecked Sendable {
     private let id: UUID
     private let request: DownloadRequest
@@ -64,8 +63,7 @@ public final class JobLog: @unchecked Sendable {
         try? FileManager.default.removeItem(at: dir.appendingPathComponent("\(id.uuidString).log"))
     }
 
-    // Keeps the newest `limit` by the owning job's finishedAt; deletes the rest's files.
-    // Not file mtime — a restored job's file is old but the job is fresh in memory.
+    // Keeps the newest `limit` by the job's finishedAt, not file mtime — a restored job's file is old, the job fresh.
     public static func evict(
         keepingNewestByFinishedAt jobs: [(id: UUID, finishedAt: Date?)],
         limit: Int = 200,

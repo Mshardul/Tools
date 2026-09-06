@@ -8,7 +8,8 @@ final class RowModelStatusTests: XCTestCase {
         state: JobState = .queued,
         attempt: Int = 0,
         kind: DownloadKind = .video(maxHeight: 1080),
-        actualQuality: String? = nil
+        actualQuality: String? = nil,
+        cooldownUntil: Date? = nil
     ) -> JobSnapshot {
         JobSnapshot(
             id: UUID(),
@@ -27,7 +28,7 @@ final class RowModelStatusTests: XCTestCase {
             sizeBytes: nil,
             actualQuality: actualQuality,
             attempt: attempt,
-            cooldownUntil: nil,
+            cooldownUntil: cooldownUntil,
             playerClientUsed: nil,
             playlistGroupID: nil,
             integrityVerdict: nil,
@@ -35,9 +36,18 @@ final class RowModelStatusTests: XCTestCase {
         )
     }
 
-    func test_status_queuedWithAttemptShowsRetrying() {
+    func test_status_queuedWithBackoffShowsRetrying() {
+        let snap = snapshot(
+            state: .queued,
+            attempt: 2,
+            cooldownUntil: Date().addingTimeInterval(60)
+        )
+        XCTAssertEqual(RowModel.status(for: snap, maxAutoRetries: 5), "Retrying")
+    }
+
+    func test_status_queuedAttemptButNoFutureCooldownIsQueued() {
         let snap = snapshot(state: .queued, attempt: 2)
-        XCTAssertEqual(RowModel.status(for: snap, maxAutoRetries: 5), "Retrying — attempt 3 of 5")
+        XCTAssertEqual(RowModel.status(for: snap, maxAutoRetries: 5), "Queued")
     }
 
     func test_status_queuedAttemptZeroIsPlainQueued() {
@@ -77,14 +87,17 @@ final class RowModelStatusTests: XCTestCase {
         XCTAssertEqual(fresh.queueBadge, "#3")
     }
 
-    func test_patch_livePrefChangeUpdatesStatus() {
-        let model = RowModel(
-            snapshot(state: .queued, attempt: 2),
-            queuePosition: nil,
-            maxAutoRetries: 5
+    func test_patch_rateDisplayChangeUpdatesStatus() {
+        let model = RowModel(snapshot(state: .queued), queuePosition: 1)
+        XCTAssertEqual(model.statusText, "Queued")
+        let deadline = Date().addingTimeInterval(60)
+        let cooling = HostRateDisplayState(
+            state: .cooldown(until: deadline, strikes: 1),
+            lastErrorKey: "rate_limited",
+            concurrencyReducedToOne: true
         )
-        XCTAssertEqual(model.statusText, "Retrying — attempt 3 of 5")
-        model.patch(snapshot(state: .queued, attempt: 2), queuePosition: nil, maxAutoRetries: 3)
-        XCTAssertEqual(model.statusText, "Retrying — attempt 3 of 3")
+        model.patch(snapshot(state: .queued), queuePosition: 1, rate: cooling)
+        XCTAssertEqual(model.statusText, "Cooling down")
+        XCTAssertEqual(model.hostCooldownDeadline, deadline)
     }
 }

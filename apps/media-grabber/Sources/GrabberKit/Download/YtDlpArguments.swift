@@ -9,9 +9,11 @@ public enum YtDlpArguments {
         for request: DownloadRequest,
         options: GlobalDownloadOptions = .none,
         tuning: YtDlpTuning = .default,
-        cookieArgument: String? = nil
+        cookieArgument: String? = nil,
+        concurrentFragments: Int
     ) -> [String] {
         baseArgv(for: request, tuning: tuning)
+            + ["--concurrent-fragments", String(concurrentFragments)]
             + cookieFlags(cookieArgument, redact: false)
             + globalFlags(options, proxyURL: options.proxyURL)
             + [request.url]
@@ -22,9 +24,11 @@ public enum YtDlpArguments {
         for request: DownloadRequest,
         options: GlobalDownloadOptions = .none,
         tuning: YtDlpTuning = .default,
-        cookieArgument: String? = nil
+        cookieArgument: String? = nil,
+        concurrentFragments: Int
     ) -> [String] {
         baseArgv(for: request, tuning: tuning)
+            + ["--concurrent-fragments", String(concurrentFragments)]
             + cookieFlags(cookieArgument, redact: true)
             + globalFlags(options, proxyURL: options.proxyURL.map(maskUserinfo(in:)))
             + [request.url]
@@ -47,8 +51,7 @@ public enum YtDlpArguments {
         return argv
     }
 
-    // Bounded, never infinite — a hard failure must exit yt-dlp and reach the classifier
-    // within a knowable time rather than hang inside yt-dlp.
+    // Bounded retries so a hard failure exits yt-dlp and reaches the classifier rather than hanging.
     private static func resilienceFlags(_ tuning: YtDlpTuning) -> [String] {
         [
             "--retries", "\(tuning.retries)",

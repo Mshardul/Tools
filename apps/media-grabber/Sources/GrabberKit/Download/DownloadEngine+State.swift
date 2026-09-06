@@ -7,11 +7,38 @@ extension DownloadEngine {
         QueueSnapshot(
             jobs: jobs.map { $0.snapshot(availableActions: Self.availableActions(for: $0.state)) },
             revision: revision,
-            queueHalt: queueHalt,
+            queueHalt: effectiveQueueHalt(),
             generatedAt: .now,
-            hostRateSummary: [:],
-            isOnline: true
+            hostRateSummary: rateLimiter.displaySummary(now: dependencies.clock.now),
+            isOnline: isOnline
         )
+    }
+
+    // The raw halt plus derived reasons (an open circuit) the queue must surface as halted.
+    func effectiveQueueHalt() -> QueueHaltReason? {
+        if queueHalt == .depMissing {
+            return .depMissing
+        }
+        if queueHalt == .networkDown {
+            return .networkDown
+        }
+        guard !rateLimiter.circuitOpenHosts.isEmpty else {
+            return nil
+        }
+        let hasLiveWork = jobs.contains { $0.state == .running || $0.state == .probing }
+        if hasLiveWork || startableQueuedJobExists() {
+            return nil
+        }
+        return .circuitOpen
+    }
+
+    private func startableQueuedJobExists() -> Bool {
+        let now = dependencies.clock.now
+        return jobs.contains { job in
+            job.state == .queued
+                && !deferrals.contains { $0.id == job.id }
+                && !rateLimiter.blocked(host: RateHost(urlString: job.request.url), now: now)
+        }
     }
 
     func emitSnapshot() {

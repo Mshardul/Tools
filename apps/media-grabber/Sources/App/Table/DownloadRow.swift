@@ -44,20 +44,34 @@ struct DownloadRow: View {
     }
 
     private var statusCell: some View {
-        HStack(spacing: Spacing.s1) {
+        let deadline = row.snapshot.cooldownUntil ?? row.hostCooldownDeadline
+        return HStack(spacing: Spacing.s1) {
             Circle()
                 .fill(RowStatusStyle.dotColor(for: row.snapshot.state, palette: theme.palette))
                 .frame(width: 6, height: 6)
-            Text(TablePresentation.statusDisplay(for: row))
-                .font(theme.monoFont(11, .medium))
-                .foregroundStyle(
-                    RowStatusStyle.textColor(for: row.snapshot.state, palette: theme.palette)
-                )
-                .lineLimit(1)
+            if let deadline, deadline > .now {
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    statusLabel(
+                        "\(TablePresentation.statusDisplay(for: row)) — "
+                            + CountdownFormat.mmss(until: deadline, now: context.date)
+                    )
+                }
+            } else {
+                statusLabel(TablePresentation.statusDisplay(for: row))
+            }
         }
         .padding(.horizontal, Spacing.s2)
         .padding(.vertical, Spacing.s1)
         .background(theme.palette.panel, in: Capsule())
+    }
+
+    private func statusLabel(_ text: String) -> some View {
+        Text(text)
+            .font(theme.monoFont(11, .medium))
+            .foregroundStyle(
+                RowStatusStyle.textColor(for: row.snapshot.state, palette: theme.palette)
+            )
+            .lineLimit(1)
     }
 
     @ViewBuilder

@@ -63,11 +63,11 @@ enum TablePresentation {
     }
 
     static func statusDisplay(for row: RowModel) -> String {
-        if row.snapshot.state == .queued, let badge = row.queueBadge {
+        if showsQueueBadge(row), let badge = row.queueBadge {
             return "queued · \(badge)"
         }
         switch row.snapshot.state {
-        case .queued: return "queued"
+        case .queued: return queuedDisplay(for: row)
         case .probing: return "probing"
         case .running: return "downloading"
         case .paused: return "paused"
@@ -78,6 +78,23 @@ enum TablePresentation {
         case .failed:
             return row.statusText.replacingOccurrences(of: "Failed — ", with: "")
         }
+    }
+
+    private static func showsQueueBadge(_ row: RowModel) -> Bool {
+        row.snapshot.state == .queued && row.rateDisplay == nil && row.snapshot.attempt == 0
+    }
+
+    private static func queuedDisplay(for row: RowModel) -> String {
+        if case .circuitOpen = row.rateDisplay?.state {
+            return "rate-limited — paused"
+        }
+        if case .cooldown = row.rateDisplay?.state {
+            return "cooling down"
+        }
+        if row.snapshot.attempt > 0, let until = row.snapshot.cooldownUntil, until > .now {
+            return "retrying"
+        }
+        return "queued"
     }
 
     static func progressLabel(for row: RowModel) -> String {

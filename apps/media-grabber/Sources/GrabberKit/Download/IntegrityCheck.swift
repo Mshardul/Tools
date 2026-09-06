@@ -11,9 +11,7 @@ public struct IntegrityResult: Sendable, Equatable {
     }
 }
 
-// An ffprobe call on a finalized file: a duration materially short of the expected value
-// fails the job; the same call reads the real resolution. A broken or absent probe degrades
-// to .skipped and never fails a download.
+// An ffprobe of the finalized file: a materially short duration fails the job; a broken or missing probe is .skipped.
 public struct IntegrityCheck: Sendable {
     private let runner: ProcessRunning
     private let ffprobeURL: URL?
@@ -100,8 +98,7 @@ public struct IntegrityCheck: Sendable {
         return Probe(duration: duration, height: height)
     }
 
-    // Materially short ⇔ under 95% of expected AND more than 10s absolute — both, so a few
-    // seconds of trailing-silence trim on a short clip passes and small drift on a long one passes.
+    // Materially short means under 95% of expected AND over 10s absolute, so trim drift passes on short and long clips.
     private static func durationVerdict(actual: Double, expected: Int) -> IntegrityVerdict {
         let expectedDouble = Double(expected)
         let gap = expectedDouble - actual

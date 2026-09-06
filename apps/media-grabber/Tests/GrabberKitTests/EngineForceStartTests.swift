@@ -25,19 +25,15 @@ final class EngineForceStartTests: XCTestCase {
 
         let first = await submitJob(engine, Fix.request(url: "https://archive.org/details/1"))
         _ = await collector.waitForState(first) { $0 == .running }
-        let queued = await submitJob(engine, Fix.request(url: "https://archive.org/details/2"))
-        // second job also auto-starts at cap 3; force it anyway from wherever it is.
-        _ = await collector.waitForState(queued) { $0 == .running }
 
-        // A genuinely queued job: add a third and immediately drop cap so it stays queued.
-        await engine.setCap(2)
-        let third = await submitJob(engine, Fix.request(url: "https://archive.org/details/3"))
+        let second = await submitJob(engine, Fix.request(url: "https://archive.org/details/2"))
+        await engine.deferStartForTest(second, until: .distantFuture)
         try? await Task.sleep(for: .milliseconds(20))
-        XCTAssertEqual(collector.latestSnapshot()?.jobs.first { $0.id == third }?.state, .queued)
+        XCTAssertEqual(collector.latestSnapshot()?.jobs.first { $0.id == second }?.state, .queued)
 
-        await engine.setCap(3)
-        await engine.forceStart(third)
-        await expectState(collector, third) { $0 == .running }
+        await engine.cancelDeferralForTest(second)
+        await engine.forceStart(second)
+        await expectState(collector, second) { $0 == .running }
         XCTAssertEqual(runner.cancelledCount, 0)
     }
 

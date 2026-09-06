@@ -40,6 +40,12 @@ public enum LogEvent: Sendable {
     case jobDuplicateSubmitPrompted(existing: UUID)
     case jobDuplicateSubmitConfirmed
     case jobDuplicateSubmitCancelled
+    case hostRateStateChanged(host: String, from: String, to: String)
+    case circuitOpened(host: String, strikes: Int)
+    case circuitReset(host: String, byUser: Bool)
+    case adaptiveConcurrencyChanged(from: Int, to: Int, reason: String)
+    case networkPathChanged(online: Bool)
+    case hostBlockOverridden(host: String, jobID: UUID)
 
     var key: String {
         switch self {
@@ -67,6 +73,12 @@ public enum LogEvent: Sendable {
         case .jobDuplicateSubmitPrompted: "job.duplicate_submit_prompted"
         case .jobDuplicateSubmitConfirmed: "job.duplicate_submit_confirmed"
         case .jobDuplicateSubmitCancelled: "job.duplicate_submit_cancelled"
+        case .hostRateStateChanged: "host.rate_state_changed"
+        case .circuitOpened: "circuit.opened"
+        case .circuitReset: "circuit.reset"
+        case .adaptiveConcurrencyChanged: "scheduler.adaptive_concurrency_changed"
+        case .networkPathChanged: "network.path_changed"
+        case .hostBlockOverridden: "scheduler.host_block_overridden"
         }
     }
 
@@ -85,6 +97,8 @@ public enum LogEvent: Sendable {
         case .revealTargetMissing, .showLogTargetMissing: .ui
         case .jobDuplicateSubmitPrompted, .jobDuplicateSubmitConfirmed,
              .jobDuplicateSubmitCancelled: .ui
+        case .hostRateStateChanged, .circuitOpened, .circuitReset,
+             .adaptiveConcurrencyChanged, .networkPathChanged, .hostBlockOverridden: .scheduler
         }
     }
 
@@ -101,6 +115,7 @@ public enum LogEvent: Sendable {
         case let .jobRetried(id): id
         case let .revealTargetMissing(jobID): jobID
         case let .showLogTargetMissing(jobID): jobID
+        case let .hostBlockOverridden(_, jobID): jobID
         default: nil
         }
     }
@@ -151,6 +166,18 @@ public enum LogEvent: Sendable {
             ["existing": existing.uuidString]
         case .jobDuplicateSubmitConfirmed, .jobDuplicateSubmitCancelled:
             [:]
+        case let .hostRateStateChanged(host, from, to):
+            ["host": host, "from": from, "to": to]
+        case let .circuitOpened(host, strikes):
+            ["host": host, "strikes": String(strikes)]
+        case let .circuitReset(host, byUser):
+            ["host": host, "by_user": byUser ? "true" : "false"]
+        case let .adaptiveConcurrencyChanged(from, to, reason):
+            ["from": String(from), "to": String(to), "reason": reason]
+        case let .networkPathChanged(online):
+            ["online": online ? "true" : "false"]
+        case let .hostBlockOverridden(host, _):
+            ["host": host]
         }
     }
 
@@ -169,7 +196,7 @@ public enum LogEvent: Sendable {
     }
 }
 
-// Spec §8.5: home-dir paths → ~, proxy creds / cookie / username / password stripped.
+// Home-dir paths → ~, proxy creds / cookie / username / password stripped.
 enum LogRedaction {
     private static let homePrefix = "/Users/"
 

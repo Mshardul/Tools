@@ -19,28 +19,48 @@ final class RowModel: Identifiable {
     private(set) var typeLabel = ""
     private(set) var qualityLabel = ""
     private(set) var queueBadge: String?
+    private(set) var rateDisplay: HostRateDisplayState?
 
     // Test hook: how many times display strings were recomputed.
     private(set) var recomputeCount = 0
 
-    // The current Preferences.maxAutoRetries — the "attempt N of M" status needs it, and it
-    // must track a live pref change, so AppModel threads it in on every apply.
+    // Live Preferences.maxAutoRetries; AppModel threads it in on every apply.
     private var maxAutoRetries: Int
 
-    init(_ snapshot: JobSnapshot, queuePosition: Int?, maxAutoRetries: Int = 5) {
+    var hostCooldownDeadline: Date? {
+        if case let .cooldown(until, _) = rateDisplay?.state {
+            return until
+        }
+        return nil
+    }
+
+    init(
+        _ snapshot: JobSnapshot,
+        queuePosition: Int?,
+        maxAutoRetries: Int = 5,
+        rate: HostRateDisplayState? = nil
+    ) {
         id = snapshot.id
         self.snapshot = snapshot
         self.maxAutoRetries = maxAutoRetries
+        rateDisplay = rate
         recomputeAll(queuePosition: queuePosition)
     }
 
     // Returns true if a field that affects filter/sort/grouping changed.
     @discardableResult
-    func patch(_ next: JobSnapshot, queuePosition: Int?, maxAutoRetries: Int = 5) -> Bool {
+    func patch(
+        _ next: JobSnapshot,
+        queuePosition: Int?,
+        maxAutoRetries: Int = 5,
+        rate: HostRateDisplayState? = nil
+    ) -> Bool {
         let old = snapshot
         snapshot = next
         let retriesChanged = self.maxAutoRetries != maxAutoRetries
         self.maxAutoRetries = maxAutoRetries
+        let rateChanged = rateDisplay != rate
+        rateDisplay = rate
 
         let stateChanged = old.state != next.state
         let progressChanged = old.progress != next.progress
@@ -50,22 +70,21 @@ final class RowModel: Identifiable {
         let durationChanged = old.durationSeconds != next.durationSeconds
         let kindChanged = old.kind != next.kind
         let qualityChanged = old.actualQuality != next.actualQuality
+        let attemptChanged = old.attempt != next.attempt || old.cooldownUntil != next.cooldownUntil
         let badgeChanged = queueBadge != Self.badge(for: next, position: queuePosition)
 
         guard stateChanged || progressChanged || sizeChanged || titleChanged
             || extractorChanged || durationChanged || kindChanged || qualityChanged
-            || badgeChanged || retriesChanged
+            || badgeChanged || retriesChanged || rateChanged || attemptChanged
         else {
             return false
         }
 
-        if stateChanged || progressChanged || retriesChanged {
-            statusText = Self.status(for: next, maxAutoRetries: maxAutoRetries)
+        if stateChanged || progressChanged || retriesChanged || rateChanged || attemptChanged {
+            statusText = Self.status(for: next, maxAutoRetries: maxAutoRetries, rate: rateDisplay)
         }
         if stateChanged || progressChanged {
             speedText = Self.speed(for: next)
-        }
-        if stateChanged || progressChanged {
             etaText = Self.eta(for: next)
         }
         if sizeChanged || stateChanged {
@@ -104,7 +123,7 @@ final class RowModel: Identifiable {
             playerClientUsed: known.playerClientUsed, playlistGroupID: known.playlistGroupID,
             integrityVerdict: known.integrityVerdict, availableActions: known.availableActions
         )
-        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries)
+        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries, rate: rateDisplay)
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -112,7 +131,7 @@ final class RowModel: Identifiable {
     }
 
     private func recomputeAll(queuePosition: Int?) {
-        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries)
+        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries, rate: rateDisplay)
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -128,22 +147,12 @@ final class RowModel: Identifiable {
 // MARK: - Derivations
 
 extension RowModel {
-    static func status(for snapshot: JobSnapshot, maxAutoRetries: Int = 5) -> String {
-        switch snapshot.state {
-        case .queued:
-            snapshot.attempt > 0
-                ? "Retrying — attempt \(snapshot.attempt + 1) of \(maxAutoRetries)"
-                : "Queued"
-        case .probing: "Resolving…"
-        case .running:
-            snapshot.progress.map { "Downloading \(Int($0.fraction * 100))%" } ?? "Downloading"
-        case .paused: "Paused"
-        case .waitingForNetwork: "Waiting for network"
-        case .cooldown: "Cooling down"
-        case .completed: "Saved"
-        case .cancelled: "Cancelled"
-        case let .failed(errorClass): "Failed — \(errorClass.presentation.sentence)"
-        }
+    static func status(
+        for snapshot: JobSnapshot,
+        maxAutoRetries: Int = 5,
+        rate: HostRateDisplayState? = nil
+    ) -> String {
+        RowStatusText.text(for: snapshot, maxAutoRetries: maxAutoRetries, rate: rate)
     }
 
     static func speed(for snapshot: JobSnapshot) -> String {

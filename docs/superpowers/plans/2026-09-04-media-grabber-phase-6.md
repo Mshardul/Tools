@@ -1583,7 +1583,7 @@ private func resumeIfCooldownElapsed(_ id: UUID, now: Date) -> Bool {
   - `EngineDependencies` gains `public var networkMonitor: any NetworkPathMonitoring`, default `AlwaysOnlineMonitor()` (a no-op — never yields, never touches the system). **Only `EngineDependencies.live(...)` constructs `NWPathNetworkMonitor`.**
   - `adaptiveCapForTest` / `isOnlineForTest` / `effectiveCapForTest` read seams.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 ```swift
 @testable import GrabberKit
@@ -1621,9 +1621,9 @@ final class RateLimiterWiringTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail** — `EngineFixture.engine` has no `networkMonitor:` param; `adaptiveCapForTest` / `effectiveCapForTest` missing.
+- [x] **Step 2: Run, verify fail** — `EngineFixture.engine` has no `networkMonitor:` param; `adaptiveCapForTest` / `effectiveCapForTest` missing.
 
-- [ ] **Step 3: Wire it**
+- [x] **Step 3: Wire it**
 
 `DownloadEngineProtocol.swift` — `EngineDependencies` gains `public var networkMonitor: any NetworkPathMonitoring`. In `init`, add `networkMonitor: (any NetworkPathMonitoring)? = nil` and `self.networkMonitor = networkMonitor ?? AlwaysOnlineMonitor()`. In `EngineDependencies.live(...)`, pass `networkMonitor: NWPathNetworkMonitor(offlineGrace: TimeInterval(tuning.networkOfflineGraceSeconds), onlineSettle: TimeInterval(tuning.networkOnlineSettleSeconds))` (the `tuning` local is resolved earlier in `.live`).
 
@@ -1669,11 +1669,11 @@ In `evaluateSchedule()`, before building `SchedulerInput`: `rateLimiter.setPrefe
 - `tuning: EngineTuning = .default` → `EngineDependencies(tuning:)`.
 - `maxAutoRetries: Int? = nil` → if set, `prefs.maxAutoRetries = maxAutoRetries` on the built `Preferences`.
 
-- [ ] **Step 4: Run, verify pass** — both tests. Full suite for regression (the `EngineDependencies.init` signature change ripples — fix any direct constructions).
+- [x] **Step 4: Run, verify pass** — both tests. Full suite for regression (the `EngineDependencies.init` signature change ripples — fix any direct constructions).
 
-- [ ] **Step 5: Lint** — regenerate; lint. `EngineDependencies.init` body length may trip — it is pre-existing large; if the new lines tip it, extract the monitor default into `private static func defaultMonitor(_ tuning: EngineTuning) -> any NetworkPathMonitoring`.
+- [x] **Step 5: Lint** — regenerate; lint. `EngineDependencies.init` body length may trip — it is pre-existing large; if the new lines tip it, extract the monitor default into `private static func defaultMonitor(_ tuning: EngineTuning) -> any NetworkPathMonitoring`.
 
-- [ ] **Step 6: Hand off** — report files, no commit.
+- [x] **Step 6: Hand off** — report files, no commit.
 
 ---
 
@@ -1696,9 +1696,9 @@ In `evaluateSchedule()`, before building `SchedulerInput`: `rateLimiter.setPrefe
   - **Already-running siblings are not SIGTERM'd** on a strike.
   - `ErrorSignatures.rateLimited` covers `"HTTP Error 429"`, `"Too Many Requests"`, `"below throttle limit"`, `"The download speed is below the minimum"` (verified present) — no change needed; if a 2026 phrasing is missing, add it here with an `ErrorSignaturesTests` case.
 
-- [ ] **Step 0: Confirm the 429 signatures.** Open `Sources/GrabberKit/Download/ErrorSignatures.swift`. The `.rateLimited()` group already lists `"HTTP Error 429"`, `"Too Many Requests"`, `"below throttle limit"`, `"The download speed is below the minimum"`. If yt-dlp's current 429 wording differs, add one string + one `ErrorSignaturesTests` assertion. Otherwise proceed.
+- [x] **Step 0: Confirm the 429 signatures.** Open `Sources/GrabberKit/Download/ErrorSignatures.swift`. The `.rateLimited()` group already lists `"HTTP Error 429"`, `"Too Many Requests"`, `"below throttle limit"`, `"The download speed is below the minimum"`. If yt-dlp's current 429 wording differs, add one string + one `ErrorSignaturesTests` assertion. Otherwise proceed.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 `Tests/GrabberKitTests/EngineRateLimitTests.swift` — uses the **real** harness (`EventCollector(engine.events)`, `runner.script` / `runner.scripts`, `clock.advance`):
 
@@ -1834,9 +1834,9 @@ final class EngineRateLimitTests: XCTestCase {
 
 `EngineFixture.engine` gains a `maxAutoRetries: Int? = nil` param (→ sets `prefs.maxAutoRetries` on the built `Preferences`) alongside `clock:` / `tuning:` from Task 11.
 
-- [ ] **Step 2: Run, verify fail** — `-only-testing:GrabberKitTests/EngineRateLimitTests`. Compile errors / states never reached.
+- [x] **Step 2: Run, verify fail** — `-only-testing:GrabberKitTests/EngineRateLimitTests`. Compile errors / states never reached.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `Scheduler.swift` — `SchedulerInput` gains the two `Set<UUID>` fields (in the stored-property list after `deferredIDs`, and in `init` after `deferredIDs:`). `nextDownloads`'s `isDownloadReady` gains `&& !blockedHostIDs.contains(job.id)` (thread `input.blockedHostIDs` through). `nextProbe`:
 
@@ -1966,16 +1966,16 @@ private func describeRateState(_ s: RateState) -> String {
 
 `recordProbeResult` — **not** touched (a probe is not a download completion; only `.completed` resets the host).
 
-- [ ] **Step 4: Run, verify pass** — the seven `EngineRateLimitTests` cases. Then the full suite.
+- [x] **Step 4: Run, verify pass** — the seven `EngineRateLimitTests` cases. Then the full suite.
 
   **Existing tests to update:**
   - `EngineRetryTests.swift` — any test that submits a 429 and then `waitForState(id) { $0 == .queued }` now transitions **through** `.cooldown` first. `test_autoRetryableExitDefersWithIncrementedAttempt` and siblings: change the intermediate wait to `{ isCooldown($0) }` (add the local helper), keep the terminal assertions. A 429 test that expects `.failed(.rateLimited())` after budget exhaustion still passes (Step B terminal branch) — but it now goes `.cooldown` → advance clock → retry → `.failed`; if the test does not `clock.advance`, it will hang. Add `clock.advance(by: .seconds(N))` (N ≥ the ladder's first rung; set `MG_BACKOFF_LADDER=1` via the `tuning:` param for speed).
   - `SchedulerTests.swift` — every `SchedulerInput(` gets `blockedHostIDs: [], blockedProbeHostIDs: []`.
   - `EngineDeferralTests.swift` — the `DeferReason` enum is non-`@frozen`; a `switch` over it in a test needs the new `.hostCooldown` case or `default`.
 
-- [ ] **Step 5: Lint** — `recordExit` and its helpers: keep each helper < 50 lines, < 10 branches. The extraction above is sized for that. `describeRateState`'s `switch` returning values may trip `void_function_in_ternary` under swiftformat — if so, add explicit `return`s.
+- [x] **Step 5: Lint** — `recordExit` and its helpers: keep each helper < 50 lines, < 10 branches. The extraction above is sized for that. `describeRateState`'s `switch` returning values may trip `void_function_in_ternary` under swiftformat — if so, add explicit `return`s.
 
-- [ ] **Step 6: Hand off** — report all changed files, no commit.
+- [x] **Step 6: Hand off** — report all changed files, no commit.
 
 ---
 
@@ -1995,7 +1995,7 @@ private func describeRateState(_ s: RateState) -> String {
   - `.queued` jobs are NOT touched on offline
   - the existing `evaluateSchedule()` guard is already `guard queueHalt == nil else { return }` (verified) — so `.networkDown` halts the scheduler for free once set
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 To keep a job "running" without a `holdOpen` API, give it a script whose lines drip via `perLineDelay` (or a long `perRunDelay`) so it stays mid-stream while the test toggles the network.
 
@@ -2078,9 +2078,9 @@ final class EngineNetworkTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Implement `applyNetworkChange`** (Task 11 stubbed it to just set `isOnline`):
+- [x] **Step 3: Implement `applyNetworkChange`** (Task 11 stubbed it to just set `isOnline`):
 
 ```swift
 func applyNetworkChange(_ online: Bool) {
@@ -2117,14 +2117,14 @@ The SIGTERM'd job's `childTasks` closure still calls `recordExit`; the existing 
 func effectiveQueueHalt() -> QueueHaltReason? { queueHalt }   // Task 14 extends this
 ```
 
-- [ ] **Step 4: Run, verify pass** — the tests + full suite. `EngineHaltTests` (Phase 2 `.depMissing`) stays green.
+- [x] **Step 4: Run, verify pass** — the tests + full suite. `EngineHaltTests` (Phase 2 `.depMissing`) stays green.
 
   **Existing tests to update:**
   - `hasActiveJobs` — Task 13 also makes it count `.cooldown` / `.waitingForNetwork`. In `DownloadEngine.swift` `hasActiveJobs()`: `jobs.contains { $0.state == .running || $0.state == .probing || $0.state == .waitingForNetwork || isCooldownState($0.state) }`. Add `testHasActiveJobsCountsParkedStates` to `EngineIntentsTests` (or wherever `hasActiveJobs` is tested). This affects `QuitCoordinatorTests` — a `.cooldown` job now triggers the quit prompt (correct — pending work).
 
-- [ ] **Step 5: Lint** — regenerate; lint.
+- [x] **Step 5: Lint** — regenerate; lint.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 
@@ -2149,7 +2149,7 @@ func effectiveQueueHalt() -> QueueHaltReason? { queueHalt }   // Task 14 extends
   - `FakeEngine` (`AppFakes.swift`) gains no-op `resetCircuit` / `resetAllCircuits`
   - `QuitCoordinator.quitConfirmation(halt:)` gains `.networkDown` / `.circuitOpen` message arms
 
-- [ ] **Step 1: Failing test** — real harness. To advance a cooldown: `clock.advance(by: .seconds(N))` then `try? await Task.sleep(for: .milliseconds(20))` — `advance` resumes the `deferralTask` awaiting `clock.sleep(until:)`, which runs `fireDueDeferrals`. There is no engine "fire" seam.
+- [x] **Step 1: Failing test** — real harness. To advance a cooldown: `clock.advance(by: .seconds(N))` then `try? await Task.sleep(for: .milliseconds(20))` — `advance` resumes the `deferralTask` awaiting `clock.sleep(until:)`, which runs `fireDueDeferrals`. There is no engine "fire" seam.
 
 ```swift
 @testable import GrabberKit
@@ -2245,9 +2245,9 @@ final class EngineCircuitTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `effectiveQueueHalt()` in `+State.swift` (replaces the `{ queueHalt }` stub):
 
@@ -2349,7 +2349,7 @@ case nil: message = /* existing generic "a download is still running" */
 }
 ```
 
-- [ ] **Step 4: Run, verify pass** — the five tests + full suite.
+- [x] **Step 4: Run, verify pass** — the five tests + full suite.
 
   **Existing tests to update:**
   - `Tests/AppUnitTests/Support/AppFakes.swift` — `FakeEngine` now fails to conform. Add:
@@ -2360,9 +2360,9 @@ case nil: message = /* existing generic "a download is still running" */
   - `EngineIntentsTests` / `EngineForceStartTests` — `forceStart` still starts a `.queued` job the same way; no assertion changes expected, but run them.
   - `QuitCoordinatorTests` — if a test builds a snapshot with `queueHalt: .depMissing` it still works; add a case for `.networkDown` / `.circuitOpen` message if the suite asserts message text.
 
-- [ ] **Step 5: Lint** — `forceStart` / `effectiveQueueHalt` risk `function_body_length` — the `startableQueuedJobExists` extraction covers `effectiveQueueHalt`; keep `forceStart`'s eviction in its existing shape.
+- [x] **Step 5: Lint** — `forceStart` / `effectiveQueueHalt` risk `function_body_length` — the `startableQueuedJobExists` extraction covers `effectiveQueueHalt`; keep `forceStart`'s eviction in its existing shape.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 
@@ -2377,7 +2377,7 @@ case nil: message = /* existing generic "a download is still running" */
 - Consumes: `RateLimiter.state(for:)` (T5), `EngineTuning.concurrentFragmentsNormal/Throttled` (T3).
 - Produces: `YtDlpArguments.build` gains a **non-defaulted** `concurrentFragments: Int` param → appends `--concurrent-fragments <n>` to the args. Not sensitive → also appears verbatim in `redacted` output.
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 First read `YtDlpArgumentsTests.swift` to match its existing arg-assertion helper (it has one — reuse it, don't invent `hasFlagValue`). Then add:
 
@@ -2424,9 +2424,9 @@ func testLaunchUsesThrottledFragmentsForCoolingHost() async {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `YtDlpArguments.build` — add `concurrentFragments: Int` (non-defaulted, after `cookieArgument:`). Append `["--concurrent-fragments", String(concurrentFragments)]` alongside the other pacing flags. `YtDlpArguments.redacted` (if it exists and re-derives) — thread the same value.
 
@@ -2438,11 +2438,11 @@ let fragments = rateLimiter.state(for: RateHost(urlString: request.url)) == .nor
     : dependencies.tuning.concurrentFragmentsThrottled
 ```
 
-- [ ] **Step 4: Run, verify pass** — tests + full suite. **Every existing `YtDlpArguments.build(` call site** (grep: `grep -rn 'YtDlpArguments.build' Sources/ Tests/`) needs `concurrentFragments:` — the param is non-defaulted so the compiler lists them all. Use `4` (the normal value) at test call sites unless the test is about throttling.
+- [x] **Step 4: Run, verify pass** — tests + full suite. **Every existing `YtDlpArguments.build(` call site** (grep: `grep -rn 'YtDlpArguments.build' Sources/ Tests/`) needs `concurrentFragments:` — the param is non-defaulted so the compiler lists them all. Use `4` (the normal value) at test call sites unless the test is about throttling.
 
-- [ ] **Step 5: Lint** — regenerate; lint. `launchDownload` may tip `function_body_length` — hoist the `fragments` computation into a `private func fragmentCount(for url: String) -> Int`.
+- [x] **Step 5: Lint** — regenerate; lint. `launchDownload` may tip `function_body_length` — hoist the `fragments` computation into a `private func fragmentCount(for url: String) -> Int`.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 
@@ -2464,7 +2464,7 @@ The real `LogEvent` accessor is **`key`** (verified `LogEvent.swift:44`), not `n
   - `case networkPathChanged(online: Bool)` → `"network.path_changed"`, fields `{online}`
   - `case hostBlockOverridden(host: String, jobID: UUID)` → `"scheduler.host_block_overridden"`, fields `{host}`, `jobID` returns the id
 
-- [ ] **Step 1: Failing test** — `LogEventRateLimitTests.swift`:
+- [x] **Step 1: Failing test** — `LogEventRateLimitTests.swift`:
 
 ```swift
 @testable import GrabberKit
@@ -2506,15 +2506,15 @@ final class LogEventRateLimitTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Add the cases** — in `enum LogEvent`, and in the `key` switch, the `category` switch, the `fields` switch, the `jobID` switch. Follow the existing `.jobDeferred` / `.jobForceStarted` pattern exactly. `DeferReason.hostCooldown` in `deferredFields` was done in Task 10 — confirm it is there.
+- [x] **Step 3: Add the cases** — in `enum LogEvent`, and in the `key` switch, the `category` switch, the `fields` switch, the `jobID` switch. Follow the existing `.jobDeferred` / `.jobForceStarted` pattern exactly. `DeferReason.hostCooldown` in `deferredFields` was done in Task 10 — confirm it is there.
 
-- [ ] **Step 4: Run, verify pass** — tests + full suite. `grep -rn 'switch.*LogEvent\|case .jobDeferred\|case .jobForceStarted' Sources/ Tests/` — any exhaustive `switch` over `LogEvent` without a `default` (e.g. in `LogWriter`, `EventCollector`, a diagnostics stub) needs the six new cases. `DeferReason` is also non-frozen — any exhaustive `switch` over it needs `.hostCooldown`.
+- [x] **Step 4: Run, verify pass** — tests + full suite. `grep -rn 'switch.*LogEvent\|case .jobDeferred\|case .jobForceStarted' Sources/ Tests/` — any exhaustive `switch` over `LogEvent` without a `default` (e.g. in `LogWriter`, `EventCollector`, a diagnostics stub) needs the six new cases. `DeferReason` is also non-frozen — any exhaustive `switch` over it needs `.hostCooldown`.
 
-- [ ] **Step 5: Lint** — the switches grow; if `LogEvent.swift` trips `type_body_length`, move the `fields` computation to `LogEvent+Fields.swift`.
+- [x] **Step 5: Lint** — the switches grow; if `LogEvent.swift` trips `type_body_length`, move the `fields` computation to `LogEvent+Fields.swift`.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 
@@ -2540,7 +2540,7 @@ final class LogEventRateLimitTests: XCTestCase {
   - `AppModel.resetCircuit(host: RateHost) async` / `AppModel.resetAllCircuits() async` → call the engine
   - `HostRatePopover` view — `@Environment(AppModel.self)`, reads `appModel.hostRateSummary`, dispatches `resetCircuit` / `resetAllCircuits` via `Task`
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 `Tests/AppUnitTests/HealthControllerTests.swift`:
 
@@ -2608,9 +2608,9 @@ final class HealthControllerTests: XCTestCase {
 
 The `testCooldownChipAppearsWithSummary` label assertion changes to `"YouTube"` (no baked countdown) — the countdown is a `TimelineView` on `chip.countdownUntil` in the strip. Update that test: `XCTAssertEqual(cooldown.label, "YouTube")` and `XCTAssertEqual(cooldown.countdownUntil, now.addingTimeInterval(134))`.
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `Sources/App/SiteNames.swift`:
 
@@ -2811,11 +2811,11 @@ healthController.update(snapshot: snapshot, now: .now)
 
 Delete the old `var healthChips: [HealthChip] { [HealthChip(id: "online", …)] }` body — it becomes the delegating one above.
 
-- [ ] **Step 4: Run, verify pass** — `HealthControllerTests` + full `AppUnitTests`. `AppModelTests` may assert the old static `healthChips` — update it to drive a snapshot through `runConsumer` and check `healthController.chips`.
+- [x] **Step 4: Run, verify pass** — `HealthControllerTests` + full `AppUnitTests`. `AppModelTests` may assert the old static `healthChips` — update it to drive a snapshot through `runConsumer` and check `healthController.chips`.
 
-- [ ] **Step 5: Lint** — `hostRateChip` / `oneHostChip` `cyclomatic_complexity` — the split above keeps each under 10. `HealthStrip.chipView`'s `AnyView` branches — acceptable; if `void_function_in_ternary` trips on `detailText`'s `switch`, add `return`s.
+- [x] **Step 5: Lint** — `hostRateChip` / `oneHostChip` `cyclomatic_complexity` — the split above keeps each under 10. `HealthStrip.chipView`'s `AnyView` branches — acceptable; if `void_function_in_ternary` trips on `detailText`'s `switch`, add `return`s.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 
@@ -2838,7 +2838,7 @@ Delete the old `var healthChips: [HealthChip] { [HealthChip(id: "online", …)] 
   - `WarningBanner` renders the button only when both `buttonTitle` and `action` are non-nil
   - `MainWindow` applies a bottom safe-area inset equal to the banner's measured height (+ `Spacing.s4`) on `page` when a banner shows
 
-- [ ] **Step 1: Failing test**
+- [x] **Step 1: Failing test**
 
 `Tests/AppUnitTests/BannerResolverTests.swift`:
 
@@ -2879,9 +2879,9 @@ final class BannerResolverTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `BannerResolver.swift`:
 
@@ -2989,11 +2989,11 @@ page
     }
 ```
 
-- [ ] **Step 4: Run, verify pass** — `BannerResolverTests` + full `AppUnitTests`.
+- [x] **Step 4: Run, verify pass** — `BannerResolverTests` + full `AppUnitTests`.
 
-- [ ] **Step 5: Lint** — `recomputeBanner` `cyclomatic_complexity` — extract the `queueHalt → Set<BannerReason>` map into `private func activeBannerReasons(_:) -> Set<BannerReason>`.
+- [x] **Step 5: Lint** — `recomputeBanner` `cyclomatic_complexity` — extract the `queueHalt → Set<BannerReason>` map into `private func activeBannerReasons(_:) -> Set<BannerReason>`.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 
@@ -3018,7 +3018,7 @@ page
   - `TablePresentation.statusDisplay(for:)` renders the new prefixes (lowercase)
   - Status cell wraps in `TimelineView` when there is a future deadline
 
-- [ ] **Step 1: Failing test** — `RowStatusTextTests.swift` (new):
+- [x] **Step 1: Failing test** — `RowStatusTextTests.swift` (new):
 
 ```swift
 @testable import MediaGrabber
@@ -3072,9 +3072,9 @@ final class RowStatusTextTests: XCTestCase {
 }
 ```
 
-- [ ] **Step 2: Run, verify fail.**
+- [x] **Step 2: Run, verify fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `RowStatusText.swift`:
 
@@ -3176,16 +3176,16 @@ private var statusCell: some View {
 
 (Extract the styled `Text` into a small `@ViewBuilder func statusText(_ s: String)` to avoid the duplication and `void_function_in_ternary`.)
 
-- [ ] **Step 4: Run, verify pass** — `RowStatusTextTests` + `RowModelStatusTests` + `RowStoreTests` + `DownloadsTableTests` + full `AppUnitTests`.
+- [x] **Step 4: Run, verify pass** — `RowStatusTextTests` + `RowModelStatusTests` + `RowStoreTests` + `DownloadsTableTests` + full `AppUnitTests`.
 
   **Existing tests to update:**
   - `RowModelStatusTests.swift` — the `"Retrying — attempt N of M"` assertion: the prefix is now `"Retrying"` (the count moves to the live countdown per spec §7.4). Change the expectation to `"Retrying"`. Any test calling `RowModel.status(for:maxAutoRetries:)` needs the `rate:` arg (defaulted nil — so only tests asserting the new behavior change).
   - `DownloadsTableTests.swift` — `statusDisplay` for a `.cooldown` row now returns `"cooling down"` (unchanged) but a `.queued` row whose host is circuit-open returns `"rate-limited — paused"` — add/adjust if the suite covers cooldown.
   - `RowStoreTests.swift` — if a test builds a `QueueSnapshot` it now needs `hostRateSummary: [:]` (Task 8 grep covered this).
 
-- [ ] **Step 5: Lint** — `RowStatusText.text` / `statusDisplay` `cyclomatic_complexity` — the `queued(_:rate:)` extraction covers `RowStatusText`; `statusDisplay`'s `.queued` arm may need its own `private static func queuedDisplay(_ row: RowModel) -> String`.
+- [x] **Step 5: Lint** — `RowStatusText.text` / `statusDisplay` `cyclomatic_complexity` — the `queued(_:rate:)` extraction covers `RowStatusText`; `statusDisplay`'s `.queued` arm may need its own `private static func queuedDisplay(_ row: RowModel) -> String`.
 
-- [ ] **Step 6: Hand off.**
+- [x] **Step 6: Hand off.**
 
 ---
 

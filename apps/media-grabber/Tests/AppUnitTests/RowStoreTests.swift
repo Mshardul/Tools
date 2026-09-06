@@ -43,11 +43,14 @@ final class RowStoreTests: XCTestCase {
         )
     }
 
-    private func queueSnapshot(_ jobs: [JobSnapshot]) -> QueueSnapshot {
+    private func queueSnapshot(
+        _ jobs: [JobSnapshot],
+        hostRateSummary: [RateHost: HostRateDisplayState] = [:]
+    ) -> QueueSnapshot {
         revision += 1
         return QueueSnapshot(
             jobs: jobs, revision: revision, queueHalt: nil, generatedAt: .init(),
-            hostRateSummary: [:], isOnline: true
+            hostRateSummary: hostRateSummary, isOnline: true
         )
     }
 
@@ -164,12 +167,19 @@ final class RowStoreTests: XCTestCase {
         XCTAssertEqual(store.rows[2].queueBadge, "#2")
     }
 
-    func test_maxAutoRetriesReachesRowModelStatus() {
+    func test_hostRateSummaryReachesRowModelStatus() {
         let store = RowStore()
-        store.apply(
-            .snapshot(queueSnapshot([snap(1, state: .queued, attempt: 2)])),
-            maxAutoRetries: 4
+        let job = snap(1, state: .queued)
+        let cooling = HostRateDisplayState(
+            state: .cooldown(until: Date().addingTimeInterval(60), strikes: 1),
+            lastErrorKey: "rate_limited",
+            concurrencyReducedToOne: true
         )
-        XCTAssertEqual(store.rows.first?.statusText, "Retrying — attempt 3 of 4")
+        store.apply(.snapshot(queueSnapshot(
+            [job],
+            hostRateSummary: [job.rateHost: cooling]
+        )))
+        XCTAssertEqual(store.rows.first?.statusText, "Cooling down")
+        XCTAssertNotNil(store.rows.first?.hostCooldownDeadline)
     }
 }

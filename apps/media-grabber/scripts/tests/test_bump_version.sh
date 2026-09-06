@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Tests for bump-version.sh.
-# Run: apps/media-grabber/scripts/tests/test_bump_version.sh
+# Tests for bump-version.sh — run: apps/media-grabber/scripts/tests/test_bump_version.sh
 
 set -euo pipefail
 

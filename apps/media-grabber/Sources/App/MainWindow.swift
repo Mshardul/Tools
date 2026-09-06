@@ -4,6 +4,7 @@ import SwiftUI
 struct MainWindow: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.theme) private var theme
+    @State private var bannerHeight: CGFloat = 0
 
     var body: some View {
         @Bindable var appModel = appModel
@@ -14,11 +15,17 @@ struct MainWindow: View {
                 HealthStrip(chips: appModel.healthChips)
                 Divider().overlay(theme.palette.hair)
                 page
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        Color.clear.frame(
+                            height: appModel.bannerContent == nil ? 0 : bannerHeight + Spacing.s4
+                        )
+                    }
             }
             .background(theme.palette.ground)
             .frame(minWidth: 820, minHeight: 560)
 
             WarningBanner(content: appModel.bannerContent)
+                .onPreferenceChange(BannerHeightKey.self) { bannerHeight = $0 }
         }
         .overlay {
             if let request = appModel.pendingConfirmation {

@@ -11,8 +11,7 @@ enum EngineFixture {
             .appendingPathComponent("mg-joblogs-\(UUID().uuidString)")
     }
 
-    // A fresh subdirectory per call — tests share NSTemporaryDirectory() otherwise, so
-    // concurrent runs can cross-contaminate .part/output file lookups by title stem.
+    // A fresh subdirectory per call so concurrent runs don't cross-contaminate .part/output lookups by title stem.
     static func scratchDestFolder() -> URL {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("mg-dest-\(UUID().uuidString)", isDirectory: true)
@@ -38,21 +37,32 @@ enum EngineFixture {
         cap: Int = 3,
         preferences: Preferences? = nil,
         fileManager: FileManaging = FoundationFileManager(),
-        resolverHome: URL? = nil
+        resolverHome: URL? = nil,
+        networkMonitor: (any NetworkPathMonitoring)? = nil,
+        clock: FakeClock? = nil,
+        tuning: EngineTuning = .default,
+        maxAutoRetries: Int? = nil
     ) -> DownloadEngine {
-        DownloadEngine(
+        let prefs = preferences
+            ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        if let maxAutoRetries {
+            prefs.maxAutoRetries = maxAutoRetries
+        }
+        return DownloadEngine(
             dependencies: EngineDependencies(
                 runner: runner,
                 fileManager: fileManager,
                 probe: probe,
                 envProbe: FakeEnvironmentProbe(.with(ytDlp: true, ffmpeg: true)),
+                clock: clock ?? SystemClock(),
                 ytDlpURL: ytDlp,
                 jobLogDir: scratchLogDir(),
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: cap),
-                cookieResolverHome: resolverHome
+                tuning: tuning,
+                cookieResolverHome: resolverHome,
+                networkMonitor: networkMonitor
             ),
-            preferences: preferences
-                ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
+            preferences: prefs
         )
     }
 

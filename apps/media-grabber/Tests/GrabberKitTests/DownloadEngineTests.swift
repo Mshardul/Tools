@@ -72,8 +72,7 @@ final class DownloadEngineTests: XCTestCase {
         XCTAssertEqual(seen.last, .completed)
     }
 
-    // A single-retry budget with a FakeClock: after the one auto-retry the job goes terminal
-    // with the classified ErrorClass.
+    // A single-retry budget with a FakeClock: after the one auto-retry the job goes terminal with the classified error.
     private func singleRetryEngine(
         runner: FakeProcessRunner,
         probe: FakeMetadataProbe,

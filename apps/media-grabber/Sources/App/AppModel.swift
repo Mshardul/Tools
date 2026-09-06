@@ -88,8 +88,11 @@ final class AppModel {
         rowStore.rows
     }
 
+    let healthController = HealthController()
+    private(set) var hostRateSummary: [RateHost: HostRateDisplayState] = [:]
+
     var healthChips: [HealthChip] {
-        [HealthChip(id: "online", label: "online", dot: .ok, interaction: .none)]
+        healthController.chips
     }
 
     var maxConcurrentDownloads: Int {
@@ -267,6 +270,14 @@ final class AppModel {
         await engine.cancel(id)
     }
 
+    func resetCircuit(host: RateHost) async {
+        await engine.resetCircuit(host)
+    }
+
+    func resetAllCircuits() async {
+        await engine.resetAllCircuits()
+    }
+
     func resetAllSettings() {
         prefs.resetToDefaults()
     }
@@ -293,6 +304,9 @@ final class AppModel {
             for await event in engine.events {
                 rowStore.apply(event, maxAutoRetries: prefs.maxAutoRetries)
                 if case let .snapshot(snapshot) = event {
+                    hostRateSummary = snapshot.hostRateSummary
+                    healthController.update(snapshot: snapshot, now: .now)
+                    recomputeBanner(snapshot)
                     applySnapshot(snapshot)
                 }
             }

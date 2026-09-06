@@ -31,11 +31,7 @@ public final class QuitCoordinator: Sendable {
     }
 
     public static func quitConfirmation(halt: QueueHaltReason?) -> ConfirmationRequest {
-        let message = if halt == .depMissing {
-            "Downloads are paused — yt-dlp needs reinstalling. Quit anyway?"
-        } else {
-            "A download is still running. Quit anyway?"
-        }
+        let message = quitMessage(for: halt)
         return ConfirmationRequest(
             title: "Quit MediaGrabber?",
             message: message,
@@ -43,5 +39,18 @@ public final class QuitCoordinator: Sendable {
             cancelTitle: "Cancel",
             isDestructive: true
         )
+    }
+
+    private static func quitMessage(for halt: QueueHaltReason?) -> String {
+        switch halt {
+        case .depMissing:
+            "Downloads are paused — yt-dlp needs reinstalling. Quit anyway?"
+        case .networkDown:
+            "Downloads are paused — no internet connection. They'll resume when you're back online. Quit anyway?"
+        case .circuitOpen:
+            "Downloads are paused — a site is rate-limiting you. Quit anyway?"
+        case nil:
+            "A download is still running. Quit anyway?"
+        }
     }
 }

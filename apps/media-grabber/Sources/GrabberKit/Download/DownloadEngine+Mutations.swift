@@ -75,8 +75,7 @@ extension DownloadEngine {
             evaluateSchedule()
             return
         }
-        // pause() / forceStart() eviction already moved the job off .running and SIGTERMed
-        // its child — that exit is expected noise, not a terminal transition.
+        // A job already off .running was evicted by pause()/forceStart(); its child's exit is expected noise.
         guard job.state == .running else {
             evaluateSchedule()
             return
@@ -91,20 +90,8 @@ extension DownloadEngine {
             finishTerminal()
             return
         }
-
-        if result.exitCode == 0 {
-            job.actualQuality = integrity?.actualQuality
-            switch integrity?.verdict {
-            case .passed, .skipped, nil:
-                job.integrityVerdict = integrity?.verdict
-                job.outputFiles = finalizedOutputFiles(for: job)
-                job.state = .completed
-                job.finishedAt = .now
-                finishTerminal()
-                return
-            case .failed:
-                job.integrityVerdict = integrity?.verdict
-            }
+        if result.exitCode == 0, completeIfClean(job, integrity: integrity) {
+            return
         }
 
         let errorClass = classifiedFailure(
@@ -113,18 +100,119 @@ extension DownloadEngine {
             cookiesRequested: cookiesRequested,
             extractedZeroCookies: extractedZeroCookies
         )
+        routeFailure(job, id: id, errorClass: errorClass)
+    }
+
+    private func completeIfClean(_ job: DownloadJob, integrity: IntegrityResult?) -> Bool {
+        job.actualQuality = integrity?.actualQuality
+        job.integrityVerdict = integrity?.verdict
+        if case .failed = integrity?.verdict {
+            return false
+        }
+        job.outputFiles = finalizedOutputFiles(for: job)
+        job.state = .completed
+        job.finishedAt = .now
+        recordCleanSuccessFor(job)
+        finishTerminal()
+        return true
+    }
+
+    private func routeFailure(_ job: DownloadJob, id: UUID, errorClass: ErrorClass) {
+        let host = RateHost(urlString: job.request.url)
+        strikeHostIfRateLimited(errorClass, host: host)
+
         if errorClass.isAutoRetryable, job.attempt < preferences.maxAutoRetries {
-            reQueueForBackoff(job, id: id, errorClass: errorClass)
+            if case .rateLimited = errorClass {
+                reQueueForHostRate(job, id: id, host: host)
+            } else {
+                reQueueForBackoff(job, id: id, errorClass: errorClass)
+            }
             return
         }
-
         job.state = .failed(errorClass)
         job.finishedAt = .now
         finishTerminal()
     }
 
-    // A user-requested cookie read that yielded nothing and then failed downstream is the
-    // cookie problem, not whatever the download hit next (the Chrome app-bound case).
+    private func recordCleanSuccessFor(_ job: DownloadJob) {
+        let before = rateLimiter.adaptiveCap
+        rateLimiter.recordCleanSuccess(
+            host: RateHost(urlString: job.request.url), now: dependencies.clock.now
+        )
+        if rateLimiter.adaptiveCap != before {
+            logEvent(.adaptiveConcurrencyChanged(
+                from: before, to: rateLimiter.adaptiveCap, reason: "clean_streak"
+            ))
+        }
+    }
+
+    // The strike is about the host — Step A, unconditional on a rate-limited exit, terminal or not.
+    private func strikeHostIfRateLimited(_ errorClass: ErrorClass, host: RateHost) {
+        guard case let .rateLimited(retryAfter) = errorClass else { return }
+        let before = rateLimiter.adaptiveCap
+        let fromState = describeRateState(rateLimiter.state(for: host))
+        rateLimiter.recordStrike(
+            host: host, retryAfter: retryAfter,
+            lastErrorKey: errorClass.key, now: dependencies.clock.now
+        )
+        let toState = rateLimiter.state(for: host)
+        logEvent(.hostRateStateChanged(
+            host: host.canonical, from: fromState, to: describeRateState(toState)
+        ))
+        if case let .circuitOpen(_, strikes) = toState {
+            logEvent(.circuitOpened(host: host.canonical, strikes: strikes))
+        }
+        if rateLimiter.adaptiveCap != before {
+            logEvent(.adaptiveConcurrencyChanged(
+                from: before, to: rateLimiter.adaptiveCap, reason: "throttle"
+            ))
+        }
+    }
+
+    // At most one .cooldown job per host — the rest wait .queued, gated by blockedHostIDs.
+    private func reQueueForHostRate(_ job: DownloadJob, id: UUID, host: RateHost) {
+        job.attempt += 1
+        job.progress = nil
+        let siblingCooling = jobs.contains {
+            $0.id != id && isCooldownState($0.state)
+                && RateHost(urlString: $0.request.url) == host
+        }
+        if let deadline = rateLimiter.cooldownDeadline(for: host), !siblingCooling {
+            job.state = .cooldown(until: deadline)
+            job.cooldownUntil = deadline
+            logEvent(.jobDeferred(
+                id: id, until: deadline,
+                reason: .hostCooldown(
+                    host: host.canonical, strikes: rateLimiter.state(for: host).strikes
+                )
+            ))
+            deferStart(id, until: deadline)
+        } else {
+            job.state = .queued
+            job.cooldownUntil = nil
+            cancelDeferral(id)
+        }
+        bump()
+        emitSnapshot()
+        evaluateSchedule()
+    }
+
+    func isCooldownState(_ state: JobState) -> Bool {
+        if case .cooldown = state {
+            return true
+        }
+        return false
+    }
+
+    private func describeRateState(_ state: RateState) -> String {
+        switch state {
+        case .normal: "normal"
+        case .cooldown: "cooldown"
+        case .circuitOpen: "circuit_open"
+        }
+    }
+
+    // A cookie read that yielded nothing then failed downstream is the cookie problem (the Chrome app-bound case).
     private func classifiedFailure(
         result: ProcessResult,
         lastError: ErrorClass?,
@@ -144,8 +232,7 @@ extension DownloadEngine {
         return lastError ?? .unknown(raw: "yt-dlp exited \(result.exitCode)")
     }
 
-    // .running -> .queued with attempt bumped and a pending deferral — one sync mutation,
-    // no transient .failed snapshot. nextDownloads skips deferredIDs until the backoff fires.
+    // One sync .running -> .queued with a pending deferral, so no transient .failed snapshot leaks.
     private func reQueueForBackoff(_ job: DownloadJob, id: UUID, errorClass: ErrorClass) {
         job.attempt += 1
         job.state = .queued
@@ -157,6 +244,7 @@ extension DownloadEngine {
                 tuning: dependencies.tuning
             )
         )
+        job.cooldownUntil = deadline
         bump()
         emitSnapshot()
         logEvent(.jobDeferred(id: id, until: deadline, reason: .backoff(attempt: job.attempt)))
@@ -171,8 +259,7 @@ extension DownloadEngine {
         evaluateSchedule()
     }
 
-    // A spawn/probe that fails to exec the binary is systemic, not the job's fault:
-    // the job waits with the rest and the scheduler stops until revalidate() clears it.
+    // A failure to exec the binary is systemic: the job re-queues and the scheduler stops until revalidate() clears it.
     func haltForDepMissing(offending job: DownloadJob) {
         job.state = .queued
         job.progress = nil

@@ -14,8 +14,7 @@ public struct EnvironmentReport: Sendable, Equatable {
     public let brew: ToolInfo?
     public let ytDlp: ToolInfo?
     public let ffmpeg: ToolInfo?
-    // Resolved from the ffmpeg location, not an independent PATH search — ffprobe ships
-    // inside the ffmpeg formula. A missing ffprobe degrades IntegrityCheck, never blocks.
+    // Resolved from the ffmpeg location, not a PATH search; a missing ffprobe degrades IntegrityCheck, never blocks.
     public let ffprobe: ToolInfo?
 
     public init(brew: ToolInfo?, ytDlp: ToolInfo?, ffmpeg: ToolInfo?, ffprobe: ToolInfo? = nil) {

@@ -40,7 +40,7 @@ final class YtDlpArgumentsTests: XCTestCase {
         let argv = YtDlpArguments.build(for: request(
             kind: .video(maxHeight: 1080),
             container: "mp4"
-        ))
+        ), concurrentFragments: 4)
         XCTAssertEqual(argv, [
             "-P", "/Users/x/Movies",
             "-o", "%(title)s.%(ext)s",
@@ -50,14 +50,24 @@ final class YtDlpArgumentsTests: XCTestCase {
             "--newline", "--progress", "--progress-template", progressTemplate,
             "--no-playlist",
             "--no-warnings"
-        ] + resilienceFlags + [url])
+        ] + resilienceFlags + ["--concurrent-fragments", "4"] + [url])
+    }
+
+    func test_concurrentFragmentsAppendedBeforeURL() throws {
+        let argv = YtDlpArguments.build(
+            for: request(kind: .video(maxHeight: 720)),
+            concurrentFragments: 3
+        )
+        let flag = try XCTUnwrap(argv.firstIndex(of: "--concurrent-fragments"))
+        XCTAssertEqual(argv[flag + 1], "3")
+        XCTAssertLessThan(flag, try XCTUnwrap(argv.firstIndex(of: url)))
     }
 
     func test_alwaysOnResilienceFlagsFromDefaultTuning() {
         let argv = YtDlpArguments.build(for: request(
             kind: .video(maxHeight: 1080),
             container: "mp4"
-        ))
+        ), concurrentFragments: 4)
         XCTAssertTrue(
             hasSubsequence(argv, resilienceFlags),
             "argv missing resilience flags: \(argv)"
@@ -76,7 +86,11 @@ final class YtDlpArgumentsTests: XCTestCase {
         var tuning = YtDlpTuning.default
         tuning.retries = 9
         tuning.throttledRateKBps = 250
-        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)), tuning: tuning)
+        let argv = YtDlpArguments.build(
+            for: request(kind: .video(maxHeight: 720)),
+            tuning: tuning,
+            concurrentFragments: 4
+        )
         let retriesIndex = try XCTUnwrap(argv.firstIndex(of: "--retries"))
         XCTAssertEqual(argv[retriesIndex + 1], "9")
         let rateIndex = try XCTUnwrap(argv.firstIndex(of: "--throttled-rate"))
@@ -84,19 +98,19 @@ final class YtDlpArgumentsTests: XCTestCase {
     }
 
     func test_video720_noContainer() {
-        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)))
+        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)), concurrentFragments: 4)
         XCTAssertFalse(argv.contains("--merge-output-format"))
         XCTAssertTrue(argv
             .contains("bv*[height<=720][ext=mp4]+ba[ext=m4a]/bv*[height<=720]+ba/b[height<=720]"))
     }
 
     func test_audio_m4a() {
-        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .m4a)))
+        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), concurrentFragments: 4)
         XCTAssertTrue(hasSubsequence(argv, ["-x", "--audio-format", "m4a"]))
     }
 
     func test_audio_mp3() {
-        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .mp3)))
+        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .mp3)), concurrentFragments: 4)
         XCTAssertTrue(hasSubsequence(argv, ["-x", "--audio-format", "mp3"]))
     }
 
@@ -104,18 +118,18 @@ final class YtDlpArgumentsTests: XCTestCase {
         let argv = YtDlpArguments.build(for: request(
             kind: .video(maxHeight: 1080),
             template: "%(uploader)s - %(title)s.%(ext)s"
-        ))
+        ), concurrentFragments: 4)
         let index = try XCTUnwrap(argv.firstIndex(of: "-o"))
         XCTAssertEqual(argv[index + 1], "%(uploader)s - %(title)s.%(ext)s")
     }
 
     func test_urlIsLast() {
-        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .mp3)))
+        let argv = YtDlpArguments.build(for: request(kind: .audio(format: .mp3)), concurrentFragments: 4)
         XCTAssertEqual(argv.last, url)
     }
 
     func test_progressTemplateIsExact() throws {
-        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 1080)))
+        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 1080)), concurrentFragments: 4)
         let index = try XCTUnwrap(argv.firstIndex(of: "--progress-template"))
         XCTAssertEqual(argv[index + 1], progressTemplate)
     }
@@ -130,14 +144,14 @@ final class YtDlpArgumentsTests: XCTestCase {
         ]
         for req in requests {
             XCTAssertEqual(
-                YtDlpArguments.redacted(for: req),
-                YtDlpArguments.build(for: req)
+                YtDlpArguments.redacted(for: req, concurrentFragments: 4),
+                YtDlpArguments.build(for: req, concurrentFragments: 4)
             )
         }
     }
 
     func test_options_none_noGlobalFlags() {
-        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 1080)))
+        let argv = YtDlpArguments.build(for: request(kind: .video(maxHeight: 1080)), concurrentFragments: 4)
         XCTAssertFalse(argv.contains("--proxy"))
         XCTAssertFalse(argv.contains("-4"))
         XCTAssertFalse(argv.contains("--limit-rate"))
@@ -150,7 +164,7 @@ final class YtDlpArgumentsTests: XCTestCase {
             speedLimitKBps: 0
         )
         XCTAssertTrue(hasSubsequence(
-            YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), options: options),
+            YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), options: options, concurrentFragments: 4),
             ["--proxy", "http://host:8080"]
         ))
     }
@@ -158,14 +172,14 @@ final class YtDlpArgumentsTests: XCTestCase {
     func test_options_forceIPv4() {
         let options = GlobalDownloadOptions(proxyURL: nil, forceIPv4: true, speedLimitKBps: 0)
         XCTAssertTrue(YtDlpArguments
-            .build(for: request(kind: .audio(format: .m4a)), options: options)
+            .build(for: request(kind: .audio(format: .m4a)), options: options, concurrentFragments: 4)
             .contains("-4"))
     }
 
     func test_options_speedLimit() {
         let options = GlobalDownloadOptions(proxyURL: nil, forceIPv4: false, speedLimitKBps: 500)
         XCTAssertTrue(hasSubsequence(
-            YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), options: options),
+            YtDlpArguments.build(for: request(kind: .audio(format: .m4a)), options: options, concurrentFragments: 4),
             ["--limit-rate", "500K"]
         ))
     }
@@ -173,7 +187,7 @@ final class YtDlpArgumentsTests: XCTestCase {
     func test_options_speedLimit_zeroOmitsFlag() {
         let options = GlobalDownloadOptions(proxyURL: nil, forceIPv4: false, speedLimitKBps: 0)
         XCTAssertFalse(YtDlpArguments
-            .build(for: request(kind: .audio(format: .m4a)), options: options)
+            .build(for: request(kind: .audio(format: .m4a)), options: options, concurrentFragments: 4)
             .contains("--limit-rate"))
     }
 
@@ -185,7 +199,7 @@ final class YtDlpArgumentsTests: XCTestCase {
         )
         let argv = YtDlpArguments.redacted(
             for: request(kind: .audio(format: .m4a)),
-            options: options
+            options: options, concurrentFragments: 4
         )
         let index = try XCTUnwrap(argv.firstIndex(of: "--proxy"))
         XCTAssertFalse(argv[index + 1].contains("secret"))
@@ -200,15 +214,19 @@ final class YtDlpArgumentsTests: XCTestCase {
             speedLimitKBps: 200
         )
         XCTAssertEqual(
-            YtDlpArguments.redacted(for: request(kind: .video(maxHeight: 720)), options: options),
-            YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)), options: options)
+            YtDlpArguments.redacted(
+                for: request(kind: .video(maxHeight: 720)),
+                options: options,
+                concurrentFragments: 4
+            ),
+            YtDlpArguments.build(for: request(kind: .video(maxHeight: 720)), options: options, concurrentFragments: 4)
         )
     }
 
     func test_cookieArgument_emittedBeforeURL() throws {
         let argv = YtDlpArguments.build(
             for: request(kind: .video(maxHeight: 720)),
-            cookieArgument: "safari"
+            cookieArgument: "safari", concurrentFragments: 4
         )
         let idx = try XCTUnwrap(argv.firstIndex(of: "--cookies-from-browser"))
         XCTAssertEqual(argv[idx + 1], "safari")
@@ -218,7 +236,7 @@ final class YtDlpArgumentsTests: XCTestCase {
     func test_cookieArgument_nil_omitsBothTokens() {
         let argv = YtDlpArguments.build(
             for: request(kind: .video(maxHeight: 720)),
-            cookieArgument: nil
+            cookieArgument: nil, concurrentFragments: 4
         )
         XCTAssertFalse(argv.contains("--cookies-from-browser"))
     }
@@ -226,7 +244,7 @@ final class YtDlpArgumentsTests: XCTestCase {
     func test_redacted_masksCookieSpec() throws {
         let argv = YtDlpArguments.redacted(
             for: request(kind: .video(maxHeight: 720)),
-            cookieArgument: "firefox:work"
+            cookieArgument: "firefox:work", concurrentFragments: 4
         )
         let idx = try XCTUnwrap(argv.firstIndex(of: "--cookies-from-browser"))
         XCTAssertEqual(argv[idx + 1], "<redacted>")

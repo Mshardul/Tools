@@ -12,6 +12,10 @@ public actor DownloadEngine: DownloadEngineProtocol {
     var probeInFlight = false
     var capOverrideForTests: Int?
 
+    var rateLimiter: RateLimiter
+    var isOnline = true
+    var networkTask: Task<Void, Never>?
+
     let eventStream: AsyncStream<QueueEvent>
     let eventContinuation: AsyncStream<QueueEvent>.Continuation
 
@@ -24,21 +28,12 @@ public actor DownloadEngine: DownloadEngineProtocol {
         eventStream = stream
         eventContinuation = continuation
         events = stream
-    }
-
-    // MARK: - Cap
-
-    var cap: Int {
-        if let capOverrideForTests {
-            return capOverrideForTests
+        let seedCap = dependencies.debugFlags.concurrencyCapOverride ?? preferences.maxConcurrentDownloads
+        rateLimiter = RateLimiter(tuning: dependencies.tuning, preferencesCap: seedCap)
+        let monitor = dependencies.networkMonitor
+        Task { [weak self] in
+            await self?.startNetworkMonitoring(monitor)
         }
-        return dependencies.debugFlags.concurrencyCapOverride ?? preferences.maxConcurrentDownloads
-    }
-
-    // Test seam: drive cap deterministically without a Preferences round-trip.
-    func setCap(_ value: Int?) {
-        capOverrideForTests = value
-        evaluateSchedule()
     }
 
     // MARK: - Queries
@@ -53,7 +48,7 @@ public actor DownloadEngine: DownloadEngineProtocol {
 
     private func isActive(_ state: JobState) -> Bool {
         switch state {
-        case .probing, .running: true
+        case .probing, .running, .waitingForNetwork, .cooldown: true
         default: false
         }
     }
@@ -101,7 +96,9 @@ public actor DownloadEngine: DownloadEngineProtocol {
     public func revalidate() async {
         let report = await dependencies.envProbe.probe()
         guard report.isReadyForDownloads else { return }
-        queueHalt = nil
+        if queueHalt == .depMissing {
+            queueHalt = nil
+        }
         bump()
         emitSnapshot()
         evaluateSchedule()
@@ -160,9 +157,21 @@ public actor DownloadEngine: DownloadEngineProtocol {
     }
 
     public func forceStart(_ id: UUID) async {
-        guard let forced = queuedJob(id) else { return }
+        guard let forced = jobs.first(where: { $0.id == id }),
+              forced.state == .queued || isCooldownState(forced.state)
+        else { return }
 
-        let victim = runningJobs().count >= cap ? oldestStartedRunningJob() : nil
+        let host = RateHost(urlString: forced.request.url)
+        if rateLimiter.blocked(host: host, now: dependencies.clock.now) {
+            logEvent(.hostBlockOverridden(host: host.canonical, jobID: id))
+        }
+        if isCooldownState(forced.state) {
+            forced.state = .queued
+            forced.cooldownUntil = nil
+            cancelDeferral(id)
+        }
+
+        let victim = runningJobs().count >= effectiveCap ? oldestStartedRunningJob() : nil
         if let victim {
             move(victim, toTail: true)
             victim.state = .queued
@@ -190,6 +199,8 @@ public actor DownloadEngine: DownloadEngineProtocol {
         probeTask?.cancel()
         deferralTask?.cancel()
         deferralTask = nil
+        networkTask?.cancel()
+        networkTask = nil
         for (_, task) in childTasks {
             await task.value
         }
@@ -222,11 +233,15 @@ public actor DownloadEngine: DownloadEngineProtocol {
 extension DownloadEngine {
     func evaluateSchedule() {
         guard queueHalt == nil else { return }
+        rateLimiter.setPreferencesCap(cap)
+        let now = dependencies.clock.now
         let input = SchedulerInput(
             queued: snapshotsForState { $0 == .queued },
             running: snapshotsForState { $0 == .running },
-            cap: cap,
+            cap: effectiveCap,
             deferredIDs: Set(deferrals.map(\.id)),
+            blockedHostIDs: blockedHostIDs(now: now, queuedOnly: true),
+            blockedProbeHostIDs: blockedHostIDs(now: now, queuedOnly: false),
             probeIdle: !probeInFlight
         )
         for id in Scheduler.nextDownloads(input) {
@@ -244,26 +259,30 @@ extension DownloadEngine {
         jobs.filter { match($0.state) }.map { $0.snapshot(availableActions: []) }
     }
 
-    private func launchDownload(id: UUID) {
-        guard let job = jobs.first(where: { $0.id == id }) else { return }
-        let request = job.request
-        let runner = dependencies.runner
-        let ytDlpURL = dependencies.ytDlpURL
-        let tuning = dependencies.tuning
+    private func downloadArguments(for job: DownloadJob, cookieArgument: String?) -> [String] {
         let options = GlobalDownloadOptions(
             proxyURL: preferences.proxyURL,
             forceIPv4: preferences.forceIPv4,
             speedLimitKBps: preferences.speedLimitKBps
         )
+        return YtDlpArguments.build(
+            for: job.request,
+            options: options,
+            tuning: dependencies.tuning.ytDlp,
+            cookieArgument: cookieArgument,
+            concurrentFragments: fragmentCount(for: job.request.url)
+        )
+    }
+
+    private func launchDownload(id: UUID) {
+        guard let job = jobs.first(where: { $0.id == id }) else { return }
+        let request = job.request
+        let runner = dependencies.runner
+        let ytDlpURL = dependencies.ytDlpURL
         let cookieArgument = resolveCookieArgument(for: job)
         let launch = ProcessLaunch(
             executableURL: ytDlpURL,
-            arguments: YtDlpArguments.build(
-                for: request,
-                options: options,
-                tuning: tuning.ytDlp,
-                cookieArgument: cookieArgument
-            )
+            arguments: downloadArguments(for: job, cookieArgument: cookieArgument)
         )
         let jobLog = JobLog(
             id: id,
@@ -307,8 +326,7 @@ extension DownloadEngine {
             .argument
     }
 
-    // Runs strictly after the process exits and the output file resolves — IntegrityCheck
-    // needs the finalized file, never a file being written.
+    // Runs only after the process exits and the output file resolves — IntegrityCheck needs the finalized file.
     func runIntegrityCheck(
         id: UUID,
         result: ProcessResult,

@@ -1,10 +1,8 @@
 import Foundation
 
-// The substring -> ErrorClass data table, shared by ProgressParser.classifyStderr (download side)
-// and MetadataProbe's classifier so the two agree by construction, not by two hand-kept lists.
+// The substring -> ErrorClass table shared by the download and probe classifiers so they agree by construction.
 public enum ErrorSignatures {
-    // Ordered: the first class with any contained substring (case-insensitive) wins.
-    // networkDown is handled by ProgressParser's own signature list before this table.
+    // Ordered, first case-insensitive substring match wins; networkDown is caught by ProgressParser before this table.
     static let table: [(errorClass: ErrorClass, substrings: [String])] = [
         (.rateLimited(), [
             "HTTP Error 429",
@@ -35,8 +33,7 @@ public enum ErrorSignatures {
         ])
     ]
 
-    // AND within a group, OR across groups. Checked before `table` so a cookie-read error
-    // on a private video classifies as the cookie problem, not the video state.
+    // AND within a group, OR across groups; checked before `table` so a cookie-read error outranks the video state.
     static let cookieReadFailedGroups: [[String]] = [
         ["could not find", "cookies database"],
         ["permission denied", "cookies"],

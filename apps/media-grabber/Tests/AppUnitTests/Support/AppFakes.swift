@@ -144,6 +144,8 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func remove(_: UUID) async {}
     func forceStart(_: UUID) async {}
+    func resetCircuit(_: RateHost) async {}
+    func resetAllCircuits() async {}
 
     func shutdown() async {
         box.mutate { $0.shutdownCalled = true }

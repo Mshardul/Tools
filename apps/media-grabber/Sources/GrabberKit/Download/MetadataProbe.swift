@@ -170,8 +170,7 @@ public actor MetadataProbe: MetadataProbing {
             .map(String.init) ?? stderr
     }
 
-    // The shared strings come from the one ErrorSignatures table so the probe-side and
-    // download-side classifiers agree; "logged-in" is probe-only, no download equivalent.
+    // Shared strings from the ErrorSignatures table plus one probe-only "logged-in" case with no download equivalent.
     private var unavailableSignatures: [String] {
         Self.sharedUnavailableSignatures + ["The web client only works when logged-in"]
     }
