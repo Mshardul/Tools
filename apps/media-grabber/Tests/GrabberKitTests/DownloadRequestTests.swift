@@ -36,6 +36,22 @@ final class DownloadRequestTests: XCTestCase {
         XCTAssertEqual(decoded, request)
     }
 
+    func testMissingAudioLanguageDecodesAsUnspecified() throws {
+        let request = DownloadRequest(
+            url: "https://example.com/v",
+            destFolder: dest,
+            kind: .video(maxHeight: 1080)
+        )
+        let encoded = try JSONEncoder().encode(request)
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+        object.removeValue(forKey: "audioLanguage")
+        let stripped = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(DownloadRequest.self, from: stripped)
+        XCTAssertEqual(decoded.audioLanguage, .unspecified)
+    }
+
     func test_errorClass_unknownCarriesRaw() {
         let boom1 = ErrorClass.unknown(raw: "boom")
         let boom2 = ErrorClass.unknown(raw: "boom")

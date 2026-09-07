@@ -9,8 +9,11 @@ struct RunwayView: View {
     @Binding var mediaType: MediaType
     @Binding var videoHeight: Int
     @Binding var audioFormat: AudioFormat
+    @Binding var selectedTrackID: String
     @Binding var destFolder: URL
 
+    let audioTracks: [AudioTrack]
+    let offeredHeights: [Int]
     let canGrab: Bool
     let onGrab: () -> Void
 
@@ -40,6 +43,7 @@ struct RunwayView: View {
 
             slot("Type", filled: true) { typeControl }
             slot("Format", filled: true) { formatControl }
+            slot("Language", filled: true) { languageControl }
             slot("Save to", filled: true) { saveControl }
 
             Divider().frame(height: 28).overlay(theme.palette.hair)
@@ -108,9 +112,7 @@ struct RunwayView: View {
         case .video:
             SkinnedPicker(
                 caption: "Resolution",
-                rows: Self.qualityLadder.map {
-                    SkinnedPickerRow(id: $0.height, title: $0.label, subtitle: nil)
-                },
+                rows: qualityRows,
                 selection: $videoHeight,
                 triggerLabel: qualityLabel(videoHeight)
             )
@@ -120,6 +122,27 @@ struct RunwayView: View {
                 selection: $audioFormat
             ) { $0.rawValue.uppercased() }
         }
+    }
+
+    private var languageControl: some View {
+        SkinnedPicker(
+            caption: "Language",
+            rows: audioTracks.map {
+                SkinnedPickerRow(id: $0.id, title: $0.label, subtitle: nil)
+            },
+            selection: $selectedTrackID,
+            triggerLabel: languageLabel
+        )
+    }
+
+    private var qualityRows: [SkinnedPickerRow<Int>] {
+        Self.qualityLadder.filter { offeredHeights.contains($0.height) }.map {
+            SkinnedPickerRow(id: $0.height, title: $0.label, subtitle: nil)
+        }
+    }
+
+    private var languageLabel: String {
+        audioTracks.first { $0.id == selectedTrackID }?.label ?? "Default"
     }
 
     private var saveControl: some View {

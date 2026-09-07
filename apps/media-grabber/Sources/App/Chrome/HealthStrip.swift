@@ -1,7 +1,7 @@
 import GrabberKit
 import SwiftUI
 
-enum DotState {
+enum DotState: Equatable {
     case ok
     case attention
 }
@@ -26,6 +26,7 @@ struct HealthChip: Identifiable {
 
 struct HealthStrip: View {
     let chips: [HealthChip]
+    var onRefresh: ((HealthChip) -> Void)?
 
     @Environment(\.theme) private var theme
     @State private var openPopoverID: String?
@@ -61,7 +62,19 @@ struct HealthStrip: View {
             )) {
                 HostRatePopover()
             }
-        case .none, .refresh:
+        case .refresh:
+            Button {
+                onRefresh?(chip)
+            } label: {
+                HStack(spacing: Spacing.s1) {
+                    chipBody(chip)
+                    Text("↻")
+                        .font(theme.monoFont(11, .regular))
+                        .foregroundStyle(theme.palette.dim)
+                }
+            }
+            .buttonStyle(.plain)
+        case .none:
             chipBody(chip)
         }
     }

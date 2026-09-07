@@ -1,0 +1,7 @@
+{
+  "id": "plain",
+  "title": "No formats key",
+  "duration": 10,
+  "_type": "video",
+  "extractor": "generic"
+}

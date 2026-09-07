@@ -5,7 +5,8 @@ final class FailurePresentationTests: XCTestCase {
     private let cases: [ErrorClass] = [
         .rateLimited(), .geoBlocked, .private, .unavailable, .ageRestricted,
         .networkDown, .cookieReadFailed, .diskFull, .permissionDenied,
-        .incomplete, .depMissing, .unknown(raw: "ERROR: boom")
+        .incomplete, .depMissing, .botCheck, .sabrGated, .formatsMissing,
+        .potProviderDown, .unknown(raw: "ERROR: boom")
     ]
 
     func test_everyCaseHasANonEmptySentence() {
@@ -40,7 +41,7 @@ final class FailurePresentationTests: XCTestCase {
         let retryable = cases.filter(\.isAutoRetryable)
         XCTAssertEqual(
             Set(retryable.map(\.key)),
-            ["rate_limited", "network_down", "incomplete", "unknown"]
+            ["rate_limited", "network_down", "incomplete", "unknown", "bot_check", "formats_missing"]
         )
         for errorClass in retryable {
             XCTAssertTrue(errorClass.presentation.offeredActions.contains(.retry), "\(errorClass)")

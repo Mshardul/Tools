@@ -99,12 +99,14 @@ final class EngineCircuitTests: XCTestCase {
         let engine = Fix.engine(runner: runner, probe: successProbe(), cap: 1, clock: clock)
         let collector = EventCollector(engine.events)
         let id = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=x"))
-        _ = await collector.waitForState(id) { self.isCooldown($0) }
+        let cooled = await collector.waitForState(id) { self.isCooldown($0) }
+        XCTAssertTrue(cooled)
         XCTAssertEqual(collector.latestSnapshot()?.hostRateSummary.isEmpty, false)
 
+        runner.perRunDelay = .seconds(30)
         await engine.forceStart(id)
-        _ = await collector.waitForState(id) { $0 == .running || $0 == .completed }
-
-        XCTAssertEqual(collector.latestSnapshot()?.hostRateSummary.isEmpty, false)
+        let snap = await engine.currentSnapshot()
+        XCTAssertEqual(snap.jobs.first { $0.id == id }?.state, .running)
+        XCTAssertEqual(snap.hostRateSummary.isEmpty, false)
     }
 }

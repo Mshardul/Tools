@@ -23,6 +23,10 @@ public protocol DownloadEngineProtocol: Sendable {
     func resetCircuit(_ host: RateHost) async
     func resetAllCircuits() async
 
+    func preview(_ url: String) async -> Result<MediaMetadata, MetadataError>
+    func ensureShield() async
+    func restartShield() async
+
     func shutdown() async
 }
 
@@ -55,6 +59,7 @@ public struct EngineDependencies: Sendable {
     // Injected so a test can resolve the cookie argument against a scripted home.
     public var cookieResolverHome: URL?
     public var networkMonitor: any NetworkPathMonitoring
+    public var potProvider: any PotProviding
 
     public init(
         runner: ProcessRunning,
@@ -75,7 +80,8 @@ public struct EngineDependencies: Sendable {
         persistence: any QueuePersisting = NoopPersisting(),
         deleteJobLog: (@Sendable (UUID) -> Void)? = nil,
         cookieResolverHome: URL? = nil,
-        networkMonitor: (any NetworkPathMonitoring)? = nil
+        networkMonitor: (any NetworkPathMonitoring)? = nil,
+        potProvider: any PotProviding = MissingPotProvider()
     ) {
         self.runner = runner
         self.fileManager = fileManager
@@ -98,6 +104,7 @@ public struct EngineDependencies: Sendable {
         }
         self.cookieResolverHome = cookieResolverHome
         self.networkMonitor = networkMonitor ?? AlwaysOnlineMonitor()
+        self.potProvider = potProvider
     }
 
     public static func live(
@@ -109,6 +116,13 @@ public struct EngineDependencies: Sendable {
     ) -> EngineDependencies {
         let runner = ProcessRunner()
         let tuning = EngineTuning.resolved()
+        let potProvider = PotProviderProcess(
+            installer: PotPluginInstaller.live(),
+            runner: runner,
+            pinger: URLSessionShieldPinger(),
+            tuning: tuning,
+            log: log
+        )
         return EngineDependencies(
             runner: runner,
             probe: MetadataProbe(ytDlpURL: ytDlpURL, runner: runner),
@@ -123,7 +137,8 @@ public struct EngineDependencies: Sendable {
             networkMonitor: NWPathNetworkMonitor(
                 offlineGrace: TimeInterval(tuning.networkOfflineGraceSeconds),
                 onlineSettle: TimeInterval(tuning.networkOnlineSettleSeconds)
-            )
+            ),
+            potProvider: potProvider
         )
     }
 

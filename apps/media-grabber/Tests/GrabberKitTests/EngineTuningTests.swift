@@ -53,4 +53,18 @@ final class EngineTuningTests: XCTestCase {
             EngineTuning.default.backoffLadder
         )
     }
+
+    func testPotTuningDefaults() {
+        XCTAssertEqual(EngineTuning.default.potHealthTimeoutSeconds, 2)
+        XCTAssertEqual(EngineTuning.default.potRestartBackoffSeconds, 2)
+    }
+
+    func testPotTuningReadsEnv() {
+        let tun = EngineTuning.resolved(environment: [
+            "MG_POT_HEALTH_TIMEOUT": "5",
+            "MG_POT_RESTART_BACKOFF": "7"
+        ])
+        XCTAssertEqual(tun.potHealthTimeoutSeconds, 5)
+        XCTAssertEqual(tun.potRestartBackoffSeconds, 7)
+    }
 }

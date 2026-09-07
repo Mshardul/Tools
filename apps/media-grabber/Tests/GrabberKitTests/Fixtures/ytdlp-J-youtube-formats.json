@@ -1,0 +1,40 @@
+{
+  "id": "abc",
+  "title": "Dubbed Clip",
+  "duration": 120,
+  "_type": "video",
+  "extractor": "youtube",
+  "original_language": "ja",
+  "formats": [
+    {
+      "format_id": "137",
+      "height": 1080,
+      "vcodec": "avc1.640028",
+      "acodec": "none"
+    },
+    {
+      "format_id": "136",
+      "height": 720,
+      "vcodec": "avc1.4d401f",
+      "acodec": "none"
+    },
+    {
+      "format_id": "140-ja",
+      "vcodec": "none",
+      "acodec": "mp4a.40.2",
+      "language": "ja",
+      "format_note": "original",
+      "language_preference": 0,
+      "audio_track": { "display_name": "Japanese" }
+    },
+    {
+      "format_id": "140-en",
+      "vcodec": "none",
+      "acodec": "mp4a.40.2",
+      "language": "en",
+      "format_note": "Default, high",
+      "language_preference": 10,
+      "audio_track": { "display_name": "English" }
+    }
+  ]
+}

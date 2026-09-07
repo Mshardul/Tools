@@ -36,7 +36,7 @@ public extension ErrorClass {
 
     var isAutoRetryable: Bool {
         switch self {
-        case .rateLimited, .networkDown, .incomplete, .unknown: true
+        case .rateLimited, .networkDown, .incomplete, .unknown, .botCheck, .formatsMissing: true
         default: false
         }
     }

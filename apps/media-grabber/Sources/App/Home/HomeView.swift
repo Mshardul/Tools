@@ -11,6 +11,7 @@ struct HomeView: View {
     @State private var mediaType: MediaType = .video
     @State private var videoHeight = 1080
     @State private var audioFormat: AudioFormat = .m4a
+    @State private var selectedTrackID = "default"
     @State private var destFolder = URL(fileURLWithPath: NSHomeDirectory())
     @State private var seeded = false
     @State private var probeTask: Task<Void, Never>?
@@ -29,6 +30,9 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear(perform: seedFromPrefs)
+        .onChange(of: appModel.resolved) { _, meta in
+            seedCatalog(meta)
+        }
     }
 
     private var firstRunLayout: some View {
@@ -104,57 +108,67 @@ struct HomeView: View {
 
     private func pasteBlock(reserveRunwaySlot: Bool = false) -> some View {
         VStack(spacing: Spacing.s3) {
-            VStack(spacing: Spacing.s2) {
-                HStack(spacing: Spacing.s2) {
-                    TextField("", text: $pastedURL)
-                        .textFieldStyle(.plain)
-                        .font(theme.bodyFont(14, .regular))
-                        .foregroundStyle(theme.palette.text)
-                        .onSubmit { Task { await resolve() } }
-                        .onChange(of: pastedURL) { _, new in autoProbe(new) }
-                        .overlay(alignment: .leading) {
-                            if pastedURL.isEmpty {
-                                Text("Paste a link")
-                                    .font(theme.bodyFont(14, .regular))
-                                    .foregroundStyle(theme.palette.faint)
-                                    .allowsHitTesting(false)
-                            }
-                        }
-                    probeStatus
-                }
-
-                if let error = appModel.probeError {
-                    Text(error)
-                        .font(theme.bodyFont(12, .regular))
-                        .foregroundStyle(theme.palette.danger)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .padding(Spacing.s4)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                theme.palette.panel,
-                in: RoundedRectangle(cornerRadius: theme.cardRadius)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: theme.cardRadius)
-                    .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
-            )
-
+            pasteField
             if runwayAttached || reserveRunwaySlot {
-                RunwayView(
-                    mediaType: $mediaType,
-                    videoHeight: $videoHeight,
-                    audioFormat: $audioFormat,
-                    destFolder: $destFolder,
-                    canGrab: appModel.resolved != nil,
-                    onGrab: grab
-                )
-                .opacity(runwayAttached ? 1 : 0)
-                .allowsHitTesting(runwayAttached)
-                .accessibilityHidden(!runwayAttached)
+                attachedRunway
+                    .opacity(runwayAttached ? 1 : 0)
+                    .allowsHitTesting(runwayAttached)
+                    .accessibilityHidden(!runwayAttached)
             }
         }
+    }
+
+    private var pasteField: some View {
+        VStack(spacing: Spacing.s2) {
+            HStack(spacing: Spacing.s2) {
+                TextField("", text: $pastedURL)
+                    .textFieldStyle(.plain)
+                    .font(theme.bodyFont(14, .regular))
+                    .foregroundStyle(theme.palette.text)
+                    .onSubmit { Task { await resolve() } }
+                    .onChange(of: pastedURL) { _, new in autoProbe(new) }
+                    .overlay(alignment: .leading) {
+                        if pastedURL.isEmpty {
+                            Text("Paste a link")
+                                .font(theme.bodyFont(14, .regular))
+                                .foregroundStyle(theme.palette.faint)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                probeStatus
+            }
+
+            if let error = appModel.probeError {
+                Text(error)
+                    .font(theme.bodyFont(12, .regular))
+                    .foregroundStyle(theme.palette.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(Spacing.s4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            theme.palette.panel,
+            in: RoundedRectangle(cornerRadius: theme.cardRadius)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: theme.cardRadius)
+                .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
+        )
+    }
+
+    private var attachedRunway: some View {
+        RunwayView(
+            mediaType: $mediaType,
+            videoHeight: $videoHeight,
+            audioFormat: $audioFormat,
+            selectedTrackID: $selectedTrackID,
+            destFolder: $destFolder,
+            audioTracks: languagePickerTracks,
+            offeredHeights: offeredHeights,
+            canGrab: appModel.resolved != nil,
+            onGrab: grab
+        )
     }
 
     private var runwayAttached: Bool {
@@ -218,7 +232,11 @@ struct HomeView: View {
     }
 
     private var runwayOverrides: RunwayOverrides {
-        RunwayOverrides(kind: selectedKind, destFolder: destFolder)
+        RunwayOverrides(
+            kind: selectedKind,
+            destFolder: destFolder,
+            audioLanguage: selectedAudioLanguage
+        )
     }
 
     private var selectedKind: DownloadKind {
@@ -228,5 +246,56 @@ struct HomeView: View {
         case .audio:
             .audio(format: audioFormat)
         }
+    }
+}
+
+extension HomeView {
+    private var languagePickerTracks: [AudioTrack] {
+        let tracks = appModel.resolved?.audioTracks ?? []
+        if tracks.isEmpty {
+            return [AudioTrack(
+                id: "default",
+                languageCode: nil,
+                label: "Default",
+                isOriginal: false,
+                isDefault: true
+            )]
+        }
+        return tracks
+    }
+
+    private var offeredHeights: [Int] {
+        guard let meta = appModel.resolved else {
+            return VideoQualityOptions.offered(from: MediaMetadata(
+                title: "",
+                durationSeconds: nil,
+                isPlaylist: false,
+                sourceURL: ""
+            ))
+        }
+        return VideoQualityOptions.offered(from: meta)
+    }
+
+    private var selectedAudioLanguage: AudioLanguage {
+        let tracks = languagePickerTracks
+        let track = tracks.first { $0.id == selectedTrackID } ?? tracks.first
+        guard let track else {
+            return .unspecified
+        }
+        return RequestBuilder.audioLanguage(from: track)
+    }
+
+    private func seedCatalog(_ meta: MediaMetadata?) {
+        guard let meta else { return }
+        videoHeight = VideoQualityOptions.seed(
+            last: appModel.prefs.lastVideoHeight,
+            defaultHeight: appModel.prefs.defaultVideoHeight,
+            offered: VideoQualityOptions.offered(from: meta)
+        )
+        selectedTrackID = AudioLanguageSeed.pick(
+            tracks: meta.audioTracks,
+            last: appModel.prefs.lastAudioLanguage,
+            policy: appModel.prefs.defaultAudioLanguagePolicy
+        ).id
     }
 }

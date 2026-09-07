@@ -225,15 +225,18 @@ The "resolve link & arm Grab" pattern.
   `--sp-3` gap between the two — not a shared border. Rounded on all corners.
   A row of labelled slots:
   - `Link` — filled when the probe resolves to a downloadable item
-  - `Type` — `SkinnedSegment` (§4.9) — Video / Audio; seeded from Preferences
-  - `Format` — contextual: `SkinnedPicker` (§4.10) quality ladder for video, or
-    `SkinnedSegment` `M4A` / `MP3` for audio; seeded from Preferences
+  - `Type` — `SkinnedSegment` (§4.9) — Video / Audio; seeded from last-used or Preferences
+  - `Format` — contextual: `SkinnedPicker` (§4.10) quality rungs this probe actually offers (video), or
+    `SkinnedSegment` `M4A` / `MP3` (audio); seeded from last-used or Preferences
+  - `Language` — `SkinnedPicker` of this probe's audio tracks; always filled
+    (last pick if offered, else Preferences YouTube-default / Original policy,
+    else YouTube's default track). Shown for Video and Audio.
   - `Save to` — `SkinnedPicker`: default folder, last-used (if distinct),
     "Choose…" for a new folder. Always seeded — never renders unfilled.
   - *(playlist only)* no extra slot — item selection happens in the picker modal (§4.3)
   - Each slot: hollow dot `○` (`--faint`) when unset, filled dot `●` (`--accent`) when set.
   - The slots use `SkinnedSegment` / `SkinnedPicker`, not the native `Menu`.
-- **Grab button** — at the end of the runway, past a divider. **Disabled** (opacity .3, grayscale) until **every** slot is filled: link resolved *and* downloadable, Type, Format, and Save-to all set. Label: `Grab` (single item) / `Grab all N` / `Add N` (after picker). Theme fill: Tape Deck `--go` solid; Aurora `--go-fill` gradient.
+- **Grab button** — at the end of the runway, past a divider. **Disabled** (opacity .3, grayscale) until the link is resolved *and* downloadable. Type, Format, Language, and Save-to are always pre-filled; the user may change any of them before Grab. Label: `Grab` (single item) / `Grab all N` / `Add N` (after picker). Theme fill: Tape Deck `--go` solid; Aurora `--go-fill` gradient.
 
 #### 4.2.3 Downloads table
 
@@ -346,6 +349,7 @@ download on the Home screen."*
 | Automatic retries | Attempts before the app asks you what to do. | stepper 1–5 | `maxAutoRetries` |
 | Media type | — | `SkinnedSegment` — Video / Audio | `defaultMediaType` |
 | Video quality | Highest available if the exact height isn't offered. | `SkinnedPicker` — 2160p / 1440p / 1080p / 720p / 480p / Best available | `defaultVideoHeight` (`Int.max` = Best) |
+| Audio language | Used when this video has that kind of track. | `SkinnedSegment` — YouTube default / Original | `defaultAudioLanguagePolicy` |
 | Audio format | — | `SkinnedSegment` — M4A / MP3 | `defaultAudioFormat` |
 | Filename format | — | `SkinnedPicker` — Title / Title – channel / Date – title / Custom… | `filenameTemplate` |
 | Clipboard detection | Offer to grab links you copy. | toggle | `detectClipboardLinks` |

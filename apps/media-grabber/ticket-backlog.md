@@ -39,20 +39,6 @@ until it reaches v1 (spec §14).
   cap is the right default. The scheduler already receives `blockedHostIDs`, so
   this is an additive change to an existing seam, not a rewrite of Phase 6 work.
 
-## Test infrastructure
-
-- **`EngineDeferralTests.testDueCooldownJobReturnsToQueued` flakes under load.**
-  Passes isolated and in a GrabberKitTests-only run (~0.03s); times out at 5s
-  when the full GrabberKitTests + AppUnitTests run back-to-back, roughly half
-  the time as of Phase 6 Task 17. Root cause: the `FakeClock` continuation that
-  `clock.advance(by:)` resumes to run `fireDueDeferrals` starves under CPU
-  contention, so the `.cooldown → .queued` flip lands after the collector's
-  `waitForState` deadline. Not a product bug — the deferral logic is correct.
-  Options: give `FakeClock` a deterministic "drain due deferrals now" seam the
-  test can await instead of racing the continuation; or raise
-  `EventCollector.waitForState`'s timeout for this suite. Pick one when this
-  ticket is worked.
-
 ## Documentation
 
 - **Job / rate-limit state-flow diagram.** The job lifecycle now spans `queued →
@@ -108,21 +94,16 @@ are in spec §12.2.
   Chrome app-bound-encryption fallback; `cookieReadFailed` (non-fatal); the
   "retry with cookies" (`🔑`) row action. Needs Phase 4's `ErrorClass` set +
   live action bar; not rate limiting.
-- **Phase 6 — Rate limiting and circuit breaker.** Per-host `RateState`
-  (`normal | cooldown | circuitOpen`); cooldown row state; `WarningBanner`
-  `cooldown` / `circuitOpen` / `depMissing` cases; circuit breaker →
-  `queue.suspended`; adaptive concurrency (more conditions on the Phase 2 loop);
-  `NetworkMonitor` → `waitingForNetwork`; `HealthStrip` engine / online /
-  cooldown chips. Smoke: force a 429.
-- **Phase 7 — YouTube hardening.** `player_client` rotation
-  (`tv → ios → tv_embedded → mweb → web_safari`); `PotProviderProcess`
-  (supervise the pipx `bgutil-pot` server on a free `127.0.0.1` port, health
-  check, restart, stop on quit) + `PotPluginInstaller`; `--extractor-args` +
-  `--plugin-dirs` wiring; bot-check-shield `HealthStrip` chip + `↻`; YouTube
-  `ErrorClass` cases (`botCheck`, `sabrGated`, `formatsMissing`,
-  `potProviderDown`) + copy; `potProviderDown` `WarningBanner` case. Needs both
-  Phase 4 and Phase 6. **Audio language:** prefer original / user-selected
-  language in the format selector (today `bv*+ba` can pick a dubbed track).
+- **Phase 6 — Rate limiting and circuit breaker.** *(shipped)* Per-host
+  `RateState` (`normal | cooldown | circuitOpen`); cooldown row state;
+  `WarningBanner` `circuitOpen` / `networkDown` cases; circuit breaker;
+  adaptive concurrency; `NetworkMonitor` → `waitingForNetwork`; `HealthStrip`
+  online / cooldown chips. Smoke: force a 429.
+- **Phase 7 — YouTube hardening.** Engine-owned shield process + plugin dirs;
+  `player_client` rotation; `engine.preview` shares YouTube identity with Grab;
+  probe format lists; runway Language slot + quality rungs this probe offers;
+  Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy; VPN
+  hint; shield chip + `↻`; `potProviderDown` banner. Needs Phase 4 and Phase 6.
 - **Phase 8 — Playlist.** `MetadataProbe` playlist mode (`--flat-playlist`);
   `PlaylistPickerView` modal (checklist, select all/none, filter, live count +
   size); group-header + spine rendering; group actions (pause all / retry

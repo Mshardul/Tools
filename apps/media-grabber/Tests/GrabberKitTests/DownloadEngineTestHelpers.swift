@@ -33,7 +33,7 @@ enum EngineFixture {
 
     static func engine(
         runner: FakeProcessRunner,
-        probe: FakeMetadataProbe,
+        probe: MetadataProbing,
         cap: Int = 3,
         preferences: Preferences? = nil,
         fileManager: FileManaging = FoundationFileManager(),
@@ -41,7 +41,8 @@ enum EngineFixture {
         networkMonitor: (any NetworkPathMonitoring)? = nil,
         clock: FakeClock? = nil,
         tuning: EngineTuning = .default,
-        maxAutoRetries: Int? = nil
+        maxAutoRetries: Int? = nil,
+        potProvider: (any PotProviding)? = nil
     ) -> DownloadEngine {
         let prefs = preferences
             ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
@@ -60,7 +61,8 @@ enum EngineFixture {
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: cap),
                 tuning: tuning,
                 cookieResolverHome: resolverHome,
-                networkMonitor: networkMonitor
+                networkMonitor: networkMonitor,
+                potProvider: potProvider ?? MissingPotProvider()
             ),
             preferences: prefs
         )

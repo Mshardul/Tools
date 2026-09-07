@@ -4,10 +4,16 @@ import GrabberKit
 struct RunwayOverrides: Equatable {
     var kind: DownloadKind?
     var destFolder: URL?
+    var audioLanguage: AudioLanguage?
 
-    init(kind: DownloadKind? = nil, destFolder: URL? = nil) {
+    init(
+        kind: DownloadKind? = nil,
+        destFolder: URL? = nil,
+        audioLanguage: AudioLanguage? = nil
+    ) {
         self.kind = kind
         self.destFolder = destFolder
+        self.audioLanguage = audioLanguage
     }
 }
 
@@ -23,8 +29,19 @@ enum RequestBuilder {
             destFolder: overrides.destFolder ?? prefs.lastUsedDownloadFolder,
             kind: kind,
             container: container(for: kind),
-            filenameTemplate: prefs.filenameTemplate
+            filenameTemplate: prefs.filenameTemplate,
+            audioLanguage: overrides.audioLanguage ?? .unspecified
         )
+    }
+
+    static func audioLanguage(from track: AudioTrack) -> AudioLanguage {
+        guard let code = track.languageCode else {
+            return .unspecified
+        }
+        if track.isOriginal {
+            return .original
+        }
+        return .code(code)
     }
 
     private static func container(for kind: DownloadKind) -> String? {

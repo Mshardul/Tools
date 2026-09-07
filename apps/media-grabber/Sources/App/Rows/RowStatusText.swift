@@ -5,7 +5,8 @@ enum RowStatusText {
     static func text(
         for snapshot: JobSnapshot,
         maxAutoRetries _: Int,
-        rate: HostRateDisplayState?
+        rate: HostRateDisplayState?,
+        vpnActive: Bool = false
     ) -> String {
         switch snapshot.state {
         case .cooldown:
@@ -25,8 +26,19 @@ enum RowStatusText {
         case .cancelled:
             "Cancelled"
         case let .failed(errorClass):
-            "Failed — \(errorClass.presentation.sentence)"
+            failedText(errorClass, vpnActive: vpnActive)
         }
+    }
+
+    private static func failedText(_ errorClass: ErrorClass, vpnActive: Bool) -> String {
+        "Failed — \(sentence(for: errorClass, vpnActive: vpnActive))"
+    }
+
+    private static func sentence(for errorClass: ErrorClass, vpnActive: Bool) -> String {
+        if case .botCheck = errorClass {
+            return BotCheckCopy.sentence(vpnActive: vpnActive)
+        }
+        return errorClass.presentation.sentence
     }
 
     private static func queued(_ snapshot: JobSnapshot, rate: HostRateDisplayState?) -> String {

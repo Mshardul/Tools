@@ -148,6 +148,13 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
 
+    func preview(_: String) async -> Result<MediaMetadata, MetadataError> {
+        .failure(.network)
+    }
+
+    func ensureShield() async {}
+    func restartShield() async {}
+
     func shutdown() async {
         box.mutate { $0.shutdownCalled = true }
     }

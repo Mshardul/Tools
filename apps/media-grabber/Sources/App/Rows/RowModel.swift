@@ -2,6 +2,58 @@ import Foundation
 import GrabberKit
 import Observation
 
+private struct RowPatchExtras {
+    var badgeChanged: Bool
+    var retriesChanged: Bool
+    var rateChanged: Bool
+    var vpnChanged: Bool
+}
+
+private struct RowFieldChanges {
+    var state: Bool
+    var progress: Bool
+    var size: Bool
+    var title: Bool
+    var extractor: Bool
+    var duration: Bool
+    var kind: Bool
+    var quality: Bool
+    var attempt: Bool
+    var badge: Bool
+    var retries: Bool
+    var rate: Bool
+    var vpn: Bool
+
+    init(from old: JobSnapshot, to next: JobSnapshot, extras: RowPatchExtras) {
+        state = old.state != next.state
+        progress = old.progress != next.progress
+        size = old.sizeBytes != next.sizeBytes
+        title = old.title != next.title
+        extractor = old.extractor != next.extractor
+        duration = old.durationSeconds != next.durationSeconds
+        kind = old.kind != next.kind
+        quality = old.actualQuality != next.actualQuality
+        attempt = old.attempt != next.attempt || old.cooldownUntil != next.cooldownUntil
+        badge = extras.badgeChanged
+        retries = extras.retriesChanged
+        rate = extras.rateChanged
+        vpn = extras.vpnChanged
+    }
+
+    var needsRecompute: Bool {
+        state || progress || size || title || extractor || duration || kind || quality
+            || badge || retries || rate || attempt || vpn
+    }
+
+    var structural: Bool {
+        state || title || extractor || duration || kind
+    }
+
+    var refreshStatus: Bool {
+        state || progress || retries || rate || attempt || vpn
+    }
+}
+
 @MainActor
 @Observable
 final class RowModel: Identifiable {
@@ -26,6 +78,7 @@ final class RowModel: Identifiable {
 
     // Live Preferences.maxAutoRetries; AppModel threads it in on every apply.
     private var maxAutoRetries: Int
+    private var vpnActive: Bool
 
     var hostCooldownDeadline: Date? {
         if case let .cooldown(until, _) = rateDisplay?.state {
@@ -38,11 +91,13 @@ final class RowModel: Identifiable {
         _ snapshot: JobSnapshot,
         queuePosition: Int?,
         maxAutoRetries: Int = 5,
-        rate: HostRateDisplayState? = nil
+        rate: HostRateDisplayState? = nil,
+        vpnActive: Bool = false
     ) {
         id = snapshot.id
         self.snapshot = snapshot
         self.maxAutoRetries = maxAutoRetries
+        self.vpnActive = vpnActive
         rateDisplay = rate
         recomputeAll(queuePosition: queuePosition)
     }
@@ -53,61 +108,67 @@ final class RowModel: Identifiable {
         _ next: JobSnapshot,
         queuePosition: Int?,
         maxAutoRetries: Int = 5,
-        rate: HostRateDisplayState? = nil
+        rate: HostRateDisplayState? = nil,
+        vpnActive: Bool = false
     ) -> Bool {
         let old = snapshot
         snapshot = next
         let retriesChanged = self.maxAutoRetries != maxAutoRetries
         self.maxAutoRetries = maxAutoRetries
+        let vpnChanged = self.vpnActive != vpnActive
+        self.vpnActive = vpnActive
         let rateChanged = rateDisplay != rate
         rateDisplay = rate
-
-        let stateChanged = old.state != next.state
-        let progressChanged = old.progress != next.progress
-        let sizeChanged = old.sizeBytes != next.sizeBytes
-        let titleChanged = old.title != next.title
-        let extractorChanged = old.extractor != next.extractor
-        let durationChanged = old.durationSeconds != next.durationSeconds
-        let kindChanged = old.kind != next.kind
-        let qualityChanged = old.actualQuality != next.actualQuality
-        let attemptChanged = old.attempt != next.attempt || old.cooldownUntil != next.cooldownUntil
-        let badgeChanged = queueBadge != Self.badge(for: next, position: queuePosition)
-
-        guard stateChanged || progressChanged || sizeChanged || titleChanged
-            || extractorChanged || durationChanged || kindChanged || qualityChanged
-            || badgeChanged || retriesChanged || rateChanged || attemptChanged
-        else {
+        let extras = RowPatchExtras(
+            badgeChanged: queueBadge != Self.badge(for: next, position: queuePosition),
+            retriesChanged: retriesChanged,
+            rateChanged: rateChanged,
+            vpnChanged: vpnChanged
+        )
+        let changes = RowFieldChanges(from: old, to: next, extras: extras)
+        guard changes.needsRecompute else {
             return false
         }
+        refreshDerivedFields(next, queuePosition: queuePosition, changes: changes)
+        recomputeCount += 1
+        return changes.structural
+    }
 
-        if stateChanged || progressChanged || retriesChanged || rateChanged || attemptChanged {
-            statusText = Self.status(for: next, maxAutoRetries: maxAutoRetries, rate: rateDisplay)
+    private func refreshDerivedFields(
+        _ next: JobSnapshot,
+        queuePosition: Int?,
+        changes: RowFieldChanges
+    ) {
+        if changes.refreshStatus {
+            statusText = Self.status(
+                for: next,
+                maxAutoRetries: maxAutoRetries,
+                rate: rateDisplay,
+                vpnActive: vpnActive
+            )
         }
-        if stateChanged || progressChanged {
+        if changes.state || changes.progress {
             speedText = Self.speed(for: next)
             etaText = Self.eta(for: next)
         }
-        if sizeChanged || stateChanged {
+        if changes.size || changes.state {
             formattedSize = Self.size(for: next)
         }
-        if durationChanged {
+        if changes.duration {
             formattedDuration = Self.duration(for: next)
         }
-        if extractorChanged {
+        if changes.extractor {
             siteLabel = Self.site(for: next)
         }
-        if kindChanged {
+        if changes.kind {
             typeLabel = Self.type(for: next)
         }
-        if kindChanged || qualityChanged {
+        if changes.kind || changes.quality {
             qualityLabel = Self.quality(for: next)
         }
-        if badgeChanged {
+        if changes.badge {
             queueBadge = Self.badge(for: next, position: queuePosition)
         }
-        recomputeCount += 1
-
-        return stateChanged || titleChanged || extractorChanged || durationChanged || kindChanged
     }
 
     func patchProgress(fraction progress: DownloadProgress) {
@@ -123,7 +184,12 @@ final class RowModel: Identifiable {
             playerClientUsed: known.playerClientUsed, playlistGroupID: known.playlistGroupID,
             integrityVerdict: known.integrityVerdict, availableActions: known.availableActions
         )
-        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries, rate: rateDisplay)
+        statusText = Self.status(
+            for: snapshot,
+            maxAutoRetries: maxAutoRetries,
+            rate: rateDisplay,
+            vpnActive: vpnActive
+        )
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -131,7 +197,12 @@ final class RowModel: Identifiable {
     }
 
     private func recomputeAll(queuePosition: Int?) {
-        statusText = Self.status(for: snapshot, maxAutoRetries: maxAutoRetries, rate: rateDisplay)
+        statusText = Self.status(
+            for: snapshot,
+            maxAutoRetries: maxAutoRetries,
+            rate: rateDisplay,
+            vpnActive: vpnActive
+        )
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -150,9 +221,15 @@ extension RowModel {
     static func status(
         for snapshot: JobSnapshot,
         maxAutoRetries: Int = 5,
-        rate: HostRateDisplayState? = nil
+        rate: HostRateDisplayState? = nil,
+        vpnActive: Bool = false
     ) -> String {
-        RowStatusText.text(for: snapshot, maxAutoRetries: maxAutoRetries, rate: rate)
+        RowStatusText.text(
+            for: snapshot,
+            maxAutoRetries: maxAutoRetries,
+            rate: rate,
+            vpnActive: vpnActive
+        )
     }
 
     static func speed(for snapshot: JobSnapshot) -> String {

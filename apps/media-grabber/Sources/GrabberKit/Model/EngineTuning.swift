@@ -59,6 +59,8 @@ public struct EngineTuning: Sendable, Equatable {
     public var networkOnlineSettleSeconds: Int
     public var concurrentFragmentsNormal: Int
     public var concurrentFragmentsThrottled: Int
+    public var potHealthTimeoutSeconds: Int
+    public var potRestartBackoffSeconds: Int
 
     public init(
         ytDlp: YtDlpTuning,
@@ -70,7 +72,9 @@ public struct EngineTuning: Sendable, Equatable {
         networkOfflineGraceSeconds: Int = 2,
         networkOnlineSettleSeconds: Int = 2,
         concurrentFragmentsNormal: Int = 4,
-        concurrentFragmentsThrottled: Int = 1
+        concurrentFragmentsThrottled: Int = 1,
+        potHealthTimeoutSeconds: Int = 2,
+        potRestartBackoffSeconds: Int = 2
     ) {
         self.ytDlp = ytDlp
         self.backoffLadder = backoffLadder
@@ -82,6 +86,8 @@ public struct EngineTuning: Sendable, Equatable {
         self.networkOnlineSettleSeconds = networkOnlineSettleSeconds
         self.concurrentFragmentsNormal = concurrentFragmentsNormal
         self.concurrentFragmentsThrottled = concurrentFragmentsThrottled
+        self.potHealthTimeoutSeconds = potHealthTimeoutSeconds
+        self.potRestartBackoffSeconds = potRestartBackoffSeconds
     }
 
     public static let `default` = EngineTuning(
@@ -94,7 +100,9 @@ public struct EngineTuning: Sendable, Equatable {
         networkOfflineGraceSeconds: 2,
         networkOnlineSettleSeconds: 2,
         concurrentFragmentsNormal: 4,
-        concurrentFragmentsThrottled: 1
+        concurrentFragmentsThrottled: 1,
+        potHealthTimeoutSeconds: 2,
+        potRestartBackoffSeconds: 2
     )
 
     // Every unset / malformed key keeps the default.
@@ -131,7 +139,15 @@ public struct EngineTuning: Sendable, Equatable {
             networkOfflineGraceSeconds: rateLimit.networkOfflineGraceSeconds,
             networkOnlineSettleSeconds: rateLimit.networkOnlineSettleSeconds,
             concurrentFragmentsNormal: rateLimit.concurrentFragmentsNormal,
-            concurrentFragmentsThrottled: rateLimit.concurrentFragmentsThrottled
+            concurrentFragmentsThrottled: rateLimit.concurrentFragmentsThrottled,
+            potHealthTimeoutSeconds: intValue(
+                "MG_POT_HEALTH_TIMEOUT",
+                EngineTuning.default.potHealthTimeoutSeconds
+            ),
+            potRestartBackoffSeconds: intValue(
+                "MG_POT_RESTART_BACKOFF",
+                EngineTuning.default.potRestartBackoffSeconds
+            )
         )
     }
 

@@ -6,19 +6,28 @@ public struct MediaMetadata: Sendable, Equatable {
     public let isPlaylist: Bool
     public let sourceURL: String
     public let extractor: String?
+    public let formatAvailability: FormatAvailability
+    public let videoHeights: [Int]
+    public let audioTracks: [AudioTrack]
 
     public init(
         title: String,
         durationSeconds: Int?,
         isPlaylist: Bool,
         sourceURL: String,
-        extractor: String? = nil
+        extractor: String? = nil,
+        formatAvailability: FormatAvailability = .unknown,
+        videoHeights: [Int] = [],
+        audioTracks: [AudioTrack] = []
     ) {
         self.title = title
         self.durationSeconds = durationSeconds
         self.isPlaylist = isPlaylist
         self.sourceURL = sourceURL
         self.extractor = extractor
+        self.formatAvailability = formatAvailability
+        self.videoHeights = videoHeights
+        self.audioTracks = audioTracks
     }
 }
 
@@ -31,11 +40,18 @@ public enum MetadataError: Error, Sendable, Equatable {
     case launchFailed
     case malformedOutput
     case botCheck
+    case hostBlocked
     case unknown(raw: String)
 }
 
 public protocol MetadataProbing: Sendable {
-    func probe(_ url: String) async -> Result<MediaMetadata, MetadataError>
+    func probe(_ url: String, context: ExtractorContext) async -> Result<MediaMetadata, MetadataError>
+}
+
+public extension MetadataProbing {
+    func probe(_ url: String) async -> Result<MediaMetadata, MetadataError> {
+        await probe(url, context: .none)
+    }
 }
 
 public actor MetadataProbe: MetadataProbing {
@@ -50,20 +66,29 @@ public actor MetadataProbe: MetadataProbing {
         self.runner = runner
     }
 
-    public func probe(_ url: String) async -> Result<MediaMetadata, MetadataError> {
+    public func probe(
+        _ url: String,
+        context: ExtractorContext = .none
+    ) async -> Result<MediaMetadata, MetadataError> {
         let predecessor = tail
         let work = Task { () -> Result<MediaMetadata, MetadataError> in
             await predecessor.value
-            return await self.runProbe(url)
+            return await self.runProbe(url, context: context)
         }
         tail = Task { _ = await work.value }
         return await work.value
     }
 
-    private func runProbe(_ url: String) async -> Result<MediaMetadata, MetadataError> {
+    private func runProbe(
+        _ url: String,
+        context: ExtractorContext
+    ) async -> Result<MediaMetadata, MetadataError> {
+        let arguments = ["-J", "--no-warnings", "--no-playlist", "--no-update"]
+            + YtDlpArguments.extractorFlags(context: context)
+            + [url]
         let execution = runner.run(ProcessLaunch(
             executableURL: ytDlpURL,
-            arguments: ["-J", "--no-warnings", "--no-playlist", "--no-update", url]
+            arguments: arguments
         ))
 
         var stdout = ""
@@ -93,27 +118,38 @@ public actor MetadataProbe: MetadataProbing {
         _ stdout: String,
         sourceURL: String
     ) -> Result<MediaMetadata, MetadataError> {
-        struct Payload: Decodable {
-            let title: String?
-            let duration: Double?
-            let extractor: String?
-            // swiftlint:disable:next identifier_name
-            let _type: String?
-        }
         guard
             let data = stdout.data(using: .utf8),
-            let payload = try? JSONDecoder().decode(Payload.self, from: data),
-            let title = payload.title
+            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let title = object["title"] as? String
         else {
             return .failure(.malformedOutput)
         }
+        let parsed = FormatCatalog.parseJSONObject(object)
         return .success(MediaMetadata(
             title: title,
-            durationSeconds: payload.duration.map { Int($0.rounded()) },
-            isPlaylist: payload._type == "playlist",
+            durationSeconds: durationSeconds(object),
+            isPlaylist: (object["_type"] as? String) == "playlist",
             sourceURL: sourceURL,
-            extractor: payload.extractor
+            extractor: object["extractor"] as? String,
+            formatAvailability: parsed.availability,
+            videoHeights: parsed.videoHeights,
+            audioTracks: parsed.audioTracks
         ))
+    }
+
+    private static func durationSeconds(_ object: [String: Any]) -> Int? {
+        guard let value = object["duration"] else { return nil }
+        if let number = value as? Double {
+            return Int(number.rounded())
+        }
+        if let number = value as? Int {
+            return number
+        }
+        if let number = value as? NSNumber {
+            return Int(number.doubleValue.rounded())
+        }
+        return nil
     }
 
     private func classify(stderr: String, exitCode: Int32) -> MetadataError {
@@ -136,7 +172,7 @@ public actor MetadataProbe: MetadataProbing {
         if isNetworkFailure(stderr: stderr, errorLine: errorLine) {
             return .network
         }
-        if isBotCheck(stderr) {
+        if let matched = ErrorSignatures.firstMatch(in: stderr), case .botCheck = matched {
             return .botCheck
         }
         if errorLine.hasPrefix("ERROR:") {
@@ -144,19 +180,6 @@ public actor MetadataProbe: MetadataProbing {
         }
         return .unknown(raw: stderr.trimmingCharacters(in: .whitespacesAndNewlines))
     }
-
-    private func isBotCheck(_ stderr: String) -> Bool {
-        botCheckSignatures.contains { stderr.localizedCaseInsensitiveContains($0) }
-    }
-
-    private let botCheckSignatures = [
-        "page needs to be reloaded",
-        "confirm you're not a bot",
-        "Sign in to confirm",
-        "unable to extract uploader id",
-        "HTTP Error 403",
-        "This content isn't available, try again later"
-    ]
 
     private func isNetworkFailure(stderr: String, errorLine: String) -> Bool {
         stderr.contains("Unable to download")

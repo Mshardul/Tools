@@ -63,6 +63,8 @@ final class PreferencesTests: XCTestCase {
         XCTAssertNil(prefs.lastVideoHeight)
         XCTAssertNil(prefs.lastMediaType)
         XCTAssertNil(prefs.lastAudioFormat)
+        XCTAssertEqual(prefs.defaultAudioLanguagePolicy, .youtubeDefault)
+        XCTAssertNil(prefs.lastAudioLanguage)
     }
 
     func test_proxyURL_trimAndEmptyToNil() {
@@ -139,5 +141,19 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(prefs.maxConcurrentDownloads, 3)
         XCTAssertEqual(prefs.filenameTemplate, "%(title)s.%(ext)s")
         XCTAssertNil(prefs.lastMediaType)
+    }
+
+    func test_audioLanguage_roundTripAndReset() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.defaultAudioLanguagePolicy = .original
+        prefs.lastAudioLanguage = .code("es")
+        let reloaded = Preferences(defaults: defaults)
+        XCTAssertEqual(reloaded.defaultAudioLanguagePolicy, .original)
+        XCTAssertEqual(reloaded.lastAudioLanguage, .code("es"))
+        prefs.lastAudioLanguage = .original
+        XCTAssertEqual(Preferences(defaults: defaults).lastAudioLanguage, .original)
+        prefs.resetToDefaults()
+        XCTAssertEqual(prefs.defaultAudioLanguagePolicy, .youtubeDefault)
+        XCTAssertNil(prefs.lastAudioLanguage)
     }
 }

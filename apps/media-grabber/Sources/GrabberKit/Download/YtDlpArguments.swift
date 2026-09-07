@@ -5,16 +5,32 @@ public enum YtDlpArguments {
         + "%(progress._speed_str)s|%(progress._eta_str)s|"
         + "%(progress.downloaded_bytes)s|%(progress.total_bytes)s"
 
+    public static func extractorFlags(context: ExtractorContext) -> [String] {
+        var flags: [String] = []
+        if !context.pluginDirs.isEmpty {
+            flags += ["--plugin-dirs", context.pluginDirs.map(\.path).joined(separator: ":")]
+        }
+        if let pot = context.potBaseURL {
+            flags += ["--extractor-args", "youtubepot-bgutilhttp:base_url=\(pot.absoluteString)"]
+        }
+        if let client = context.playerClient {
+            flags += ["--extractor-args", "youtube:player_client=\(client)"]
+        }
+        return flags
+    }
+
     public static func build(
         for request: DownloadRequest,
         options: GlobalDownloadOptions = .none,
         tuning: YtDlpTuning = .default,
         cookieArgument: String? = nil,
+        context: ExtractorContext = .none,
         concurrentFragments: Int
     ) -> [String] {
         baseArgv(for: request, tuning: tuning)
             + ["--concurrent-fragments", String(concurrentFragments)]
             + cookieFlags(cookieArgument, redact: false)
+            + extractorFlags(context: context)
             + globalFlags(options, proxyURL: options.proxyURL)
             + [request.url]
     }
@@ -25,11 +41,13 @@ public enum YtDlpArguments {
         options: GlobalDownloadOptions = .none,
         tuning: YtDlpTuning = .default,
         cookieArgument: String? = nil,
+        context: ExtractorContext = .none,
         concurrentFragments: Int
     ) -> [String] {
         baseArgv(for: request, tuning: tuning)
             + ["--concurrent-fragments", String(concurrentFragments)]
             + cookieFlags(cookieArgument, redact: true)
+            + extractorFlags(context: context)
             + globalFlags(options, proxyURL: options.proxyURL.map(maskUserinfo(in:)))
             + [request.url]
     }
@@ -95,18 +113,37 @@ public enum YtDlpArguments {
     private static func formatSelector(for request: DownloadRequest) -> [String] {
         switch request.kind {
         case let .video(maxHeight: height):
-            var tokens = [
-                "-f",
-                "bv*[height<=\(height)][ext=mp4]+ba[ext=m4a]"
-                    + "/bv*[height<=\(height)]+ba"
-                    + "/b[height<=\(height)]"
-            ]
+            var tokens = ["-f", videoSelector(height: height, language: request.audioLanguage)]
             if let container = request.container {
                 tokens += ["--merge-output-format", container]
             }
             return tokens
         case let .audio(format: format):
-            return ["-x", "--audio-format", format.rawValue]
+            return audioFormatFilter(request.audioLanguage)
+                + ["-x", "--audio-format", format.rawValue]
         }
+    }
+
+    private static func baFilter(_ language: AudioLanguage) -> String? {
+        switch language {
+        case .unspecified: nil
+        case .original: "format_note*=original"
+        case let .code(code): "language=\(code)"
+        }
+    }
+
+    private static func videoSelector(height: Int, language: AudioLanguage) -> String {
+        let unfiltered = "bv*[height<=\(height)][ext=mp4]+ba[ext=m4a]"
+            + "/bv*[height<=\(height)]+ba"
+            + "/b[height<=\(height)]"
+        guard let filter = baFilter(language) else { return unfiltered }
+        let preferred = "bv*[height<=\(height)][ext=mp4]+ba[\(filter)][ext=m4a]"
+            + "/bv*[height<=\(height)]+ba[\(filter)]"
+        return preferred + "/" + unfiltered
+    }
+
+    private static func audioFormatFilter(_ language: AudioLanguage) -> [String] {
+        guard let filter = baFilter(language) else { return [] }
+        return ["-f", "ba[\(filter)]/ba"]
     }
 }

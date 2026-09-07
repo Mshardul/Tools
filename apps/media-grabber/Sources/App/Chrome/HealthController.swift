@@ -8,11 +8,28 @@ final class HealthController {
     private(set) var chips: [HealthChip] = []
 
     func update(snapshot: QueueSnapshot, now _: Date) {
-        var next: [HealthChip] = [onlineChip(snapshot.isOnline)]
+        var next: [HealthChip] = [
+            shieldChip(snapshot.shieldStatus),
+            onlineChip(snapshot.isOnline)
+        ]
         if let cooldown = hostRateChip(snapshot.hostRateSummary) {
             next.append(cooldown)
         }
         chips = next
+    }
+
+    private func shieldChip(_ status: ShieldStatus) -> HealthChip {
+        switch status {
+        case .running:
+            HealthChip(id: "shield", label: "shield", dot: .ok, interaction: .none)
+        case .down, .missing:
+            HealthChip(
+                id: "shield",
+                label: "shield · offline",
+                dot: .attention,
+                interaction: .refresh
+            )
+        }
     }
 
     private func onlineChip(_ online: Bool) -> HealthChip {

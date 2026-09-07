@@ -77,4 +77,46 @@ final class RequestBuilderTests: XCTestCase {
             )
         )
     }
+
+    func test_audioLanguageOverride_writesOntoRequest() {
+        let request = RequestBuilder.build(
+            from: meta(),
+            prefs: prefs(),
+            overrides: RunwayOverrides(audioLanguage: .code("ja"))
+        )
+        XCTAssertEqual(request.audioLanguage, .code("ja"))
+    }
+
+    func test_audioLanguage_fromTrack() {
+        XCTAssertEqual(
+            RequestBuilder.audioLanguage(from: AudioTrack(
+                id: "default",
+                languageCode: nil,
+                label: "Default",
+                isOriginal: false,
+                isDefault: true
+            )),
+            .unspecified
+        )
+        XCTAssertEqual(
+            RequestBuilder.audioLanguage(from: AudioTrack(
+                id: "ja|orig",
+                languageCode: "ja",
+                label: "Japanese (original)",
+                isOriginal: true,
+                isDefault: true
+            )),
+            .original
+        )
+        XCTAssertEqual(
+            RequestBuilder.audioLanguage(from: AudioTrack(
+                id: "en|dub",
+                languageCode: "en",
+                label: "English",
+                isOriginal: false,
+                isDefault: false
+            )),
+            .code("en")
+        )
+    }
 }

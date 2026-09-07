@@ -10,7 +10,8 @@ extension DownloadEngine {
             queueHalt: effectiveQueueHalt(),
             generatedAt: .now,
             hostRateSummary: rateLimiter.displaySummary(now: dependencies.clock.now),
-            isOnline: isOnline
+            isOnline: isOnline,
+            shieldStatus: shieldStatus
         )
     }
 

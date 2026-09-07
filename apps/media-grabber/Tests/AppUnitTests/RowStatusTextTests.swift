@@ -86,4 +86,25 @@ final class RowStatusTextTests: XCTestCase {
         let text = RowStatusText.text(for: snap(.waitingForNetwork), maxAutoRetries: 5, rate: nil)
         XCTAssertEqual(text, "Waiting for network")
     }
+
+    func testBotCheckWithoutVPN() {
+        let text = RowStatusText.text(for: snap(.failed(.botCheck)), maxAutoRetries: 5, rate: nil)
+        XCTAssertEqual(
+            text,
+            "Failed — Couldn't verify you. Try again, or add browser cookies in Preferences."
+        )
+    }
+
+    func testBotCheckWithVPN() {
+        let text = RowStatusText.text(
+            for: snap(.failed(.botCheck)),
+            maxAutoRetries: 5,
+            rate: nil,
+            vpnActive: true
+        )
+        XCTAssertEqual(
+            text,
+            "Failed — Couldn't verify you. Turn off your VPN, or add browser cookies in Preferences."
+        )
+    }
 }

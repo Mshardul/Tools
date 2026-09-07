@@ -36,7 +36,45 @@ extension DownloadEngine {
             .unknown(raw: "\(error)")
         case .botCheck:
             .botCheck
+        case .hostBlocked:
+            .rateLimited()
         }
+    }
+
+    static func resolvedExitClass(
+        kind: DownloadKind,
+        lastError: ErrorClass?,
+        sawAudioOnly: Bool,
+        exitCode: Int? = nil
+    ) -> ErrorClass {
+        if case .sabrGated = lastError {
+            return .sabrGated
+        }
+        if sawAudioOnly, isVideoKind(kind), isReplaceable(lastError) {
+            return .formatsMissing
+        }
+        if let lastError {
+            return lastError
+        }
+        if let exitCode {
+            return .unknown(raw: "yt-dlp exited \(exitCode)")
+        }
+        return .unknown(raw: "yt-dlp exited")
+    }
+
+    private static func isVideoKind(_ kind: DownloadKind) -> Bool {
+        if case .video = kind {
+            return true
+        }
+        return false
+    }
+
+    private static func isReplaceable(_ lastError: ErrorClass?) -> Bool {
+        guard let lastError else { return true }
+        if case .unknown = lastError {
+            return true
+        }
+        return false
     }
 
     func deletePartFiles(for job: DownloadJob) {

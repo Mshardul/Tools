@@ -81,5 +81,6 @@ final class ValueTypesTests: XCTestCase {
         )
         XCTAssertFalse(snap.isOnline)
         XCTAssertTrue(snap.hostRateSummary.isEmpty)
+        XCTAssertEqual(snap.shieldStatus, .missing)
     }
 }

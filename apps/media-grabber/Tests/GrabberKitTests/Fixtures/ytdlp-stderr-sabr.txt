@@ -1,0 +1,1 @@
+ERROR: [youtube] abc: only images are available for this video (sabr)

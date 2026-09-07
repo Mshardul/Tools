@@ -85,6 +85,16 @@ struct DownloadsPane: View {
                 )
             }
 
+            PrefRow(
+                "Audio language",
+                helper: "Used when this video has that kind of track."
+            ) {
+                SkinnedSegment(
+                    [AudioLanguagePolicy.youtubeDefault, .original],
+                    selection: $prefs.defaultAudioLanguagePolicy
+                ) { $0 == .youtubeDefault ? "YouTube default" : "Original" }
+            }
+
             PrefRow("Audio format") {
                 SkinnedSegment(
                     [AudioFormat.m4a, .mp3],

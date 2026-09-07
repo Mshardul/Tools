@@ -5,6 +5,7 @@ public final class JobLog: @unchecked Sendable {
     private let id: UUID
     private let request: DownloadRequest
     private let ytDlpVersion: String
+    private let playerClient: String?
     private let fileURL: URL
     private var handle: FileHandle?
 
@@ -12,11 +13,13 @@ public final class JobLog: @unchecked Sendable {
         id: UUID,
         request: DownloadRequest,
         ytDlpVersion: String,
+        playerClient: String? = nil,
         dir: URL = JobLog.defaultDir
     ) {
         self.id = id
         self.request = request
         self.ytDlpVersion = ytDlpVersion
+        self.playerClient = playerClient
         fileURL = dir.appendingPathComponent("\(id.uuidString).log")
     }
 
@@ -30,6 +33,7 @@ public final class JobLog: @unchecked Sendable {
         request: \(LogRedaction.redact(Self.describe(request)))
         started: \(ISO8601DateFormatter().string(from: Date()))
         yt-dlp: \(ytDlpVersion)
+        player_client: \(playerClient ?? "-")
         ----
         """
         try (header + "\n").data(using: .utf8)?.write(to: fileURL)

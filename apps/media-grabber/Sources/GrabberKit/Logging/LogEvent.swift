@@ -46,6 +46,10 @@ public enum LogEvent: Sendable {
     case adaptiveConcurrencyChanged(from: Int, to: Int, reason: String)
     case networkPathChanged(online: Bool)
     case hostBlockOverridden(host: String, jobID: UUID)
+    case shieldStarted(port: Int)
+    case shieldExited(code: Int32)
+    case shieldRestarted(reason: String)
+    case shieldMissing
 
     var key: String {
         switch self {
@@ -79,6 +83,10 @@ public enum LogEvent: Sendable {
         case .adaptiveConcurrencyChanged: "scheduler.adaptive_concurrency_changed"
         case .networkPathChanged: "network.path_changed"
         case .hostBlockOverridden: "scheduler.host_block_overridden"
+        case .shieldStarted: "shield.started"
+        case .shieldExited: "shield.exited"
+        case .shieldRestarted: "shield.restarted"
+        case .shieldMissing: "shield.missing"
         }
     }
 
@@ -99,6 +107,7 @@ public enum LogEvent: Sendable {
              .jobDuplicateSubmitCancelled: .ui
         case .hostRateStateChanged, .circuitOpened, .circuitReset,
              .adaptiveConcurrencyChanged, .networkPathChanged, .hostBlockOverridden: .scheduler
+        case .shieldStarted, .shieldExited, .shieldRestarted, .shieldMissing: .deps
         }
     }
 
@@ -178,6 +187,14 @@ public enum LogEvent: Sendable {
             ["online": online ? "true" : "false"]
         case let .hostBlockOverridden(host, _):
             ["host": host]
+        case let .shieldStarted(port):
+            ["port": String(port)]
+        case let .shieldExited(code):
+            ["code": String(code)]
+        case let .shieldRestarted(reason):
+            ["reason": reason]
+        case .shieldMissing:
+            [:]
         }
     }
 

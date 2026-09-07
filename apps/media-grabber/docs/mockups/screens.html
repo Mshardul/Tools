@@ -534,13 +534,13 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 1.2 -->
   <div class="screen" id="s1-2">
     <div class="cap"><b>1.2</b> Home — link resolved (runway + table)</div>
-    <div class="sub">After the first Grab: paste field + runway, no kicker or step cards. Slots are Link · Type · Format · Save to (SkinnedSegment / SkinnedPicker). Link shows the resolved title. Quality ladder drops 360, adds "Best available". Save-to always seeded — here to <code>Downloads</code>. Failed rows read a one-sentence reason; a non-recoverable class (private / removed / geo-blocked) disables Retry (↻). A retrying row shows <code>Retrying — attempt N of M</code> with no position badge and no countdown (the live m:ss lands in a later phase). Queued shows <code>queued · #N</code> and force-start (⏫). The Show-log action (📄) is on every row whose job has run. A completed row served lower than requested shows <code>1080p → 720p</code>.</div>
+    <div class="sub">After the first Grab: paste field + runway, no kicker or step cards. Slots are Link · Type · Format · Language · Save to (SkinnedSegment / SkinnedPicker). Link shows the resolved title. Quality ladder drops 360, adds "Best available". Save-to always seeded — here to <code>Downloads</code>. Failed rows read a one-sentence reason; a non-recoverable class (private / removed / geo-blocked) disables Retry (↻). A retrying row shows <code>Retrying — attempt N of M</code> with no position badge and no countdown (the live m:ss lands in a later phase). Queued shows <code>queued · #N</code> and force-start (⏫). The Show-log action (📄) is on every row whose job has run. A completed row served lower than requested shows <code>1080p → 720p</code>.</div>
     <div class="phase-note">(the live backoff countdown, the cooldown health chip + banner, and the success toast arrive in later phases)</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
       <div class="health">
-        <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+        <span class="chip"><span class="dot warn"></span>shield · offline ↻</span>
         <span class="chip"><span class="dot ok"></span>engine · current</span>
         <span class="chip"><span class="dot ok"></span>online</span>
         <span class="chip warn"><span class="dot warn"></span>youtube · cooldown 4:12</span>
@@ -558,6 +558,8 @@ tbody tr:hover td{background:var(--panel)}
               <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
               <span class="pick">1080p <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick">Japanese (original) <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
               <span class="pick">Downloads <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
@@ -589,7 +591,7 @@ tbody tr:hover td{background:var(--panel)}
             <tr><td>Old mix — cancelled</td><td class="site">archive.org</td><td>Audio · MP3</td><td><span class="st s-done">cancelled</span></td><td></td><td>—</td><td><div class="acts"><button>✕</button></div></td></tr>
           </tbody></table>
           <div class="toaststack"><div class="toast"><span class="tk">✓</span> Conference keynote 2024 saved <a>Reveal</a></div></div>
-          <div class="banner"><strong>Cooling down.</strong><span>YouTube asked us to pause. Downloads resume on their own in about 4 minutes.</span><button>Retry now</button></div>
+          <div class="banner"><span>Bot-check protection is offline — some downloads may fail or be low-res.</span><button>Restart</button></div>
         </div>
       </div>
     </div>
@@ -659,6 +661,8 @@ tbody tr:hover td{background:var(--panel)}
               <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
               <span class="pick">1080p <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick">Japanese (original) <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
               <span class="pick">Downloads <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
@@ -733,6 +737,8 @@ tbody tr:hover td{background:var(--panel)}
               <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
               <span class="seg"><button class="on">M4A</button><button>MP3</button></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick">Default <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
               <span class="pick">Downloads <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
@@ -896,6 +902,7 @@ tbody tr:hover td{background:var(--panel)}
           <div class="field2"><div class="fl">Automatic retries<small>Attempts before the app asks you what to do.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">3</span><button>+</button></span></div></div>
           <div class="field2"><div class="fl">Media type</div><div class="fc"><span class="seg"><button class="on">Video</button><button>Audio</button></span></div></div>
           <div class="field2"><div class="fl">Video quality<small>Highest available if the exact height isn't offered.</small></div><div class="fc"><span class="pick">1080p <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Audio language<small>Used when this video has that kind of track.</small></div><div class="fc"><span class="seg"><button class="on">YouTube default</button><button>Original</button></span></div></div>
           <div class="field2"><div class="fl">Audio format</div><div class="fc"><span class="seg"><button class="on">M4A</button><button>MP3</button></span></div></div>
           <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick">Title <span class="cv">▾</span></span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl">Clipboard detection<small>Offer to grab links you copy.</small></div><div class="fc"><span class="toggle on"></span></div></div>
@@ -1319,6 +1326,7 @@ tbody tr:hover td{background:var(--panel)}
             <div class="rstep ok"><span class="rl">Link</span><span class="rv">Big Buck Bunny</span></div>
             <div class="rstep ok"><span class="rl">Type</span><span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span><span class="pick">1080p <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span><span class="pick">Japanese (original) <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span><span class="pick">Downloads <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
@@ -1356,6 +1364,7 @@ tbody tr:hover td{background:var(--panel)}
             <div class="rstep ok"><span class="rl">Link</span><span class="rv">Talks — episode 12</span></div>
             <div class="rstep ok"><span class="rl">Type</span><span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span><span class="pick">720p <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span><span class="pick">English <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span><span class="pick">Downloads <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
@@ -1431,6 +1440,8 @@ tbody tr:hover td{background:var(--panel)}
               <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
               <span class="seg"><button class="on">M4A</button><button>MP3</button></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick">Default <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
               <span class="pick">Rips <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Add 12</button></div>

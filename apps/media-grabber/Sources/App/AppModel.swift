@@ -100,7 +100,7 @@ final class AppModel {
     }
 
     let engine: DownloadEngineProtocol
-    private let probe: MetadataProbing
+    let vpnDetector: any VPNDetecting
     private let envProbe: EnvironmentProbing
     let log: LogWriter
     private let persistence: (any QueuePersisting)?
@@ -113,7 +113,6 @@ final class AppModel {
 
     init(
         engine: DownloadEngineProtocol,
-        probe: MetadataProbing,
         installer: OnboardingInstaller,
         prefs: Preferences,
         log: LogWriter,
@@ -124,10 +123,11 @@ final class AppModel {
         engineJobLogDir: URL = JobLog.defaultDir,
         suppression: SuppressionStore = UserDefaultsSuppressionStore(),
         persistence: (any QueuePersisting)? = nil,
-        columnConfig: ColumnConfig = .default
+        columnConfig: ColumnConfig = .default,
+        vpnDetector: any VPNDetecting = InterfaceVPNDetector()
     ) {
         self.engine = engine
-        self.probe = probe
+        self.vpnDetector = vpnDetector
         self.installer = installer
         self.prefs = prefs
         self.log = log
@@ -153,6 +153,9 @@ final class AppModel {
         await log.log(.appLaunched)
         await performLaunchSetup()
         await refreshOnboardingState()
+        if !needsOnboarding {
+            await engine.ensureShield()
+        }
         startConsumerIfNeeded()
     }
 
@@ -162,7 +165,11 @@ final class AppModel {
         let history = persistence.loadHistory()
         await engine.restore(active: active, history: history)
         let snapshot = await engine.currentSnapshot()
-        rowStore.resync(snapshot, maxAutoRetries: prefs.maxAutoRetries)
+        rowStore.resync(
+            snapshot,
+            maxAutoRetries: prefs.maxAutoRetries,
+            vpnActive: vpnDetector.isVPNActive
+        )
         applySnapshot(snapshot)
     }
 
@@ -177,72 +184,12 @@ final class AppModel {
 
     func onboardingFinished() async {
         await engine.revalidate()
+        await engine.ensureShield()
         await refreshOnboardingState()
     }
 
-    func resolvePasted(_ url: String) async {
-        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        isProbing = true
-        probeError = nil
-        let result = await probe.probe(trimmed)
-        isProbing = false
-        switch result {
-        case let .success(meta):
-            resolved = meta
-            await log.log(.probeCompleted(url: trimmed, title: meta.title, ok: true))
-        case let .failure(error):
-            resolved = nil
-            probeError = AppModelDialogs.probeErrorMessage(for: error)
-            await log.log(.probeCompleted(url: trimmed, title: nil, ok: false))
-        }
-    }
-
-    func clearResolved() {
-        resolved = nil
-        probeError = nil
-    }
-
-    func grab(overrides: RunwayOverrides = RunwayOverrides()) async {
-        guard let resolved else { return }
-        let request = RequestBuilder.build(from: resolved, prefs: prefs, overrides: overrides)
-        if let folder = overrides.destFolder {
-            prefs.lastUsedDownloadFolder = folder
-        }
-        if let kind = overrides.kind {
-            switch kind {
-            case let .video(maxHeight):
-                prefs.lastMediaType = .video
-                prefs.lastVideoHeight = maxHeight
-            case let .audio(format):
-                prefs.lastMediaType = .audio
-                prefs.lastAudioFormat = format
-            }
-        }
-
-        let result = await engine.submit(request, force: false, prefetchedMetadata: resolved)
-        switch result {
-        case let .queued(id):
-            lastSubmittedJobID = id
-            scrollToRowID = id
-        case let .duplicateExists(existing, wasCompleted):
-            await log.log(.jobDuplicateSubmitPrompted(existing: existing))
-            let confirmed = await confirm(AppModelDialogs
-                .duplicateConfirmation(wasCompleted: wasCompleted))
-            if confirmed {
-                await log.log(.jobDuplicateSubmitConfirmed)
-                let forced = await engine.submit(request, force: true, prefetchedMetadata: resolved)
-                if case let .queued(id) = forced {
-                    lastSubmittedJobID = id
-                    scrollToRowID = id
-                }
-            } else {
-                await log.log(.jobDuplicateSubmitCancelled)
-                if wasCompleted {
-                    scrollToRowID = existing
-                }
-            }
-        }
+    func restartShield() async {
+        await engine.restartShield()
     }
 
     func confirm(_ request: ConfirmationRequest) async -> Bool {
@@ -291,6 +238,93 @@ final class AppModel {
     func setPendingCookieRetry(_ id: UUID?) {
         pendingCookieRetryJobID = id
     }
+}
+
+extension AppModel {
+    func resolvePasted(_ url: String) async {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        isProbing = true
+        probeError = nil
+        let result = await engine.preview(trimmed)
+        isProbing = false
+        switch result {
+        case let .success(meta):
+            resolved = meta
+            await log.log(.probeCompleted(url: trimmed, title: meta.title, ok: true))
+        case let .failure(error):
+            resolved = nil
+            probeError = error == .botCheck
+                ? BotCheckCopy.sentence(vpnActive: vpnDetector.isVPNActive)
+                : AppModelDialogs.probeErrorMessage(for: error)
+            await log.log(.probeCompleted(url: trimmed, title: nil, ok: false))
+        }
+    }
+
+    func clearResolved() {
+        resolved = nil
+        probeError = nil
+    }
+
+    func grab(overrides: RunwayOverrides = RunwayOverrides()) async {
+        guard let resolved else { return }
+        let request = RequestBuilder.build(from: resolved, prefs: prefs, overrides: overrides)
+        rememberLastSelection(request, overrides: overrides)
+        await submitGrab(request, metadata: resolved)
+    }
+
+    private func rememberLastSelection(
+        _ request: DownloadRequest,
+        overrides: RunwayOverrides
+    ) {
+        if let folder = overrides.destFolder {
+            prefs.lastUsedDownloadFolder = folder
+        }
+        if let kind = overrides.kind {
+            switch kind {
+            case let .video(maxHeight):
+                prefs.lastMediaType = .video
+                prefs.lastVideoHeight = maxHeight
+            case let .audio(format):
+                prefs.lastMediaType = .audio
+                prefs.lastAudioFormat = format
+            }
+        }
+        switch request.audioLanguage {
+        case .original:
+            prefs.lastAudioLanguage = .original
+        case let .code(code):
+            prefs.lastAudioLanguage = .code(code)
+        case .unspecified:
+            break
+        }
+    }
+
+    private func submitGrab(_ request: DownloadRequest, metadata: MediaMetadata) async {
+        let result = await engine.submit(request, force: false, prefetchedMetadata: metadata)
+        switch result {
+        case let .queued(id):
+            lastSubmittedJobID = id
+            scrollToRowID = id
+        case let .duplicateExists(existing, wasCompleted):
+            await log.log(.jobDuplicateSubmitPrompted(existing: existing))
+            let confirmed = await confirm(AppModelDialogs
+                .duplicateConfirmation(wasCompleted: wasCompleted))
+            if confirmed {
+                await log.log(.jobDuplicateSubmitConfirmed)
+                let forced = await engine.submit(request, force: true, prefetchedMetadata: metadata)
+                if case let .queued(id) = forced {
+                    lastSubmittedJobID = id
+                    scrollToRowID = id
+                }
+            } else {
+                await log.log(.jobDuplicateSubmitCancelled)
+                if wasCompleted {
+                    scrollToRowID = existing
+                }
+            }
+        }
+    }
 
     private func startConsumerIfNeeded() {
         guard consumerTask == nil else { return }
@@ -302,7 +336,11 @@ final class AppModel {
     private func runConsumer() async {
         while !Task.isCancelled {
             for await event in engine.events {
-                rowStore.apply(event, maxAutoRetries: prefs.maxAutoRetries)
+                rowStore.apply(
+                    event,
+                    maxAutoRetries: prefs.maxAutoRetries,
+                    vpnActive: vpnDetector.isVPNActive
+                )
                 if case let .snapshot(snapshot) = event {
                     hostRateSummary = snapshot.hostRateSummary
                     healthController.update(snapshot: snapshot, now: .now)
@@ -314,7 +352,8 @@ final class AppModel {
             try? await Task.sleep(for: .seconds(1))
             await rowStore.resync(
                 engine.currentSnapshot(),
-                maxAutoRetries: prefs.maxAutoRetries
+                maxAutoRetries: prefs.maxAutoRetries,
+                vpnActive: vpnDetector.isVPNActive
             )
         }
     }

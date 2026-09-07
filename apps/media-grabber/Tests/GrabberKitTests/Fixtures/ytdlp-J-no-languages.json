@@ -1,0 +1,16 @@
+{
+  "id": "bunny",
+  "title": "Big Buck Bunny",
+  "duration": 596,
+  "_type": "video",
+  "extractor": "generic",
+  "formats": [
+    {
+      "format_id": "1",
+      "height": 720,
+      "vcodec": "avc1",
+      "acodec": "mp4a.40.2",
+      "format_note": "Default, high"
+    }
+  ]
+}

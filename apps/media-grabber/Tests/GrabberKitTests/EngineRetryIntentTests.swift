@@ -107,10 +107,12 @@ final class EngineRetryIntentTests: XCTestCase {
         let id = await failedJob(engine, collector, clock, request: Fix.request(destFolder: dir))
         XCTAssertEqual(job(collector, id)?.state, .failed(.rateLimited()))
 
+        await engine.setCap(0)
         await engine.retry(id)
-        _ = await collector.waitForState(id) { $0 == .queued || $0 == .running }
+        let after = await engine.currentSnapshot().jobs.first { $0.id == id }
 
-        XCTAssertEqual(job(collector, id)?.attempt, 0, "retry restores the full budget")
+        XCTAssertEqual(after?.attempt, 0, "retry restores the full budget")
+        XCTAssertEqual(after?.state, .queued)
         XCTAssertFalse(FileManager.default.fileExists(atPath: part.path), ".part deleted")
     }
 
@@ -142,12 +144,14 @@ final class EngineRetryIntentTests: XCTestCase {
         XCTAssertEqual(job(collector, id)?.state, .failed(.incomplete))
         XCTAssertNotNil(job(collector, id)?.integrityVerdict)
 
+        await engine.setCap(0)
         await engine.retry(id)
-        _ = await collector.waitForState(id) { $0 == .queued || $0 == .running }
+        let after = await engine.currentSnapshot().jobs.first { $0.id == id }
 
-        XCTAssertEqual(job(collector, id)?.attempt, 0)
-        XCTAssertNil(job(collector, id)?.integrityVerdict, "integrity fields cleared on retry")
-        XCTAssertNil(job(collector, id)?.actualQuality)
+        XCTAssertEqual(after?.attempt, 0)
+        XCTAssertEqual(after?.state, .queued)
+        XCTAssertNil(after?.integrityVerdict, "integrity fields cleared on retry")
+        XCTAssertNil(after?.actualQuality)
     }
 
     func test_noOpOnNonRetryableClass() async {

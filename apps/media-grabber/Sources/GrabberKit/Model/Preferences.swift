@@ -183,6 +183,34 @@ public final class Preferences: @unchecked Sendable {
         }
     }
 
+    public var defaultAudioLanguagePolicy: AudioLanguagePolicy {
+        get {
+            (defaults.string(forKey: "mg.defaultAudioLanguagePolicy"))
+                .flatMap(AudioLanguagePolicy.init) ?? .youtubeDefault
+        }
+        set { defaults.set(newValue.rawValue, forKey: "mg.defaultAudioLanguagePolicy") }
+    }
+
+    public var lastAudioLanguage: LastAudioLanguage? {
+        get {
+            guard let data = defaults.data(forKey: "mg.lastAudioLanguage"),
+                  let decoded = try? JSONDecoder().decode(LastAudioLanguage.self, from: data)
+            else {
+                return nil
+            }
+            return decoded
+        }
+        set {
+            guard let value = newValue,
+                  let data = try? JSONEncoder().encode(value)
+            else {
+                defaults.removeObject(forKey: "mg.lastAudioLanguage")
+                return
+            }
+            defaults.set(data, forKey: "mg.lastAudioLanguage")
+        }
+    }
+
     // MARK: - Theme
 
     public var theme: ThemeKind {
@@ -214,7 +242,8 @@ public final class Preferences: @unchecked Sendable {
         "mg.maxAutoRetries", "mg.maxConcurrentDownloads", "mg.verboseLogging",
         "mg.theme", "mg.palette", "mg.detectClipboardLinks", "mg.proxyURL",
         "mg.forceIPv4", "mg.speedLimitKBps", "mg.lastVideoHeight",
-        "mg.lastMediaType", "mg.lastAudioFormat", "mg.cookiesFromBrowser"
+        "mg.lastMediaType", "mg.lastAudioFormat", "mg.cookiesFromBrowser",
+        "mg.defaultAudioLanguagePolicy", "mg.lastAudioLanguage"
     ]
 
     // MARK: - Helpers

@@ -31,6 +31,10 @@ extension DownloadEngine {
         emitSnapshot()
     }
 
+    func fireDueDeferralsForTest() {
+        fireDueDeferrals()
+    }
+
     private func armDeferralTask() {
         deferralTask?.cancel()
         guard let earliest = deferrals.first?.notBefore else {

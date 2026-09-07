@@ -9,7 +9,6 @@ enum AppModelTestHelpers {
         defaults: UserDefaults,
         logDirectory: URL,
         engine: FakeEngine = FakeEngine(),
-        probe: FakeMetadataProbe = FakeMetadataProbe(.failure(.malformedOutput)),
         envReady: Bool = true,
         debugFlags: DebugFlags = DebugFlags(),
         revealSink: FakeRevealSink = FakeRevealSink(),
@@ -19,7 +18,6 @@ enum AppModelTestHelpers {
     ) -> AppModel {
         AppModel(
             engine: engine,
-            probe: probe,
             installer: OnboardingInstaller(
                 probe: FakeEnvironmentProbe(ready: envReady),
                 runner: NullRunner()

@@ -54,7 +54,7 @@ public final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
         ))
     }
 
-    public func probe(_ url: String) async -> Outcome {
+    public func probe(_ url: String, context _: ExtractorContext) async -> Outcome {
         let (result, delay) = box.mutate { state -> (Outcome, Duration) in
             state.probedURLs.append(url)
             return (state.results[url] ?? state.fallback, state.perProbeDelay)

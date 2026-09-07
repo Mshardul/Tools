@@ -82,11 +82,10 @@ Phase 2 added a multi-download queue with persistence:
 Not yet built:
 
 - **Column header drag-reorder** — `ColumnConfig.moveColumn` exists; UI deferred.
-- **Multi-select row actions**, playlists, cookies, retry/backoff, Preferences
-  panes (beyond the model), Diagnostics content. See
-  [ticket-backlog.md](ticket-backlog.md).
+- **Multi-select row actions**, playlists, YouTube hardening (POT / player
+  clients), Diagnostics content. See [ticket-backlog.md](ticket-backlog.md).
 
-**Next:** Phase 3 — Preferences screen (7-pane UI).
+**Next:** Phase 7 — YouTube hardening.
 
 ## Phase 1 gaps (resolved in Phase 2)
 

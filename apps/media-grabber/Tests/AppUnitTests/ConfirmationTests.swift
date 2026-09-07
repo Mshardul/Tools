@@ -20,7 +20,6 @@ final class ConfirmationTests: XCTestCase {
         let defaults = UserDefaults(suiteName: "mg.confirm.\(UUID().uuidString)")!
         return AppModel(
             engine: FakeEngine(),
-            probe: FakeMetadataProbe(.failure(.malformedOutput)),
             installer: OnboardingInstaller(
                 probe: FakeEnvironmentProbe(ready: true),
                 runner: NullRunner()

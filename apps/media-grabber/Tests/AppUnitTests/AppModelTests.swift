@@ -25,7 +25,6 @@ final class AppModelTests: XCTestCase {
 
     private func makeModel(
         engine: FakeEngine = FakeEngine(),
-        probe: FakeMetadataProbe = FakeMetadataProbe(.failure(.malformedOutput)),
         envReady: Bool = true,
         debugFlags: DebugFlags = DebugFlags(),
         revealSink: FakeRevealSink = FakeRevealSink(),
@@ -37,7 +36,6 @@ final class AppModelTests: XCTestCase {
             defaults: defaults,
             logDirectory: logDirectory,
             engine: engine,
-            probe: probe,
             envReady: envReady,
             debugFlags: debugFlags,
             revealSink: revealSink,
@@ -48,48 +46,70 @@ final class AppModelTests: XCTestCase {
     }
 
     func test_onAppear_depsPresent_noOnboarding() async {
-        let model = makeModel(envReady: true)
+        let engine = FakeEngine()
+        let model = makeModel(engine: engine, envReady: true)
         await model.onAppear()
         XCTAssertFalse(model.needsOnboarding)
+        XCTAssertEqual(engine.ensureCount, 1)
     }
 
     func test_onAppear_depsMissing_needsOnboarding() async {
-        let model = makeModel(envReady: false)
+        let engine = FakeEngine()
+        let model = makeModel(engine: engine, envReady: false)
         await model.onAppear()
         XCTAssertTrue(model.needsOnboarding)
+        XCTAssertEqual(engine.ensureCount, 0)
     }
 
     func test_forceOnboardingFlag_overrides() async {
-        let model = makeModel(envReady: true, debugFlags: DebugFlags(forceOnboarding: true))
+        let engine = FakeEngine()
+        let model = makeModel(
+            engine: engine,
+            envReady: true,
+            debugFlags: DebugFlags(forceOnboarding: true)
+        )
         await model.onAppear()
         XCTAssertTrue(model.needsOnboarding)
+        XCTAssertEqual(engine.ensureCount, 0)
     }
 
     func test_resolvePasted_success_setsResolved() async {
-        let model =
-            makeModel(probe: FakeMetadataProbe(.success(AppModelTestHelpers
-                    .meta(title: "Big Buck Bunny"))))
+        let engine = FakeEngine()
+        engine.stubPreview(.success(AppModelTestHelpers.meta(title: "Big Buck Bunny")))
+        let model = makeModel(engine: engine)
         await model.resolvePasted("https://x/y")
         XCTAssertEqual(model.resolved?.title, "Big Buck Bunny")
         XCTAssertNil(model.probeError)
     }
 
     func test_resolvePasted_badURL_setsError() async {
-        let model = makeModel(probe: FakeMetadataProbe(.failure(.badURL)))
+        let engine = FakeEngine()
+        engine.stubPreview(.failure(.badURL))
+        let model = makeModel(engine: engine)
         await model.resolvePasted("not a url")
         XCTAssertNotNil(model.probeError)
         XCTAssertNil(model.resolved)
     }
 
+    func test_onboardingFinished_callsEnsureShield() async {
+        let engine = FakeEngine()
+        let model = makeModel(engine: engine, envReady: false)
+        await model.onboardingFinished()
+        XCTAssertTrue(engine.revalidateCalled)
+        XCTAssertEqual(engine.ensureCount, 1)
+    }
+}
+
+extension AppModelTests {
     func test_grab_buildsRequestFromPrefsAndResolved() async {
         let engine = FakeEngine()
+        engine.stubPreview(.success(AppModelTestHelpers.meta(url: "https://src/v")))
         let dest = URL(fileURLWithPath: "/tmp/x")
         let prefs = Preferences(defaults: defaults)
         prefs.lastUsedDownloadFolder = dest
 
         let model = AppModel(
             engine: engine,
-            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta(url: "https://src/v"))),
             installer: OnboardingInstaller(
                 probe: FakeEnvironmentProbe(ready: true),
                 runner: NullRunner()
@@ -109,25 +129,27 @@ final class AppModelTests: XCTestCase {
     }
 
     func test_grab_writesLastSelectedFromOverrides() async {
-        let model = makeModel(
-            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta()))
-        )
+        let engine = FakeEngine()
+        engine.stubPreview(.success(AppModelTestHelpers.meta()))
+        let model = makeModel(engine: engine)
         await model.resolvePasted("https://x/y")
         await model.grab(overrides: RunwayOverrides(
             kind: .video(maxHeight: 720),
-            destFolder: nil
+            destFolder: nil,
+            audioLanguage: .code("ja")
         ))
         XCTAssertEqual(model.prefs.lastMediaType, .video)
         XCTAssertEqual(model.prefs.lastVideoHeight, 720)
+        XCTAssertEqual(model.prefs.lastAudioLanguage, .code("ja"))
     }
 
     func test_grab_keepsJobReference() async {
         let engine = FakeEngine()
         let jobID = UUID()
         engine.stubNextResult(.queued(jobID))
+        engine.stubPreview(.success(AppModelTestHelpers.meta()))
         let model = makeModel(
-            engine: engine,
-            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta()))
+            engine: engine
         )
         await model.resolvePasted("https://x/y")
         await model.grab()
@@ -138,9 +160,9 @@ final class AppModelTests: XCTestCase {
         let engine = FakeEngine()
         let jobID = UUID()
         engine.stubNextResult(.queued(jobID))
+        engine.stubPreview(.success(AppModelTestHelpers.meta()))
         let model = makeModel(
-            engine: engine,
-            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta()))
+            engine: engine
         )
         await model.resolvePasted("https://x/y")
         await model.grab()
@@ -156,9 +178,9 @@ final class AppModelTests: XCTestCase {
             .duplicateExists(existing: existingID, wasCompleted: false),
             .queued(newID)
         )
+        engine.stubPreview(.success(AppModelTestHelpers.meta()))
         let model = makeModel(
-            engine: engine,
-            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta()))
+            engine: engine
         )
         await model.resolvePasted("https://x/y")
 
@@ -177,9 +199,9 @@ final class AppModelTests: XCTestCase {
         let engine = FakeEngine()
         let existingID = UUID()
         engine.stubNextResult(.duplicateExists(existing: existingID, wasCompleted: true))
+        engine.stubPreview(.success(AppModelTestHelpers.meta()))
         let model = makeModel(
-            engine: engine,
-            probe: FakeMetadataProbe(.success(AppModelTestHelpers.meta()))
+            engine: engine
         )
         await model.resolvePasted("https://x/y")
 
@@ -222,13 +244,6 @@ final class AppModelTests: XCTestCase {
             "reveal.target_missing",
             in: logDirectory
         ))
-    }
-
-    func test_onboardingFinished_callsEngineRevalidate() async {
-        let engine = FakeEngine()
-        let model = makeModel(engine: engine)
-        await model.onboardingFinished()
-        XCTAssertTrue(engine.revalidateCalled)
     }
 
     func test_restoreProducedJobs_forcesHasGrabbedOnce() async {

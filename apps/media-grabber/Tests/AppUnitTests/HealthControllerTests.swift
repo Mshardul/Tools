@@ -6,7 +6,8 @@ import XCTest
 final class HealthControllerTests: XCTestCase {
     private func snapshot(
         online: Bool,
-        summary: [RateHost: HostRateDisplayState]
+        summary: [RateHost: HostRateDisplayState],
+        shield: ShieldStatus = .missing
     ) -> QueueSnapshot {
         QueueSnapshot(
             jobs: [],
@@ -14,21 +15,44 @@ final class HealthControllerTests: XCTestCase {
             queueHalt: nil,
             generatedAt: .now,
             hostRateSummary: summary,
-            isOnline: online
+            isOnline: online,
+            shieldStatus: shield
         )
+    }
+
+    func testShieldMissingIsFirstChipOfflineRefresh() {
+        let controller = HealthController()
+        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now)
+        XCTAssertEqual(controller.chips[0].id, "shield")
+        XCTAssertEqual(controller.chips[0].label, "shield · offline")
+        XCTAssertEqual(controller.chips[0].dot, .attention)
+        XCTAssertEqual(controller.chips[0].interaction, .refresh)
+        XCTAssertEqual(controller.chips[1].label, "online")
+    }
+
+    func testShieldRunningIsFirstChipOk() {
+        let controller = HealthController()
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .running(port: 4416)),
+            now: .now
+        )
+        XCTAssertEqual(controller.chips[0].label, "shield")
+        XCTAssertEqual(controller.chips[0].dot, .ok)
+        XCTAssertEqual(controller.chips[0].interaction, .none)
+        XCTAssertEqual(controller.chips[1].label, "online")
     }
 
     func testOnlineChipAlwaysPresent() {
         let controller = HealthController()
         controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now)
-        XCTAssertEqual(controller.chips.count, 1)
-        XCTAssertEqual(controller.chips[0].label, "online")
+        XCTAssertEqual(controller.chips.count, 2)
+        XCTAssertEqual(controller.chips[1].label, "online")
     }
 
     func testOfflineChipLabel() {
         let controller = HealthController()
         controller.update(snapshot: snapshot(online: false, summary: [:]), now: .now)
-        XCTAssertEqual(controller.chips[0].label, "offline")
+        XCTAssertEqual(controller.chips[1].label, "offline")
     }
 
     func testCooldownChipCarriesDeadlineAsData() {
@@ -41,8 +65,8 @@ final class HealthControllerTests: XCTestCase {
         )]
         let controller = HealthController()
         controller.update(snapshot: snapshot(online: true, summary: summary), now: now)
-        XCTAssertEqual(controller.chips.count, 2)
-        let cooldown = controller.chips[1]
+        XCTAssertEqual(controller.chips.count, 3)
+        let cooldown = controller.chips[2]
         XCTAssertEqual(cooldown.label, "YouTube")
         XCTAssertEqual(cooldown.countdownUntil, now.addingTimeInterval(134))
         XCTAssertEqual(cooldown.interaction, .popover(.hostRate))
@@ -62,8 +86,8 @@ final class HealthControllerTests: XCTestCase {
             snapshot: snapshot(online: true, summary: [youtube: display, vimeo: display]),
             now: now
         )
-        XCTAssertEqual(controller.chips.count, 2)
-        XCTAssertEqual(controller.chips[1].label, "2 sites cooling down")
+        XCTAssertEqual(controller.chips.count, 3)
+        XCTAssertEqual(controller.chips[2].label, "2 sites cooling down")
     }
 
     func testCircuitOpenChipLabel() {
@@ -76,6 +100,6 @@ final class HealthControllerTests: XCTestCase {
         )]
         let controller = HealthController()
         controller.update(snapshot: snapshot(online: true, summary: summary), now: now)
-        XCTAssertEqual(controller.chips[1].label, "YouTube — paused")
+        XCTAssertEqual(controller.chips[2].label, "YouTube — paused")
     }
 }

@@ -160,7 +160,6 @@ final class DownloadsTableTests: XCTestCase {
 
         let appModel = AppModel(
             engine: FakeEngine(),
-            probe: FakeMetadataProbe(.failure(.malformedOutput)),
             installer: OnboardingInstaller(
                 probe: FakeEnvironmentProbe(ready: true),
                 runner: NullRunner()

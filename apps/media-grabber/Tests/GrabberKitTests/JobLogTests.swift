@@ -42,6 +42,7 @@ final class JobLogTests: XCTestCase {
         let text = try contents(id)
         XCTAssertTrue(text.contains("yt-dlp: 2025.01.01"))
         XCTAssertTrue(text.contains("url: https://archive.org/details/x"))
+        XCTAssertTrue(text.contains("player_client: -"))
         let headerEnd = try XCTUnwrap(text.range(of: "----\n"))
         let body = String(text[headerEnd.upperBound...])
         XCTAssertEqual(
@@ -92,5 +93,19 @@ final class JobLogTests: XCTestCase {
         let remaining = try FileManager.default.contentsOfDirectory(atPath: dir.path)
         XCTAssertEqual(remaining.count, 200)
         XCTAssertFalse(remaining.contains("\(oldest.id.uuidString).log"))
+    }
+
+    func testHeaderIncludesPlayerClientWhenSet() throws {
+        let id = UUID()
+        let log = JobLog(
+            id: id,
+            request: request(),
+            ytDlpVersion: "0",
+            playerClient: "tv",
+            dir: dir
+        )
+        try log.writeHeader()
+        log.close()
+        XCTAssertTrue(try contents(id).contains("player_client: tv"))
     }
 }

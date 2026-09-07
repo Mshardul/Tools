@@ -54,13 +54,13 @@ final class EngineRateLimitTests: XCTestCase {
         let clock = FakeClock(now: Date(timeIntervalSince1970: 1000))
         let runner = FakeProcessRunner()
         runner.script(rl429, forPathEndingIn: "yt-dlp")
-        let engine = Fix.engine(runner: runner, probe: successProbe(), cap: 2, clock: clock)
+        let engine = Fix.engine(runner: runner, probe: successProbe(), cap: 1, clock: clock)
         let collector = EventCollector(engine.events)
 
         let first = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=a"))
         let second = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=b"))
-        _ = await collector.waitForState(first) { self.isCooldown($0) }
-        try? await Task.sleep(for: .milliseconds(50))
+        let cooled = await collector.waitForState(first) { self.isCooldown($0) }
+        XCTAssertTrue(cooled)
 
         XCTAssertEqual(job(collector, second)?.state, .queued)
     }

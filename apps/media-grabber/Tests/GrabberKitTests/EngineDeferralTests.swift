@@ -170,18 +170,17 @@ final class EngineDeferralTests: XCTestCase {
         let engine = engine(clock: clock, runner: runner, probe: probe, cap: 0)
         let collector = EventCollector(engine.events)
         let id = await submitJob(engine, Fix.request())
-        _ = await collector.waitForState(id) { $0 == .queued }
+        let queued = await collector.waitForState(id) { $0 == .queued }
+        XCTAssertTrue(queued)
         await engine.enterCooldownForTest(id, until: Date(timeIntervalSince1970: 30))
-        let reachedCooldown = await collector.waitForState(id) { state in
-            if case .cooldown = state {
-                return true
-            }
-            return false
+        let cooled = await engine.currentSnapshot().jobs.first { $0.id == id }
+        guard case .cooldown = cooled?.state else {
+            return XCTFail("job never entered cooldown")
         }
-        XCTAssertTrue(reachedCooldown)
         clock.advance(by: .seconds(30))
-        let backToQueued = await collector.waitForState(id) { $0 == .queued }
-        XCTAssertTrue(backToQueued)
+        await engine.fireDueDeferralsForTest()
+        let after = await engine.currentSnapshot().jobs.first { $0.id == id }
+        XCTAssertEqual(after?.state, .queued)
     }
 
     private func job(_ collector: EventCollector, _ id: UUID) -> JobSnapshot? {

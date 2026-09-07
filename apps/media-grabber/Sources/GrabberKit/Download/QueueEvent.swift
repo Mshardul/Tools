@@ -7,6 +7,7 @@ public struct QueueSnapshot: Sendable, Equatable {
     public let generatedAt: Date
     public let hostRateSummary: [RateHost: HostRateDisplayState]
     public let isOnline: Bool
+    public let shieldStatus: ShieldStatus
 
     public init(
         jobs: [JobSnapshot],
@@ -14,7 +15,8 @@ public struct QueueSnapshot: Sendable, Equatable {
         queueHalt: QueueHaltReason?,
         generatedAt: Date,
         hostRateSummary: [RateHost: HostRateDisplayState],
-        isOnline: Bool
+        isOnline: Bool,
+        shieldStatus: ShieldStatus = .missing
     ) {
         self.jobs = jobs
         self.revision = revision
@@ -22,6 +24,7 @@ public struct QueueSnapshot: Sendable, Equatable {
         self.generatedAt = generatedAt
         self.hostRateSummary = hostRateSummary
         self.isOnline = isOnline
+        self.shieldStatus = shieldStatus
     }
 }
 

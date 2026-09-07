@@ -24,6 +24,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var restoreCalled = false
         var revalidateCalled = false
         var shutdownCalled = false
+        var previewResult: Result<MediaMetadata, MetadataError> = .failure(.malformedOutput)
+        var previewed: [String] = []
+        var ensureCount = 0
+        var restartCount = 0
     }
 
     init() {
@@ -62,6 +66,22 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     var shutdownCalled: Bool {
         box.read { $0.shutdownCalled }
+    }
+
+    var previewedURLs: [String] {
+        box.read { $0.previewed }
+    }
+
+    var ensureCount: Int {
+        box.read { $0.ensureCount }
+    }
+
+    var restartCount: Int {
+        box.read { $0.restartCount }
+    }
+
+    func stubPreview(_ result: Result<MediaMetadata, MetadataError>) {
+        box.mutate { $0.previewResult = result }
     }
 
     func stubNextResult(_ result: SubmitResult) {
@@ -147,6 +167,21 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
 
+    func preview(_ url: String) async -> Result<MediaMetadata, MetadataError> {
+        box.mutate { state in
+            state.previewed.append(url)
+            return state.previewResult
+        }
+    }
+
+    func ensureShield() async {
+        box.mutate { $0.ensureCount += 1 }
+    }
+
+    func restartShield() async {
+        box.mutate { $0.restartCount += 1 }
+    }
+
     func shutdown() async {
         box.mutate { $0.shutdownCalled = true }
     }
@@ -165,7 +200,7 @@ final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
         probed.read { $0 }
     }
 
-    func probe(_ url: String) async -> Outcome {
+    func probe(_ url: String, context _: ExtractorContext) async -> Outcome {
         probed.mutate { $0.append(url) }
         return box.read { $0 }
     }

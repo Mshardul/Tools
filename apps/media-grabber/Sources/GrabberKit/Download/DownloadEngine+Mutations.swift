@@ -68,7 +68,8 @@ extension DownloadEngine {
         lastError: ErrorClass?,
         launchFailed: Bool,
         cookiesRequested: Bool = false,
-        extractedZeroCookies: Bool = false
+        extractedZeroCookies: Bool = false,
+        sawAudioOnly: Bool = false
     ) {
         childTasks[id] = nil
         guard let job = jobs.first(where: { $0.id == id }) else {
@@ -98,7 +99,8 @@ extension DownloadEngine {
             result: result,
             lastError: lastError,
             cookiesRequested: cookiesRequested,
-            extractedZeroCookies: extractedZeroCookies
+            extractedZeroCookies: extractedZeroCookies,
+            hint: ExitHint(kind: job.request.kind, sawAudioOnly: sawAudioOnly)
         )
         routeFailure(job, id: id, errorClass: errorClass)
     }
@@ -212,24 +214,45 @@ extension DownloadEngine {
         }
     }
 
+    private struct ExitHint {
+        var kind: DownloadKind
+        var sawAudioOnly: Bool
+    }
+
     // A cookie read that yielded nothing then failed downstream is the cookie problem (the Chrome app-bound case).
     private func classifiedFailure(
         result: ProcessResult,
         lastError: ErrorClass?,
         cookiesRequested: Bool,
-        extractedZeroCookies: Bool
+        extractedZeroCookies: Bool,
+        hint: ExitHint
     ) -> ErrorClass {
         if result.exitCode != 0, cookiesRequested, extractedZeroCookies {
             return .cookieReadFailed
         }
-        return classifyExit(result: result, lastError: lastError)
+        return classifyExit(
+            result: result,
+            lastError: lastError,
+            kind: hint.kind,
+            sawAudioOnly: hint.sawAudioOnly
+        )
     }
 
-    private func classifyExit(result: ProcessResult, lastError: ErrorClass?) -> ErrorClass {
+    private func classifyExit(
+        result: ProcessResult,
+        lastError: ErrorClass?,
+        kind: DownloadKind,
+        sawAudioOnly: Bool
+    ) -> ErrorClass {
         if result.exitCode == 0 {
             return .incomplete
         }
-        return lastError ?? .unknown(raw: "yt-dlp exited \(result.exitCode)")
+        return Self.resolvedExitClass(
+            kind: kind,
+            lastError: lastError,
+            sawAudioOnly: sawAudioOnly,
+            exitCode: Int(result.exitCode)
+        )
     }
 
     // One sync .running -> .queued with a pending deferral, so no transient .failed snapshot leaks.

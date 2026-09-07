@@ -36,16 +36,20 @@ public struct FailurePresentation: Sendable, Equatable {
         "disk_full": "The disk is full.",
         "permission_denied": "The download folder isn't writable.",
         "incomplete": "The download kept ending early.",
-        "dep_missing": "The downloader needs reinstalling."
+        "dep_missing": "The downloader needs reinstalling.",
+        "bot_check": "Couldn't verify you. Try again, or add browser cookies in Preferences.",
+        "sabr_gated": "YouTube isn't offering a downloadable video for this link.",
+        "formats_missing": "The quality you picked isn't available for this video.",
+        "pot_provider_down": "Bot-check protection is offline."
     ]
 
     private static let noRetryKeys: Set<String> = [
-        "geo_blocked", "private", "unavailable", "age_restricted", "dep_missing"
+        "geo_blocked", "private", "unavailable", "age_restricted", "dep_missing", "sabr_gated"
     ]
 
     // A browser sign-in is what unblocks these — the row offers Retry-with-cookies.
     private static let cookieRetryKeys: Set<String> = [
-        "cookie_read_failed", "age_restricted", "private"
+        "cookie_read_failed", "age_restricted", "private", "bot_check", "formats_missing"
     ]
 
     private static func actions(for errorClass: ErrorClass) -> Set<RowAction> {

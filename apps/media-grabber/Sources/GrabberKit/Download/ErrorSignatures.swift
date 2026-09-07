@@ -30,6 +30,21 @@ public enum ErrorSignatures {
             "Sign in to confirm your age",
             "age-restricted",
             "confirm your age"
+        ]),
+        (.sabrGated, [
+            "only images are available",
+            "sabr"
+        ]),
+        (.formatsMissing, [
+            "requested format is not available"
+        ]),
+        (.botCheck, [
+            "Sign in to confirm you're not a bot",
+            "confirm you're not a bot",
+            "page needs to be reloaded",
+            "unable to extract uploader id",
+            "HTTP Error 403",
+            "This content isn't available, try again later"
         ])
     ]
 

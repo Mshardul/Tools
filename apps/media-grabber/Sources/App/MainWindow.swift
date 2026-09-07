@@ -12,7 +12,11 @@ struct MainWindow: View {
             VStack(spacing: 0) {
                 brandRow
                 Divider().overlay(theme.palette.hair)
-                HealthStrip(chips: appModel.healthChips)
+                HealthStrip(chips: appModel.healthChips) { chip in
+                    if chip.id == "shield" {
+                        Task { await appModel.restartShield() }
+                    }
+                }
                 Divider().overlay(theme.palette.hair)
                 page
                     .safeAreaInset(edge: .bottom, spacing: 0) {

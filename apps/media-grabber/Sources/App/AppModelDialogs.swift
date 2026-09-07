@@ -38,7 +38,7 @@ enum AppModelDialogs {
         )
     }
 
-    static func probeErrorMessage(for error: MetadataError) -> String {
+    static func probeErrorMessage(for error: MetadataError, vpnActive: Bool = false) -> String {
         switch error {
         case .badURL: "That doesn't look like a valid link."
         case .unsupported: "That site isn't supported."
@@ -47,7 +47,9 @@ enum AppModelDialogs {
         case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
         case .malformedOutput: "Couldn't read the video details."
         case .botCheck:
-            "YouTube blocked the lookup. Try again, or update yt-dlp with brew upgrade yt-dlp."
+            BotCheckCopy.sentence(vpnActive: vpnActive)
+        case .hostBlocked:
+            "This site is cooling down. Try again in a moment."
         case .unknown: "Couldn't read the video details."
         }
     }

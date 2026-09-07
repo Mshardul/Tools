@@ -28,13 +28,11 @@ struct MediaGrabberApp: App {
             ),
             preferences: prefs
         )
-        let probe = MetadataProbe(ytDlpURL: ytDlpURL)
 
         let columnConfig = debugFlags.resetState ? ColumnConfig
             .default : (persistence.loadColumns() ?? .default)
         let model = AppModel(
             engine: engine,
-            probe: probe,
             installer: installer,
             prefs: prefs,
             log: log,

@@ -1,0 +1,17 @@
+{
+  "id": "audio1",
+  "title": "Audio only",
+  "duration": 90,
+  "_type": "video",
+  "extractor": "youtube",
+  "formats": [
+    {
+      "format_id": "251",
+      "vcodec": "none",
+      "acodec": "opus",
+      "language": "en",
+      "language_preference": 10,
+      "audio_track": { "display_name": "English" }
+    }
+  ]
+}

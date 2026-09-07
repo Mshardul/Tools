@@ -51,11 +51,13 @@ final class RowStore {
 
     // Live Preferences.maxAutoRetries forwarded to RowModel; defaulted so RowStore stays Preferences-free.
     private var maxAutoRetries = 5
+    private var vpnActive = false
 
     // MARK: - Event ingestion
 
-    func apply(_ event: QueueEvent, maxAutoRetries: Int = 5) {
+    func apply(_ event: QueueEvent, maxAutoRetries: Int = 5, vpnActive: Bool = false) {
         self.maxAutoRetries = maxAutoRetries
+        self.vpnActive = vpnActive
         switch event {
         case let .snapshot(snapshot):
             applySnapshot(snapshot)
@@ -71,8 +73,9 @@ final class RowStore {
         }
     }
 
-    func resync(_ snapshot: QueueSnapshot, maxAutoRetries: Int = 5) {
+    func resync(_ snapshot: QueueSnapshot, maxAutoRetries: Int = 5, vpnActive: Bool = false) {
         self.maxAutoRetries = maxAutoRetries
+        self.vpnActive = vpnActive
         modelsByID.removeAll()
         rows = []
         applySnapshot(snapshot)
@@ -105,7 +108,8 @@ final class RowStore {
                     job,
                     queuePosition: position,
                     maxAutoRetries: maxAutoRetries,
-                    rate: rate
+                    rate: rate,
+                    vpnActive: vpnActive
                 )
                 structuralChange = structuralChange || changed
                 newRows.append(existing)
@@ -114,7 +118,8 @@ final class RowStore {
                     job,
                     queuePosition: position,
                     maxAutoRetries: maxAutoRetries,
-                    rate: rate
+                    rate: rate,
+                    vpnActive: vpnActive
                 )
                 modelsByID[job.id] = model
                 newRows.append(model)
