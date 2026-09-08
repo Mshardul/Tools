@@ -104,11 +104,11 @@ are in spec §12.2.
   probe format lists; runway Language slot + quality rungs this probe offers;
   Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy; VPN
   hint; shield chip + `↻`; `potProviderDown` banner. Needs Phase 4 and Phase 6.
-- **Phase 8 — Playlist.** `MetadataProbe` playlist mode (`--flat-playlist`);
-  `PlaylistPickerView` modal (checklist, select all/none, filter, live count +
-  size); group-header + spine rendering; group actions (pause all / retry
-  failed / cancel all); `MetadataTokenBucket` (built here) + large-playlist
-  drip. Re-adds `DownloadJob`'s `playlistGroupID` / `playlistProgress`.
+- **Phase 8 — Playlist.** YouTube watch = one video; `PL` playlist page = one
+  `--flat-playlist` dump, picker (checklist, filter, duration footer, duplicate
+  warnings), then N jobs sharing `playlistGroupID`. Group header + spine +
+  group actions; `MetadataTokenBucket`; per-request probe cancel. Spec:
+  `docs/superpowers/specs/2026-09-08-media-grabber-phase-8.md`.
 - **Phase 9 — Add flows.** Clipboard auto-detect on activation; Services / Share
   ("Download with …"); drag a URL onto the window or Dock icon; custom URL
   scheme (`CFBundleURLTypes`). All route into the same Home field. Needs only

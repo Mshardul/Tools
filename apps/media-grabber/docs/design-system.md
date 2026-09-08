@@ -297,9 +297,11 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 Opens automatically when a resolved link is a playlist, **before** any rows are added.
 
 - **Header** — "Choose videos to download" + `<playlist> · <site> · by <uploader> · N items`.
-- **Tools row** — `Select all` / `Select none` links; a filter-in-playlist text field (right).
-- **List** — scrollable, one row per video: checkbox · thumbnail · title (truncates) · duration. Whole row toggles.
-- **Footer** — live `M of N selected · ≈ <size>` · `Cancel` · `Add M` (primary; disabled at 0).
+- **Banner** (when this playlist is already in the queue) — "This playlist is already in your queue."
+- **Tools row** — `Select all` / `Select none` links (apply to the current filter); a filter-in-playlist text field (right).
+- **List** — scrollable, one row per video: checkbox · thumbnail · title (truncates) · duration · optional **In queue** / **Already saved**. Whole row toggles.
+- **Defaults** — all checked except warned rows (those start unchecked). Select all can still check them. Checks are not remembered the next open.
+- **Footer** — live `M of N selected · K already in queue · ≈ H:MM:SS` (sum of known durations among checked; omit K when 0) · `Cancel` · `Add M` (primary; disabled at 0). No invented MB/GB.
 - Only checked videos become table rows (as the group in §4.2.4). Unchecked are not added and not remembered.
 
 ### 4.4 Toast

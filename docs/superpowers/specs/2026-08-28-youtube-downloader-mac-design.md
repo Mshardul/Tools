@@ -145,12 +145,12 @@ Downloads table, reached through the "Done" filter chip.
 
 **Download/**
 
-- `DownloadRequest.swift` — immutable: url, destFolder, kind, container, playlist, template
+- `DownloadRequest.swift` — immutable: url, destFolder, kind, container, template, audioLanguage
 - `DownloadJob.swift` — `@Observable` per-row state machine
 - `DownloadEngine.swift` — actor: the rate-limit-aware scheduler; spawns one `yt-dlp` per job
 - `YtDlpArguments.swift` — `DownloadRequest` + attempt context → argv (with a redaction view)
 - `ProgressParser.swift` — progress-template lines → `ProgressEvent`; stderr → `ErrorClass`
-- `MetadataProbe.swift` — serialized `yt-dlp -J --flat-playlist` → title / playlist info
+- `MetadataProbe.swift` — serialized `yt-dlp -J --no-playlist` (one video) or `-J --flat-playlist` (playlist dump); `MetadataTokenBucket` paces both
 - `IntegrityCheck.swift` — ffprobe output vs expected duration → verdict
 
 **RateLimiting/**
@@ -166,7 +166,7 @@ Downloads table, reached through the "Done" filter chip.
 - `Skin.swift` — `Skin` enum (`.tapeDeck | .aurora`): display / body / mono font, radius scale, border width, elevation style, motif kind
 - `Palette.swift` — `Palette` enum (3 per skin) → the full colour token set; `Skin.palettes` lists its three
 - `ColumnConfig.swift` — Downloads-table column state: visible set, order, per-column sort direction, active filters. `Codable`, persisted to `columns.json`, debounced.
-- `Persistence.swift` — Codable load / save: `queue.json`, `history.json`, `columns.json` (debounced)
+- `Persistence.swift` — Codable load / save: `queue.json` (jobs + playlist groups), `history.json`, `columns.json` (debounced)
 
 **Logging/**
 
@@ -195,8 +195,10 @@ logging surface is unit-tested without launching the app.
 - `destFolder: URL` — the Preferences default, overridable per download
 - `kind: .video(maxHeight: Int) | .audio(codec: AudioCodec)` — `AudioCodec ∈ {m4a, mp3}`
 - `container: String?` — `mp4` for video; `nil` lets yt-dlp choose
-- `playlist: PlaylistSelection` — `.notPlaylist | .all | .items(String)` (yt-dlp range syntax `"1-5,8"`)
 - `outputTemplate: String` — default `%(title)s.%(ext)s`, from Preferences
+- `audioLanguage` — `.unspecified | .original | .code(String)` (Phase 7)
+- There is **no** `playlist` / range-syntax field. A playlist becomes N
+  `DownloadRequest`s (one watch URL each) from the picker (Phase 8).
 
 ### DownloadJob (engine-internal from Phase 2; one per queue entry)
 
@@ -210,7 +212,7 @@ by a later phase — fields a later phase populates ship defaulted.
 - `id: UUID`
 - `request: DownloadRequest`
 - `title: String?`, `extractor: String?`, `durationSeconds: Int?` — from the probe (or from `prefetchedMetadata` at submit); `extractor` is the Site identity
-- `playlistGroupID: UUID?` — Phase 8; playlist rollup is a `RowStore` aggregate (`PlaylistGroup`), not a job field
+- `playlistGroupID: UUID?` — shared by items from one picker Add M; playlist rollup is a `RowStore` aggregate (`PlaylistGroup`), not a job field. `playlistIndex` orders children.
 - `state: JobState` — `.queued | .probing | .running | .paused | .waitingForNetwork | .cooldown(until:) | .completed | .failed(ErrorClass) | .cancelled`
 - `progress: Progress?` — `fraction`, `speedBytesPerSec?`, `etaSeconds?`, `downloadedBytes`, `totalBytes`
 - `sizeBytes: Int64?` — the current download process's first-reported `total_bytes`; re-set by a fresh process on resume/restart
@@ -298,7 +300,7 @@ contract.
 - **After the first Grab:** the step cards are gone permanently, and the Downloads table renders from then on. The field sits above it; the runway appears when a pasted link resolves and is hidden otherwise.
 - **Table emptied later** (every row removed): the table stays, showing a single centred line — "No downloads — paste a link above." The step cards do not return; they are first-run-only.
 - **Runway** (the resolve-and-arm pattern) — **hidden until a pasted link resolves.** On resolve, the field shows an inline `✓ <title>` and the runway appears attached below it: a strip of labelled slots — **Link · Type · Format · Language · Save to** — each a filled dot when set, a hollow dot when not. Type / Format / Language / Save-to seed from last-used or Preferences; Language is always filled (YouTube's default track, or Original when that is the Preferences policy and the video has one). Format (video) lists only this probe's offered quality rungs. **Grab** sits at the end of the runway and is **disabled until the link is resolved and downloadable** — every other slot is pre-filled; the user may change any of them before Grab. The "Save to" slot is the per-download destination override. The runway is the entire add flow — there is no separate Add sheet.
-- **Playlist:** when the probe resolves to a playlist, a modal picker opens *before* any rows are added — a checklist (thumbnail, title, duration), Select all / none, a filter-in-playlist field, a live `M of N · ≈ size`, and "Add M". Only checked videos become rows. There is no range-syntax field in the UI; the engine still uses ranges internally.
+- **Playlist:** YouTube watch URLs (even with `&list=`) stay one video. A YouTube `/playlist?list=PL…` page runs one `--flat-playlist` dump; a modal picker opens *before* any rows are added — a checklist (thumbnail, title, duration), Select all / none, a filter-in-playlist field, duplicate warnings, a live `M of N · K already in queue · ≈ duration`, and "Add M". Only checked videos become rows. Mix / Radio / Watch Later / Liked / channel pages do not open the picker. There is no range-syntax field; the engine never runs `--playlist-items`.
 
 ### 5.4 Downloads table
 
@@ -379,8 +381,8 @@ its own container and the page never scrolls sideways.
 ## 6. Data flow (one download)
 
 1. **Add** — a URL reaches the Home field (paste / drag / Services / clipboard-detect). The runway's Type / Format / Language / Save-to slots seed from last-used or Preferences; the Link slot is still hollow.
-2. `engine.preview` runs the shared `MetadataProbe` (`yt-dlp -J --no-playlist --no-warnings`, plus `ExtractorContext`: shield URL, first `player_client`, cookies if set). Title, duration, format list, audio tracks. On success the field shows `✓ <title>` and the Link slot fills; Grab arms. Playlist expansion (`--flat-playlist`, picker modal) is Phase 8.
-3. The user presses Grab (a single item) or confirms the picker → one `DownloadRequest` per item is built → a `DownloadJob(state: .queued)` per item is appended to `AppModel.queue` (playlist items share a group id) → persisted.
+2. Classify the URL. YouTube watch → `engine.preview` (`yt-dlp -J --no-playlist --no-warnings`, plus `ExtractorContext`). Title, duration, format list, audio tracks. YouTube `PL` playlist page → `engine.previewPlaylist` (`-J --flat-playlist`, one call, one token). On a video success the field shows `✓ <title>` and Grab arms. On a playlist success the field shows `✓ <playlist> · N items` and the picker opens.
+3. The user presses Grab (a single item) or Add M in the picker → one `DownloadRequest` per item is built (playlist items inherit the runway) → a `DownloadJob(state: .queued)` per item is appended (playlist items share a group id and `playlistIndex`) → persisted. Happy-path playlist items skip per-item `-J` when the dump already has title, duration, and extractor.
 4. `DownloadEngine`'s scheduler loop: if the host `RateState == .normal`, `running < AdaptiveConcurrency.current`, and the network is up → dequeue the next `.queued` job.
 5. `YtDlpArguments` builds the argv: resilience flags (§7) + `--plugin-dirs` (the POT plugin) + the POT provider base URL + cookies + the `player_client` for this attempt. `ProcessRunner` launches; stdout is streamed line-by-line off the main actor.
 6. `ProgressParser` parses progress-template lines → `ProgressEvent` → `job.progress` (hopping to the main actor). Raw lines are appended to `JobLog`. Error signatures → `ErrorClass` + `LogEvent`.
@@ -785,11 +787,22 @@ add cases and wiring, never relayout — §12.2.
   on bot-check; shield `HealthStrip` chip + `↻`; `potProviderDown` banner (not a
   queue halt). Needs Phase 4 and Phase 6.
 
-- **Phase 8 — Playlist.** `MetadataProbe` playlist mode (`--flat-playlist`, one call); the `PlaylistPickerView` modal (checklist, select all / none, filter, live count + size); the group-header and spine in the table; the group actions (pause all / retry failed / cancel all); `MetadataTokenBucket` (built here — the first phase that bursts metadata requests) and large-playlist drip.
-  - *Hint: `MetadataProbe` needs per-request cancellation here (a job removed while its probe is queued behind others in the tail-chain) — additive to the Phase 2 chain. Group actions ("cancel all") route through the Phase 2 `ConfirmationRequest` component.*
-  - *Hint: each playlist item inherits the Home runway's quality cap and `audioLanguage` (Phase 7); the picker does not re-ask per row.*
-  - *Hint: the group-header row shows a per-column **aggregate** of the playlist's items (Phase 2 defines `PlaylistGroup` in `RowStore`, leaves `groups` empty): Progress = Σ per-item contribution / total, where contribution is `1.0` if `.completed`, else the item's `progress.fraction` quantized to the nearest 0.1, else `0.0` — `RowStore` recomputes a group only when a child crosses a 10% bucket or a state boundary (tracks last-bucket per active child), never on every progress tick; Status = `M done · K failed · rest queued`; Speed = Σ active speeds; ETA = max active ETA; Size/Duration = Σ known values (blank until items probed); Added at = min; Finished at = max once all done; Site/Type/Quality/Destination/Client = the common value or `mixed`; Attempt = max. `playlistGroupID` on `JobSnapshot` (Phase 2) is the only engine-side hook — grouping is entirely a `RowStore` aggregate, the engine treats playlist items as independent jobs (parent §5.5).*
-  - *Hint: update the `screens.html` mockup — add the playlist-picker modal and the in-table group header + spine, and change the runway depiction on the playlist screens (Link · Type · Format · Language · Save to; `SkinnedSegment` / `SkinnedPicker` from Phase 3 / 7, not native dropdowns).*
+- **Phase 8 — Playlist.** Spec:
+  `docs/superpowers/specs/2026-09-08-media-grabber-phase-8.md`.
+  YouTube watch = one video (`--no-playlist`, even with `&list=`). YouTube
+  `/playlist?list=PL…` = one `--flat-playlist` dump, then `PlaylistPickerView`
+  (checklist, select all / none, filter, duration footer, duplicate warnings),
+  then N independent jobs sharing `playlistGroupID`. Group header + spine +
+  group actions; `MetadataTokenBucket`; per-request probe cancel. Mix / Radio /
+  channel `/videos` / Watch Later / Liked are out. Items inherit the Home
+  runway's quality cap and `audioLanguage`. Group rollup: Progress = Σ
+  per-item contribution / total (completed = 1.0, else fraction quantized to
+  0.1) — recompute only on 10% bucket or state boundary; Status =
+  `M done · K failed · rest queued`; Speed = Σ active; ETA = max active;
+  Size/Duration = Σ known; Added at = min (cell), block position = max child
+  `addedAt`; Finished at = max once all done; Site/Type/Quality/Destination/Client
+  = common or `mixed`; Attempt = max. Update `screens.html` §5 (picker + group
+  + five-slot skinned runway).
 
 - **Phase 9 — Add flows.** Clipboard auto-detect on activation, Services / Share ("Download with …"), a URL dragged onto the window or Dock icon, the custom URL scheme (`Info.plist` `CFBundleURLTypes`) — all land in the Home field. Depends only on the Phase 1 Home field; scheduled here because it has nothing downstream and adds no risk to the Phase 2–8 chain.
 
@@ -809,12 +822,12 @@ means no screen is built twice.
 |---|---|---|
 | Scheduler loop | Phase 2 — event-driven `evaluateSchedule()` after every mutation; two pure decisions, `nextDownloads(SchedulerInput)` (cap-gated) and `nextProbe(SchedulerInput)` (serial-probe-gated, independent of the download cap); a deferred-start seam (sorted `(jobID, notBefore)` list + one dormant sleep-`Task`, `deferStart(_:until:)`, no caller) | Phase 4 — first `deferStart` caller (backoff); Phase 6 — `blockedHostIDs` / `blockedProbeHostIDs` plus `cap` swapped to `min(adaptiveCap, prefsCap)` on `SchedulerInput`, second `deferStart` caller (host cooldown); neither rewrites the loop |
 | Engine → UI channel | Phase 2 — `AsyncStream<QueueEvent>` (`.snapshot(QueueSnapshot)` on structural change, `.progress` delta on progress ticks); `DownloadJob` demoted to engine-internal model, `JobSnapshot` the only boundary type | not filled later — the shape is final |
-| `JobSnapshot` | Phase 2 — the full field set. Populated now: `progress`, `durationSeconds?`, `extractor?`, `sizeBytes?`, `availableActions`, `outputFiles`, dates. Shipped defaulted: `attempt` (0), `actualQuality?`, `cooldownUntil?`, `playerClientUsed?`, `playlistGroupID?`, `integrityVerdict?`. **One exception:** `rateHost: RateHost` is a genuine new stored field (total initialiser, fixtures pass `.unresolved`) — a struct edit, fixture churn mechanical | Phase 4 populates `attempt` + `integrityVerdict` + `actualQuality`, Phase 6 `cooldownUntil` + `rateHost`, Phase 7 `playerClientUsed`, Phase 8 `playlistGroupID` |
+| `JobSnapshot` | Phase 2 — the full field set. Populated now: `progress`, `durationSeconds?`, `extractor?`, `sizeBytes?`, `availableActions`, `outputFiles`, dates. Shipped defaulted: `attempt` (0), `actualQuality?`, `cooldownUntil?`, `playerClientUsed?`, `playlistGroupID?`, `integrityVerdict?`. **Exceptions:** `rateHost: RateHost` (Phase 6, fixtures pass `.unresolved`); `playlistIndex: Int?` (Phase 8, fixtures pass `nil`) — struct edits, fixture churn mechanical | Phase 4 populates `attempt` + `integrityVerdict` + `actualQuality`, Phase 6 `cooldownUntil` + `rateHost`, Phase 7 `playerClientUsed`, Phase 8 `playlistGroupID` + `playlistIndex` |
 | `QueueSnapshot.queueHalt` + `engine.revalidate()` | Phase 2 — `QueueHaltReason?`, `.depMissing` case (scheduler stops, `AppModel` shows Onboarding takeover); `revalidate()` re-checks deps and clears `.depMissing` only, called on onboarding completion. `QueueSnapshot` also carries `hostRateSummary` + `isOnline` | Phase 6 — adds derived `.circuitOpen` and hard `.networkDown`; circuit reset is `resetCircuit` / `resetAllCircuits`, not `revalidate()`. Banner "Retry now" and the cooldown-chip popover call those |
 | Downloads-table row-action bar | Phase 2 — every `RowAction` button laid out in fixed order; `availableActions: Set<RowAction>` per job from the engine; buttons not in the set render disabled | Phase 4 (`retry`, `showLog` — the `.failed` arm reads `ErrorClass.presentation.offeredActions`; `showLog` on every run state), Phase 5 (`retryWithCookies` `🔑`) — the engine adds them to the set, no UI change |
 | `WarningBanner` | Phase 2 — the docked shell + `BannerContent { text, buttonTitle?, action? }`, always nil | Phase 6 wires a `BannerReason` priority resolver (`depMissing` > `networkDown` > `circuitOpen`; optional button — `networkDown` has none); Phase 7 adds `potProviderDown` as one resolver entry (Restart → `restartShield`; not a `QueueHaltReason`) |
 | `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction, countdownUntil? }`; `ChipInteraction` = `none \| refresh \| popover(PopoverKind)` (data, the strip renders interaction) | Phase 6 ships `HealthController` + online + cooldown chips + `.popover(.hostRate)`; Phase 7 adds the bot-check shield chip + live `.refresh` (`↻`); Phase 10 adds the engine-freshness chip; Phase 11 the chip-refresh toast |
-| `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil`. The `suppressionKey` mechanism is built but unused in P2 | Phase 8 "cancel all" (a suppression candidate) and any later dialog — just call `confirm(...)` |
+| `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil`. The `suppressionKey` mechanism is built but unused in P2 | Phase 8 "cancel all" (`suppressionKey: "playlist-cancel-all"`) and any later dialog — just call `confirm(...)` |
 | `ErrorClass` emit paths + failure UI | Phase 2 wires `incomplete` / `diskFull` / `permissionDenied` · Phase 4 the generic-set classifier signatures + the `FailurePresentation` model (`{ sentence, offeredActions }` keyed off `ErrorClass`, one switch) + `ErrorClass.key` | Phase 5 (`cookieReadFailed`) · Phase 7 (`botCheck`, `sabrGated`, `formatsMissing` on jobs; `potProviderDown` presentation sentence exists, chrome-only, never a row terminal state) |
 | `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Network / Logs & privacy / Advanced filled, Sign-in & cookies + Updates stepless | Phase 4 (retry engine consuming `maxAutoRetries`), Phase 5 (the whole Sign-in & cookies pane — browser picker, Firefox-profile picker, Full Disk Access row, Learn more, tip), Phase 7 (Downloads **Audio language** policy row), Phase 10 (`autoCheckUpdates`) |
 | Onboarding step list | Phase 1 — `OnboardingView` renders `ForEach(OnboardingStepID.allCases)`; ships `homebrew`, `downloaderTools`, `botCheckShield` (POT `pipx` install), `testRun` | — (stays 4 steps; cookies use a just-in-time Full Disk Access request from the Preferences pane) |
