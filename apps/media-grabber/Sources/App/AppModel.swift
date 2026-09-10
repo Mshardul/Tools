@@ -32,6 +32,7 @@ final class AppModel {
     private(set) var pendingCookieRetryJobID: UUID?
     private(set) var needsOnboarding = false
     private(set) var lastSubmittedJobID: UUID?
+    var homeFieldText = ""
     var resolved: ResolvedLink?
     var probeError: String?
     var isProbing = false
@@ -41,6 +42,8 @@ final class AppModel {
     var scrollToRowID: UUID?
     var bannerContent: BannerContent?
     let debugFlags: DebugFlags
+
+    @ObservationIgnored weak var incomingLinkController: IncomingLinkController?
 
     var columnConfig: ColumnConfig = .default {
         didSet {
@@ -69,6 +72,14 @@ final class AppModel {
     var resolvedVideo: MediaMetadata? {
         guard case let .video(meta) = resolved else { return nil }
         return meta
+    }
+
+    var isHomeBusy: Bool {
+        !homeFieldText.isEmpty || isProbing || isPlaylistPickerPresented
+    }
+
+    var detectClipboardLinks: Bool {
+        prefs.detectClipboardLinks
     }
 
     var maxConcurrentDownloads: Int {
@@ -218,6 +229,11 @@ final class AppModel {
 }
 
 extension AppModel {
+    func applyIncomingURL(_ url: URL) async {
+        homeFieldText = url.absoluteString
+        await resolvePasted(homeFieldText)
+    }
+
     func resolvePasted(_ url: String) async {
         let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }

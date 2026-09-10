@@ -6,6 +6,7 @@ struct MediaGrabberApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var appModel: AppModel
     @State private var installer: OnboardingInstaller
+    @State private var incomingLinks: IncomingLinkController
 
     init() {
         let debugFlags = DebugFlags.parse(CommandLine.arguments)
@@ -43,6 +44,7 @@ struct MediaGrabberApp: App {
 
         _installer = State(initialValue: installer)
         _appModel = State(initialValue: model)
+        _incomingLinks = State(initialValue: IncomingLinkController(home: model))
     }
 
     var body: some Scene {
@@ -54,9 +56,15 @@ struct MediaGrabberApp: App {
                 ))
                 .preferredColorScheme(appModel.prefs.theme == .aurora ? .dark : .light)
                 .environment(appModel)
+                .environment(incomingLinks)
                 .background(WindowFrameAutosave(name: "MediaGrabberMain"))
+                .onOpenURL { url in
+                    Task { await incomingLinks.handleOpenURL(url) }
+                }
                 .task {
                     appDelegate.quitCoordinator = appModel.quitCoordinator
+                    appDelegate.incomingLinks = incomingLinks
+                    appModel.incomingLinkController = incomingLinks
                     await appModel.onAppear()
                 }
         }

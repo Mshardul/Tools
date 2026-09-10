@@ -40,6 +40,26 @@ enum AppModelDialogs {
         )
     }
 
+    static func incomingLinkBusyConfirmation(url: URL) -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Grab this link?",
+            message: url.absoluteString,
+            confirmTitle: "Grab",
+            cancelTitle: "Not now",
+            isDestructive: false,
+            suppressionKey: nil
+        )
+    }
+
+    static func incomingLinkSchemeFailureNotice() -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Couldn\u{2019}t open that link",
+            message: "The link was missing or not a web address.",
+            confirmTitle: "OK",
+            cancelTitle: nil
+        )
+    }
+
     static func playlistCancelAllConfirmation() -> ConfirmationRequest {
         ConfirmationRequest(
             title: "Cancel this playlist?",

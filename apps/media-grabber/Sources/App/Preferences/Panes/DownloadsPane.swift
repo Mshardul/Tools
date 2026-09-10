@@ -112,6 +112,9 @@ struct DownloadsPane: View {
             ) {
                 Toggle("", isOn: $prefs.detectClipboardLinks)
                     .labelsHidden()
+                    .onChange(of: prefs.detectClipboardLinks) { _, enabled in
+                        Task { await appModel.setClipboardDetection(enabled) }
+                    }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

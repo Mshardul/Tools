@@ -32,7 +32,26 @@ let project = Project(
                 "CFBundleDisplayName": "MediaGrabber",
                 "NSHumanReadableCopyright": "MIT",
                 "CFBundleShortVersionString": "$(MARKETING_VERSION)",
-                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)"
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+                "CFBundleURLTypes": [
+                    [
+                        "CFBundleURLName": "MediaGrabber",
+                        "CFBundleTypeRole": "Editor",
+                        "CFBundleURLSchemes": ["mediagrabber"]
+                    ]
+                ],
+                "NSServices": [
+                    [
+                        "NSMenuItem": ["default": "Download with MediaGrabber"],
+                        "NSMessage": "downloadWithMediaGrabber",
+                        "NSPortName": "MediaGrabber",
+                        "NSSendTypes": [
+                            "public.utf8-plain-text",
+                            "public.url",
+                            "NSStringPboardType"
+                        ]
+                    ]
+                ]
             ]),
             sources: ["Sources/App/**"],
             resources: ["PRIVACY.md"],

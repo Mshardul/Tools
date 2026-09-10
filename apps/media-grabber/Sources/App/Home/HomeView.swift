@@ -7,7 +7,6 @@ struct HomeView: View {
 
     @AppStorage("mg.hasGrabbedOnce") private var hasGrabbedOnce = false
 
-    @State private var pastedURL = ""
     @State private var mediaType: MediaType = .video
     @State private var videoHeight = 1080
     @State private var audioFormat: AudioFormat = .m4a
@@ -120,16 +119,17 @@ struct HomeView: View {
     }
 
     private var pasteField: some View {
-        VStack(spacing: Spacing.s2) {
+        @Bindable var appModel = appModel
+        return VStack(spacing: Spacing.s2) {
             HStack(spacing: Spacing.s2) {
-                TextField("", text: $pastedURL)
+                TextField("", text: $appModel.homeFieldText)
                     .textFieldStyle(.plain)
                     .font(theme.bodyFont(14, .regular))
                     .foregroundStyle(theme.palette.text)
                     .onSubmit { Task { await resolve() } }
-                    .onChange(of: pastedURL) { _, new in autoProbe(new) }
+                    .onChange(of: appModel.homeFieldText) { _, new in autoProbe(new) }
                     .overlay(alignment: .leading) {
-                        if pastedURL.isEmpty {
+                        if appModel.homeFieldText.isEmpty {
                             Text("Paste a link")
                                 .font(theme.bodyFont(14, .regular))
                                 .foregroundStyle(theme.palette.faint)
@@ -206,7 +206,7 @@ struct HomeView: View {
 
     private func resolve() async {
         probeTask?.cancel()
-        await appModel.resolvePasted(pastedURL)
+        await appModel.resolvePasted(appModel.homeFieldText)
     }
 
     private func autoProbe(_ value: String) {
@@ -231,7 +231,7 @@ struct HomeView: View {
                 return
             }
             hasGrabbedOnce = true
-            pastedURL = ""
+            appModel.homeFieldText = ""
             appModel.clearResolved()
         }
     }
@@ -289,7 +289,7 @@ extension HomeView {
         guard let playlistPickerModel, playlistPickerModel.selectedCount > 0 else { return }
         await appModel.addPlaylistSelection(model: playlistPickerModel, overrides: runwayOverrides)
         hasGrabbedOnce = true
-        pastedURL = ""
+        appModel.homeFieldText = ""
         appModel.clearResolved()
     }
 

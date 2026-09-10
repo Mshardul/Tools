@@ -1,8 +1,10 @@
 import GrabberKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct MainWindow: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(IncomingLinkController.self) private var incomingLinks
     @Environment(\.theme) private var theme
     @State private var bannerHeight: CGFloat = 0
 
@@ -27,6 +29,9 @@ struct MainWindow: View {
             }
             .background(theme.palette.ground)
             .frame(minWidth: 820, minHeight: 560)
+            .onDrop(of: [.url, .plainText], isTargeted: nil) { providers in
+                handleDrop(providers)
+            }
 
             WarningBanner(content: appModel.bannerContent)
                 .onPreferenceChange(BannerHeightKey.self) { bannerHeight = $0 }
@@ -42,6 +47,25 @@ struct MainWindow: View {
 
     private var jobRunning: Bool {
         appModel.rowStore.rows.contains { $0.snapshot.state == .running }
+    }
+
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        guard let provider = providers.first else { return false }
+        if provider.canLoadObject(ofClass: URL.self) {
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url else { return }
+                Task { @MainActor in await incomingLinks.handlePlainText(url.absoluteString) }
+            }
+            return true
+        }
+        if provider.canLoadObject(ofClass: String.self) {
+            _ = provider.loadObject(ofClass: String.self) { text, _ in
+                guard let text else { return }
+                Task { @MainActor in await incomingLinks.handlePlainText(text) }
+            }
+            return true
+        }
+        return false
     }
 
     private var brandRow: some View {

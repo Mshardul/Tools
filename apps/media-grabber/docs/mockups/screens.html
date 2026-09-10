@@ -501,7 +501,9 @@ tbody tr:hover td{background:var(--panel)}
     <a href="#s4-3">4.3 notice — log unavailable</a> ·
     <a href="#s4-4">4.4 duplicate — download again</a> ·
     <a href="#s4-5">4.5 duplicate — already in queue</a> ·
-    <a href="#s4-6">4.6 quit while downloading</a></span>
+    <a href="#s4-6">4.6 quit while downloading</a> ·
+    <a href="#s4-7">4.7 incoming link — busy offer</a> ·
+    <a href="#s4-8">4.8 incoming link — couldn’t open</a></span>
   <span class="row"><span class="grp">§5 Playlist</span> —
     <a href="#s5-1">5.1 picker modal</a> ·
     <a href="#s5-2">5.2 group in table</a></span>
@@ -517,7 +519,7 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 1.1 -->
   <div class="screen" id="s1-1">
     <div class="cap"><b>1.1</b> Home — first run (no download ever made)</div>
-    <div class="sub">No table, no runway. Header + paste field + the three step cards fill the body. See design-system §4.2.1.</div>
+    <div class="sub">No table, no runway. Header + paste field + the three step cards fill the body. See design-system §4.2.1. The whole window is a drop target — a link dragged onto it (or copied to the clipboard, or sent via Services) fills the field and probes; no dedicated drop chrome.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
@@ -1426,6 +1428,56 @@ tbody tr:hover td{background:var(--panel)}
           <div class="ct">Quit MediaGrabber?</div>
           <div class="cm">A download is still running. Quit anyway?</div>
           <div class="cbtns"><button class="focusring">Cancel</button><button class="danger">Quit Anyway</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s4-7">
+    <div class="cap"><b>4.7</b> Confirmation — incoming link while Home is busy</div>
+    <div class="sub">A clipboard, drag, Services, or <code>mediagrabber://</code> link arrives while the Home field is occupied or a probe is running. Message is the candidate URL. Confirm uses accent fill. Idle instead fills the field and probes with no dialog.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll" style="opacity:.4">
+        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+          <div class="field solo"><input value="https://vimeo.com/987654"><span class="status">✓ Rehearsal cut</span></div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="colbtn">⊞ Columns</button></div>
+          <table><thead><tr><th>Title</th><th>Status</th></tr></thead><tbody>
+            <tr><td>Rehearsal cut</td><td><span class="st s-queue">queued · #1</span></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="scrim">
+        <div class="cdialog">
+          <div class="ct">Grab this link?</div>
+          <div class="cm">https://www.youtube.com/watch?v=aqz-KE-bpKQ</div>
+          <div class="cbtns"><button class="focusring">Not now</button><button class="ok">Grab</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="s4-8">
+    <div class="cap"><b>4.8</b> Confirmation — notice — incoming link couldn’t be opened</div>
+    <div class="sub">A <code>mediagrabber://open</code> link with a missing or non-web <code>url</code>. Same notice card, single OK. App is brought forward first.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll" style="opacity:.4">
+        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+          <div class="field solo"><input placeholder="Paste a link"></div>
+        </div>
+      </div>
+      <div class="scrim">
+        <div class="cdialog">
+          <div class="ct">Couldn’t open that link</div>
+          <div class="cm">The link was missing or not a web address.</div>
+          <div class="cbtns"><button class="focusring ok">OK</button></div>
         </div>
       </div>
     </div>
