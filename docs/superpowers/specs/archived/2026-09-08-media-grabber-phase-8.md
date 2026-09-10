@@ -1,7 +1,7 @@
 # Playlist (Phase 8)
 
-**Status:** design complete. Plan:
-`docs/superpowers/plans/2026-09-08-media-grabber-phase-8.md`. Parent spec:
+**Status:** shipped. Plan:
+`docs/superpowers/plans/archived/2026-09-08-media-grabber-phase-8.md`. Parent spec:
 `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3–5.5,
 §7.4 token bucket, §12.1. Phase 2 shells: `docs/superpowers/specs/queue-foundation.md`
 (`PlaylistGroup`, `playlistGroupID`, per-request probe cancel deferred here).

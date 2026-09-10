@@ -9,11 +9,15 @@ Specs: `docs/superpowers/specs/` — parent design `2026-08-28-youtube-downloade
 `core-download-pipeline.md`, Phase 2 `queue-foundation.md` (not archived — kept
 in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
 `2026-09-01-media-grabber-phase-4.md`, Phase 5 `2026-09-02-media-grabber-phase-5.md`, Phase 6
-`2026-09-04-media-grabber-phase-6.md`
+`2026-09-04-media-grabber-phase-6.md`, Phase 7
+`2026-09-07-media-grabber-phase-7.md`, Phase 8
+`2026-09-08-media-grabber-phase-8.md`
 (spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
-not this app-local one). Next: Phase 7 (YouTube hardening) —
-`docs/superpowers/specs/2026-09-07-media-grabber-phase-7.md`,
-plan `docs/superpowers/plans/2026-09-07-media-grabber-phase-7.md`.
+not this app-local one). Next: Phase 9 (Add flows) — design complete
+`docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md`, plan
+`docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`. Share Extension
+is a separate STUB epic
+`docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
 
 ## Phase scoping — three rules
 

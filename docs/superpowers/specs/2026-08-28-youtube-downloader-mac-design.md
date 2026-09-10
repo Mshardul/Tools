@@ -776,39 +776,71 @@ add cases and wiring, never relayout — §12.2.
   state is in-memory only. Per-host adaptive concurrency is a backlog deferral.
   Engine-freshness chip is Phase 10.
 
-- **Phase 7 — YouTube hardening.** Spec:
-  `docs/superpowers/specs/2026-09-07-media-grabber-phase-7.md`. Engine-owned
-  `PotProviderProcess` + `PotPluginInstaller`; `ExtractorContext` shared by
-  `engine.preview` and download spawn; `player_client` rotation
+- **Phase 7 — YouTube hardening (shipped).** Spec + plan:
+  `docs/superpowers/specs/archived/2026-09-07-media-grabber-phase-7.md`,
+  `docs/superpowers/plans/archived/2026-09-07-media-grabber-phase-7.md`.
+  Engine-owned `PotProviderProcess` + `PotPluginInstaller`; `ExtractorContext`
+  shared by `engine.preview` and download spawn; `player_client` rotation
   (`tv → ios → tv_embedded → mweb → web_safari`); probe format-list parsing;
   runway **Language** slot + quality rungs restricted to this probe; Downloads
   pane **Audio language** policy (`YouTube default` | `Original`); YouTube
   `ErrorClass` emit (`botCheck`, `sabrGated`, `formatsMissing`) + copy; VPN hint
   on bot-check; shield `HealthStrip` chip + `↻`; `potProviderDown` banner (not a
-  queue halt). Needs Phase 4 and Phase 6.
+  queue halt). Parked follow-up: refresh engine `shieldStatus` after shield
+  crash auto-recovery so chip/banner track live provider status.
 
-- **Phase 8 — Playlist.** Spec:
-  `docs/superpowers/specs/2026-09-08-media-grabber-phase-8.md`.
-  YouTube watch = one video (`--no-playlist`, even with `&list=`). YouTube
-  `/playlist?list=PL…` = one `--flat-playlist` dump, then `PlaylistPickerView`
-  (checklist, select all / none, filter, duration footer, duplicate warnings),
-  then N independent jobs sharing `playlistGroupID`. Group header + spine +
-  group actions; `MetadataTokenBucket`; per-request probe cancel. Mix / Radio /
-  channel `/videos` / Watch Later / Liked are out. Items inherit the Home
-  runway's quality cap and `audioLanguage`. Group rollup: Progress = Σ
-  per-item contribution / total (completed = 1.0, else fraction quantized to
-  0.1) — recompute only on 10% bucket or state boundary; Status =
-  `M done · K failed · rest queued`; Speed = Σ active; ETA = max active;
-  Size/Duration = Σ known; Added at = min (cell), block position = max child
-  `addedAt`; Finished at = max once all done; Site/Type/Quality/Destination/Client
-  = common or `mixed`; Attempt = max. Update `screens.html` §5 (picker + group
-  + five-slot skinned runway).
+- **Phase 8 — Playlist (shipped).** Spec + plan:
+  `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md`,
+  `docs/superpowers/plans/archived/2026-09-08-media-grabber-phase-8.md`.
+  `PlaylistLink` classifies paste before probe. YouTube watch = one video
+  (`--no-playlist`, even with `&list=`). YouTube `/playlist?list=PL…` = one
+  `--flat-playlist` dump → `PlaylistPickerView` (checklist, select all / none,
+  filter, duration footer, duplicate warnings) → N independent jobs sharing
+  `playlistGroupID` + `playlistIndex`. Group header + spine + group actions are
+  a `RowStore` aggregate; `MetadataTokenBucket` paces probes; per-request probe
+  cancel. Mix / Radio / channel `/videos` / Watch Later / Liked stay out.
+  Items inherit the Home runway's quality cap and `audioLanguage`. Cancel-all
+  uses `ConfirmationRequest` `suppressionKey: "playlist-cancel-all"`.
+  `screens.html` §5 depicts picker + group + skinned runway. Built out of
+  numeric order ahead of Phase 7 (both now shipped).
 
-- **Phase 9 — Add flows.** Clipboard auto-detect on activation, Services / Share ("Download with …"), a URL dragged onto the window or Dock icon, the custom URL scheme (`Info.plist` `CFBundleURLTypes`) — all land in the Home field. Depends only on the Phase 1 Home field; scheduled here because it has nothing downstream and adds no risk to the Phase 2–8 chain.
+- **Phase 9 — Add flows (design complete).** Spec + plan:
+  `docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md`,
+  `docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`. Clipboard
+  (activation + frontmost, prefs-gated), drag onto window/Dock, Services
+  (“Download with …”), custom URL scheme — all land in the Home field via
+  `IncomingLinkController`. Idle → silent fill+probe; busy → skinned confirm.
+  Loose URL extract (`LinkExtractor`); probe stays the extractor truth. **Share
+  Extension is not this phase** — sibling stub
+  `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`
+  (insert as Phase 10 and renumber Diagnostics/Polish when scheduled).
 
-- **Phase 10 — Diagnostics, staleness, updater.** The Diagnostics page (Run check → report card → Copy report / Copy diagnostic bundle); the `DiagnosticBundle` zip; the yt-dlp staleness daily check; `YtDlpUpdater`; the Updates pane rows (Phase 3). The engine-freshness `HealthStrip` chip is emitted here from `HealthController` (no Phase 6 slot) — amber when yt-dlp is stale, `↻` runs the upgrade; staleness is a chip, never a banner. The report card reflects Phase 4 / 6 / 7 state, so it comes after them. *Hint: `DebugFlags` (`-MG*` launch args, struct from Phase 2) has grown across phases — add a Debug menu bound to it here if warranted.* *Hint: update the `screens.html` mockup — the Diagnostics screen (before-run and after-run states) and the Updates pane fill here; both are stepless / header-only in the current snapshot.*
+- **Phase 10 — Share Extension (STUB — needs planning).** Reserved only. See
+  `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
+  When opened: full spec + plan + e2e Share appex. Renumber: this becomes 10;
+  Diagnostics 11; Polish 12.
 
-- **Phase 11 — Polish.** Success and chip-refresh-failure toasts; native macOS notifications for backgrounded failures; the first-run cards → table transition and the emptied-table state; a full keyboard-navigation, VoiceOver, and `prefers-reduced-motion` pass over every screen; the GitHub-release self-update check (§10.2). Last because the a11y pass audits every screen the earlier phases built.
+- **Phase 11 — Diagnostics, staleness, updater.** *(was Phase 10; number
+  shifts when Share Extension is scheduled — until then still “Phase 10” in
+  older prose.)* The Diagnostics page (Run check → report card → Copy report /
+  Copy diagnostic bundle); the `DiagnosticBundle` zip; the yt-dlp staleness
+  daily check; `YtDlpUpdater`; the Updates pane rows (Phase 3). The
+  engine-freshness `HealthStrip` chip is emitted here from `HealthController`
+  (no Phase 6 slot) — amber when yt-dlp is stale, `↻` runs the upgrade;
+  staleness is a chip, never a banner. The report card reflects Phase 4 / 6 /
+  7 state, so it comes after them. *Hint: `DebugFlags` (`-MG*` launch args,
+  struct from Phase 2) has grown across phases — add a Debug menu bound to it
+  here if warranted.* *Hint: update the `screens.html` mockup — the Diagnostics
+  screen (before-run and after-run states) and the Updates pane fill here;
+  both are stepless / header-only in the current snapshot.*
+
+- **Phase 12 — Polish.** *(was Phase 11; same provisional renumber note.)*
+  Success and chip-refresh-failure toasts; native macOS notifications for
+  backgrounded failures; the first-run cards → table transition and the
+  emptied-table state; a full keyboard-navigation, VoiceOver, and
+  `prefers-reduced-motion` pass over every screen; the GitHub-release
+  self-update check (§10.2). Last because the a11y pass audits every screen
+  the earlier phases built.
 
 ### 12.2 Shells built complete, filled later
 
@@ -822,12 +854,12 @@ means no screen is built twice.
 |---|---|---|
 | Scheduler loop | Phase 2 — event-driven `evaluateSchedule()` after every mutation; two pure decisions, `nextDownloads(SchedulerInput)` (cap-gated) and `nextProbe(SchedulerInput)` (serial-probe-gated, independent of the download cap); a deferred-start seam (sorted `(jobID, notBefore)` list + one dormant sleep-`Task`, `deferStart(_:until:)`, no caller) | Phase 4 — first `deferStart` caller (backoff); Phase 6 — `blockedHostIDs` / `blockedProbeHostIDs` plus `cap` swapped to `min(adaptiveCap, prefsCap)` on `SchedulerInput`, second `deferStart` caller (host cooldown); neither rewrites the loop |
 | Engine → UI channel | Phase 2 — `AsyncStream<QueueEvent>` (`.snapshot(QueueSnapshot)` on structural change, `.progress` delta on progress ticks); `DownloadJob` demoted to engine-internal model, `JobSnapshot` the only boundary type | not filled later — the shape is final |
-| `JobSnapshot` | Phase 2 — the full field set. Populated now: `progress`, `durationSeconds?`, `extractor?`, `sizeBytes?`, `availableActions`, `outputFiles`, dates. Shipped defaulted: `attempt` (0), `actualQuality?`, `cooldownUntil?`, `playerClientUsed?`, `playlistGroupID?`, `integrityVerdict?`. **Exceptions:** `rateHost: RateHost` (Phase 6, fixtures pass `.unresolved`); `playlistIndex: Int?` (Phase 8, fixtures pass `nil`) — struct edits, fixture churn mechanical | Phase 4 populates `attempt` + `integrityVerdict` + `actualQuality`, Phase 6 `cooldownUntil` + `rateHost`, Phase 7 `playerClientUsed`, Phase 8 `playlistGroupID` + `playlistIndex` |
+| `JobSnapshot` | Phase 2 — the full field set. Populated now: `progress`, `durationSeconds?`, `extractor?`, `sizeBytes?`, `availableActions`, `outputFiles`, dates, `attempt`, `actualQuality?`, `cooldownUntil?`, `rateHost`, `playerClientUsed?`, `playlistGroupID?`, `playlistIndex?`, `integrityVerdict?`. Non-playlist fixtures pass `playlistGroupID` / `playlistIndex` as `nil` | Phase 4 populates `attempt` + `integrityVerdict` + `actualQuality`, Phase 6 `cooldownUntil` + `rateHost`, Phase 7 `playerClientUsed`, Phase 8 `playlistGroupID` + `playlistIndex` |
 | `QueueSnapshot.queueHalt` + `engine.revalidate()` | Phase 2 — `QueueHaltReason?`, `.depMissing` case (scheduler stops, `AppModel` shows Onboarding takeover); `revalidate()` re-checks deps and clears `.depMissing` only, called on onboarding completion. `QueueSnapshot` also carries `hostRateSummary` + `isOnline` | Phase 6 — adds derived `.circuitOpen` and hard `.networkDown`; circuit reset is `resetCircuit` / `resetAllCircuits`, not `revalidate()`. Banner "Retry now" and the cooldown-chip popover call those |
 | Downloads-table row-action bar | Phase 2 — every `RowAction` button laid out in fixed order; `availableActions: Set<RowAction>` per job from the engine; buttons not in the set render disabled | Phase 4 (`retry`, `showLog` — the `.failed` arm reads `ErrorClass.presentation.offeredActions`; `showLog` on every run state), Phase 5 (`retryWithCookies` `🔑`) — the engine adds them to the set, no UI change |
 | `WarningBanner` | Phase 2 — the docked shell + `BannerContent { text, buttonTitle?, action? }`, always nil | Phase 6 wires a `BannerReason` priority resolver (`depMissing` > `networkDown` > `circuitOpen`; optional button — `networkDown` has none); Phase 7 adds `potProviderDown` as one resolver entry (Restart → `restartShield`; not a `QueueHaltReason`) |
 | `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction, countdownUntil? }`; `ChipInteraction` = `none \| refresh \| popover(PopoverKind)` (data, the strip renders interaction) | Phase 6 ships `HealthController` + online + cooldown chips + `.popover(.hostRate)`; Phase 7 adds the bot-check shield chip + live `.refresh` (`↻`); Phase 10 adds the engine-freshness chip; Phase 11 the chip-refresh toast |
-| `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil`. The `suppressionKey` mechanism is built but unused in P2 | Phase 8 "cancel all" (`suppressionKey: "playlist-cancel-all"`) and any later dialog — just call `confirm(...)` |
+| `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil` | Phase 8 "cancel all" (`suppressionKey: "playlist-cancel-all"`) and any later dialog — just call `confirm(...)` |
 | `ErrorClass` emit paths + failure UI | Phase 2 wires `incomplete` / `diskFull` / `permissionDenied` · Phase 4 the generic-set classifier signatures + the `FailurePresentation` model (`{ sentence, offeredActions }` keyed off `ErrorClass`, one switch) + `ErrorClass.key` | Phase 5 (`cookieReadFailed`) · Phase 7 (`botCheck`, `sabrGated`, `formatsMissing` on jobs; `potProviderDown` presentation sentence exists, chrome-only, never a row terminal state) |
 | `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Network / Logs & privacy / Advanced filled, Sign-in & cookies + Updates stepless | Phase 4 (retry engine consuming `maxAutoRetries`), Phase 5 (the whole Sign-in & cookies pane — browser picker, Firefox-profile picker, Full Disk Access row, Learn more, tip), Phase 7 (Downloads **Audio language** policy row), Phase 10 (`autoCheckUpdates`) |
 | Onboarding step list | Phase 1 — `OnboardingView` renders `ForEach(OnboardingStepID.allCases)`; ships `homebrew`, `downloaderTools`, `botCheckShield` (POT `pipx` install), `testRun` | — (stays 4 steps; cookies use a just-in-time Full Disk Access request from the Preferences pane) |

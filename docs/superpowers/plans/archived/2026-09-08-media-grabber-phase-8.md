@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 6, Tuist, XCTest. Targets: `GrabberKit`, `MediaGrabber`, `TestSupport`, `GrabberKitTests`, `AppUnitTests`.
 
-**Spec:** `docs/superpowers/specs/2026-09-08-media-grabber-phase-8.md` — read it alongside this plan. Every task's "why" is there; this plan is the "how".
+**Spec:** `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md` — read it alongside this plan. Every task's "why" is there; this plan is the "how".
 
 ## Global Constraints
 
@@ -778,7 +778,7 @@ Disable Pause all when no running child; Retry failed when no `.failed`; Cancel 
 **Files:**
 - Modify: `apps/media-grabber/docs/mockups/screens.html` §5.1 and §5.2
 - Verify (no rewrite unless drift): parent playlist paragraphs, `apps/media-grabber/docs/design-system.md` §4.3, `apps/media-grabber/ticket-backlog.md` Phase 8
-- Modify: `docs/superpowers/specs/2026-09-08-media-grabber-phase-8.md` status if needed (plan path already set)
+- Modify: `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md` status if needed (plan path already set)
 
 **Do:**
 

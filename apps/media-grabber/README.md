@@ -82,10 +82,16 @@ Phase 2 added a multi-download queue with persistence:
 Not yet built:
 
 - **Column header drag-reorder** — `ColumnConfig.moveColumn` exists; UI deferred.
-- **Multi-select row actions**, playlists, YouTube hardening (POT / player
-  clients), Diagnostics content. See [ticket-backlog.md](ticket-backlog.md).
+- **Multi-select row actions**, Diagnostics content. See
+  [ticket-backlog.md](ticket-backlog.md).
 
-**Next:** Phase 7 — YouTube hardening.
+YouTube hardening (Phase 7) shipped: bot-check shield, shared preview/Grab
+identity, runway Language slot, YouTube failure chrome.
+
+Playlists (Phase 8) shipped: paste a YouTube `PL` playlist page → picker →
+grouped rows with header / spine / group actions.
+
+**Next:** Phase 9 — Add flows (plan ready).
 
 ## Phase 1 gaps (resolved in Phase 2)
 

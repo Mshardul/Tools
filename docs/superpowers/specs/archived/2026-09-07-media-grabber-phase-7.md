@@ -1,7 +1,7 @@
 # YouTube hardening (Phase 7)
 
-**Status:** design complete. Plan:
-`docs/superpowers/plans/2026-09-07-media-grabber-phase-7.md`. Parent spec:
+**Status:** shipped. Plan:
+`docs/superpowers/plans/archived/2026-09-07-media-grabber-phase-7.md`. Parent spec:
 `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §7.2, §7.8,
 §7.9, §12.1.
 Phase 2 (shipped): `docs/superpowers/specs/queue-foundation.md`.

@@ -99,28 +99,36 @@ are in spec §12.2.
   `WarningBanner` `circuitOpen` / `networkDown` cases; circuit breaker;
   adaptive concurrency; `NetworkMonitor` → `waitingForNetwork`; `HealthStrip`
   online / cooldown chips. Smoke: force a 429.
-- **Phase 7 — YouTube hardening.** Engine-owned shield process + plugin dirs;
-  `player_client` rotation; `engine.preview` shares YouTube identity with Grab;
-  probe format lists; runway Language slot + quality rungs this probe offers;
-  Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy; VPN
-  hint; shield chip + `↻`; `potProviderDown` banner. Needs Phase 4 and Phase 6.
-- **Phase 8 — Playlist.** YouTube watch = one video; `PL` playlist page = one
-  `--flat-playlist` dump, picker (checklist, filter, duration footer, duplicate
-  warnings), then N jobs sharing `playlistGroupID`. Group header + spine +
-  group actions; `MetadataTokenBucket`; per-request probe cancel. Spec:
-  `docs/superpowers/specs/2026-09-08-media-grabber-phase-8.md`.
-- **Phase 9 — Add flows.** Clipboard auto-detect on activation; Services / Share
-  ("Download with …"); drag a URL onto the window or Dock icon; custom URL
-  scheme (`CFBundleURLTypes`). All route into the same Home field. Needs only
-  the Phase 1 Home field; scheduled here — nothing downstream.
-- **Phase 10 — Diagnostics, staleness, updater.** Diagnostics page (Run check →
-  report card → Copy report / Copy diagnostic bundle); `DiagnosticBundle` zip;
-  yt-dlp staleness banner + daily check; `YtDlpUpdater`; Updates pane rows.
-  Report card reflects Phase 4 / 6 / 7 state.
-- **Phase 11 — Polish.** Success + chip-refresh-failure toasts; native
-  notifications for backgrounded failures; the first-run-cards → table
-  transition + emptied-table state; full keyboard-nav + VoiceOver +
-  reduced-motion pass over every screen; GitHub-release self-update check (spec
-  §10.2). Last — the a11y pass audits every earlier screen. **Row actions:**
-  hide inactive action icons instead of rendering the full disabled bar (Phase 2
-  spec required all glyphs visible; revisit for less visual noise).
+- **Phase 7 — YouTube hardening.** *(shipped)* Engine-owned shield process +
+  plugin dirs; `player_client` rotation; `engine.preview` shares YouTube identity
+  with Grab; probe format lists; runway Language slot + quality rungs this probe
+  offers; Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy;
+  VPN hint; shield chip + `↻`; `potProviderDown` banner. Spec:
+  `docs/superpowers/specs/archived/2026-09-07-media-grabber-phase-7.md`.
+  Parked: refresh engine `shieldStatus` after shield crash auto-recovery.
+- **Phase 8 — Playlist.** *(shipped)* YouTube watch = one video; `PL` playlist
+  page = one `--flat-playlist` dump, picker (checklist, filter, duration footer,
+  duplicate warnings), then N jobs sharing `playlistGroupID`. Group header +
+  spine + group actions; `MetadataTokenBucket`; per-request probe cancel. Spec:
+  `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md`.
+- **Phase 9 — Add flows.** *(design complete)* Clipboard (activation +
+  frontmost); drag window/Dock; Services; custom URL scheme →
+  `IncomingLinkController` + Home. Idle silent / busy confirm. Spec + plan:
+  `docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md`,
+  `docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`. Share Extension
+  is a sibling stub, not this phase.
+- **Share Extension — STUB (phase # TBD → likely 10).** Needs planning later.
+  `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
+- **Phase 10 — Diagnostics, staleness, updater.** *(becomes 11 when Share is
+  scheduled)* Diagnostics page (Run check → report card → Copy report / Copy
+  diagnostic bundle); `DiagnosticBundle` zip; yt-dlp staleness banner + daily
+  check; `YtDlpUpdater`; Updates pane rows. Report card reflects Phase 4 / 6 /
+  7 state.
+- **Phase 11 — Polish.** *(becomes 12 when Share is scheduled)* Success +
+  chip-refresh-failure toasts; native notifications for backgrounded failures;
+  the first-run-cards → table transition + emptied-table state; full
+  keyboard-nav + VoiceOver + reduced-motion pass over every screen;
+  GitHub-release self-update check (spec §10.2). Last — the a11y pass audits
+  every earlier screen. **Row actions:** hide inactive action icons instead of
+  rendering the full disabled bar (Phase 2 spec required all glyphs visible;
+  revisit for less visual noise).
