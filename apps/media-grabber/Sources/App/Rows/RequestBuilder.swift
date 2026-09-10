@@ -34,6 +34,24 @@ enum RequestBuilder {
         )
     }
 
+    static func build(
+        from entry: PlaylistEntry,
+        prefs: Preferences,
+        overrides: RunwayOverrides
+    ) -> DownloadRequest {
+        build(from: prefetch(from: entry), prefs: prefs, overrides: overrides)
+    }
+
+    static func prefetch(from entry: PlaylistEntry) -> MediaMetadata {
+        MediaMetadata(
+            title: entry.title,
+            durationSeconds: entry.durationSeconds,
+            isPlaylist: false,
+            sourceURL: entry.watchURL,
+            extractor: entry.extractor
+        )
+    }
+
     static func audioLanguage(from track: AudioTrack) -> AudioLanguage {
         guard let code = track.languageCode else {
             return .unspecified

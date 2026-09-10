@@ -168,6 +168,12 @@ body{background:#08090b;font-family:var(--font-body);color:var(--text);padding:2
 .fl .dot.ok{background:var(--accent)}
 
 .body-scroll{flex:1;min-height:0;overflow:auto}
+/* Home with paste/runway + table: chrome stays put; only row body scrolls */
+.body-home{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.body-home>.hero{flex:none}
+.tablewrap.fill>.toolbar{flex:none}
+.table-scroll{flex:1;min-height:0;overflow:auto}
+.table-scroll thead th{position:sticky;top:0;z-index:2;background:var(--panel-solid)}
 
 .hero{padding:var(--sp-6) var(--sp-5) var(--sp-5)}
 .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-2)}
@@ -191,24 +197,28 @@ h1.head em{font-style:normal;color:var(--accent)}
 .rstep{flex:1;display:flex;flex-direction:column;gap:6px;padding:0 14px;position:relative;min-width:0}
 .rstep + .rstep::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--hair)}
 .rstep .rl{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
-.rstep .rv{font-family:var(--font-display);font-size:13px;display:flex;gap:6px;align-items:center;white-space:nowrap}
-.rstep.ok .rv::before{content:"●";color:var(--accent);font-size:8px}
-.rstep.wait .rv{color:var(--faint)} .rstep.wait .rv::before{content:"○";color:var(--faint);font-size:8px}
+/* value row: same control height for link text, segment, and pickers */
+.rstep>.rv,.rstep>.seg,.rstep>.pick{height:34px;box-sizing:border-box;min-width:0;max-width:100%}
+.rstep .rv{font-family:var(--font-display);font-size:13px;display:flex;gap:6px;align-items:center;min-width:0;overflow:hidden}
+.rstep .rv .rt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rstep.ok .rv::before{content:"●";color:var(--accent);font-size:8px;flex:none;line-height:1}
+.rstep.wait .rv{color:var(--faint)} .rstep.wait .rv::before{content:"○";color:var(--faint);font-size:8px;flex:none;line-height:1}
 .rgo{flex:none;display:flex;align-items:center;padding-left:14px;border-left:1px solid var(--hair)}
 .go{background:var(--go-fill);color:var(--on-accent);border:none;border-radius:var(--r-control);padding:0 24px;font-family:var(--font-display);font-weight:700;font-size:14px;cursor:pointer;min-height:44px}
 :root[data-theme="tapedeck"] .go{border:2px solid var(--panel-solid)}
 .go[disabled]{opacity:.3;cursor:not-allowed;filter:grayscale(.5)}
 
-/* skinned segmented control */
-.seg{display:inline-flex;border:var(--border-w) solid var(--stroke);border-radius:var(--r-chip);background:var(--panel);overflow:hidden}
-.seg button{font-family:var(--font-display);font-size:12px;padding:7px 0;min-width:62px;text-align:center;border:none;background:transparent;color:var(--dim);cursor:pointer;border-right:1px solid var(--hair)}
+/* skinned segmented control — same 34px control height as .pick */
+.seg{display:inline-flex;align-items:stretch;height:34px;box-sizing:border-box;border:var(--border-w) solid var(--stroke);border-radius:var(--r-chip);background:var(--panel);overflow:hidden}
+.seg button{font-family:var(--font-display);font-size:12px;padding:0 14px;min-width:62px;text-align:center;border:none;background:transparent;color:var(--dim);cursor:pointer;border-right:1px solid var(--hair)}
 .seg button:last-child{border-right:none}
 .seg button.on{background:var(--panel-solid);color:var(--text);font-weight:600}
 :root[data-theme="aurora"] .seg button.on{box-shadow:inset 0 0 0 1px var(--stroke)}
 
-/* skinned picker trigger */
-.pick{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:12px;padding:8px 12px;border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);background:var(--panel);color:var(--text);cursor:pointer}
-.pick .cv{color:var(--faint);font-size:10px}
+/* skinned picker trigger — fixed height; long labels ellipsize, never grow */
+.pick{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:12px;height:34px;padding:0 12px;border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);background:var(--panel);color:var(--text);cursor:pointer;box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden}
+.pick .ptxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick .cv{color:var(--faint);font-size:10px;flex:none}
 .pick.nochev{cursor:pointer}
 
 /* skinned picker popover */
@@ -337,6 +347,9 @@ tbody tr:hover td{background:var(--panel)}
 .mrow .thumb{width:52px;height:30px;border-radius:5px;background:linear-gradient(135deg,#25384a,#141f28);border:1px solid var(--stroke);flex:none}
 .mrow .mn{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mrow .md{font-family:var(--font-mono);font-size:10px;color:var(--dim)}
+.mrow .mwarn{font-family:var(--font-mono);font-size:10px;color:var(--warn);flex:none;margin-left:auto}
+.mrow.warned{background:color-mix(in srgb,var(--warn) 6%,transparent)}
+.modal .mbann{padding:10px 18px;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--warn);background:var(--panel-hi);border-bottom:1px solid var(--hair)}
 .modal .mf{padding:14px 18px;border-top:1px solid var(--stroke);display:flex;align-items:center;gap:12px}
 .modal .mf .count{font-family:var(--font-mono);font-size:12px;color:var(--dim)}
 .modal .mf .sp{margin-left:auto}
@@ -545,7 +558,7 @@ tbody tr:hover td{background:var(--panel)}
         <span class="chip"><span class="dot ok"></span>online</span>
         <span class="chip warn"><span class="dot warn"></span>youtube · cooldown 4:12</span>
       </div>
-      <div class="body-scroll">
+      <div class="body-home">
         <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
           <div class="paste-stack">
           <div class="field">
@@ -553,25 +566,26 @@ tbody tr:hover td{background:var(--panel)}
             <span class="status">✓ Big Buck Bunny</span>
           </div>
           <div class="runway">
-            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Big Buck Bunny</span></div>
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Big Buck Bunny</span></span></div>
             <div class="rstep ok"><span class="rl">Type</span>
               <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
-              <span class="pick">1080p <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">1080p</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Language</span>
-              <span class="pick">Japanese (original) <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Japanese (original)</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
-              <span class="pick">Downloads <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Downloads</span> <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
           </div>
         </div>
-        <div class="tablewrap">
+        <div class="tablewrap fill">
           <div class="toolbar">
             <button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button>
             <button class="fc">Needs attention <span class="badge">2</span></button>
             <button class="colbtn">⊞ Columns</button>
           </div>
+          <div class="table-scroll">
           <table><thead><tr>
             <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
             <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
@@ -590,12 +604,13 @@ tbody tr:hover td{background:var(--panel)}
             <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p → 720p</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td><div class="acts"><button>📂</button><button>✕</button><button>📄</button></div></td></tr>
             <tr><td>Old mix — cancelled</td><td class="site">archive.org</td><td>Audio · MP3</td><td><span class="st s-done">cancelled</span></td><td></td><td>—</td><td><div class="acts"><button>✕</button></div></td></tr>
           </tbody></table>
+          </div>
           <div class="toaststack"><div class="toast"><span class="tk">✓</span> Conference keynote 2024 saved <a>Reveal</a></div></div>
           <div class="banner"><span>Bot-check protection is offline — some downloads may fail or be low-res.</span><button>Restart</button></div>
         </div>
       </div>
     </div>
-    <p class="dims"><b>Dimensions</b> — window 980 × 720. SkinnedPicker trigger ≈ 34 pt tall; runway slots divided by a 1 pt hairline.</p>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720. Paste + runway + filter chips stay fixed; only the row body scrolls. SkinnedPicker trigger ≈ 34 pt tall; runway slots divided by a 1 pt hairline.</p>
   </div>
 
   <!-- 1.3 -->
@@ -656,15 +671,15 @@ tbody tr:hover td{background:var(--panel)}
             <span class="status">✓ Big Buck Bunny</span>
           </div>
           <div class="runway">
-            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Big Buck Bunny</span></div>
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Big Buck Bunny</span></span></div>
             <div class="rstep ok"><span class="rl">Type</span>
               <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
-              <span class="pick">1080p <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">1080p</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Language</span>
-              <span class="pick">Japanese (original) <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Japanese (original)</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
-              <span class="pick">Downloads <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Downloads</span> <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
           </div>
@@ -732,15 +747,15 @@ tbody tr:hover td{background:var(--panel)}
             <span class="status">✓ Studio session — take 3</span>
           </div>
           <div class="runway">
-            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Studio session — take 3</span></div>
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Studio session — take 3</span></span></div>
             <div class="rstep ok"><span class="rl">Type</span>
               <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
               <span class="seg"><button class="on">M4A</button><button>MP3</button></span></div>
             <div class="rstep ok"><span class="rl">Language</span>
-              <span class="pick">Default <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Default</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
-              <span class="pick">Downloads <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Downloads</span> <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
           </div>
@@ -901,10 +916,10 @@ tbody tr:hover td{background:var(--panel)}
           <div class="field2"><div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span></div></div>
           <div class="field2"><div class="fl">Automatic retries<small>Attempts before the app asks you what to do.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">3</span><button>+</button></span></div></div>
           <div class="field2"><div class="fl">Media type</div><div class="fc"><span class="seg"><button class="on">Video</button><button>Audio</button></span></div></div>
-          <div class="field2"><div class="fl">Video quality<small>Highest available if the exact height isn't offered.</small></div><div class="fc"><span class="pick">1080p <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Video quality<small>Highest available if the exact height isn't offered.</small></div><div class="fc"><span class="pick"><span class="ptxt">1080p</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl">Audio language<small>Used when this video has that kind of track.</small></div><div class="fc"><span class="seg"><button class="on">YouTube default</button><button>Original</button></span></div></div>
           <div class="field2"><div class="fl">Audio format</div><div class="fc"><span class="seg"><button class="on">M4A</button><button>MP3</button></span></div></div>
-          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick">Title <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv">▾</span></span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl">Clipboard detection<small>Offer to grab links you copy.</small></div><div class="fc"><span class="toggle on"></span></div></div>
           <div style="height:40px"></div>
         </div>
@@ -986,8 +1001,8 @@ tbody tr:hover td{background:var(--panel)}
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">Firefox <span class="cv">▾</span></span></div></div>
-          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="pick">default-release <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="pick"><span class="ptxt">default-release</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
         </div>
@@ -1008,7 +1023,7 @@ tbody tr:hover td{background:var(--panel)}
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">Safari <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl"><span class="dot warn"></span> Full Disk Access<small>MediaGrabber needs Full Disk Access to read Safari's sign-in.</small></div><div class="fc"><button class="btn-txt">Open System Settings</button></div></div>
           <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
@@ -1030,7 +1045,7 @@ tbody tr:hover td{background:var(--panel)}
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">None <span class="cv">▾</span></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv">▾</span></span></div></div>
         </div>
       </div>
     </div>
@@ -1050,7 +1065,7 @@ tbody tr:hover td{background:var(--panel)}
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
           <div class="pending"><span class="wg">⚠</span><span>Pick a browser to retry "Interview with the director" with your sign-in.</span></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">None <span class="cv">▾</span></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv">▾</span></span></div></div>
         </div>
       </div>
     </div>
@@ -1069,7 +1084,7 @@ tbody tr:hover td{background:var(--panel)}
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">Safari <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl">Full Disk Access</div><div class="fc"><span class="note" style="max-width:none"><span class="dot ok"></span> Full Disk Access granted.</span></div></div>
           <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
@@ -1091,7 +1106,7 @@ tbody tr:hover td{background:var(--panel)}
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick">Firefox <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span style="font-size:11.5px;color:var(--dim)">No Firefox profiles found.</span></div></div>
           <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
@@ -1198,13 +1213,13 @@ tbody tr:hover td{background:var(--panel)}
 
         <div class="frag">
           <div class="fraglabel">2 · Custom filename — "Filename format" row with Custom… selected</div>
-          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick">Custom… <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Custom…</span> <span class="cv">▾</span></span></div></div>
           <div class="field2" style="border-bottom:none"><div class="fl">Template</div><div class="fc"><input type="text" class="mono" value="%(title)s - %(id)s.%(ext)s" style="min-width:300px"></div></div>
         </div>
 
         <div class="frag" style="min-height:300px">
           <div class="fraglabel">3 · Open picker popover — "Filename format" SkinnedPicker, popover open</div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Filename format</div><div class="fc"><span class="pick">Title <span class="cv">▾</span></span></div></div>
+          <div class="field2" style="border-bottom:none"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv">▾</span></span></div></div>
           <div class="pop" style="right:22px;top:64px;width:320px">
             <div class="ph">File naming</div>
             <div class="prow"><span class="pt"><span class="ck">✓</span>Title</span><span class="pst">Never Gonna Give You Up.mp4</span></div>
@@ -1323,11 +1338,11 @@ tbody tr:hover td{background:var(--panel)}
           <div class="paste-stack">
           <div class="field"><input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ"><span class="status">✓ Big Buck Bunny</span></div>
           <div class="runway">
-            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Big Buck Bunny</span></div>
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Big Buck Bunny</span></span></div>
             <div class="rstep ok"><span class="rl">Type</span><span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
-            <div class="rstep ok"><span class="rl">Format</span><span class="pick">1080p <span class="cv">▾</span></span></div>
-            <div class="rstep ok"><span class="rl">Language</span><span class="pick">Japanese (original) <span class="cv">▾</span></span></div>
-            <div class="rstep ok"><span class="rl">Save to</span><span class="pick">Downloads <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Format</span><span class="pick"><span class="ptxt">1080p</span> <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span><span class="pick"><span class="ptxt">Japanese (original)</span> <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span><span class="pick"><span class="ptxt">Downloads</span> <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
           </div>
@@ -1361,11 +1376,11 @@ tbody tr:hover td{background:var(--panel)}
           <div class="paste-stack">
           <div class="field"><input value="https://vimeo.com/123"><span class="status">✓ Talks — episode 12</span></div>
           <div class="runway">
-            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Talks — episode 12</span></div>
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Talks — episode 12</span></span></div>
             <div class="rstep ok"><span class="rl">Type</span><span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
-            <div class="rstep ok"><span class="rl">Format</span><span class="pick">720p <span class="cv">▾</span></span></div>
-            <div class="rstep ok"><span class="rl">Language</span><span class="pick">English <span class="cv">▾</span></span></div>
-            <div class="rstep ok"><span class="rl">Save to</span><span class="pick">Downloads <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Format</span><span class="pick"><span class="ptxt">720p</span> <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span><span class="pick"><span class="ptxt">English</span> <span class="cv">▾</span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span><span class="pick"><span class="ptxt">Downloads</span> <span class="cv">▾</span></span></div>
             <div class="rgo"><button class="go">Grab</button></div>
           </div>
           </div>
@@ -1422,51 +1437,59 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 5.1 picker modal -->
   <div class="screen" id="s5-1">
     <div class="cap"><b>5.1</b> Playlist link → picker modal</div>
-    <div class="sub">Opens before any rows are added. Runway uses the same skinned-control swap as §1. See design-system §4.3.</div>
-    <div class="phase-note">(depiction is refined when this screen's phase is detailed)</div>
+    <div class="sub">Playlist resolved on a Home that already has rows (match §1.2 paste + runway + table under the overlay). Runway slots: Link · Type · Format · Language · Save to. Picker footer: duration + already-in-queue count; modal primary is Add M, runway primary is Grab. See design-system §4.3.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="body-scroll">
-        <div class="hero">
-          <div class="kicker">Paste a link</div>
-          <h1 class="head">Any video. Any song. <em>Onto your Mac.</em></h1>
+        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
           <div class="paste-stack">
-          <div class="field"><input value="youtube.com/playlist?list=PLbpi6…"><span class="status">✓ “Focus — deep work” · 24 items</span></div>
+          <div class="field"><input value="https://www.youtube.com/playlist?list=PLbpi6…"><span class="status">✓ “Focus — deep work” · 24 items</span></div>
           <div class="runway">
-            <div class="rstep ok"><span class="rl">Link</span><span class="rv">Playlist · 24</span></div>
-            <div class="rstep ok"><span class="rl">Media type</span>
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Focus — deep work</span></span></div>
+            <div class="rstep ok"><span class="rl">Type</span>
               <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
             <div class="rstep ok"><span class="rl">Format</span>
-              <span class="seg"><button class="on">M4A</button><button>MP3</button></span></div>
+              <span class="pick"><span class="ptxt">M4A</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Language</span>
-              <span class="pick">Default <span class="cv">▾</span></span></div>
+              <span class="pick"><span class="ptxt">Default</span> <span class="cv">▾</span></span></div>
             <div class="rstep ok"><span class="rl">Save to</span>
-              <span class="pick">Rips <span class="cv">▾</span></span></div>
-            <div class="rgo"><button class="go">Add 12</button></div>
+              <span class="pick"><span class="ptxt">Rips</span> <span class="cv">▾</span></span></div>
+            <div class="rgo"><button class="go">Grab</button></div>
           </div>
           </div>
         </div>
-        <div class="tablewrap short"><div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button></div>
-          <table><thead><tr><th>Title</th><th>Site</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-            <tr><td>Podcast ep. 214</td><td class="site">soundcloud.com</td><td><span class="st s-done">saved</span></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="colbtn">⊞ Columns</button></div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Speed / ETA <span class="sortbtn">↕</span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td>Talks — episode 12</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-queue">queued · #2</span></td><td></td><td>—</td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
+            <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p → 720p</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
           </tbody></table>
         </div>
       </div>
       <div class="backdrop">
         <div class="modal">
           <div class="mh"><div class="mt">Choose videos to download</div><div class="ms">Focus — deep work · youtube.com · by Ambient Dept · 24 items</div></div>
+          <div class="mbann">This playlist is already in your queue.</div>
           <div class="mtools"><a>Select all</a><a>Select none</a><input class="search" placeholder="filter…"></div>
           <div class="mlist">
             <div class="mrow"><span class="box on">✓</span><span class="thumb"></span><span class="mn">01 — Sunrise Loop</span><span class="md">4:12</span></div>
             <div class="mrow"><span class="box on">✓</span><span class="thumb"></span><span class="mn">02 — Tidewater</span><span class="md">6:30</span></div>
-            <div class="mrow off"><span class="box"></span><span class="thumb"></span><span class="mn">03 — Pale Grid</span><span class="md">3:58</span></div>
+            <div class="mrow warned"><span class="box"></span><span class="thumb"></span><span class="mn">03 — Pale Grid</span><span class="mwarn">Already saved</span><span class="md">3:58</span></div>
             <div class="mrow"><span class="box on">✓</span><span class="thumb"></span><span class="mn">04 — Long Exposure</span><span class="md">8:01</span></div>
             <div class="mrow off"><span class="box"></span><span class="thumb"></span><span class="mn">05 — Marginalia</span><span class="md">5:20</span></div>
             <div class="mrow"><span class="box on">✓</span><span class="thumb"></span><span class="mn">06 — Slow Ferry</span><span class="md">7:44</span></div>
           </div>
-          <div class="mf"><span class="count">12 of 24 selected · ≈ 640 MB</span><span class="sp"></span><button class="btn">Cancel</button><button class="go">Add 12</button></div>
+          <div class="mf"><span class="count">12 of 24 selected · 2 already in queue · ≈ 1:12:45</span><span class="sp"></span><button class="btn">Cancel</button><button class="go">Add 12</button></div>
         </div>
       </div>
     </div>
@@ -1475,33 +1498,37 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 5.2 group in table -->
   <div class="screen" id="s5-2">
     <div class="cap"><b>5.2</b> Playlist videos in the table — group header + spine</div>
-    <div class="sub">Group header + continuous spine. See design-system §4.2.4.</div>
-    <div class="phase-note">(depiction is refined when this screen's phase is detailed)</div>
+    <div class="sub">After the first Grab: paste + runway + table. Group header + continuous spine + group actions; one ungrouped row by recency. Columns match Home defaults (Title, Status, Progress, …). See design-system §4.2.4.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="body-scroll">
-        <div class="tablewrap short" style="padding-top:18px">
+        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+          <div class="paste-stack">
+          <div class="field solo"><input placeholder="Paste a link"></div>
+          </div>
+        </div>
+        <div class="tablewrap short">
           <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention <span class="badge">1</span></button><button class="colbtn">⊞ Columns</button></div>
           <table><thead><tr>
             <th><span class="thc"><span class="grip">⠿</span>Title <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-            <th><span class="thc"><span class="grip">⠿</span>Site <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-            <th><span class="thc"><span class="grip">⠿</span>Format <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
-            <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
             <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Speed / ETA <span class="sortbtn">↕</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Type <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
+            <th><span class="thc"><span class="grip">⠿</span>Quality <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
             <th>Actions</th></tr></thead><tbody>
-            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-            <tr class="ghead"><td colspan="6"><div class="gh">
+            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td>Video</td><td>1080p</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr class="ghead"><td colspan="7"><div class="gh">
               <span class="caret">▾</span> Focus — deep work
               <span class="meta2">· 12 items · 4 done <span class="gminibar"><i style="width:33%"></i></span></span>
               <span class="gact"><button>⏸ Pause all</button><button>↻ Retry failed</button><button>✕ Cancel all</button></span>
             </div></td></tr>
-            <tr class="child"><td><span class="ti"><span class="rr"></span>01 — Sunrise Loop</span></td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:80%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
-            <tr class="child"><td>02 — Tidewater</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-queue">queued</span></td><td></td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
-            <tr class="child"><td>04 — Long Exposure</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td></td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
-            <tr class="child"><td>06 — Slow Ferry</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
-            <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td></td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
+            <tr class="child"><td><span class="ti"><span class="rr"></span>01 — Sunrise Loop</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:80%"></i></span></td><td>3.1 MB/s · 0:12</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>02 — Tidewater</td><td><span class="st s-queue">queued · #3</span></td><td></td><td>—</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>04 — Long Exposure</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td></td><td>—</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
+            <tr class="child"><td>06 — Slow Ferry</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
           </tbody></table>
         </div>
       </div>
@@ -1527,7 +1554,7 @@ tbody tr:hover td{background:var(--panel)}
             <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
             <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
             <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
-            <div class="rrow"><span class="rk">Detected client</span><span class="rv">tv</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
             <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv warn">active · 4:12 left</span></div>
             <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
           </div>

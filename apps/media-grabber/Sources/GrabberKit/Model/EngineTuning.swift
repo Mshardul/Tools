@@ -61,6 +61,8 @@ public struct EngineTuning: Sendable, Equatable {
     public var concurrentFragmentsThrottled: Int
     public var potHealthTimeoutSeconds: Int
     public var potRestartBackoffSeconds: Int
+    public var metadataProbeLimit: Int
+    public var metadataProbeWindowSeconds: Int
 
     public init(
         ytDlp: YtDlpTuning,
@@ -74,7 +76,9 @@ public struct EngineTuning: Sendable, Equatable {
         concurrentFragmentsNormal: Int = 4,
         concurrentFragmentsThrottled: Int = 1,
         potHealthTimeoutSeconds: Int = 2,
-        potRestartBackoffSeconds: Int = 2
+        potRestartBackoffSeconds: Int = 2,
+        metadataProbeLimit: Int = 3,
+        metadataProbeWindowSeconds: Int = 60
     ) {
         self.ytDlp = ytDlp
         self.backoffLadder = backoffLadder
@@ -88,6 +92,8 @@ public struct EngineTuning: Sendable, Equatable {
         self.concurrentFragmentsThrottled = concurrentFragmentsThrottled
         self.potHealthTimeoutSeconds = potHealthTimeoutSeconds
         self.potRestartBackoffSeconds = potRestartBackoffSeconds
+        self.metadataProbeLimit = metadataProbeLimit
+        self.metadataProbeWindowSeconds = metadataProbeWindowSeconds
     }
 
     public static let `default` = EngineTuning(
@@ -102,7 +108,9 @@ public struct EngineTuning: Sendable, Equatable {
         concurrentFragmentsNormal: 4,
         concurrentFragmentsThrottled: 1,
         potHealthTimeoutSeconds: 2,
-        potRestartBackoffSeconds: 2
+        potRestartBackoffSeconds: 2,
+        metadataProbeLimit: 3,
+        metadataProbeWindowSeconds: 60
     )
 
     // Every unset / malformed key keeps the default.
@@ -147,6 +155,14 @@ public struct EngineTuning: Sendable, Equatable {
             potRestartBackoffSeconds: intValue(
                 "MG_POT_RESTART_BACKOFF",
                 EngineTuning.default.potRestartBackoffSeconds
+            ),
+            metadataProbeLimit: intValue(
+                "MG_METADATA_PROBE_LIMIT",
+                EngineTuning.default.metadataProbeLimit
+            ),
+            metadataProbeWindowSeconds: intValue(
+                "MG_METADATA_PROBE_WINDOW_SECONDS",
+                EngineTuning.default.metadataProbeWindowSeconds
             )
         )
     }

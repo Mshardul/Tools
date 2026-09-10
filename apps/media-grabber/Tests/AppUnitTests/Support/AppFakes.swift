@@ -11,7 +11,9 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     private struct State {
         var submitted: [(DownloadRequest, Bool)] = []
+        var paused: [UUID] = []
         var cancelled: [UUID] = []
+        var removed: [UUID] = []
         var retried: [UUID] = []
         var retriedWithCookies: [UUID] = []
         var submitResults: [SubmitResult] = []
@@ -25,7 +27,11 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var revalidateCalled = false
         var shutdownCalled = false
         var previewResult: Result<MediaMetadata, MetadataError> = .failure(.malformedOutput)
+        var previewPlaylistResult: Result<PlaylistDump, MetadataError> = .failure(.malformedOutput)
         var previewed: [String] = []
+        var previewedPlaylists: [String] = []
+        var submittedPlaylistItems: [PlaylistSubmitItem] = []
+        var stubPlaylistSubmitIDs: [UUID]?
         var ensureCount = 0
         var restartCount = 0
     }
@@ -44,8 +50,16 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.read { $0.submitted.map(\.1) }
     }
 
+    var pausedIDs: [UUID] {
+        box.read { $0.paused }
+    }
+
     var cancelledIDs: [UUID] {
         box.read { $0.cancelled }
+    }
+
+    var removedIDs: [UUID] {
+        box.read { $0.removed }
     }
 
     var retriedIDs: [UUID] {
@@ -72,6 +86,14 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.read { $0.previewed }
     }
 
+    var previewPlaylistURLs: [String] {
+        box.read { $0.previewedPlaylists }
+    }
+
+    var submittedPlaylistItems: [PlaylistSubmitItem] {
+        box.read { $0.submittedPlaylistItems }
+    }
+
     var ensureCount: Int {
         box.read { $0.ensureCount }
     }
@@ -84,12 +106,20 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { $0.previewResult = result }
     }
 
+    func stubPreviewPlaylist(_ result: Result<PlaylistDump, MetadataError>) {
+        box.mutate { $0.previewPlaylistResult = result }
+    }
+
     func stubNextResult(_ result: SubmitResult) {
         box.mutate { $0.submitResults = [result] }
     }
 
     func stubSubmitResults(_ results: SubmitResult...) {
         box.mutate { $0.submitResults = results }
+    }
+
+    func stubPlaylistSubmitIDs(_ ids: [UUID]) {
+        box.mutate { $0.stubPlaylistSubmitIDs = ids }
     }
 
     func setHasActiveJobs(_ value: Bool) {
@@ -129,6 +159,16 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         return result ?? .queued(UUID())
     }
 
+    func submitPlaylistItems(_ items: [PlaylistSubmitItem]) async -> [UUID] {
+        box.mutate { state in
+            state.submittedPlaylistItems.append(contentsOf: items)
+        }
+        if let stubbed = box.read { $0.stubPlaylistSubmitIDs } {
+            return stubbed
+        }
+        return items.map { _ in UUID() }
+    }
+
     func restore(active _: [PersistedJob], history _: [PersistedJob]) async {
         let snapshot = box.mutate { state -> QueueSnapshot? in
             state.restoreCalled = true
@@ -147,7 +187,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { $0.revalidateCalled = true }
     }
 
-    func pause(_: UUID) async {}
+    func pause(_ jobID: UUID) async {
+        box.mutate { $0.paused.append(jobID) }
+    }
+
     func resume(_: UUID) async {}
 
     func retry(_ jobID: UUID) async {
@@ -162,7 +205,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { $0.cancelled.append(jobID) }
     }
 
-    func remove(_: UUID) async {}
+    func remove(_ jobID: UUID) async {
+        box.mutate { $0.removed.append(jobID) }
+    }
+
     func forceStart(_: UUID) async {}
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
@@ -171,6 +217,13 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { state in
             state.previewed.append(url)
             return state.previewResult
+        }
+    }
+
+    func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError> {
+        box.mutate { state in
+            state.previewedPlaylists.append(url)
+            return state.previewPlaylistResult
         }
     }
 
@@ -189,20 +242,33 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
 final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
     typealias Outcome = Result<MediaMetadata, MetadataError>
+    typealias PlaylistOutcome = Result<PlaylistDump, MetadataError>
     private let box: LockedBox<Outcome>
+    private let playlistBox: LockedBox<PlaylistOutcome>
     private let probed = LockedBox<[String]>([])
+    private let playlistProbed = LockedBox<[String]>([])
 
-    init(_ outcome: Outcome) {
+    init(_ outcome: Outcome, playlistOutcome: PlaylistOutcome = .failure(.malformedOutput)) {
         box = LockedBox(outcome)
+        playlistBox = LockedBox(playlistOutcome)
     }
 
     var probedURLs: [String] {
         probed.read { $0 }
     }
 
+    var probedPlaylistURLs: [String] {
+        playlistProbed.read { $0 }
+    }
+
     func probe(_ url: String, context _: ExtractorContext) async -> Outcome {
         probed.mutate { $0.append(url) }
         return box.read { $0 }
+    }
+
+    func probePlaylist(_ url: String, context _: ExtractorContext) async -> PlaylistOutcome {
+        playlistProbed.mutate { $0.append(url) }
+        return playlistBox.read { $0 }
     }
 }
 

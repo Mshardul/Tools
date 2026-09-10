@@ -6,6 +6,8 @@ struct DownloadsTable: View {
     @Binding var columnConfig: ColumnConfig
     @Binding var scrollToRowID: UUID?
     let onAction: (UUID, RowAction) -> Void
+    let onPlaylistGroupAction: (UUID, PlaylistGroupAction) -> Void
+    let onTogglePlaylistGroupCollapsed: (UUID, Bool) -> Void
 
     @Environment(\.theme) private var theme
 
@@ -49,7 +51,7 @@ struct DownloadsTable: View {
     private var emptyMessage: String? {
         TablePresentation.emptyBodyMessage(
             rowCount: store.rows.count,
-            visibleCount: store.visibleRows.count,
+            visibleCount: store.visibleItems.count,
             activeChip: store.activeChip,
             columnFilters: columnConfig.columnFilters
         )
@@ -63,13 +65,25 @@ struct DownloadsTable: View {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: true) {
                         LazyVStack(spacing: 0) {
-                            ForEach(store.visibleRows) { row in
-                                DownloadRow(
-                                    row: row,
-                                    columns: visibleColumns,
-                                    onAction: { onAction(row.id, $0) }
-                                )
-                                .id(row.id)
+                            ForEach(store.visibleItems) { item in
+                                switch item {
+                                case let .header(group):
+                                    PlaylistGroupHeader(
+                                        group: group,
+                                        tableWidth: tableWidth,
+                                        onToggleCollapsed: { onTogglePlaylistGroupCollapsed(group.id, $0) },
+                                        onAction: { onPlaylistGroupAction(group.id, $0) }
+                                    )
+                                    .id(item.id)
+                                case let .child(row):
+                                    DownloadRow(
+                                        row: row,
+                                        columns: visibleColumns,
+                                        spineSegment: spineSegment(for: row, in: store.visibleItems),
+                                        onAction: { onAction(row.id, $0) }
+                                    )
+                                    .id(item.id)
+                                }
                             }
                         }
                         .frame(width: tableWidth)
@@ -186,6 +200,27 @@ struct DownloadsTable: View {
     private func filterValues(for column: ColumnID) -> [String] {
         let values = store.rows.map { TablePresentation.cellText(for: $0, column: column) }
         return Array(Set(values)).sorted()
+    }
+
+    private func spineSegment(for row: RowModel, in items: [VisibleItem]) -> PlaylistSpineSegment {
+        guard let groupID = row.snapshot.playlistGroupID else { return .none }
+        let siblings = items.compactMap { item -> RowModel? in
+            guard case let .child(candidate) = item,
+                  candidate.snapshot.playlistGroupID == groupID
+            else { return nil }
+            return candidate
+        }
+        guard let index = siblings.firstIndex(where: { $0.id == row.id }) else { return .none }
+        switch siblings.count {
+        case 1:
+            return .only
+        case let count where index == 0:
+            return .first
+        case let count where index == count - 1:
+            return .last
+        default:
+            return .middle
+        }
     }
 
     private func toggleFilter(column: ColumnID, value: String) {

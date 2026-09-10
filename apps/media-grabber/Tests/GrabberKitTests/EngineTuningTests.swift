@@ -67,4 +67,18 @@ final class EngineTuningTests: XCTestCase {
         XCTAssertEqual(tun.potHealthTimeoutSeconds, 5)
         XCTAssertEqual(tun.potRestartBackoffSeconds, 7)
     }
+
+    func testMetadataProbeTuningDefaults() {
+        XCTAssertEqual(EngineTuning.default.metadataProbeLimit, 3)
+        XCTAssertEqual(EngineTuning.default.metadataProbeWindowSeconds, 60)
+    }
+
+    func testMetadataProbeTuningReadsEnv() {
+        let tun = EngineTuning.resolved(environment: [
+            "MG_METADATA_PROBE_LIMIT": "5",
+            "MG_METADATA_PROBE_WINDOW_SECONDS": "90"
+        ])
+        XCTAssertEqual(tun.metadataProbeLimit, 5)
+        XCTAssertEqual(tun.metadataProbeWindowSeconds, 90)
+    }
 }

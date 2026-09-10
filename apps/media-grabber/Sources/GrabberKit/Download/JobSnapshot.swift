@@ -56,6 +56,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
     public let cooldownUntil: Date?
     public let playerClientUsed: String?
     public let playlistGroupID: UUID?
+    public let playlistIndex: Int?
     public let integrityVerdict: IntegrityVerdict?
     public let availableActions: Set<RowAction>
 
@@ -79,6 +80,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
         cooldownUntil: Date?,
         playerClientUsed: String?,
         playlistGroupID: UUID?,
+        playlistIndex: Int? = nil,
         integrityVerdict: IntegrityVerdict?,
         availableActions: Set<RowAction>
     ) {
@@ -101,6 +103,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
         self.cooldownUntil = cooldownUntil
         self.playerClientUsed = playerClientUsed
         self.playlistGroupID = playlistGroupID
+        self.playlistIndex = playlistIndex
         self.integrityVerdict = integrityVerdict
         self.availableActions = availableActions
     }

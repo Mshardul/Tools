@@ -3,6 +3,44 @@ import Foundation
 public struct QueueFile: Codable, Sendable {
     public var schemaVersion: Int
     public var jobs: [PersistedJob]
+    public var groups: [PersistedPlaylistGroup]
+
+    public init(
+        schemaVersion: Int,
+        jobs: [PersistedJob],
+        groups: [PersistedPlaylistGroup] = []
+    ) {
+        self.schemaVersion = schemaVersion
+        self.jobs = jobs
+        self.groups = groups
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion
+        case jobs
+        case groups
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        jobs = try container.decode([PersistedJob].self, forKey: .jobs)
+        groups = try container.decodeIfPresent([PersistedPlaylistGroup].self, forKey: .groups) ?? []
+    }
+}
+
+public struct PersistedPlaylistGroup: Codable, Sendable, Equatable {
+    public var id: UUID
+    public var title: String
+    public var sourceURL: String
+    public var isCollapsed: Bool
+
+    public init(id: UUID, title: String, sourceURL: String, isCollapsed: Bool) {
+        self.id = id
+        self.title = title
+        self.sourceURL = sourceURL
+        self.isCollapsed = isCollapsed
+    }
 }
 
 public struct HistoryFile: Codable, Sendable {
@@ -27,10 +65,12 @@ public protocol QueuePersisting: Sendable {
     func saveQueue(_ jobs: [PersistedJob])
     func saveHistory(_ jobs: [PersistedJob])
     func saveColumns(_ config: ColumnConfig)
+    func savePlaylistGroups(_ groups: [PersistedPlaylistGroup])
     func flushNow() async
     func loadQueue() -> [PersistedJob]
     func loadHistory() -> [PersistedJob]
     func loadColumns() -> ColumnConfig?
+    func loadPlaylistGroups() -> [PersistedPlaylistGroup]
 }
 
 public final class Persistence: QueuePersisting {
@@ -42,6 +82,7 @@ public final class Persistence: QueuePersisting {
         var queue: [PersistedJob]?
         var history: [PersistedJob]?
         var columns: ColumnConfig?
+        var groups: [PersistedPlaylistGroup]?
     }
 
     private let dir: URL
@@ -49,6 +90,8 @@ public final class Persistence: QueuePersisting {
     private let debug: PersistenceDebug
     private let clock: any Clock
     private let pending = Locked(Pending())
+    private let lastQueueJobs = Locked<[PersistedJob]?>(nil)
+    private let lastPlaylistGroups = Locked<[PersistedPlaylistGroup]?>(nil)
     private let writer: Writer
 
     public init(
@@ -77,6 +120,7 @@ public final class Persistence: QueuePersisting {
 
     public func saveQueue(_ jobs: [PersistedJob]) {
         pending.mutate { $0.queue = jobs }
+        lastQueueJobs.mutate { $0 = jobs }
         armDebounce()
     }
 
@@ -87,6 +131,12 @@ public final class Persistence: QueuePersisting {
 
     public func saveColumns(_ config: ColumnConfig) {
         pending.mutate { $0.columns = config }
+        armDebounce()
+    }
+
+    public func savePlaylistGroups(_ groups: [PersistedPlaylistGroup]) {
+        pending.mutate { $0.groups = groups }
+        lastPlaylistGroups.mutate { $0 = groups }
         armDebounce()
     }
 
@@ -115,9 +165,18 @@ public final class Persistence: QueuePersisting {
             current = Pending()
             return taken
         }
-        if let jobs = snapshot.queue {
+        if snapshot.queue != nil || snapshot.groups != nil {
+            let cachedJobs = lastQueueJobs.read { $0 }
+            let cachedGroups = lastPlaylistGroups.read { $0 }
+            let diskFile = loadQueueFileIfCacheCold(
+                snapshot: snapshot,
+                cachedJobs: cachedJobs,
+                cachedGroups: cachedGroups
+            )
+            let jobs = snapshot.queue ?? cachedJobs ?? diskFile?.jobs ?? []
+            let groups = snapshot.groups ?? cachedGroups ?? diskFile?.groups ?? []
             await writer.write(
-                QueueFile(schemaVersion: Self.schemaVersion, jobs: jobs),
+                QueueFile(schemaVersion: Self.schemaVersion, jobs: jobs, groups: groups),
                 to: "queue.json"
             )
         }
@@ -137,7 +196,10 @@ public final class Persistence: QueuePersisting {
 
     public func loadQueue() -> [PersistedJob] {
         guard !debug.resetState else { return [] }
-        return loadJobs(name: "queue.json", QueueFile.self)
+        guard let file = loadQueueFile() else { return [] }
+        cacheQueueFile(file)
+        emit(.persistenceLoaded(file: "queue.json", count: file.jobs.count))
+        return file.jobs
     }
 
     public func loadHistory() -> [PersistedJob] {
@@ -159,6 +221,50 @@ public final class Persistence: QueuePersisting {
         }
         emit(.persistenceLoaded(file: "columns.json", count: file.config.visibleColumns.count))
         return file.config
+    }
+
+    public func loadPlaylistGroups() -> [PersistedPlaylistGroup] {
+        guard !debug.resetState else { return [] }
+        guard let file = loadQueueFile() else { return [] }
+        cacheQueueFile(file)
+        emit(.persistenceLoaded(file: "queue.json", count: file.groups.count))
+        return file.groups
+    }
+
+    private func loadQueueFile() -> QueueFile? {
+        let url = dir.appendingPathComponent("queue.json")
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        guard let file = try? JSONDecoder().decode(QueueFile.self, from: data) else {
+            emit(.persistenceCorrupt(file: "queue.json"))
+            return nil
+        }
+        if file.schemaVersion > Self.schemaVersion {
+            emit(.persistenceSchemaAhead(file: "queue.json"))
+            return nil
+        }
+        return file
+    }
+
+    private func loadQueueFileIfCacheCold(
+        snapshot: Pending,
+        cachedJobs: [PersistedJob]?,
+        cachedGroups: [PersistedPlaylistGroup]?
+    ) -> QueueFile? {
+        let needsJobs = snapshot.queue == nil && cachedJobs == nil
+        let needsGroups = snapshot.groups == nil && cachedGroups == nil
+        guard needsJobs || needsGroups, let file = loadQueueFile() else { return nil }
+        if needsJobs {
+            lastQueueJobs.mutate { $0 = file.jobs }
+        }
+        if needsGroups {
+            lastPlaylistGroups.mutate { $0 = file.groups }
+        }
+        return file
+    }
+
+    private func cacheQueueFile(_ file: QueueFile) {
+        lastQueueJobs.mutate { $0 = file.jobs }
+        lastPlaylistGroups.mutate { $0 = file.groups }
     }
 
     private func loadJobs<F: SchemaVersioned>(name: String, _: F.Type) -> [PersistedJob] {

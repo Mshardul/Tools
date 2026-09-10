@@ -22,6 +22,7 @@ public enum LogEvent: Sendable {
     case processLaunched(executable: String, argvRedacted: [String])
     case processExited(executable: String, code: Int32)
     case jobEnqueued(id: UUID, url: String, queuePosition: Int)
+    case playlistEnqueued(groupID: UUID, count: Int)
     case jobStartedByScheduler(id: UUID, running: Int, cap: Int)
     case jobPaused(id: UUID)
     case jobResumed(id: UUID)
@@ -59,6 +60,7 @@ public enum LogEvent: Sendable {
         case .processLaunched: "process.launched"
         case .processExited: "process.exited"
         case .jobEnqueued: "job.enqueued"
+        case .playlistEnqueued: "playlist.enqueued"
         case .jobStartedByScheduler: "job.started_by_scheduler"
         case .jobPaused: "job.paused"
         case .jobResumed: "job.resumed"
@@ -96,7 +98,7 @@ public enum LogEvent: Sendable {
         case .probeCompleted: .engine
         case .jobStateChanged: .engine
         case .processLaunched, .processExited: .engine
-        case .jobEnqueued, .jobStartedByScheduler: .scheduler
+        case .jobEnqueued, .playlistEnqueued, .jobStartedByScheduler: .scheduler
         case .jobPaused, .jobResumed, .jobRemoved, .jobRetried: .engine
         case .jobForceStarted, .jobDeferred: .scheduler
         case .persistenceLoaded, .persistenceCorrupt, .persistenceSchemaAhead,
@@ -125,6 +127,7 @@ public enum LogEvent: Sendable {
         case let .revealTargetMissing(jobID): jobID
         case let .showLogTargetMissing(jobID): jobID
         case let .hostBlockOverridden(_, jobID): jobID
+        case .playlistEnqueued: nil
         default: nil
         }
     }
@@ -143,6 +146,8 @@ public enum LogEvent: Sendable {
             ["executable": executable, "code": String(code)]
         case let .jobEnqueued(_, url, queuePosition):
             ["url": url, "queue_position": String(queuePosition)]
+        case let .playlistEnqueued(groupID, count):
+            ["group_id": groupID.uuidString, "count": String(count)]
         case let .jobStartedByScheduler(_, running, cap):
             ["running": String(running), "cap": String(cap)]
         case .jobPaused, .jobResumed:

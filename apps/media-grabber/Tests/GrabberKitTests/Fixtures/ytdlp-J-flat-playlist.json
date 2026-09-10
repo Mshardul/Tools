@@ -1,0 +1,28 @@
+{
+  "_type": "playlist",
+  "title": "Focus — deep work",
+  "uploader": "Ambient Dept",
+  "extractor": "youtube",
+  "webpage_url": "https://www.youtube.com/playlist?list=PLbpi6ZahtOH6",
+  "entries": [
+    {
+      "id": "aaaaaaaaaaa",
+      "title": "01 — Sunrise Loop",
+      "duration": 252,
+      "ie_key": "Youtube",
+      "playlist_index": 1,
+      "thumbnail": "https://i.ytimg.com/vi/aaaaaaaaaaa/default.jpg"
+    },
+    {
+      "_type": "playlist",
+      "title": "nested"
+    },
+    {
+      "id": "bbbbbbbbbbb",
+      "title": "02 — Tidewater",
+      "duration": 390.4,
+      "webpage_url": "https://www.youtube.com/watch?v=bbbbbbbbbbb",
+      "playlist_index": 2
+    }
+  ]
+}

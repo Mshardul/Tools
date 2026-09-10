@@ -182,6 +182,7 @@ final class RowModel: Identifiable {
             sizeBytes: known.sizeBytes ?? progress.totalBytes, actualQuality: known.actualQuality,
             attempt: known.attempt, cooldownUntil: known.cooldownUntil,
             playerClientUsed: known.playerClientUsed, playlistGroupID: known.playlistGroupID,
+            playlistIndex: known.playlistIndex,
             integrityVerdict: known.integrityVerdict, availableActions: known.availableActions
         )
         statusText = Self.status(

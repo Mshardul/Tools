@@ -32,19 +32,24 @@ struct RunwayView: View {
     ]
 
     var body: some View {
-        HStack(spacing: Spacing.s4) {
+        HStack(alignment: .center, spacing: Spacing.s4) {
             slot("Link", filled: appModel.resolved != nil) {
                 Text(appModel.resolved?.title ?? "—")
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .truncationMode(.tail)
                     .foregroundStyle(theme.palette.dim)
+                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             slot("Type", filled: true) { typeControl }
+                .fixedSize(horizontal: true, vertical: false)
             slot("Format", filled: true) { formatControl }
+                .frame(maxWidth: .infinity, alignment: .leading)
             slot("Language", filled: true) { languageControl }
+                .frame(maxWidth: .infinity, alignment: .leading)
             slot("Save to", filled: true) { saveControl }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Divider().frame(height: 28).overlay(theme.palette.hair)
 
@@ -96,6 +101,7 @@ struct RunwayView: View {
             }
             content()
                 .font(theme.bodyFont(12, .medium))
+                .frame(minHeight: 28, alignment: .leading)
         }
     }
 
@@ -114,7 +120,8 @@ struct RunwayView: View {
                 caption: "Resolution",
                 rows: qualityRows,
                 selection: $videoHeight,
-                triggerLabel: qualityLabel(videoHeight)
+                triggerLabel: qualityLabel(videoHeight),
+                fillsWidth: true
             )
         case .audio:
             SkinnedSegment(
@@ -131,7 +138,8 @@ struct RunwayView: View {
                 SkinnedPickerRow(id: $0.id, title: $0.label, subtitle: nil)
             },
             selection: $selectedTrackID,
-            triggerLabel: languageLabel
+            triggerLabel: languageLabel,
+            fillsWidth: true
         )
     }
 
@@ -153,7 +161,8 @@ struct RunwayView: View {
                 get: { .folder(destFolder) },
                 set: { applySaveTarget($0) }
             ),
-            triggerLabel: destFolder.lastPathComponent
+            triggerLabel: destFolder.lastPathComponent,
+            fillsWidth: true
         )
     }
 

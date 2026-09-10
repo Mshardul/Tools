@@ -14,6 +14,19 @@ public extension DownloadEngine {
         return await dependencies.probe.probe(url, context: context)
     }
 
+    func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError> {
+        shieldStatus = await dependencies.potProvider.status
+        if queueHalt == .networkDown {
+            return .failure(.network)
+        }
+        let host = RateHost(urlString: url)
+        if rateLimiter.blocked(host: host, now: dependencies.clock.now) {
+            return .failure(.hostBlocked)
+        }
+        let context = await makeContext(url: url, attempt: 0, forceCookies: false)
+        return await dependencies.probe.probePlaylist(url, context: context)
+    }
+
     func ensureShield() async {
         await dependencies.potProvider.ensure()
         shieldStatus = await dependencies.potProvider.status

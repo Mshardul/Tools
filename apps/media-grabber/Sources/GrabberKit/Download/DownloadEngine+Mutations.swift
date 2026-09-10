@@ -21,10 +21,17 @@ extension DownloadEngine {
     }
 
     func recordProbeResult(_ id: UUID, _ result: Result<MediaMetadata, MetadataError>) {
-        probeInFlight = false
-        probeTask = nil
-        guard let job = jobs.first(where: { $0.id == id }) else {
+        defer {
             evaluateSchedule()
+        }
+        defer {
+            probeInFlight = false
+            probeTask = nil
+        }
+        guard let job = jobs.first(where: { $0.id == id }) else {
+            return
+        }
+        guard job.state == .probing else {
             return
         }
         switch result {
@@ -42,7 +49,6 @@ extension DownloadEngine {
         }
         bump()
         emitSnapshot()
-        evaluateSchedule()
     }
 
     func recordProgress(_ id: UUID, _ progress: Progress) {

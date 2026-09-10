@@ -40,7 +40,8 @@ enum AppModelTestHelpers {
     static func jobSnapshot(
         id: UUID = UUID(),
         outputFiles: [URL] = [],
-        state: JobState = .completed
+        state: JobState = .completed,
+        playlistGroupID: UUID? = nil
     ) -> JobSnapshot {
         JobSnapshot(
             id: id,
@@ -61,7 +62,7 @@ enum AppModelTestHelpers {
             attempt: 1,
             cooldownUntil: nil,
             playerClientUsed: nil,
-            playlistGroupID: nil,
+            playlistGroupID: playlistGroupID,
             integrityVerdict: .passed,
             availableActions: [.reveal]
         )

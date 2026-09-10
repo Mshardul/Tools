@@ -104,7 +104,7 @@ struct ColumnsMenu: View {
 
     private var showsClearFilters: Bool {
         !store.rows.isEmpty
-            && store.visibleRows.isEmpty
+            && store.visibleItems.isEmpty
             && TablePresentation.hasActiveFilters(
                 activeChip: store.activeChip,
                 columnFilters: columnConfig.columnFilters

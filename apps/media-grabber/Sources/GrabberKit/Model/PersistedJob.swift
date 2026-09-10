@@ -11,6 +11,7 @@ public struct PersistedJob: Codable, Sendable, Equatable {
     public var attempt: Int
     public var forceCookies: Bool
     public var playlistGroupID: UUID?
+    public var playlistIndex: Int?
     public var addedAt: Date
     public var finishedAt: Date?
 
@@ -24,6 +25,7 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         attempt: Int = 0,
         forceCookies: Bool = false,
         playlistGroupID: UUID? = nil,
+        playlistIndex: Int? = nil,
         addedAt: Date,
         finishedAt: Date? = nil
     ) {
@@ -36,6 +38,7 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         self.attempt = attempt
         self.forceCookies = forceCookies
         self.playlistGroupID = playlistGroupID
+        self.playlistIndex = playlistIndex
         self.addedAt = addedAt
         self.finishedAt = finishedAt
     }
@@ -52,6 +55,7 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         attempt = try container.decodeIfPresent(Int.self, forKey: .attempt) ?? 0
         forceCookies = try container.decodeIfPresent(Bool.self, forKey: .forceCookies) ?? false
         playlistGroupID = try container.decodeIfPresent(UUID.self, forKey: .playlistGroupID)
+        playlistIndex = try container.decodeIfPresent(Int.self, forKey: .playlistIndex)
         addedAt = try container.decode(Date.self, forKey: .addedAt)
         finishedAt = try container.decodeIfPresent(Date.self, forKey: .finishedAt)
     }

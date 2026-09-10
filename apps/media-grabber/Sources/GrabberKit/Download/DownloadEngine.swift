@@ -82,6 +82,47 @@ public actor DownloadEngine: DownloadEngineProtocol {
         return .queued(job.id)
     }
 
+    public func submitPlaylistItems(_ items: [PlaylistSubmitItem]) async -> [UUID] {
+        let queuePositionBase = queuedCount()
+        var enqueued: [DownloadJob] = []
+        for item in items {
+            guard let job = makeJob(from: item) else { continue }
+            jobs.append(job)
+            enqueued.append(job)
+        }
+        guard !enqueued.isEmpty else { return [] }
+
+        bump()
+        emitSnapshot()
+        if let groupID = enqueued.first?.playlistGroupID {
+            logEvent(.playlistEnqueued(groupID: groupID, count: enqueued.count))
+        }
+        for (offset, job) in enqueued.enumerated() {
+            logEvent(.jobEnqueued(
+                id: job.id,
+                url: job.request.url,
+                queuePosition: queuePositionBase + offset + 1
+            ))
+        }
+        evaluateSchedule()
+        return enqueued.map(\.id)
+    }
+
+    private func makeJob(from item: PlaylistSubmitItem) -> DownloadJob? {
+        if !item.force, jobs.contains(where: { $0.request == item.request }) {
+            return nil
+        }
+        let job = DownloadJob(request: item.request)
+        if let meta = item.prefetched {
+            job.title = meta.title
+            job.extractor = meta.extractor
+            job.durationSeconds = meta.durationSeconds
+        }
+        job.playlistGroupID = item.playlistGroupID
+        job.playlistIndex = item.playlistIndex
+        return job
+    }
+
     private(set) var producedJobsOnRestore = false
 
     public func restore(active: [PersistedJob], history: [PersistedJob]) async {
@@ -131,8 +172,11 @@ public actor DownloadEngine: DownloadEngineProtocol {
     public func cancel(_ id: UUID) async {
         guard let job = jobs.first(where: { $0.id == id }) else { return }
         switch job.state {
-        case .running, .probing:
+        case .running:
             cancelChild(id)
+        case .probing:
+            probeTask?.cancel()
+            markCancelled(id)
         case .queued, .paused:
             markCancelled(id)
         default:
@@ -144,8 +188,10 @@ public actor DownloadEngine: DownloadEngineProtocol {
         guard let index = jobs.firstIndex(where: { $0.id == id }) else { return }
         let job = jobs[index]
         let wasRunning = job.state == .running || job.state == .probing
-        if wasRunning {
+        if job.state == .running {
             childTasks[id]?.cancel()
+        } else if job.state == .probing {
+            probeTask?.cancel()
         }
         deletePartFiles(for: job)
         dependencies.deleteJobLog?(id)

@@ -46,6 +46,7 @@ public enum MetadataError: Error, Sendable, Equatable {
 
 public protocol MetadataProbing: Sendable {
     func probe(_ url: String, context: ExtractorContext) async -> Result<MediaMetadata, MetadataError>
+    func probePlaylist(_ url: String, context: ExtractorContext) async -> Result<PlaylistDump, MetadataError>
 }
 
 public extension MetadataProbing {
@@ -57,26 +58,57 @@ public extension MetadataProbing {
 public actor MetadataProbe: MetadataProbing {
     private let ytDlpURL: URL
     private let runner: ProcessRunning
+    private let bucket: any MetadataTokenBucketing
 
     // Actors are reentrant across `await`, so chain probes explicitly to serialize.
     private var tail: Task<Void, Never> = Task {}
 
-    public init(ytDlpURL: URL, runner: ProcessRunning = ProcessRunner()) {
+    public init(
+        ytDlpURL: URL,
+        runner: ProcessRunning = ProcessRunner(),
+        bucket: any MetadataTokenBucketing = UnlimitedMetadataTokenBucket()
+    ) {
         self.ytDlpURL = ytDlpURL
         self.runner = runner
+        self.bucket = bucket
     }
 
     public func probe(
         _ url: String,
         context: ExtractorContext = .none
     ) async -> Result<MediaMetadata, MetadataError> {
+        await enqueue {
+            await self.runProbe(url, context: context)
+        }
+    }
+
+    public func probePlaylist(
+        _ url: String,
+        context: ExtractorContext = .none
+    ) async -> Result<PlaylistDump, MetadataError> {
+        await enqueue {
+            await self.runPlaylistProbe(url, context: context)
+        }
+    }
+
+    private func enqueue<Output: Sendable>(
+        _ operation: @escaping @Sendable () async -> Result<Output, MetadataError>
+    ) async -> Result<Output, MetadataError> {
         let predecessor = tail
-        let work = Task { () -> Result<MediaMetadata, MetadataError> in
+        let work = Task { () -> Result<Output, MetadataError> in
             await predecessor.value
-            return await self.runProbe(url, context: context)
+            await bucket.acquire()
+            if Task.isCancelled {
+                return .failure(.malformedOutput)
+            }
+            return await operation()
         }
         tail = Task { _ = await work.value }
-        return await work.value
+        return await withTaskCancellationHandler {
+            await work.value
+        } onCancel: {
+            work.cancel()
+        }
     }
 
     private func runProbe(
@@ -86,25 +118,65 @@ public actor MetadataProbe: MetadataProbing {
         let arguments = ["-J", "--no-warnings", "--no-playlist", "--no-update"]
             + YtDlpArguments.extractorFlags(context: context)
             + [url]
+        let output = await runYtDlp(arguments: arguments)
+
+        if output.result.wasCancelled || Task.isCancelled {
+            return .failure(.malformedOutput)
+        }
+        guard output.result.exitCode == 0 else {
+            return .failure(classify(stderr: output.stderr, exitCode: output.result.exitCode))
+        }
+        return Self.decode(output.stdout, sourceURL: url)
+    }
+
+    private func runPlaylistProbe(
+        _ url: String,
+        context: ExtractorContext
+    ) async -> Result<PlaylistDump, MetadataError> {
+        let arguments = ["-J", "--flat-playlist", "--no-warnings", "--no-update"]
+            + YtDlpArguments.extractorFlags(context: context)
+            + [url]
+        let output = await runYtDlp(arguments: arguments)
+
+        if output.result.wasCancelled || Task.isCancelled {
+            return .failure(.malformedOutput)
+        }
+        guard output.result.exitCode == 0 else {
+            return .failure(classify(stderr: output.stderr, exitCode: output.result.exitCode))
+        }
+        return PlaylistDump.decode(output.stdout, pasteURL: url)
+    }
+
+    private func runYtDlp(arguments: [String]) async -> ProbeProcessOutput {
         let execution = runner.run(ProcessLaunch(
             executableURL: ytDlpURL,
             arguments: arguments
         ))
+        let textTask = Task {
+            await collectText(from: execution.lines)
+        }
+        let result = await execution.result()
+        let text = await textTask.value
+        return ProbeProcessOutput(
+            stdout: text.stdout,
+            stderr: text.stderr,
+            result: result
+        )
+    }
 
+    private func collectText(from lines: AsyncStream<ProcessLine>) async -> ProbeTextOutput {
         var stdout = ""
         var stderr = ""
-        for await line in execution.lines {
+        for await line in lines {
             switch line {
             case let .stdout(text): stdout += text + "\n"
             case let .stderr(text): stderr += text + "\n"
             }
         }
-        let result = await execution.result()
-
-        guard result.exitCode == 0 else {
-            return .failure(classify(stderr: stderr, exitCode: result.exitCode))
-        }
-        return Self.decode(stdout, sourceURL: url)
+        return ProbeTextOutput(
+            stdout: stdout,
+            stderr: stderr
+        )
     }
 
     static func decodeForTest(
@@ -206,4 +278,15 @@ public actor MetadataProbe: MetadataProbing {
             }
         }
         .flatMap(\.substrings)
+}
+
+private struct ProbeProcessOutput: Sendable {
+    var stdout: String
+    var stderr: String
+    var result: ProcessResult
+}
+
+private struct ProbeTextOutput: Sendable {
+    var stdout: String
+    var stderr: String
 }

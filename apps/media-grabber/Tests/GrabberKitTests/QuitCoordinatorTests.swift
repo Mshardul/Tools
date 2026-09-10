@@ -136,6 +136,10 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         .queued(UUID())
     }
 
+    func submitPlaylistItems(_: [PlaylistSubmitItem]) async -> [UUID] {
+        []
+    }
+
     func restore(active _: [PersistedJob], history _: [PersistedJob]) async {}
     func revalidate() async {}
     func pause(_: UUID) async {}
@@ -150,6 +154,10 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func preview(_: String) async -> Result<MediaMetadata, MetadataError> {
         .failure(.network)
+    }
+
+    func previewPlaylist(_: String) async -> Result<PlaylistDump, MetadataError> {
+        .failure(.malformedOutput)
     }
 
     func ensureShield() async {}

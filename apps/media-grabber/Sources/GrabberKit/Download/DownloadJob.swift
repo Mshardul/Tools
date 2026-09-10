@@ -24,6 +24,8 @@ final class DownloadJob {
     // Force-start evicts the oldest-startedAt running job.
     var startedAt: Date?
     var playerClientUsed: String?
+    var playlistGroupID: UUID?
+    var playlistIndex: Int?
 
     init(request: DownloadRequest, id: UUID = UUID(), addedAt: Date = .now) {
         self.id = id
@@ -44,6 +46,8 @@ final class DownloadJob {
         finishedAt = nil
         startedAt = nil
         playerClientUsed = nil
+        playlistGroupID = nil
+        playlistIndex = nil
     }
 
     func snapshot(availableActions: Set<RowAction>) -> JobSnapshot {
@@ -66,7 +70,8 @@ final class DownloadJob {
             attempt: attempt,
             cooldownUntil: cooldownUntil,
             playerClientUsed: playerClientUsed,
-            playlistGroupID: nil,
+            playlistGroupID: playlistGroupID,
+            playlistIndex: playlistIndex,
             integrityVerdict: integrityVerdict,
             availableActions: availableActions
         )

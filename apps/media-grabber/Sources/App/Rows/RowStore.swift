@@ -13,14 +13,51 @@ struct ChipCounts: Equatable {
     var needsAttention = 0
 }
 
-// Populated and rendered once playlists ship; carried through the store empty until then.
+enum VisibleItem: Equatable, Identifiable {
+    case header(PlaylistGroup)
+    case child(RowModel)
+
+    var id: String {
+        switch self {
+        case let .header(group): "g-\(group.id)"
+        case let .child(row): "j-\(row.id)"
+        }
+    }
+
+    static func == (lhs: VisibleItem, rhs: VisibleItem) -> Bool {
+        switch (lhs, rhs) {
+        case let (.header(left), .header(right)):
+            left == right
+        case let (.child(left), .child(right)):
+            left.id == right.id
+        default:
+            false
+        }
+    }
+}
+
 struct PlaylistGroup: Identifiable, Equatable {
     let id: UUID
     let title: String
     let totalCount: Int
     let completedCount: Int
     let failedCount: Int
+    let runningCount: Int
+    let cancellableCount: Int
     let rollupFraction: Double
+    let speedBytesPerSec: Double
+    let etaSeconds: Int?
+    let sizeBytes: Int64?
+    let durationSeconds: Int?
+    let addedAt: Date
+    let finishedAt: Date?
+    let siteLabel: String
+    let typeLabel: String
+    let qualityLabel: String
+    let destinationLabel: String
+    let clientUsedLabel: String
+    let attempt: Int
+    let statusText: String
     var isCollapsed: Bool
 }
 
@@ -29,15 +66,19 @@ struct PlaylistGroup: Identifiable, Equatable {
 final class RowStore {
     private(set) var rows: [RowModel] = []
     private(set) var visibleRows: [RowModel] = []
-    private(set) var groups: [PlaylistGroup] = []
+    var visibleItems: [VisibleItem] = []
+    var groups: [PlaylistGroup] = []
     private(set) var chipCounts = ChipCounts()
 
     var activeChip: FilterChip = .all {
         didSet { recomputeVisible() }
     }
 
-    private var columnConfig: ColumnConfig
+    var columnConfig: ColumnConfig
     private var modelsByID: [UUID: RowModel] = [:]
+    var groupRegistry: [UUID: PersistedPlaylistGroup] = [:]
+    var localCollapsed: [UUID: Bool] = [:]
+    private var progressBuckets: [UUID: Int] = [:]
     private(set) var lastRevision: UInt64 = 0
 
     init(columnConfig: ColumnConfig = .default) {
@@ -67,7 +108,7 @@ final class RowStore {
             for (id, progress) in delta {
                 modelsByID[id]?.patchProgress(fraction: progress)
             }
-            if sortIsProgressLike {
+            if sortIsProgressLike || delta.keys.contains(where: progressBucketChanged) {
                 recomputeVisible()
             }
         }
@@ -89,53 +130,84 @@ final class RowStore {
         modelsByID = modelsByID.filter { incomingIDs.contains($0.key) }
 
         var structuralChange = rows.count != snapshot.jobs.count
+        var groupBucketChange = false
         var newRows: [RowModel] = []
         newRows.reserveCapacity(snapshot.jobs.count)
 
         let summary = snapshot.hostRateSummary
         var queuePosition = 0
         for job in snapshot.jobs {
-            let position: Int?
-            if job.state == .queued {
-                queuePosition += 1
-                position = queuePosition
-            } else {
-                position = nil
-            }
-            let rate = summary[job.rateHost]
-            if let existing = modelsByID[job.id] {
-                let changed = existing.patch(
-                    job,
-                    queuePosition: position,
-                    maxAutoRetries: maxAutoRetries,
-                    rate: rate,
-                    vpnActive: vpnActive
-                )
-                structuralChange = structuralChange || changed
-                newRows.append(existing)
-            } else {
-                let model = RowModel(
-                    job,
-                    queuePosition: position,
-                    maxAutoRetries: maxAutoRetries,
-                    rate: rate,
-                    vpnActive: vpnActive
-                )
-                modelsByID[job.id] = model
-                newRows.append(model)
-                structuralChange = true
-            }
+            groupBucketChange = groupBucketChange || progressBuckets[job.id] != Self.progressBucket(for: job)
+            appendRow(
+                for: job,
+                summary: summary,
+                queuePosition: &queuePosition,
+                structuralChange: &structuralChange,
+                rows: &newRows
+            )
         }
 
         if newRows.map(\.id) != rows.map(\.id) {
             structuralChange = true
         }
         rows = newRows
+        pruneProgressBuckets(keeping: incomingIDs)
+        for job in snapshot.jobs {
+            progressBuckets[job.id] = Self.progressBucket(for: job)
+        }
         recomputeChipCounts()
 
-        if structuralChange || sortIsProgressLike {
+        if structuralChange || sortIsProgressLike || groupBucketChange {
             recomputeVisible()
         }
+    }
+
+    private func appendRow(
+        for job: JobSnapshot,
+        summary: [RateHost: HostRateDisplayState],
+        queuePosition: inout Int,
+        structuralChange: inout Bool,
+        rows newRows: inout [RowModel]
+    ) {
+        let position = nextQueuePosition(for: job, queuePosition: &queuePosition)
+        let rate = summary[job.rateHost]
+        if let existing = modelsByID[job.id] {
+            let changed = existing.patch(
+                job,
+                queuePosition: position,
+                maxAutoRetries: maxAutoRetries,
+                rate: rate,
+                vpnActive: vpnActive
+            )
+            structuralChange = structuralChange || changed
+            newRows.append(existing)
+        } else {
+            appendNewRow(job, position: position, rate: rate, rows: &newRows)
+            structuralChange = true
+        }
+    }
+
+    private func appendNewRow(
+        _ job: JobSnapshot,
+        position: Int?,
+        rate: HostRateDisplayState?,
+        rows newRows: inout [RowModel]
+    ) {
+        let model = RowModel(
+            job,
+            queuePosition: position,
+            maxAutoRetries: maxAutoRetries,
+            rate: rate,
+            vpnActive: vpnActive
+        )
+        modelsByID[job.id] = model
+        newRows.append(model)
+    }
+
+    private func nextQueuePosition(for job: JobSnapshot, queuePosition: inout Int) -> Int? {
+        guard job.state == .queued else { return nil }
+        queuePosition += 1
+        return queuePosition
     }
 
     // MARK: - Derived state
@@ -167,9 +239,10 @@ final class RowStore {
         chipCounts = counts
     }
 
-    private func recomputeVisible() {
+    func recomputeVisible() {
         let filtered = rows.filter(passesChip).filter(passesColumnFilters)
         visibleRows = sorted(filtered)
+        recomputeVisibleItems(filtered: filtered)
     }
 
     private func passesChip(_ row: RowModel) -> Bool {
@@ -241,17 +314,14 @@ final class RowStore {
         }
     }
 
-    private func sortKey(_ row: RowModel, column: ColumnID) -> Double? {
-        switch column {
-        case .progress: row.snapshot.progress?.fraction
-        case .speed: row.snapshot.progress?.speedBytesPerSec
-        case .eta: row.snapshot.progress?.etaSeconds.map(Double.init)
-        case .size: row.snapshot.sizeBytes.map(Double.init)
-        case .addedAt: row.snapshot.addedAt.timeIntervalSince1970
-        case .finishedAt: row.snapshot.finishedAt?.timeIntervalSince1970
-        case .duration: row.snapshot.durationSeconds.map(Double.init)
-        case .attempt: Double(row.snapshot.attempt)
-        default: nil
-        }
+    private func progressBucketChanged(id: UUID) -> Bool {
+        guard let row = modelsByID[id] else { return false }
+        let next = Self.progressBucket(for: row.snapshot)
+        defer { progressBuckets[id] = next }
+        return progressBuckets[id] != next
+    }
+
+    private func pruneProgressBuckets(keeping ids: Set<UUID>) {
+        progressBuckets = progressBuckets.filter { ids.contains($0.key) }
     }
 }

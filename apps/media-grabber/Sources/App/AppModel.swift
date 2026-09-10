@@ -2,37 +2,6 @@ import Foundation
 import GrabberKit
 import Observation
 
-#if canImport(AppKit)
-    import AppKit
-#endif
-
-@MainActor
-protocol RevealSink {
-    func reveal(_ files: [URL])
-}
-
-struct WorkspaceRevealSink: RevealSink {
-    func reveal(_ files: [URL]) {
-        #if canImport(AppKit)
-            guard !files.isEmpty else { return }
-            NSWorkspace.shared.activateFileViewerSelecting(files)
-        #endif
-    }
-}
-
-@MainActor
-protocol OpenURLSink {
-    func open(_ url: URL)
-}
-
-struct WorkspaceOpenURLSink: OpenURLSink {
-    func open(_ url: URL) {
-        #if canImport(AppKit)
-            NSWorkspace.shared.open(url)
-        #endif
-    }
-}
-
 @MainActor
 final class AppModelConfirmer: Confirming, @unchecked Sendable {
     weak var model: AppModel?
@@ -63,9 +32,11 @@ final class AppModel {
     private(set) var pendingCookieRetryJobID: UUID?
     private(set) var needsOnboarding = false
     private(set) var lastSubmittedJobID: UUID?
-    private(set) var resolved: MediaMetadata?
-    private(set) var probeError: String?
-    private(set) var isProbing = false
+    var resolved: ResolvedLink?
+    var probeError: String?
+    var isProbing = false
+    var playlistGroups: [PersistedPlaylistGroup] = []
+    var isPlaylistPickerPresented = false
     var pendingConfirmation: ConfirmationRequest?
     var scrollToRowID: UUID?
     var bannerContent: BannerContent?
@@ -95,6 +66,11 @@ final class AppModel {
         healthController.chips
     }
 
+    var resolvedVideo: MediaMetadata? {
+        guard case let .video(meta) = resolved else { return nil }
+        return meta
+    }
+
     var maxConcurrentDownloads: Int {
         debugFlags.concurrencyCapOverride ?? prefs.maxConcurrentDownloads
     }
@@ -103,7 +79,7 @@ final class AppModel {
     let vpnDetector: any VPNDetecting
     private let envProbe: EnvironmentProbing
     let log: LogWriter
-    private let persistence: (any QueuePersisting)?
+    let persistence: (any QueuePersisting)?
     let revealSink: RevealSink
     let openURLSink: OpenURLSink
     let engineJobLogDir: URL
@@ -171,6 +147,7 @@ final class AppModel {
             vpnActive: vpnDetector.isVPNActive
         )
         applySnapshot(snapshot)
+        loadPlaylistGroups(for: snapshot)
     }
 
     func refreshOnboardingState() async {
@@ -246,31 +223,64 @@ extension AppModel {
         guard !trimmed.isEmpty else { return }
         isProbing = true
         probeError = nil
-        let result = await engine.preview(trimmed)
-        isProbing = false
-        switch result {
-        case let .success(meta):
-            resolved = meta
-            await log.log(.probeCompleted(url: trimmed, title: meta.title, ok: true))
-        case let .failure(error):
-            resolved = nil
-            probeError = error == .botCheck
-                ? BotCheckCopy.sentence(vpnActive: vpnDetector.isVPNActive)
-                : AppModelDialogs.probeErrorMessage(for: error)
-            await log.log(.probeCompleted(url: trimmed, title: nil, ok: false))
+
+        switch PlaylistLink.classify(trimmed) {
+        case .youtubeUnsupported:
+            await resolveUnsupportedPlaylistLink(trimmed)
+        case .youtubePlaylist:
+            await resolvePlaylist(trimmed)
+        case .singleVideo:
+            await resolveVideo(trimmed)
         }
     }
 
     func clearResolved() {
         resolved = nil
         probeError = nil
+        isPlaylistPickerPresented = false
     }
 
     func grab(overrides: RunwayOverrides = RunwayOverrides()) async {
         guard let resolved else { return }
-        let request = RequestBuilder.build(from: resolved, prefs: prefs, overrides: overrides)
+        guard case let .video(meta) = resolved else {
+            isPlaylistPickerPresented = true
+            return
+        }
+        let request = RequestBuilder.build(from: meta, prefs: prefs, overrides: overrides)
         rememberLastSelection(request, overrides: overrides)
-        await submitGrab(request, metadata: resolved)
+        await submitGrab(request, metadata: meta)
+    }
+
+    func addPlaylistSelection(
+        model picker: PlaylistPickerModel,
+        overrides: RunwayOverrides
+    ) async {
+        let entries = picker.dump.entries.filter { picker.checked.contains($0.playlistIndex) }
+        guard !entries.isEmpty else { return }
+
+        let existingGroupID = existingPlaylistGroupID(for: picker.dump)
+        let isNewGroup = existingGroupID == nil
+        let groupID = existingGroupID ?? UUID()
+        let items = entries.map {
+            playlistSubmitItem(
+                entry: $0,
+                picker: picker,
+                overrides: overrides,
+                groupID: groupID
+            )
+        }
+        if let first = items.first {
+            rememberLastSelection(first.request, overrides: overrides)
+        }
+        let ids = await engine.submitPlaylistItems(items)
+        guard !ids.isEmpty else { return }
+        if isNewGroup {
+            registerPlaylistGroup(id: groupID, for: picker.dump)
+        }
+        if let firstID = ids.first {
+            lastSubmittedJobID = firstID
+            scrollToRowID = firstID
+        }
     }
 
     private func rememberLastSelection(
@@ -342,6 +352,7 @@ extension AppModel {
                     vpnActive: vpnDetector.isVPNActive
                 )
                 if case let .snapshot(snapshot) = event {
+                    rowStore.applyGroups(playlistGroups)
                     hostRateSummary = snapshot.hostRateSummary
                     healthController.update(snapshot: snapshot, now: .now)
                     recomputeBanner(snapshot)
@@ -350,11 +361,13 @@ extension AppModel {
             }
             await log.log(.consumerStreamEnded)
             try? await Task.sleep(for: .seconds(1))
+            let snapshot = await engine.currentSnapshot()
             await rowStore.resync(
-                engine.currentSnapshot(),
+                snapshot,
                 maxAutoRetries: prefs.maxAutoRetries,
                 vpnActive: vpnDetector.isVPNActive
             )
+            await rowStore.applyGroups(playlistGroups)
         }
     }
 

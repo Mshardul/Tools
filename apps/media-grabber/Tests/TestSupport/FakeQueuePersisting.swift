@@ -6,10 +6,12 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
         var queueSaves: [[PersistedJob]] = []
         var historySaves: [[PersistedJob]] = []
         var columnSaves: [ColumnConfig] = []
+        var playlistGroupSaves: [[PersistedPlaylistGroup]] = []
         var flushes = 0
         var cannedQueue: [PersistedJob] = []
         var cannedHistory: [PersistedJob] = []
         var cannedColumns: ColumnConfig?
+        var cannedPlaylistGroups: [PersistedPlaylistGroup] = []
     }
 
     private let box = LockedBox(State())
@@ -26,6 +28,10 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
 
     public var columnSaves: [ColumnConfig] {
         box.read { $0.columnSaves }
+    }
+
+    public var playlistGroupSaves: [[PersistedPlaylistGroup]] {
+        box.read { $0.playlistGroupSaves }
     }
 
     public var flushCount: Int {
@@ -52,6 +58,10 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
         box.mutate { $0.cannedColumns = config }
     }
 
+    public func stubPlaylistGroups(_ groups: [PersistedPlaylistGroup]) {
+        box.mutate { $0.cannedPlaylistGroups = groups }
+    }
+
     public func saveQueue(_ jobs: [PersistedJob]) {
         box.mutate { $0.queueSaves.append(jobs) }
     }
@@ -62,6 +72,10 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
 
     public func saveColumns(_ config: ColumnConfig) {
         box.mutate { $0.columnSaves.append(config) }
+    }
+
+    public func savePlaylistGroups(_ groups: [PersistedPlaylistGroup]) {
+        box.mutate { $0.playlistGroupSaves.append(groups) }
     }
 
     public func flushNow() async {
@@ -78,5 +92,9 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
 
     public func loadColumns() -> ColumnConfig? {
         box.read { $0.cannedColumns }
+    }
+
+    public func loadPlaylistGroups() -> [PersistedPlaylistGroup] {
+        box.read { $0.cannedPlaylistGroups }
     }
 }

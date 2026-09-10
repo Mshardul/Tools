@@ -87,6 +87,39 @@ final class RequestBuilderTests: XCTestCase {
         XCTAssertEqual(request.audioLanguage, .code("ja"))
     }
 
+    func test_buildFromPlaylistEntry_usesWatchURLAndRunwayChoices() {
+        let entry = PlaylistEntry(
+            watchURL: "https://example.com/watch/item",
+            title: "Entry",
+            durationSeconds: 20,
+            thumbnailURL: nil,
+            extractor: "Example",
+            playlistIndex: 7
+        )
+
+        let request = RequestBuilder.build(
+            from: entry,
+            prefs: prefs(),
+            overrides: RunwayOverrides(
+                kind: .audio(format: .mp3),
+                destFolder: overrideDest,
+                audioLanguage: .code("ja")
+            )
+        )
+
+        XCTAssertEqual(
+            request,
+            DownloadRequest(
+                url: "https://example.com/watch/item",
+                destFolder: overrideDest,
+                kind: .audio(format: .mp3),
+                container: nil,
+                filenameTemplate: "%(title)s.%(ext)s",
+                audioLanguage: .code("ja")
+            )
+        )
+    }
+
     func test_audioLanguage_fromTrack() {
         XCTAssertEqual(
             RequestBuilder.audioLanguage(from: AudioTrack(

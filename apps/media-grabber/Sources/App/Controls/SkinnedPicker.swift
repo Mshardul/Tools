@@ -14,6 +14,7 @@ struct SkinnedPicker<Option: Hashable>: View {
     private let rows: [SkinnedPickerRow<Option>]
     @Binding private var selection: Option
     private let triggerLabelOverride: String?
+    private let fillsWidth: Bool
 
     @State private var isPresented = false
     @State private var highlighted: Option?
@@ -22,12 +23,14 @@ struct SkinnedPicker<Option: Hashable>: View {
         caption: String,
         rows: [SkinnedPickerRow<Option>],
         selection: Binding<Option>,
-        triggerLabel: String? = nil
+        triggerLabel: String? = nil,
+        fillsWidth: Bool = false
     ) {
         self.caption = caption
         self.rows = rows
         _selection = selection
         triggerLabelOverride = triggerLabel
+        self.fillsWidth = fillsWidth
     }
 
     var body: some View {
@@ -39,17 +42,25 @@ struct SkinnedPicker<Option: Hashable>: View {
                 Text(currentLabel)
                     .font(theme.bodyFont(12, .medium))
                     .foregroundStyle(theme.palette.text)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(
+                        minWidth: 0,
+                        maxWidth: fillsWidth ? .infinity : nil,
+                        alignment: .leading
+                    )
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(theme.palette.dim)
             }
             .padding(.horizontal, Spacing.s2)
-            .padding(.vertical, Spacing.s1)
+            .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
+            .frame(height: 28, alignment: .center)
             .background(theme.palette.panel, in: triggerShape)
             .overlay(triggerShape.stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth))
         }
         .buttonStyle(.plain)
-        .fixedSize()
+        .fixedSize(horizontal: !fillsWidth, vertical: true)
         .accessibilityAddTraits(.isButton)
         .accessibilityValue(currentLabel)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {

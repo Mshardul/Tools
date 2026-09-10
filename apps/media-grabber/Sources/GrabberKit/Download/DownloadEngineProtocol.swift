@@ -24,6 +24,8 @@ public protocol DownloadEngineProtocol: Sendable {
     func resetAllCircuits() async
 
     func preview(_ url: String) async -> Result<MediaMetadata, MetadataError>
+    func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError>
+    func submitPlaylistItems(_ items: [PlaylistSubmitItem]) async -> [UUID]
     func ensureShield() async
     func restartShield() async
 
@@ -116,6 +118,11 @@ public struct EngineDependencies: Sendable {
     ) -> EngineDependencies {
         let runner = ProcessRunner()
         let tuning = EngineTuning.resolved()
+        let bucket = MetadataTokenBucket(
+            limit: tuning.metadataProbeLimit,
+            windowSeconds: tuning.metadataProbeWindowSeconds,
+            clock: SystemClock()
+        )
         let potProvider = PotProviderProcess(
             installer: PotPluginInstaller.live(),
             runner: runner,
@@ -125,7 +132,7 @@ public struct EngineDependencies: Sendable {
         )
         return EngineDependencies(
             runner: runner,
-            probe: MetadataProbe(ytDlpURL: ytDlpURL, runner: runner),
+            probe: MetadataProbe(ytDlpURL: ytDlpURL, runner: runner, bucket: bucket),
             envProbe: EnvironmentProbe(),
             clock: SystemClock(),
             ytDlpURL: ytDlpURL,
@@ -154,6 +161,7 @@ public struct NoopPersisting: QueuePersisting {
     public func saveQueue(_: [PersistedJob]) {}
     public func saveHistory(_: [PersistedJob]) {}
     public func saveColumns(_: ColumnConfig) {}
+    public func savePlaylistGroups(_: [PersistedPlaylistGroup]) {}
     public func flushNow() async {}
     public func loadQueue() -> [PersistedJob] {
         []
@@ -165,5 +173,9 @@ public struct NoopPersisting: QueuePersisting {
 
     public func loadColumns() -> ColumnConfig? {
         nil
+    }
+
+    public func loadPlaylistGroups() -> [PersistedPlaylistGroup] {
+        []
     }
 }

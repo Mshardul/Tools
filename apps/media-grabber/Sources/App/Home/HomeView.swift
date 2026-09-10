@@ -15,13 +15,15 @@ struct HomeView: View {
     @State private var destFolder = URL(fileURLWithPath: NSHomeDirectory())
     @State private var seeded = false
     @State private var probeTask: Task<Void, Never>?
+    @State private var playlistPickerModel: PlaylistPickerModel?
 
     private var showsTable: Bool {
         hasGrabbedOnce || !appModel.rowStore.rows.isEmpty
     }
 
     var body: some View {
-        Group {
+        @Bindable var appModel = appModel
+        return Group {
             if showsTable {
                 tableLayout
             } else {
@@ -29,9 +31,28 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear(perform: seedFromPrefs)
-        .onChange(of: appModel.resolved) { _, meta in
+        .onAppear {
+            seedFromPrefs()
+            if appModel.isPlaylistPickerPresented {
+                rebuildPlaylistPickerModel()
+            }
+        }
+        .onChange(of: appModel.resolvedVideo) { _, meta in
             seedCatalog(meta)
+        }
+        .onChange(of: appModel.isPlaylistPickerPresented) { _, isPresented in
+            if isPresented {
+                rebuildPlaylistPickerModel()
+            }
+        }
+        .sheet(isPresented: $appModel.isPlaylistPickerPresented) {
+            if let picker = Binding($playlistPickerModel) {
+                PlaylistPickerView(
+                    model: picker,
+                    onCancel: dismissPlaylistPicker,
+                    onAdd: addPlaylistSelection
+                )
+            }
         }
     }
 
@@ -47,26 +68,6 @@ struct HomeView: View {
             .frame(maxWidth: 760, alignment: .leading)
             .frame(maxWidth: .infinity)
             Spacer(minLength: 0)
-        }
-    }
-
-    private var tableLayout: some View {
-        @Bindable var appModel = appModel
-        return VStack(spacing: 0) {
-            pasteBlock(reserveRunwaySlot: true)
-                .padding(.horizontal, Spacing.s6)
-                .padding(.top, Spacing.s4)
-
-            DownloadsTable(
-                store: appModel.rowStore,
-                columnConfig: $appModel.columnConfig,
-                scrollToRowID: $appModel.scrollToRowID,
-                onAction: { id, action in
-                    Task { await appModel.handleRowAction(id, action: action) }
-                }
-            )
-            .padding(.top, Spacing.s5)
-            .frame(maxHeight: .infinity)
         }
     }
 
@@ -225,6 +226,10 @@ struct HomeView: View {
     private func grab() {
         Task {
             await appModel.grab(overrides: runwayOverrides)
+            if appModel.isPlaylistPickerPresented {
+                rebuildPlaylistPickerModel()
+                return
+            }
             hasGrabbedOnce = true
             pastedURL = ""
             appModel.clearResolved()
@@ -250,8 +255,73 @@ struct HomeView: View {
 }
 
 extension HomeView {
+    private var tableLayout: some View {
+        @Bindable var appModel = appModel
+        return VStack(spacing: 0) {
+            pasteBlock(reserveRunwaySlot: true)
+                .padding(.horizontal, Spacing.s6)
+                .padding(.top, Spacing.s4)
+
+            DownloadsTable(
+                store: appModel.rowStore,
+                columnConfig: $appModel.columnConfig,
+                scrollToRowID: $appModel.scrollToRowID,
+                onAction: { id, action in
+                    Task { await appModel.handleRowAction(id, action: action) }
+                },
+                onPlaylistGroupAction: { id, action in
+                    Task { await appModel.handlePlaylistGroupAction(id, action: action) }
+                },
+                onTogglePlaylistGroupCollapsed: { id, isCollapsed in
+                    appModel.setPlaylistGroupCollapsed(id: id, isCollapsed)
+                }
+            )
+            .padding(.top, Spacing.s5)
+            .frame(maxHeight: .infinity)
+        }
+    }
+
+    private func dismissPlaylistPicker() {
+        appModel.isPlaylistPickerPresented = false
+    }
+
+    private func addPlaylistSelection() async {
+        guard let playlistPickerModel, playlistPickerModel.selectedCount > 0 else { return }
+        await appModel.addPlaylistSelection(model: playlistPickerModel, overrides: runwayOverrides)
+        hasGrabbedOnce = true
+        pastedURL = ""
+        appModel.clearResolved()
+    }
+
+    private func rebuildPlaylistPickerModel() {
+        guard case let .playlist(dump) = appModel.resolved else {
+            playlistPickerModel = nil
+            return
+        }
+        playlistPickerModel = PlaylistPickerModel(
+            dump: dump,
+            existing: existingPlaylistRows,
+            showPlaylistBanner: showsPlaylistBanner(for: dump)
+        )
+    }
+
+    private var existingPlaylistRows: [(url: String, completed: Bool)] {
+        appModel.rowStore.rows.map { row in
+            (url: row.snapshot.url, completed: row.snapshot.state == .completed)
+        }
+    }
+
+    private func showsPlaylistBanner(for dump: PlaylistDump) -> Bool {
+        let liveGroupIDs = Set(appModel.rowStore.rows.compactMap(\.snapshot.playlistGroupID))
+        let sourceURL = AppModel.trimmedPlaylistSourceURL(dump.sourceURL)
+        return appModel.playlistGroups.contains { group in
+            liveGroupIDs.contains(group.id)
+                && AppModel.trimmedPlaylistSourceURL(group.sourceURL) == sourceURL
+        }
+    }
+
     private var languagePickerTracks: [AudioTrack] {
-        let tracks = appModel.resolved?.audioTracks ?? []
+        let tracks = appModel.resolvedVideo?.audioTracks ?? []
         if tracks.isEmpty {
             return [AudioTrack(
                 id: "default",
@@ -265,7 +335,7 @@ extension HomeView {
     }
 
     private var offeredHeights: [Int] {
-        guard let meta = appModel.resolved else {
+        guard let meta = appModel.resolvedVideo else {
             return VideoQualityOptions.offered(from: MediaMetadata(
                 title: "",
                 durationSeconds: nil,

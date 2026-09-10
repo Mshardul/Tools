@@ -1,12 +1,25 @@
 import GrabberKit
 import SwiftUI
 
+enum PlaylistSpineSegment {
+    case none
+    case only
+    case first
+    case middle
+    case last
+}
+
 struct DownloadRow: View {
     let row: RowModel
     let columns: [ColumnID]
+    let spineSegment: PlaylistSpineSegment
     let onAction: (RowAction) -> Void
 
     @Environment(\.theme) private var theme
+
+    private var isPlaylistChild: Bool {
+        spineSegment != .none
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -18,11 +31,61 @@ struct DownloadRow: View {
         }
         .padding(.vertical, Spacing.s2)
         .background(theme.palette.ground)
+        .overlay {
+            if isPlaylistChild {
+                spineOverlay
+            }
+        }
         .overlay(alignment: .bottom) {
             Rectangle()
                 .fill(theme.palette.hair)
                 .frame(height: theme.hairlineWidth)
+                .padding(.leading, isPlaylistChild ? contentIndent : 0)
         }
+    }
+
+    private var contentIndent: CGFloat {
+        Spacing.s6
+    }
+
+    private var spineX: CGFloat {
+        Spacing.s4
+    }
+
+    private var spineOverlay: some View {
+        GeometryReader { proxy in
+            let midY = proxy.size.height / 2
+            let stroke = theme.palette.stroke
+            let width = theme.hairlineWidth
+
+            Canvas { context, size in
+                var path = Path()
+                path.move(to: CGPoint(x: spineX, y: midY))
+                path.addLine(to: CGPoint(x: contentIndent, y: midY))
+                context.stroke(path, with: .color(stroke), lineWidth: width)
+
+                switch spineSegment {
+                case .none, .only:
+                    break
+                case .first:
+                    path = Path()
+                    path.move(to: CGPoint(x: spineX, y: midY))
+                    path.addLine(to: CGPoint(x: spineX, y: size.height))
+                    context.stroke(path, with: .color(stroke), lineWidth: width)
+                case .middle:
+                    path = Path()
+                    path.move(to: CGPoint(x: spineX, y: 0))
+                    path.addLine(to: CGPoint(x: spineX, y: size.height))
+                    context.stroke(path, with: .color(stroke), lineWidth: width)
+                case .last:
+                    path = Path()
+                    path.move(to: CGPoint(x: spineX, y: 0))
+                    path.addLine(to: CGPoint(x: spineX, y: midY))
+                    context.stroke(path, with: .color(stroke), lineWidth: width)
+                }
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     @ViewBuilder
@@ -40,7 +103,12 @@ struct DownloadRow: View {
                 .foregroundStyle(theme.palette.dim)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .padding(.leading, playlistIndent(for: column))
         }
+    }
+
+    private func playlistIndent(for column: ColumnID) -> CGFloat {
+        isPlaylistChild && column == .title ? contentIndent - Spacing.s2 : 0
     }
 
     private var statusCell: some View {
