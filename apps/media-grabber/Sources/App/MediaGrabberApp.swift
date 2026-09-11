@@ -66,6 +66,7 @@ struct MediaGrabberApp: App {
                     appDelegate.incomingLinks = incomingLinks
                     appModel.incomingLinkController = incomingLinks
                     await appModel.onAppear()
+                    await incomingLinks.applicationDidBecomeActive()
                 }
         }
         .defaultSize(width: 980, height: 720)

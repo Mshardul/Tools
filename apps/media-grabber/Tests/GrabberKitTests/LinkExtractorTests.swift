@@ -16,6 +16,13 @@ final class LinkExtractorTests: XCTestCase {
         )
     }
 
+    func testAngleBracketsMidSentence() {
+        XCTAssertEqual(
+            LinkExtractor.extract(from: "grab <https://youtu.be/x> when you can")?.absoluteString,
+            "https://youtu.be/x"
+        )
+    }
+
     func testFirstOfMany() {
         XCTAssertEqual(
             LinkExtractor.extract(from: "see https://a.example and https://b.example")?.absoluteString,

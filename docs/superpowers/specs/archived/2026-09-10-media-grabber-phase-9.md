@@ -1,8 +1,8 @@
 # Add flows (Phase 9)
 
-**Status:** design complete.
+**Status:** shipped.
 
-**Plan:** `docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`.  
+**Plan:** `docs/superpowers/plans/archived/2026-09-10-media-grabber-phase-9.md`.  
 **Parent:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md`
 §12.1 Phase 9.  
 **Prefs (already shipped):** `Preferences.detectClipboardLinks` (default

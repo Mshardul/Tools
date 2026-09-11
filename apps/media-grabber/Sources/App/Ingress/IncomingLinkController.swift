@@ -12,7 +12,7 @@ final class IncomingLinkController {
 
     private var lastHandledChangeCount: Int?
     private var lastHandledURL: String?
-    private var ignoredChangeCount: Int?
+    private var appWrittenString: String?
     private var detectionGeneration = 0
 
     init(
@@ -41,8 +41,8 @@ final class IncomingLinkController {
 
     // MARK: - Clipboard
 
-    func markAppPasteboardWrite() {
-        ignoredChangeCount = pasteboard.changeCount + 1
+    func markAppPasteboardWrite(_ string: String) {
+        appWrittenString = string
     }
 
     func setClipboardDetectionEnabled(_ enabled: Bool) async {
@@ -63,11 +63,11 @@ final class IncomingLinkController {
     private func sniffClipboard() async {
         guard home.detectClipboardLinks else { return }
         let change = pasteboard.changeCount
-        if let ignored = ignoredChangeCount, change == ignored {
+        guard let raw = pasteboard.readString() else { return }
+        if raw == appWrittenString {
             return
         }
-        guard let raw = pasteboard.readString(),
-              let url = LinkExtractor.extract(from: raw) else { return }
+        guard let url = LinkExtractor.extract(from: raw) else { return }
         if change == lastHandledChangeCount, url.absoluteString == lastHandledURL {
             return
         }

@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_: NSApplication, open urls: [URL]) {
+        NSApp.activate(ignoringOtherApps: true)
         for url in urls {
             Task { await incomingLinks?.handleOpenURL(url) }
         }
@@ -47,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let text = pboard.string(forType: .string) ?? pboard.string(forType: .URL) else {
             return
         }
+        NSApp.activate(ignoringOtherApps: true)
         Task { await incomingLinks?.handlePlainText(text) }
     }
 

@@ -3,6 +3,10 @@
 macOS app. Two targets: `GrabberKit` (headless SPM-style framework, no SwiftUI)
 and `MediaGrabber` (thin SwiftUI app over it). Tuist-generated project.
 
+`docs/state-flow.md` — the job / `RateState` / `ShieldStatus` state machines,
+every transition with a trigger + `file:line`. Read it before touching the
+engine's scheduler, `recordExit`, `RatePolicy`, or the deferral seams.
+
 Specs: `docs/superpowers/specs/` — parent design `2026-08-28-youtube-downloader-mac-design.md`
 (living), current phase spec alongside it. Built phases' specs + plans move to
 `specs/archived/` and `plans/archived/`. Shipped: Phase 1
@@ -11,13 +15,12 @@ in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
 `2026-09-01-media-grabber-phase-4.md`, Phase 5 `2026-09-02-media-grabber-phase-5.md`, Phase 6
 `2026-09-04-media-grabber-phase-6.md`, Phase 7
 `2026-09-07-media-grabber-phase-7.md`, Phase 8
-`2026-09-08-media-grabber-phase-8.md`
+`2026-09-08-media-grabber-phase-8.md`, Phase 9
+`2026-09-10-media-grabber-phase-9.md`
 (spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
-not this app-local one). Next: Phase 9 (Add flows) — design complete
-`docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md`, plan
-`docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`. Share Extension
-is a separate STUB epic
-`docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
+not this app-local one). Next: Share Extension — a separate STUB epic
+`docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`
+(needs planning; likely Phase 10, renumber Diagnostics/Polish when scheduled).
 
 ## Phase scoping — three rules
 

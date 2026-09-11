@@ -40,7 +40,8 @@ final class MetadataProbePlaylistTests: XCTestCase {
         let sut = MetadataProbe(ytDlpURL: ytDlp, runner: runner)
 
         let task = Task { await sut.probe("https://example.com/delayed") }
-        await Task.yield()
+        let launched = await waitFor { runner.launches.count >= 1 }
+        XCTAssertTrue(launched, "probe never reached the runner")
         task.cancel()
         _ = await task.value
 
@@ -50,15 +51,13 @@ final class MetadataProbePlaylistTests: XCTestCase {
 
     func testCancellingTailProbeDoesNotBlockNextProbe() async throws {
         let runner = FakeProcessRunner()
-        runner.perRunDelay = .seconds(5)
-        runner.scripts([
-            .stdout(#"{"title":"A"}"#),
-            .stdout(#"{"title":"B"}"#)
-        ], forPathEndingIn: "yt-dlp")
+        runner.perRunDelay = .milliseconds(50)
+        runner.script(.stdout(#"{"title":"B"}"#), forPathEndingIn: "yt-dlp")
         let sut = MetadataProbe(ytDlpURL: ytDlp, runner: runner)
 
         let first = Task { await sut.probe("https://example.com/a") }
-        await Task.yield()
+        let launched = await waitFor { runner.launches.count >= 1 }
+        XCTAssertTrue(launched, "first probe never reached the runner")
         let second = Task { await sut.probe("https://example.com/b") }
         first.cancel()
         _ = await first.value
@@ -66,5 +65,20 @@ final class MetadataProbePlaylistTests: XCTestCase {
 
         let metadata = try result.get()
         XCTAssertEqual(metadata.title, "B")
+    }
+
+    private func waitFor(
+        timeout: Duration = .seconds(2),
+        _ condition: @Sendable () -> Bool
+    ) async -> Bool {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+        while clock.now < deadline {
+            if condition() {
+                return true
+            }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        return condition()
     }
 }

@@ -59,46 +59,37 @@ A build you compiled yourself is not quarantined and needs neither step.
 
 ## Where things land
 
-- **Downloads:** `~/Downloads` by default (change it per-download in the runway,
-  or set a default in Preferences once that pane lands).
+- **Downloads:** `~/Downloads` by default, changeable per-download in the
+  runway or as a default in Preferences → Downloads.
 - **Logs:** `~/Library/Logs/MediaGrabber/` — local only, never uploaded.
   - `app.log` — app-wide events (launch, probes, duplicate prompts, quit).
   - `jobs/<job-id>.log` — one raw `yt-dlp` transcript per download.
   See [PRIVACY.md](PRIVACY.md) for exactly what they contain.
+- **Persisted state:** `queue.json`, `history.json`, and `columns.json` under
+  `~/Library/Application Support/MediaGrabber/` — relaunch restores the queue.
 
-## Phase 2 (shipped)
+## What the app does today
 
-Phase 2 added a multi-download queue with persistence:
+A multi-download queue with a live table (pause / resume / cancel / remove /
+force-start per row), rate limiting and a circuit breaker per host, retry with
+error-class-aware messaging, cookie-based sign-in for gated videos, a
+bot-check shield for YouTube, playlist paste → picker → grouped rows, and
+add-flow ingress (clipboard, drag, Services, a `mediagrabber://` URL scheme) —
+every entry point lands in the same Home field. Graceful quit confirms when a
+download is active, flushes persistence, then shuts down child processes.
 
-- **Queue + table** — paste URLs, watch several jobs run under
-  `Preferences.maxConcurrentDownloads`, pause/resume/cancel/remove/force-start
-  from the row action bar.
-- **Persistence** — `queue.json`, `history.json`, and `columns.json` under
-  `~/Library/Application Support/MediaGrabber/`; relaunch restores the queue.
-- **Graceful quit** — confirm when a download is active or the queue is halted,
-  flush persistence, then shut down child processes.
-- **Debug flags** — `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
+For how it fits together: [`docs/architecture.md`](docs/architecture.md)
+(component map, request/event/persistence paths) and
+[`docs/state-flow.md`](docs/state-flow.md) (every job, rate-limit, and shield
+state with its triggers).
 
-Not yet built:
+Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
 
-- **Column header drag-reorder** — `ColumnConfig.moveColumn` exists; UI deferred.
-- **Multi-select row actions**, Diagnostics content. See
-  [ticket-backlog.md](ticket-backlog.md).
+Not yet built: Diagnostics page content, column header drag-reorder
+(`ColumnConfig.moveColumn` exists; no UI), multi-select row actions, a Share
+Extension. See [ticket-backlog.md](ticket-backlog.md).
 
-YouTube hardening (Phase 7) shipped: bot-check shield, shared preview/Grab
-identity, runway Language slot, YouTube failure chrome.
-
-Playlists (Phase 8) shipped: paste a YouTube `PL` playlist page → picker →
-grouped rows with header / spine / group actions.
-
-**Next:** Phase 9 — Add flows (plan ready).
-
-## Phase 1 gaps (resolved in Phase 2)
-
-- ~~No queue~~ — now multi-download with scheduler.
-- ~~No persistence / resume~~ — queue + history persist; `.part` files resume.
-
-Still open from Phase 1:
+## Known gaps
 
 - **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the
   UI falls back to system faces. Tracked in

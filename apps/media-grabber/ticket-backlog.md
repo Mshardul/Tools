@@ -41,27 +41,22 @@ until it reaches v1 (spec §14).
 
 ## Documentation
 
-- **Job / rate-limit state-flow diagram.** The job lifecycle now spans `queued →
-  probing → running → cooldown → queued → failed/completed`, with the engine's
-  `RateLimiter` running a parallel per-host `normal → cooldown → circuitOpen`
-  machine and a global adaptive-concurrency cap on top. Add-flow entry points,
-  network offline/online parking, force-start overrides, and the auto-retry
-  budget all feed in. This is too tangled to explain from the code. Under this
-  ticket: (1) enumerate every job state, every host `RateState`, and each
-  transition + trigger; (2) note what is deferred (per-host adaptive cap, POT
-  rotation states, playlist-group states) so the diagram has room; (3) write an
-  md file with a mermaid state diagram (or two — one for the job, one for the
-  host) and a short prose walk-through. Keep it beside the specs. Revisit
-  whenever a phase adds a state.
+- **Job / rate-limit state-flow diagram.** *(done — `docs/state-flow.md`)*
+  Three mermaid state diagrams (job lifecycle, per-host `RateState`,
+  `ShieldStatus`) with a full transition table + trigger + `file:line` for
+  each, the auto-retry budget, the `availableActions`-vs-`cancel` mismatch on
+  `.cooldown` / `.waitingForNetwork`, and a §4 "deferred — leave room" table
+  (per-host adaptive cap, POT rotation, playlist-group state, `.shieldDown`
+  halt, probe-throttle visibility). Revisit whenever a phase adds a state.
 
-- **HLD / LLD architecture doc.** A single md file with a high-level design
-  (component boxes — App / GrabberKit engine / RateLimiter / Scheduler /
-  ProcessRunner / Persistence / probes — and how requests and snapshots flow
-  between them) and a low-level design (the key types, their ownership, the
-  async seams, the actor boundary, the event stream). All in mermaid
-  (flowchart + sequence + class diagrams). Discuss scope when the ticket is
-  picked — decide HLD-only vs both, and how much of the future phases to sketch.
-  Pairs with the state-flow diagram above; keep them in one `docs/` area.
+- **HLD / LLD architecture doc.** *(done — `docs/architecture.md`)* Both HLD
+  and LLD, current (shipped-through-Phase-9) scope only — no future-phase
+  sketching. Component map + request path + snapshot/event path + persistence
+  path + config path (HLD); ownership graph + actor boundary + async seams +
+  event-stream mechanics + key value types + process rules (LLD). 5 mermaid
+  diagrams (flowchart, 2× sequence, flowchart, classDiagram), all verified to
+  render via `mermaid-cli`. Cross-references `docs/state-flow.md` rather than
+  repeating the state machines.
 
 ## Phases 3–11 (intent — detailed when reached, from spec §12.1)
 
@@ -111,12 +106,13 @@ are in spec §12.2.
   duplicate warnings), then N jobs sharing `playlistGroupID`. Group header +
   spine + group actions; `MetadataTokenBucket`; per-request probe cancel. Spec:
   `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md`.
-- **Phase 9 — Add flows.** *(design complete)* Clipboard (activation +
-  frontmost); drag window/Dock; Services; custom URL scheme →
-  `IncomingLinkController` + Home. Idle silent / busy confirm. Spec + plan:
-  `docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md`,
-  `docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`. Share Extension
-  is a sibling stub, not this phase.
+- **Phase 9 — Add flows.** *(shipped)* Clipboard (activation + frontmost poll,
+  prefs-gated, self-write ignore, dedupe); drag window/Dock; Services;
+  `mediagrabber://open?url=` scheme → `IncomingLinkController` + Home. Idle
+  silent / busy confirm; scheme-failure notice. `LinkExtractor` pure first-http(s).
+  Spec + plan: `docs/superpowers/specs/archived/2026-09-10-media-grabber-phase-9.md`,
+  `docs/superpowers/plans/archived/2026-09-10-media-grabber-phase-9.md`. Share
+  Extension is a sibling stub, not this phase.
 - **Share Extension — STUB (phase # TBD → likely 10).** Needs planning later.
   `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
 - **Phase 10 — Diagnostics, staleness, updater.** *(becomes 11 when Share is

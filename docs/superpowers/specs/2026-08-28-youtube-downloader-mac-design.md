@@ -804,15 +804,22 @@ add cases and wiring, never relayout — §12.2.
   `screens.html` §5 depicts picker + group + skinned runway. Built out of
   numeric order ahead of Phase 7 (both now shipped).
 
-- **Phase 9 — Add flows (design complete).** Spec + plan:
-  `docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md`,
-  `docs/superpowers/plans/2026-09-10-media-grabber-phase-9.md`. Clipboard
-  (activation + frontmost, prefs-gated), drag onto window/Dock, Services
-  (“Download with …”), custom URL scheme — all land in the Home field via
-  `IncomingLinkController`. Idle → silent fill+probe; busy → skinned confirm.
-  Loose URL extract (`LinkExtractor`); probe stays the extractor truth. **Share
-  Extension is not this phase** — sibling stub
-  `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`
+- **Phase 9 — Add flows (shipped).** Spec + plan:
+  `docs/superpowers/specs/archived/2026-09-10-media-grabber-phase-9.md`,
+  `docs/superpowers/plans/archived/2026-09-10-media-grabber-phase-9.md`. Clipboard
+  (activation + frontmost poll, prefs-gated, content-keyed self-write ignore,
+  dedupe), drag onto window/Dock, Services (“Download with …”), `mediagrabber://open?url=`
+  scheme — all land in the Home field via `IncomingLinkController` (App-owned,
+  `@Observable @MainActor`, in the SwiftUI environment). `IncomingLinkHome`
+  protocol is `AppModel`'s narrow surface (`isHomeBusy`, `detectClipboardLinks`,
+  `applyIncomingURL`, `confirm`). Idle → silent fill+probe; busy → skinned
+  “Grab this link?” confirm. Scheme failure → one-shot “Couldn’t open that link”
+  notice; `NSApp.activate` on every accept. `LinkExtractor` (GrabberKit, pure
+  first-http(s), trims `<>` incl. mid-sentence); probe stays the extractor truth.
+  Home field text lifted from `HomeView` `@State` onto `AppModel`.
+  `markAppPasteboardWrite(_:)` exists + tested but has no caller until Phase 11
+  Diagnostics copy-report (hint there). **Share Extension is not this phase** —
+  sibling stub `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`
   (insert as Phase 10 and renumber Diagnostics/Polish when scheduled).
 
 - **Phase 10 — Share Extension (STUB — needs planning).** Reserved only. See
@@ -832,7 +839,10 @@ add cases and wiring, never relayout — §12.2.
   struct from Phase 2) has grown across phases — add a Debug menu bound to it
   here if warranted.* *Hint: update the `screens.html` mockup — the Diagnostics
   screen (before-run and after-run states) and the Updates pane fill here;
-  both are stepless / header-only in the current snapshot.*
+  both are stepless / header-only in the current snapshot.* *Hint: Copy report
+  and Copy diagnostic bundle write the clipboard — call
+  `IncomingLinkController.markAppPasteboardWrite(_:)` with the same string at
+  each write site so the clipboard sniff (Phase 9) ignores our own copy.*
 
 - **Phase 12 — Polish.** *(was Phase 11; same provisional renumber note.)*
   Success and chip-refresh-failure toasts; native macOS notifications for

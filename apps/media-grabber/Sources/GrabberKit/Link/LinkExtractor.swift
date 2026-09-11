@@ -38,9 +38,12 @@ public enum LinkExtractor {
 
     private static func endOfURL(in text: String, startingAt start: String.Index) -> String.Index {
         var index = start
-        while index < text.endIndex, !text[index].isWhitespace {
+        while index < text.endIndex, !text[index].isWhitespace, !terminators.contains(text[index]) {
             index = text.index(after: index)
         }
         return index
     }
+
+    // Angle brackets wrap URLs in mail clients and Markdown; a bare URL never contains them.
+    private static let terminators: Set<Character> = ["<", ">"]
 }

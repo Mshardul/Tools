@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 6, Tuist, XCTest, AppKit Services / URL types. Targets: `GrabberKit`, `MediaGrabber`, `TestSupport`, `GrabberKitTests`, `AppUnitTests`.
 
-**Spec:** `docs/superpowers/specs/2026-09-10-media-grabber-phase-9.md` — read it alongside this plan. Every task's "why" is there; this plan is the "how".
+**Spec:** `docs/superpowers/specs/archived/2026-09-10-media-grabber-phase-9.md` — read it alongside this plan. Every task's "why" is there; this plan is the "how".
 
 ## Global Constraints
 

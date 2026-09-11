@@ -183,10 +183,21 @@ final class IncomingLinkControllerTests: XCTestCase {
         let home = FakeIncomingLinkHome()
         let pasteboard = FakePasteboard()
         let controller = makeController(home: home, pasteboard: pasteboard)
-        controller.markAppPasteboardWrite()
-        pasteboard.writeString("https://example.com/ours")
+        let ours = "https://example.com/ours"
+        controller.markAppPasteboardWrite(ours)
+        pasteboard.writeString(ours)
         await controller.pollPasteboard()
         XCTAssertTrue(home.appliedURLs.isEmpty)
+    }
+
+    func test_clipboard_externalWriteAfterSelfWrite_stillSniffed() async {
+        let home = FakeIncomingLinkHome()
+        let pasteboard = FakePasteboard()
+        let controller = makeController(home: home, pasteboard: pasteboard)
+        controller.markAppPasteboardWrite("https://example.com/ours")
+        pasteboard.setExternal("https://example.com/theirs")
+        await controller.pollPasteboard()
+        XCTAssertEqual(home.appliedURLs.map(\.absoluteString), ["https://example.com/theirs"])
     }
 
     func test_clipboard_disableMidOffer_skipsApply() async {
