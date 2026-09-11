@@ -16,11 +16,11 @@ in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
 `2026-09-04-media-grabber-phase-6.md`, Phase 7
 `2026-09-07-media-grabber-phase-7.md`, Phase 8
 `2026-09-08-media-grabber-phase-8.md`, Phase 9
-`2026-09-10-media-grabber-phase-9.md`
+`2026-09-10-media-grabber-phase-9.md`, Phase 10
+`2026-09-11-media-grabber-phase-10-share-extension.md`
 (spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
-not this app-local one). Next: Share Extension — a separate STUB epic
-`docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`
-(needs planning; likely Phase 10, renumber Diagnostics/Polish when scheduled).
+not this app-local one). Next: Phase 11 — Diagnostics, staleness, updater
+(not yet planned).
 
 ## Phase scoping — three rules
 

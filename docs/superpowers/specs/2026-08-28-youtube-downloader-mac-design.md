@@ -819,17 +819,26 @@ add cases and wiring, never relayout — §12.2.
   Home field text lifted from `HomeView` `@State` onto `AppModel`.
   `markAppPasteboardWrite(_:)` exists + tested but has no caller until Phase 11
   Diagnostics copy-report (hint there). **Share Extension is not this phase** —
-  sibling stub `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`
-  (insert as Phase 10 and renumber Diagnostics/Polish when scheduled).
+  see Phase 10.
 
-- **Phase 10 — Share Extension (STUB — needs planning).** Reserved only. See
-  `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
-  When opened: full spec + plan + e2e Share appex. Renumber: this becomes 10;
-  Diagnostics 11; Polish 12.
+- **Phase 10 — Share Extension (shipped).** Spec + plan:
+  `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
+  `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
+  New `ShareExtension` appex target (`product: .appExtension`, bundle id
+  `app.mediagrabber.mac.share`), minimal sandbox entitlements, no App Group.
+  Single share action ("MediaGrabber", bare name, no second "download with
+  defaults" variant). `ShareExtractor.extractURL(from:)` (`@MainActor`, pure
+  aside from `NSItemProvider` async loads, unit-tested — lives in
+  `GrabberKit/Link/` next to `LinkExtractor`, which it reuses for the
+  plain-text fallback) pulls a `URL` out of the shared `NSExtensionItem`,
+  then the appex calls `mediagrabber://open?url=…` — the exact Phase 9
+  `IncomingLinkScheme` path, no new scheme variant, no shared container. No
+  new mockups (reuses the Phase 9 field-filling screens). Two deferrals
+  surfaced during manual smoke, hinted forward to Phase 12 — app icon,
+  Share Extension first-enable nudge (§12.1 Phase 12).
 
-- **Phase 11 — Diagnostics, staleness, updater.** *(was Phase 10; number
-  shifts when Share Extension is scheduled — until then still “Phase 10” in
-  older prose.)* The Diagnostics page (Run check → report card → Copy report /
+- **Phase 11 — Diagnostics, staleness, updater.** The Diagnostics page
+  (Run check → report card → Copy report /
   Copy diagnostic bundle); the `DiagnosticBundle` zip; the yt-dlp staleness
   daily check; `YtDlpUpdater`; the Updates pane rows (Phase 3). The
   engine-freshness `HealthStrip` chip is emitted here from `HealthController`
@@ -844,13 +853,16 @@ add cases and wiring, never relayout — §12.2.
   `IncomingLinkController.markAppPasteboardWrite(_:)` with the same string at
   each write site so the clipboard sniff (Phase 9) ignores our own copy.*
 
-- **Phase 12 — Polish.** *(was Phase 11; same provisional renumber note.)*
-  Success and chip-refresh-failure toasts; native macOS notifications for
+- **Phase 12 — Polish.** Success and chip-refresh-failure toasts; native macOS notifications for
   backgrounded failures; the first-run cards → table transition and the
   emptied-table state; a full keyboard-navigation, VoiceOver, and
   `prefers-reduced-motion` pass over every screen; the GitHub-release
   self-update check (§10.2). Last because the a11y pass audits every screen
-  the earlier phases built.
+  the earlier phases built. *Hint (from Phase 10):* app icon — no
+  `.icns`/`.xcassets` exists yet, app-wide gap. *Hint (from Phase 10):*
+  Share Extension first-enable nudge — macOS disables Share Extensions by
+  default until enabled once in Privacy & Security → Extensions; evaluate a
+  first-run hint.
 
 ### 12.2 Shells built complete, filled later
 

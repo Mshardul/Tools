@@ -55,12 +55,43 @@ let project = Project(
             ]),
             sources: ["Sources/App/**"],
             resources: ["PRIVACY.md"],
-            dependencies: [.target(name: "GrabberKit")],
+            dependencies: [.target(name: "GrabberKit"), .target(name: "ShareExtension")],
             settings: .settings(base: [
                 "CODE_SIGN_IDENTITY": "-",
                 "CODE_SIGN_STYLE": "Manual",
                 "ENABLE_HARDENED_RUNTIME": "NO",
                 "ENABLE_APP_SANDBOX": "NO"
+            ])
+        ),
+        .target(
+            name: "ShareExtension",
+            destinations: .macOS,
+            product: .appExtension,
+            bundleId: "app.mediagrabber.mac.share",
+            deploymentTargets: .macOS("14.0"),
+            infoPlist: .extendingDefault(with: [
+                "CFBundleDisplayName": "MediaGrabber",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+                "NSExtension": [
+                    "NSExtensionPointIdentifier": "com.apple.share-services",
+                    "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ShareViewController",
+                    "NSExtensionAttributes": [
+                        "NSExtensionActivationRule": [
+                            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+                            "NSExtensionActivationSupportsText": true
+                        ]
+                    ]
+                ]
+            ]),
+            sources: ["Sources/ShareExtension/**"],
+            dependencies: [.target(name: "GrabberKit")],
+            settings: .settings(base: [
+                "CODE_SIGN_IDENTITY": "-",
+                "CODE_SIGN_STYLE": "Manual",
+                "ENABLE_HARDENED_RUNTIME": "NO",
+                "ENABLE_APP_SANDBOX": "YES",
+                "CODE_SIGN_ENTITLEMENTS": "Sources/ShareExtension/ShareExtension.entitlements"
             ])
         ),
         .target(

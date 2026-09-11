@@ -113,18 +113,26 @@ are in spec §12.2.
   Spec + plan: `docs/superpowers/specs/archived/2026-09-10-media-grabber-phase-9.md`,
   `docs/superpowers/plans/archived/2026-09-10-media-grabber-phase-9.md`. Share
   Extension is a sibling stub, not this phase.
-- **Share Extension — STUB (phase # TBD → likely 10).** Needs planning later.
-  `docs/superpowers/specs/2026-09-10-media-grabber-share-extension-STUB.md`.
-- **Phase 10 — Diagnostics, staleness, updater.** *(becomes 11 when Share is
-  scheduled)* Diagnostics page (Run check → report card → Copy report / Copy
-  diagnostic bundle); `DiagnosticBundle` zip; yt-dlp staleness banner + daily
-  check; `YtDlpUpdater`; Updates pane rows. Report card reflects Phase 4 / 6 /
+- **Phase 10 — Share Extension.** *(shipped)* New `ShareExtension` appex
+  target, scheme-only handoff (no App Group), one share action reusing the
+  Phase 9 `mediagrabber://open` path. Spec + plan:
+  `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
+  `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
+  Deferrals surfaced during smoke, hinted forward to Phase 12 (below).
+- **Phase 11 — Diagnostics, staleness, updater.** Diagnostics page (Run
+  check → report card → Copy report / Copy diagnostic bundle);
+  `DiagnosticBundle` zip; yt-dlp staleness banner + daily check;
+  `YtDlpUpdater`; Updates pane rows. Report card reflects Phase 4 / 6 /
   7 state.
-- **Phase 11 — Polish.** *(becomes 12 when Share is scheduled)* Success +
-  chip-refresh-failure toasts; native notifications for backgrounded failures;
+- **Phase 12 — Polish.** Success + chip-refresh-failure toasts; native
+  notifications for backgrounded failures;
   the first-run-cards → table transition + emptied-table state; full
   keyboard-nav + VoiceOver + reduced-motion pass over every screen;
   GitHub-release self-update check (spec §10.2). Last — the a11y pass audits
   every earlier screen. **Row actions:** hide inactive action icons instead of
   rendering the full disabled bar (Phase 2 spec required all glyphs visible;
-  revisit for less visual noise).
+  revisit for less visual noise). **App icon:** no `.icns`/`.xcassets` exists
+  yet (surfaced Phase 10 — Share sheet grid shows the blank-document icon).
+  **Share Extension first-enable hint:** macOS disables Share Extensions by
+  default until enabled once in Privacy & Security → Extensions (surfaced
+  Phase 10 smoke) — evaluate a first-run nudge here.
