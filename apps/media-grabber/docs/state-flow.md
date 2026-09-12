@@ -2,12 +2,13 @@
 
 Two state machines drive the download queue, plus a small third for the
 bot-check shield. This doc enumerates every state, every transition, and the
-trigger for each, and marks what is deferred so the diagrams have room to grow.
+trigger for each, and marks parked capabilities with their owning phase (§4).
 
 Paths are relative to `apps/media-grabber/`. Engine files live under
 `Sources/GrabberKit/Download/`, rate files under
 `Sources/GrabberKit/RateLimiting/`. Revisit this doc whenever a phase adds a
-state.
+state. Phase 11 **product** contract for row labels, rail filters, and actions
+(final look — not this as-shipped doc): `job-status-and-actions.md`.
 
 ---
 
@@ -131,9 +132,15 @@ The diagram draws one `.queued` node; the scheduler distinguishes the two.
 ### `availableActions` per state
 
 `DownloadEngine.availableActions(for:)` —
-`Sources/GrabberKit/Download/DownloadEngine+Helpers.swift`:
+`Sources/GrabberKit/Download/DownloadEngine+Helpers.swift`.
 
-| state | actions |
+**As shipped today** (table below). **Product target** (locked):  
+`job-status-and-actions.md` §4 / §3b — notably: no Pause on queued; Cancel wired
+on cooldown + waitingForNetwork; Restart from cancelled; Log on cooldown +
+waitingForNetwork; Force start on queued only when blocked; group Cancel all
+includes those states; Restart failed includes cancelled.
+
+| state | actions (as shipped) |
 |---|---|
 | `.queued` | pause, cancel, **forceStart**, remove, openInBrowser |
 | `.probing` | cancel, remove, openInBrowser |
@@ -152,6 +159,7 @@ Mismatch to be aware of: `availableActions` lists `.cancel` for `.cooldown` and
 `.waitingForNetwork`, but `cancel` only handles `.running`, `.probing`,
 `.queued`, and `.paused` — its `default` arm is a no-op. Cancelling a cooling or
 network-parked job currently does nothing; `remove` is the way to clear one.
+Phase 11 closes this against `job-status-and-actions.md`.
 
 ### Auto-retry budget
 
@@ -333,13 +341,16 @@ does **not** halt the queue — YouTube jobs run without POT and may fail with
 
 ---
 
-## 4. Deferred — leave room in the diagrams
+## 4. Parked capabilities (phase homes)
 
-| capability | current state | where it would slot in |
+Architectural headroom that must not float without an owner. Each row names the
+phase that will plan and ship it (or drop it in that phase’s plan).
+
+| capability | current state | phase |
 |---|---|---|
-| **Per-host adaptive concurrency cap** | `adaptiveCap` / `cleanStreak` / `strikeLoweredCap` are single scalars on `RateLimiter`; only `states` is per-host. | Make the cap trio per `RateHost`; `effectiveCap` takes a host argument; `Scheduler.nextDownloads` does per-host slot accounting instead of one global cap. |
-| **POT / shield rotation** | `ShieldStatus` is single-instance (one port, one child). `PlayerClientRotation` rotates yt-dlp player clients by `attempt` but is a stateless pure function. | New `ShieldStatus` cases (`.rotating`, `.rateLimited`) + a provider pool in `PotProviderProcess`; a per-host "burned client" set for `PlayerClientRotation`. |
-| **Playlist-group aggregate state** | `playlistGroupID` / `playlistIndex` on the job; group roll-up (`completedCount`, `rollupFraction`, …) is UI-only, derived per render in `RowStore+Groups`. No `PlaylistGroupState`, no engine-side group lifecycle. `savePlaylistGroups` / `loadPlaylistGroups` are no-op stubs. | A real `PlaylistGroupState` machine (`.enqueuing`, `.downloading`, `.partiallyFailed`, `.complete`) in `GrabberKit`, emitted in `QueueSnapshot`. |
-| **`.shieldDown` queue halt** | `QueueHaltReason` has no `.shieldDown` — a dead shield does not halt the queue. | A `.shieldDown` case + a branch in `effectiveQueueHalt()`. |
-| **`.userReset` as a soft transition** | Defined and handled in `RatePolicy` but never fired — reset clears the dict entry directly. | Route reset through `RatePolicy.next(event: .userReset)` if it should ever become `.circuitOpen → .cooldown` instead of `→ .normal`. |
-| **Metadata-probe throttle visibility** | `MetadataTokenBucket` exists but the wired instance is `UnlimitedMetadataTokenBucket` (no-op). A throttled probe would just block inside the probe Task — no job state. | A `.probing`-adjacent "waiting for probe slot" sub-state, or a `DeferReason.probeThrottle`. |
+| **Per-host adaptive concurrency cap** | `adaptiveCap` / `cleanStreak` / `strikeLoweredCap` are single scalars on `RateLimiter`; only `states` is per-host. Slot: per-`RateHost` cap trio + per-host slot accounting in `Scheduler.nextDownloads`. | **Phase 13** |
+| **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 14** |
+| **Playlist-group aggregate state** | Group roll-up is UI-only in `RowStore+Groups`; `savePlaylistGroups` / `loadPlaylistGroups` are no-op stubs. Slot: `PlaylistGroupState` in GrabberKit. | **Phase 14** |
+| **`.shieldDown` queue halt** | Dead shield does not halt the queue (by design today). Slot: `.shieldDown` on `QueueHaltReason` if plan reverses that. | **Phase 14** (ship or drop) |
+| **`.userReset` soft transition** | Defined in `RatePolicy` but never fired — reset clears the dict entry. | **Phase 14** (ship or drop) |
+| **Metadata-probe throttle visibility** | Wired bucket is `UnlimitedMetadataTokenBucket` (no-op). Slot: real bucket + probe-wait visibility. | **Phase 14** |

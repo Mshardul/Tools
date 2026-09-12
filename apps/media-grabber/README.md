@@ -8,8 +8,8 @@ bundled; the app installs both through Homebrew on first run if they are
 missing.
 
 > **Working name.** `MediaGrabber` / bundle ID `app.mediagrabber.mac` are
-> placeholders. The final product name is deferred; renaming later is a
-> mechanical find-and-replace.
+> placeholders. The final product name is chosen at v1 (Phase 13 / spec §14);
+> renaming is a find-and-replace.
 
 ## Requirements
 
@@ -85,14 +85,15 @@ state with its triggers).
 
 Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
 
-Not yet built: Diagnostics page content, column header drag-reorder
-(`ColumnConfig.moveColumn` exists; no UI), multi-select row actions, a Share
-Extension. See [ticket-backlog.md](ticket-backlog.md).
+Not yet built: Diagnostics / About (Phase 11), Downloads table chrome —
+column header drag-reorder, multi-select, resizable widths (Phase 12; Progress /
+Speed / ETA stay separate columns), polish / fonts / product name (Phase 13). See
+[ticket-backlog.md](ticket-backlog.md).
 
 ## Known gaps
 
 - **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the
-  UI falls back to system faces. Tracked in
+  UI falls back to system faces. Parks in **Phase 13** — see
   [ticket-backlog.md](ticket-backlog.md).
 
 ## License

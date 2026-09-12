@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Move Diagnostics into Preferences with a real report card and support-bundle sharing; add an About/Developer page as the third top-level nav destination with certainty-tracked update actions for MediaGrabber and yt-dlp; pin yt-dlp to a declared minimum version with drift detection and a reinstall action; give every actionable HealthStrip chip a uniform busy state; split the Downloads table's Status column into a closed enum plus a hidden-by-default Remark column; and fix the Site column to show friendly host names.
+**Goal:** Move Diagnostics into Preferences with a real report card and support-bundle sharing; add an About/Developer page as the third top-level nav destination with certainty-tracked update actions for MediaGrabber and yt-dlp; pin yt-dlp to a declared minimum version with drift detection and a reinstall action; give every actionable HealthStrip chip a uniform busy state; ship **Home manager chrome** (status left rail, Status column hidden by default, Remark via hover/focus + optional column, 1:1 `JobState` labels, actions per `apps/media-grabber/docs/job-status-and-actions.md`); and fix the Site column to show friendly host names.
 
-**Architecture:** Bottom-up: pure model/comparison logic first (version compare, `EnvironmentReport` drift field, `DiagnosticBundle`), then engine-layer wiring (the real canary probe, the pinned-reinstall action, `availableActions`/`RowModel` changes), then chrome (`HealthController`/`HealthStrip` busy state, the new `engine` chip), then the two new/changed SwiftUI surfaces (`DiagnosticsPane` inside Preferences, `AboutView`/`DeveloperView` replacing the Diagnostics nav slot), finishing with the Downloads-table column split. Every task lands on `main`/the current branch directly — no worktree, no branching (per repo convention, no git commands of any kind).
+**Architecture:** Bottom-up: pure model/comparison logic first (version compare, `EnvironmentReport` drift field, `DiagnosticBundle`), then engine-layer wiring (the real canary probe, the pinned-reinstall action, `availableActions` / Cancel on cooldown+network-park / conditional Force start / Restart-from-cancelled), then chrome (`HealthController`/`HealthStrip` busy state, the new `engine` chip), then the two new/changed SwiftUI surfaces (`DiagnosticsPane` inside Preferences, `AboutView`/`DeveloperView` replacing the Diagnostics nav slot), finishing with Home manager chrome (rail + Remark + Status hidden-by-default + row labels/actions). Every task lands on `main`/the current branch directly — no worktree, no branching (per repo convention, no git commands of any kind).
 
 **Tech Stack:** Swift 6, SwiftUI, XCTest, Tuist (project generation), `mise`-pinned `swiftformat`/`swiftlint`.
 
-**Spec:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` — this plan implements §5.2 (App chrome / chip busy state), §5.4 (Downloads table Status/Remark/Site), §5.9 (Preferences → Updates), §5.10 (Diagnostics), §5.12 (About), §8.3/§8.4 (diagnostic bundle, canary), §10.1a (yt-dlp version pin — new section), §10.2 (App self-update), and the Phase 11 entry in §12.1. Executors should read the relevant subsection before starting each task; UI-facing tasks should also check `apps/media-grabber/docs/design-system.md` §4.1/§4.6/§4.7/§4.8 for exact visual spec, and the mockups at `apps/media-grabber/docs/mockups/screens/{preferences,about}.html` for reference.
+**Spec:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` — this plan implements §5.2 (App chrome / chip busy state), §5.3/§5.4 (Home manager: rail, Status hidden by default, Remark, Site), §5.9 (Preferences → Updates), §5.10 (Diagnostics), §5.12 (About), §8.3/§8.4 (diagnostic bundle, canary), §10.1a (yt-dlp version pin — new section), §10.2 (App self-update), and the Phase 11 entry in §12.1. **Product contract for status/rail/actions:** `apps/media-grabber/docs/job-status-and-actions.md` (supersedes any older invented-label wording in this plan). Executors should read the relevant subsection before starting each task; UI-facing tasks should also check `apps/media-grabber/docs/design-system.md` §4.1/§4.2/§4.6/§4.7/§4.8, and the mockups at `apps/media-grabber/docs/mockups/screens/{home,preferences,about,onboarding}.html`.
 
 ## Global Constraints
 
@@ -52,7 +52,9 @@
 - `Sources/GrabberKit/Model/EngineTuning.swift` — new `minimumYtDlpVersion` constant.
 - `Sources/GrabberKit/Onboarding/OnboardingInstaller.swift` — `testRun` step calls a real `MetadataProbe` canary instead of auto-passing.
 - `Sources/GrabberKit/Model/Preferences.swift` — two new toggles (`autoCheckAppUpdates`, `autoCheckYtDlpUpdates`) plus `ownedKeys` update.
-- `Sources/GrabberKit/Model/ColumnConfig.swift` — `ColumnID` gains `.remark`; `defaultOrder`/hidden-by-default set updated.
+- `Sources/GrabberKit/Model/ColumnConfig.swift` — Status **hidden by default** (not removed); `ColumnID` gains `.remark` (optional / hidden by default); `defaultOrder` updated.
+- `Sources/App/Home/` (rail / filter presentation) — status left rail `All` / `Downloading` / `Done` / `Inactive` replaces top filter chips; badge on Inactive.
+- `Sources/GrabberKit/Download/DownloadEngine.swift` (+ helpers) — wire `cancel` for `.cooldown` / `.waitingForNetwork`; conditional `forceStart` eligibility on `.queued`; Restart (`retry`) from `.cancelled`; Log offered on cooldown/network-park when a log may exist.
 - `Sources/App/Preferences/UpdatesPane.swift` — **already exists** as the stepless Phase 3 placeholder (`PrefSteplessPane(.updates, line: "Update checks are coming in a later update.")`); replaced with the two auto-check toggles (Task 9).
 - `Sources/App/AppModel.swift` — `Page` enum: `.diagnostics` case removed, `.about` case added; a new `restartYtDlp()` method mirroring `restartShield()`.
 - `Sources/App/Chrome/HealthStrip.swift` — `DotState` gains `.busy`; `ChipInteraction.refresh` gains an associated `isBusy: Bool`; `HealthChip` unchanged in shape (busy state travels via `ChipInteraction`, not a new field) — see Task 6 for the exact type.
@@ -62,7 +64,7 @@
 - `Sources/App/Preferences/PreferencesView.swift` — `paneBody` switch gains the `.diagnostics` case.
 - `Sources/App/SiteNames.swift` — becomes the single source of truth for site display names (extractor-keyed, absorbing `RowModel.siteMap`'s coverage).
 - `Sources/App/Rows/RowModel.swift` — `site(for:)` delegates to `SiteNames`; new `remarkText` field; `siteMap` deleted.
-- `Sources/App/Table/TablePresentation.swift` — `statusDisplay` narrowed to the closed enum labels only (drops its `"queued · #N"` badge concatenation and its `.failed`-branch use of `row.statusText`); gains a `.remark` case in its cell-text switch reading the new `RowModel.remarkText`. `queuedDisplay` is unchanged — it already returns only plain labels.
+- `Sources/App/Table/TablePresentation.swift` — row status labels **1:1 with the nine `JobState`s** (plain aliases only — **no** `retrying` / host-cooling-on-queued). Detail → `RowModel.remarkText`. Status column cell path remains for when the user shows the column.
 - `Sources/App/Ingress/IncomingLinkController.swift` — no signature change; two new call sites (Copy report, Share diagnostic bundle) added elsewhere.
 - `apps/media-grabber/docs/design-system.md` — §4.2.3's column count/table updated for `.remark` (this doc already reflects the About/Diagnostics/dialog changes from brainstorming; only the column-count table needs the code-driven update).
 
@@ -1547,220 +1549,36 @@ Run: `mise exec -- swiftformat --lint Sources/App/SiteNames.swift Sources/App/Ro
 
 ---
 
-## Task 11: `ColumnID.remark` + Status/Remark split in `TablePresentation`
+## Task 11: Home manager chrome — rail, Status hidden by default, Remark, actions
 
-**Files:**
-- Modify: `Sources/GrabberKit/Model/ColumnConfig.swift`
-- Modify: `Sources/App/Table/TablePresentation.swift`
-- Modify: `Sources/App/Rows/RowModel.swift`
-- Modify: `Sources/App/Table/DownloadRow.swift` — a dedicated `.title` case added to `cell(for:)` for the hover tooltip (Step 4.5); its live countdown rendering in `statusCell` is untouched, since it already reads `row.snapshot.cooldownUntil`/`row.hostCooldownDeadline` directly via `TimelineView`, not through either status-text function.
-- Test: `Tests/AppUnitTests/ColumnConfigRemarkTests.swift`
-- Test: `Tests/AppUnitTests/DownloadsTableTests.swift` (existing — add the Status/Remark-split cases here; also update any pre-existing assertion in this file that checks the old combined Status text)
+> **Supersedes** the earlier draft that invented labels (`retrying`, etc.) or removed Status entirely. Contract: `apps/media-grabber/docs/job-status-and-actions.md` (**locked**). Do not reintroduce top filter chips. Status column stays, **hidden by default**.
 
-`Sources/App/Rows/RowStatusText.swift` is not modified — it backs the differently-cased, VPN-aware `RowModel.statusText` used elsewhere, untouched by this split.
+**Files (expected — confirm paths while executing):**
+- Modify: `Sources/GrabberKit/Model/ColumnConfig.swift` — Status not in `defaultVisible`; add optional `.remark`
+- Modify: `Sources/App/Table/TablePresentation.swift`, `Sources/App/Rows/RowModel.swift`, `Sources/App/Rows/RowStatusText.swift` — 1:1 `JobState` labels; Remark per §5 catalog (short); **no** `retrying`
+- Modify: Home table chrome — status **left rail** (`All` / `Downloading` / `Done` / `Inactive` + badge); remove top filter chips
+- Modify: `DownloadEngine.availableActions` + `cancel` / `forceStart` / `retry` — match locked matrix; Force-start eviction confirm when needed; **no eviction Remark**
+- Modify: `Sources/App/Table/DownloadRow.swift` — Title hover tooltip; Status cell when column visible
+- Modify: playlist group rail visibility — show group if any child matches selected rail
+- Test: ColumnConfig / DownloadsTable / availableActions / rail-filter / confirm unit tests as needed
+- Docs (same phase or Task 15): parent §5.3/§5.4, `design-system.md` §4.2, Home mockup (later), `state-flow.md` § availableActions once code matches
 
-**Interfaces:**
-- Produces: `ColumnID.remark` (new case, hidden by default, inserted into `defaultOrder` immediately after `.status`); `TablePresentation.statusDisplay(for:)` narrowed to return only the closed set of labels (`downloading`, `queued`, `paused`, `cooling down`, `retrying`, `saved`, `cancelled`, `failed`) with **no interpolated free text**; new `TablePresentation.remarkText(for:) -> String` extracting whatever free text `statusDisplay` used to embed (queue position, resume countdown, attempt count, failure reason).
+**Locked product rules (do not invent):**
+- Nine `JobState`s ↔ nine row labels (aliases OK: running→Downloading, completed→Saved).
+- Rail mapping per `job-status-and-actions.md` §2.
+- Remove = delete persistence entry (+ parts + job log). Cancel = keep as `cancelled`.
+- Restart = always `attempt = 0`.
+- Force start on queued = only when not immediately schedulable; always on cooldown.
+- Confirms / Remark / `isActive` / Phase 12 batch: §§5–8 of the contract.
 
-- [ ] **Step 1: Write the failing `ColumnConfig` tests**
+- [ ] **Step 1: Align labels + Remark model (TDD)** — failing tests that status never returns `retrying`; queued-with-position stays `Queued` with Remark `#N`; failed Remark is the short reason sentence.
+- [ ] **Step 2: ColumnConfig** — Status + Remark hidden by default; migrate persisted `columns.json` via `enforceInvariants`.
+- [ ] **Step 3: Left rail** — replace chips; Inactive badge = failed+cancelled; playlist header visible if any child matches.
+- [ ] **Step 4: Engine actions + confirms** — locked matrix; Cancel on cooldown/waitingForNetwork; conditional Force start; Restart from cancelled; eviction confirm; tests.
+- [ ] **Step 5: Row chrome** — Title `.help` tooltip; Remark hover/focus + optional column (a11y not hover-only).
+- [ ] **Step 6: Manual + lint** — exercise each rail bucket and action; `swiftformat`/`swiftlint` on touched files.
 
-```swift
-import XCTest
-@testable import GrabberKit
-
-final class ColumnConfigRemarkTests: XCTestCase {
-    func test_remarkColumnExists() {
-        XCTAssertTrue(ColumnID.allCases.contains(.remark))
-    }
-
-    func test_remarkIsHiddenByDefault() {
-        XCTAssertFalse(ColumnID.defaultVisible.contains(.remark))
-    }
-
-    func test_remarkSitsImmediatelyAfterStatusInDefaultOrder() {
-        guard let statusIndex = ColumnID.defaultOrder.firstIndex(of: .status),
-              let remarkIndex = ColumnID.defaultOrder.firstIndex(of: .remark) else {
-            XCTFail("status or remark missing from defaultOrder")
-            return
-        }
-        XCTAssertEqual(remarkIndex, statusIndex + 1)
-    }
-
-    func test_existingPersistedColumnOrder_autoBackfillsRemark() {
-        // enforceInvariants() (public) is what a persisted config saved before this column
-        // existed will run through on load; its private appendMissingKnownColumns() step is
-        // what actually backfills .remark — exercised here through the public entry point.
-        var config = ColumnConfig.default
-        config.columnOrder.removeAll { $0 == .remark }
-        config.enforceInvariants()
-        XCTAssertTrue(config.columnOrder.contains(.remark))
-    }
-}
-```
-
-- [ ] **Step 2: Run tests to verify they fail**
-
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/ColumnConfigRemarkTests`
-Expected: FAIL — `.remark` doesn't exist.
-
-- [ ] **Step 3: Add `.remark` to `ColumnID`**
-
-In `Sources/GrabberKit/Model/ColumnConfig.swift` (line 3-6), add `case remark` to the enum. Update `defaultOrder` (line 12-16) to insert `.remark` immediately after `.status`. Confirm `.remark` is **not** added to `defaultVisible` (line 8-10) — it must stay hidden by default per spec §5.4.
-
-Give `.remark` a display title wherever `ColumnID` maps to a header label (e.g. a `.title` computed property or a `ColumnsMenu` label lookup — find it via `grep -n "case .status" Sources/App/Table/ Sources/GrabberKit/Model/ColumnConfig.swift` to locate every switch that needs a new arm) — label it `"Remark"`.
-
-- [ ] **Step 4: Run `ColumnConfigRemarkTests` to verify they pass**
-
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/ColumnConfigRemarkTests`
-Expected: PASS.
-
-- [ ] **Step 4.5: Add a hover tooltip to the Title cell (truncation itself already works)**
-
-`Sources/App/Table/DownloadRow.swift`'s `cell(for:)` (line 92-108) already applies `.lineLimit(1)` and `.truncationMode(.tail)` to every column that falls through to its `default:` branch (line 100-106) — Title has no dedicated case today, so it already gets this treatment; a long title already truncates with an ellipsis rather than wrapping or growing the row. The only missing piece is a hover tooltip showing the untruncated title. Since `.help(_:)` should apply to Title only, not every other `default:`-routed column, give Title its own case:
-
-```swift
-case .title:
-    Text(TablePresentation.cellText(for: row, column: column))
-        .font(theme.bodyFont(12, .regular))
-        .foregroundStyle(theme.palette.dim)
-        .lineLimit(1)
-        .truncationMode(.tail)
-        .padding(.leading, playlistIndent(for: column))
-        .help(TablePresentation.cellText(for: row, column: column))
-```
-
-(Placed as a new case above the existing `default:` branch in the same `switch`, matching that branch's exact styling so Title's appearance is unchanged apart from the added tooltip.) Verify manually in Step 11 below — SwiftUI view-modifier application has no meaningful XCTest coverage without a rendering harness: add a row with a very long title during manual testing and confirm hovering over the truncated title shows the full text.
-
-- [ ] **Step 5: Read the real status-text pipeline before changing anything**
-
-There are two separate, parallel status-text implementations today:
-
-1. `Sources/App/Table/TablePresentation.swift`'s `statusDisplay(for:)` (line 65-81) and `queuedDisplay(for:)` (line 87-98) — produce the **lowercase** Status cell text shown in the Downloads table (`"queued"`, `"cooling down"`, `"retrying"`, `"downloading"`, etc.). This already has a `showsQueueBadge(_:)` check (line 83-85) and returns `"queued · \(badge)"` (e.g. `"queued · #2"`) directly in `statusDisplay`, not in `queuedDisplay`. Its `.failed` branch (line 78-79) returns `row.statusText` with a hardcoded `"Failed — "` prefix stripped.
-2. `Sources/App/Rows/RowStatusText.swift`'s `RowStatusText.text(for:maxAutoRetries:rate:vpnActive:)` (line 5-31) — produces **capitalized** text (`"Queued"`, `"Cooling down"`, `"Retrying"`, `"Failed — <sentence>"`) that becomes `RowModel.statusText` (set at `RowModel.swift:143,188,201`). This is a *different, fuller* pipeline: it takes `maxAutoRetries` and `vpnActive` and produces VPN-aware failure text via `BotCheckCopy.sentence(vpnActive:)` for `.botCheck` specifically (line 38-39) — `TablePresentation.statusDisplay` does not have access to any of this context and only reads the *result* of it (`row.statusText`) for the `.failed` case.
-3. The **live countdown suffix** (e.g. `"cooling down — 1:00"`) is rendered **at the SwiftUI view layer**, not inside either status-text function: `Sources/App/Table/DownloadRow.swift`'s `statusCell` (line 114-134) computes `let deadline = row.snapshot.cooldownUntil ?? row.hostCooldownDeadline`, and when `deadline > .now`, wraps the label in a `TimelineView(.periodic(from: .now, by: 1))` appending `" — " + CountdownFormat.mmss(until: deadline, now: context.date)` (line 121-125, `CountdownFormat.mmss` at `Sources/GrabberKit/.../CountdownFormat.swift`) so the countdown ticks live without `TablePresentation` or `RowModel` re-computing anything per second.
-
-Given this, the actual Remark split is:
-- **`TablePresentation.statusDisplay(for:)`** loses its `"queued · \(badge)"` special case (line 66-68) — becomes a plain closed-label switch, no badge concatenation, no reason-sentence concatenation.
-- **`RowModel` gains `remarkText: String`** (mirroring `statusText`/`siteLabel`'s existing pattern) computed from `queueBadge` (already exactly `"#N"`, no reformatting needed — `RowModel.swift:281-284`) for the queued-with-position case, and from `statusText`'s failure sentence (stripped of the `"Failed — "` prefix, same as `TablePresentation.statusDisplay`'s existing `.failed` branch already does) for the failed case.
-- **The live countdown suffix in `DownloadRow.statusCell` is untouched** — it already lives outside both status-text functions and needs no change; it continues appending to whatever `TablePresentation.statusDisplay` returns, same as today.
-- **`RowStatusText`/`RowModel.statusText` are untouched** — they back the (differently-cased, VPN-aware) text used elsewhere, not the table's Status cell directly; only `TablePresentation.statusDisplay`'s narrow reuse of `row.statusText` for the failure sentence changes to instead read the *new* `RowModel.remarkText` for that content, moving the reason sentence out of `statusDisplay` entirely.
-
-- [ ] **Step 6: Write the failing tests**
-
-Add to `Tests/AppUnitTests/DownloadsTableTests.swift` (the existing file already exercising `statusDisplay`/`queuedDisplay`). Check that file's existing tests first for its actual `RowModel`-construction helper (it must already build fixtures to test `statusDisplay`/`queuedDisplay` today) and use that exact helper — do not invent a `.fixture(...)` API without confirming its real name/parameters from the file first.
-
-```swift
-func test_statusDisplay_queuedWithPosition_showsPlainQueuedNoBadge() {
-    // Uses whatever this file's existing RowModel-construction helper is, with a
-    // queued state and a queue position of 2.
-    XCTAssertEqual(TablePresentation.statusDisplay(for: row), "queued")
-}
-
-func test_remarkText_queuedWithPosition_showsPositionNumber() {
-    XCTAssertEqual(row.remarkText, "#2")
-}
-
-func test_statusDisplay_retryingState_showsPlainRetrying() {
-    // attempt > 0, cooldownUntil in the future, queued state.
-    XCTAssertEqual(TablePresentation.statusDisplay(for: row), "retrying")
-}
-
-func test_remarkText_retryingState_isEmpty() {
-    // The countdown itself is rendered by DownloadRow's TimelineView from
-    // row.snapshot.cooldownUntil directly, not from Remark text — Remark carries
-    // no countdown string for this state.
-    XCTAssertEqual(row.remarkText, "")
-}
-
-func test_statusDisplay_failed_showsPlainFailed() {
-    XCTAssertEqual(TablePresentation.statusDisplay(for: row), "failed")
-}
-
-func test_remarkText_failed_showsReasonSentenceWithoutFailedPrefix() {
-    // row.statusText is "Failed — Couldn't read your browser's sign-in." (RowStatusText's
-    // capitalized form); remarkText strips the "Failed — " prefix the same way
-    // statusDisplay's old .failed branch already did.
-    XCTAssertEqual(row.remarkText, "Couldn't read your browser's sign-in.")
-}
-
-func test_remarkText_healthyRunningRow_isEmpty() {
-    XCTAssertEqual(row.remarkText, "")
-}
-
-func test_remarkText_savedRow_isEmpty() {
-    XCTAssertEqual(row.remarkText, "")
-}
-```
-
-- [ ] **Step 7: Run tests to verify they fail**
-
-Run the relevant test target/suite.
-Expected: FAIL — `statusDisplay` still returns `"queued · #2"`-style combined text; `RowModel.remarkText` doesn't exist.
-
-- [ ] **Step 8: Implement the split**
-
-In `Sources/App/Table/TablePresentation.swift`, remove the badge-concatenation special case from `statusDisplay(for:)` (line 65-68) and the `.failed` branch's dependence on `row.statusText` (line 78-79):
-
-```swift
-static func statusDisplay(for row: RowModel) -> String {
-    switch row.snapshot.state {
-    case .queued: return queuedDisplay(for: row)
-    case .probing: return "probing"
-    case .running: return "downloading"
-    case .paused: return "paused"
-    case .waitingForNetwork: return "waiting for network"
-    case .cooldown: return "cooling down"
-    case .completed: return "saved"
-    case .cancelled: return "cancelled"
-    case .failed: return "failed"
-    }
-}
-```
-
-`queuedDisplay(for:)` (line 87-98) stays exactly as-is — it already returns only plain labels (`"rate-limited — paused"`, `"cooling down"`, `"retrying"`, `"queued"`), none of them carrying free text; it was never the source of the `"queued · #2"` combination (that concatenation happened one level up, in `statusDisplay` itself, which this step removes). Delete the now-unused `showsQueueBadge(_:)` helper (line 83-85) if nothing else calls it — confirm via `grep -n "showsQueueBadge" Sources/App/` before deleting.
-
-In `Sources/App/Rows/RowModel.swift`, add a computed `remarkText` property next to `siteLabel`/`statusText`:
-
-```swift
-var remarkText: String {
-    if let queueBadge, snapshot.state == .queued {
-        return queueBadge
-    }
-    if case .failed = snapshot.state, statusText.hasPrefix("Failed — ") {
-        return String(statusText.dropFirst("Failed — ".count))
-    }
-    return ""
-}
-```
-
-(`queueBadge` is already exactly `"#N"` per `RowModel.badge(for:position:)` — no reformatting needed. The retrying-countdown case intentionally returns `""` here since `DownloadRow.statusCell`'s existing `TimelineView` already renders that countdown live from `row.snapshot.cooldownUntil` directly, not from any status-text string — see Step 5's finding #3. `hasPrefix`/`dropFirst` mirrors the exact stripping `TablePresentation.statusDisplay`'s old `.failed` branch used to do, just relocated.)
-
-In `Sources/App/Table/TablePresentation.swift`'s `cellText(for:column:)` switch, add the new case:
-
-```swift
-case .remark:
-    row.remarkText
-```
-
-(This can be added as its own `case` above the `default:` branch in `cellText`, or fall through the existing `default: dataColumnText(for: row, column: column)` path with a new case added inside `dataColumnText` instead — check which of the two switches (`cellText` at line 10-25, or `dataColumnText` at line 27-50) is the more natural fit given how `.site` is already handled there (`dataColumnText`'s `case .site: row.siteLabel`, line 37-38) and add `.remark` alongside it in the same switch, for consistency with how the other "plain `RowModel` field" columns are wired.)
-
-- [ ] **Step 9: Run tests to verify they pass**
-
-Run the relevant test target.
-Expected: PASS.
-
-- [ ] **Step 10: Run the full AppUnitTests suite and fix any regressions**
-
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Any existing test asserting the OLD combined Status text (e.g. `"queued · #2"` from `statusDisplay`) must be updated to check `statusDisplay` for the plain label and `RowModel.remarkText` for the detail separately — do not leave a stale assertion checking for combined text. Given `DownloadsTableTests.swift` was confirmed as already testing `statusDisplay`/`queuedDisplay` (Step 6), check every existing test in that file for a `"queued · #"`-shaped string assertion specifically, since that exact case is the one this step removes.
-
-- [ ] **Step 11: Manual verification**
-
-Run `make`, open Home, add several downloads to exercise different states (queued behind another, a deliberately-failed URL, a completed one), turn on the Remark column via the Columns menu, confirm: Status shows only the plain label, Remark shows the detail (queue position or failure reason), the live cooling-down/retrying countdown in the Status cell itself still ticks exactly as it did before this task (unaffected, since `DownloadRow.statusCell`'s `TimelineView` was not touched), and the Remark column is off by default on a fresh launch.
-
-- [ ] **Step 12: Lint**
-
-Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Model/ColumnConfig.swift Sources/App/Table/TablePresentation.swift Sources/App/Rows/RowModel.swift Sources/App/Table/DownloadRow.swift` then `mise exec -- swiftlint lint --strict` on the same files.
+*(Onboarding Install primacy — Install now primary; brew/pipx secondary — lands in the same Home/onboarding mockup pass if not already shipped; first-run empty Home copy stays Phase 13. Home mockups after this contract is treated as final — user preference.)*
 
 ---
 
@@ -2169,22 +1987,18 @@ Run lint on whatever file was changed in Step 3.
 ## Task 15: Documentation updates
 
 **Files:**
-- Modify: `apps/media-grabber/docs/design-system.md`
+- Modify: `apps/media-grabber/docs/design-system.md` (§4.2 Home — left rail, Status hidden by default, Remark, Inactive)
+- Modify: `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3 / §5.4 (if not already aligned)
+- Modify: `apps/media-grabber/docs/state-flow.md` § availableActions once `job-status-and-actions.md` §6 closes
 - Modify: `apps/media-grabber/CLAUDE.md`
+- Modify: Home / onboarding mockups under `apps/media-grabber/docs/mockups/screens/` as needed
 
-**No code changes in this task** — pure documentation reconciliation now that the implementation is real and may have deviated in small ways from the brainstorming-stage mockups (e.g. exact SwiftUI component names).
+**No code changes in this task** — pure documentation reconciliation.
 
-- [ ] **Step 1: Update design-system.md §4.2.3's column table**
-
-Find the Downloads-table column list in `apps/media-grabber/docs/design-system.md` (§4.2.3, referenced but not directly quoted in this plan's research pass — read it now) and add the `Remark` column (hidden by default, positioned after Status) to match the 17-column reality Task 11 implemented.
-
-- [ ] **Step 2: Confirm §4.6, §4.7, §4.8 still match the shipped UI**
-
-Read `apps/media-grabber/docs/design-system.md` §4.6 (Preferences), §4.7 (Diagnostics), §4.8 (About) against the actual `DiagnosticsPane`/`UpdatesPane`/`AboutView`/`DeveloperView` SwiftUI code from Tasks 8, 9, 13. If any real button label, row order, or copy string drifted from the brainstormed spec during implementation (which sometimes happens for good reasons — a SwiftUI layout constraint, an API limitation), update the doc to match the shipped reality rather than leaving it describing an unbuilt variant. Do not silently accept a drift that has no good reason — if something changed without a real reason, fix the code to match the spec instead of the doc.
-
-- [ ] **Step 3: Update CLAUDE.md's phase-status line**
-
-`apps/media-grabber/CLAUDE.md`'s "Next: Phase 11 — Diagnostics, About, updates (brainstormed; not yet planned)" line needs updating once this plan is fully executed — change to reflect Phase 11 as shipped, following the exact pattern used for Phase 9/Phase 10's entries (spec + plan file paths, "(shipped)" marker) elsewhere in that same file section.
+- [ ] **Step 1: design-system §4.2** — left rail replaces chips; Status + Remark hidden by default; actions/Restart wording; toast copy no longer cites “Needs attention”.
+- [ ] **Step 2: Confirm §4.6, §4.7, §4.8 still match the shipped UI** — same as before (Diagnostics / Updates / About).
+- [ ] **Step 3: Update CLAUDE.md's phase-status line** after Phase 11 ships.
+- [ ] **Step 4: Point readers at `job-status-and-actions.md`** as product contract; stamp its “final look” one-liner only after §6 open items close.
 
 ---
 
@@ -2192,7 +2006,8 @@ Read `apps/media-grabber/docs/design-system.md` §4.6 (Preferences), §4.7 (Diag
 
 **Spec coverage check:**
 - §5.2 chip busy state → Task 6. Engine-freshness chip → Task 7. ✓
-- §5.4 Status/Remark split, Site names, Title truncation → Task 11 (Status/Remark in Steps 5-9, Site names in Task 10, Title truncation in Step 4.5). ✓
+- §5.3/§5.4 Home manager (rail, Status hidden by default, Remark, Site, Title tooltip) → Task 11 + Task 10. ✓
+- `job-status-and-actions.md` (full contract incl. Remark catalog, confirms, isActive, batch) → Task 11. ✓
 - §5.9 Updates pane → Task 9. ✓
 - §5.10 Diagnostics → Task 8. ✓
 - §5.12 About/Developer → Task 13. ✓
@@ -2201,9 +2016,7 @@ Read `apps/media-grabber/docs/design-system.md` §4.6 (Preferences), §4.7 (Diag
 - Onboarding canary reuse → Task 4. ✓
 - `DiagnosticBundle` → Task 5. ✓
 - `markAppPasteboardWrite` callers → Task 14. ✓
-- `DebugFlags` Debug menu → deferred, hint carried in `ticket-backlog.md`'s Phase 12 entry.
-
-**Fix applied inline:** Title-column truncation is Task 11 Step 4.5 — same file (`DownloadRow.swift`) Task 11 already touches for the Remark column.
+- `DebugFlags` Debug menu → deferred, hint in Phase 13 (ticket-backlog).
 
 **Type consistency check:** `DottedVersion`/`YtDlpDriftVerdict` (Task 1) flow unchanged through Tasks 2, 3, 7, 13 — same names throughout. `SharePresenting`/`SharePresenter` (Task 8) consistent. `DiagnosticsPaneModel` consistent between Tasks 8 and 14. `AboutViewModel` consistent within Task 13. No renamed-halfway signatures.
 

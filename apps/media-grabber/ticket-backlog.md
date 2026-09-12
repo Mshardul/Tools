@@ -3,41 +3,8 @@
 Work not in Phase 1. The repo-root `BACKLOG.md` is **not** touched by this app
 until it reaches v1 (spec §14).
 
-## Phase 1 follow-ups (surfaced during the build)
-
-- **Bundle the Aurora typefaces.** Ship Sora / Inter / JetBrains Mono under
-  `Sources/App/Resources/Fonts/**` and add `ATSApplicationFontsPath` to the
-  Info.plist. `Skin`'s font accessors already resolve-or-fall-back; today they
-  always fall back to the system face because the files aren't present.
-- **Real onboarding canary.** `OnboardingInstaller`'s `testRun` step is
-  auto-pass (`.done` when deps resolved). Give it a real `MetadataProbe` of a
-  known-stable Creative-Commons URL and surface a genuine pass/fail.
-- **Product-name decision (spec §14).** `MediaGrabber` / `app.mediagrabber.mac`
-  are placeholders; pick the real name and do the find-and-replace.
-
-## Phase 2 deferrals (surfaced during the build)
-
-- **Column header drag-reorder.** `ColumnConfig.moveColumn` and persistence are
-  wired; the Downloads table header does not yet support drag-to-reorder.
-- **Multi-select row actions.** The table is single-select only this phase.
-- **Resizable column widths.** Widths are fixed in `ColumnMetrics`; needs drag
-  handles + persist in `ColumnConfig`.
-- **Merged transfer column.** Combine Progress + Speed + ETA into one column
-  (bar background, `speed · eta` overlay) — discussed post-Phase 2; update
-  design-system §4.2.3 when implemented.
-
-## Phase 6 deferrals (surfaced during design)
-
-- **Per-host adaptive concurrency.** Phase 6 ships one global adaptive cap: it
-  starts at 2, climbs by 1 per clean streak of 5 up to the Preferences cap, and
-  drops to 1 on any rate-limit / throttle from any host. A throttle on one site
-  therefore briefly slows every other site. Moving to a cap per `RateHost` would
-  keep healthy sites fast while a throttled site eases back alone. Deferred
-  because it rewrites `Scheduler.nextDownloads` into per-host slot accounting
-  (two capping layers — per-host adaptive plus the global Preferences cap — and
-  their interaction), and rate limiting is mostly per-IP anyway so the global
-  cap is the right default. The scheduler already receives `blockedHostIDs`, so
-  this is an additive change to an existing seam, not a rewrite of Phase 6 work.
+**No orphan deferrals.** Every item lives in a numbered phase below. Never a
+floating "Phase N follow-ups / deferrals" bucket.
 
 ## Documentation
 
@@ -45,9 +12,8 @@ until it reaches v1 (spec §14).
   Three mermaid state diagrams (job lifecycle, per-host `RateState`,
   `ShieldStatus`) with a full transition table + trigger + `file:line` for
   each, the auto-retry budget, the `availableActions`-vs-`cancel` mismatch on
-  `.cooldown` / `.waitingForNetwork`, and a §4 "deferred — leave room" table
-  (per-host adaptive cap, POT rotation, playlist-group state, `.shieldDown`
-  halt, probe-throttle visibility). Revisit whenever a phase adds a state.
+  `.cooldown` / `.waitingForNetwork`,   and a §4 "parked capabilities" table (each row names its owning phase).
+  Revisit whenever a phase adds a state.
 
 - **HLD / LLD architecture doc.** *(done — `docs/architecture.md`)* Both HLD
   and LLD, current (shipped-through-Phase-9) scope only — no future-phase
@@ -58,7 +24,7 @@ until it reaches v1 (spec §14).
   render via `mermaid-cli`. Cross-references `docs/state-flow.md` rather than
   repeating the state machines.
 
-## Phases 3–11 (intent — detailed when reached, from spec §12.1)
+## Phases 2–14 (intent — detailed when reached, from spec §12.1)
 
 Boundaries are dependency cuts: a phase is picked when its inputs exist, and its
 scope is drawn so nothing inside waits on a later phase. Shell-and-fill splits
@@ -67,7 +33,8 @@ are in spec §12.2.
 - **Phase 2 — Queue foundation and window chrome.** *(shipped)* Engine owns the
   queue; Downloads table with columns, sort, filter chips, and row actions;
   `Persistence` for queue/history/columns; graceful quit; `MainWindow` chrome
-  shells. Deferred: column drag-reorder UI, multi-select.
+  shells. Column header drag-reorder UI, multi-select, and resizable widths
+  park in **Phase 12**. Progress / Speed / ETA stay separate columns (no merge).
 - **Phase 3 — Preferences screen.** 7-pane `PreferencesView` over the existing
   `Preferences` model. Downloads / Appearance / Logs & privacy panes filled;
   Network / Sign-in & cookies / Updates / Advanced are headers later phases add
@@ -93,14 +60,16 @@ are in spec §12.2.
   `RateState` (`normal | cooldown | circuitOpen`); cooldown row state;
   `WarningBanner` `circuitOpen` / `networkDown` cases; circuit breaker;
   adaptive concurrency; `NetworkMonitor` → `waitingForNetwork`; `HealthStrip`
-  online / cooldown chips. Smoke: force a 429.
+  online / cooldown chips. Smoke: force a 429. Per-host adaptive concurrency
+  parks in **Phase 13**.
 - **Phase 7 — YouTube hardening.** *(shipped)* Engine-owned shield process +
   plugin dirs; `player_client` rotation; `engine.preview` shares YouTube identity
   with Grab; probe format lists; runway Language slot + quality rungs this probe
   offers; Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy;
   VPN hint; shield chip + `↻`; `potProviderDown` banner. Spec:
   `docs/superpowers/specs/archived/2026-09-07-media-grabber-phase-7.md`.
-  Parked: refresh engine `shieldStatus` after shield crash auto-recovery.
+  Refresh engine `shieldStatus` after shield crash auto-recovery parks in
+  **Phase 11** (engine-freshness / HealthStrip chip work).
 - **Phase 8 — Playlist.** *(shipped)* YouTube watch = one video; `PL` playlist
   page = one `--flat-playlist` dump, picker (checklist, filter, duration footer,
   duplicate warnings), then N jobs sharing `playlistGroupID`. Group header +
@@ -118,12 +87,13 @@ are in spec §12.2.
   Phase 9 `mediagrabber://open` path. Spec + plan:
   `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
   `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
-  Deferrals surfaced during smoke, hinted forward to Phase 12 (below).
-- **Phase 11 — Diagnostics, About, updates.** Diagnostics moves into
-  Preferences (System group) rather than top-level nav; report card, Copy
-  report, and Share diagnostic bundle (system share sheet, not a plain
-  clipboard copy) built here, plus the real canary probe shared with
-  Onboarding's `testRun`. yt-dlp version pinning: a declared minimum-known-good
+  App icon + Share Extension first-enable nudge park in **Phase 13**.
+- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** Diagnostics
+  moves into Preferences (System group) rather than top-level nav; report card,
+  Copy report, and Share diagnostic bundle (system share sheet, not a plain
+  clipboard copy) built here, plus the **real canary probe** shared with
+  Onboarding's `testRun` (closes the Phase 1 auto-pass gap — one canary
+  concept, not two). yt-dlp version pinning: a declared minimum-known-good
   version, checked on every launch (local compare, no network), with a `↻`
   action (uniform busy state across every actionable chip) that reinstalls to
   the declared minimum — never an unconditional upgrade. About replaces
@@ -131,23 +101,84 @@ are in spec §12.2.
   version and action button (MediaGrabber, yt-dlp, ffmpeg) lives there, with a
   button verb tracking certainty (nothing shown / "Check for updates" /
   "Update"); the MediaGrabber GitHub-release self-update check (spec §10.2)
-  is built here rather than Phase 12, since About's rows need real backing
+  is built here rather than Phase 13, since About's rows need real backing
   logic in the phase that builds them. Preferences → Updates is filled with
   settings only (two auto-check toggles), no version numbers or actions.
-  Downloads table: Status becomes a closed enum with per-row detail moved to a
-  new hidden-by-default Remark column; Site shows friendly host names. Report
-  card reflects Phase 4 / 6 / 7 state.
-- **Phase 12 — Polish.** Success + chip-refresh-failure toasts; native
-  notifications for backgrounded failures;
-  the first-run-cards → table transition + emptied-table state; full
-  keyboard-nav + VoiceOver + reduced-motion pass over every screen. Last — the
-  a11y pass audits every earlier screen. **App icon:** no `.icns`/`.xcassets`
-  exists yet — Share sheet grid shows the blank-document icon. **Share
-  Extension first-enable hint:** macOS disables Share Extensions by default
-  until enabled once in Privacy & Security → Extensions — evaluate a
-  first-run nudge here. **Debug menu:** review whether a `DebugFlags` Debug
-  menu is warranted.
-- **Home screen banner → footer.** The bottom warning/info banner on Home
-  becomes a fixed footer; the info/warning content it currently shows moves
-  into the HealthStrip chips instead. Not detailed yet — pick this up and
-  design it in depth when its phase is reached.
+  Report card reflects Phase 4 / 6 / 7 state. Also: refresh engine
+  `shieldStatus` after shield crash auto-recovery so chip/banner track live
+  provider status.
+
+  **Home manager chrome (locked 2026-09-12, absorbed here — Option A):** status
+  left rail (`All` / `Downloading` / `Done` / `Inactive` with badge on Inactive) — replaces top filter chips (do not keep both). **Status**
+  column stays in Columns but **hidden by default** (rail is everyday filter).
+  Status labels are 1:1 with the 9 `JobState`s (plain-language only; no
+  invented display statuses such as `retrying` or host-`cooling down` on a
+  `.queued` job). Backoff / host rate / attempt / failure reason → **Remark**
+  (hover + keyboard focus; optional Columns-menu column; a11y not hover-only).
+  Playlist groups: show the group if any child matches the selected rail
+  status. **Onboarding Install primacy** — primary CTA is Install now;
+  brew/pipx command + Copy / Open in Terminal are secondary. Phase 11 plan
+  rewrites parent §5.3 / §5.4 + design-system + Home/onboarding mockups to
+  match before implement. Site friendly host names if not already shipped.
+  *(First-run empty Home copy/layout redesign and Aurora body face stay
+  Phase 13.)*
+
+  **Status model (locked 2026-09-12):** Keep the nine `JobState` cases. Row
+  status = those nine, 1:1 (aliases OK: `running`→Downloading, `completed`→Saved).
+  Rail = filters only (many-to-one), not a second status vocabulary. Detail
+  that is not the job’s own state lives in Remark / HealthStrip — never as a
+  rewritten Status string.
+
+  **Rail mapping (locked 2026-09-12):** Downloading = probing, running, queued,
+  paused, waitingForNetwork, cooldown. Done = completed only. **Inactive**
+  (rail label only; row status stays Failed vs Cancelled) = failed, cancelled.
+  All = everything. From failed/cancelled: Restart (not Resume); cookie-restart
+  only when the failure class offers it. **Actions (locked 2026-09-12):**
+  Remove = delete persistence entry (+ parts + job log); Cancel = keep as
+  `cancelled` (on cooldown: clear job deferral only, host rate unchanged);
+  Restart always `attempt = 0`; no Restart on Saved; Log on cooldown +
+  waitingForNetwork; Force start on queued only when not immediately
+  schedulable; UI strings Force start / Restart / Restart with sign-in;
+  depMissing = queueHalt + blocking dialog (not mass Pause); playlist group:
+  Pause all (running), Restart failed (failed+cancelled), Cancel all (includes
+  cooldown + waitingForNetwork), keep expand/collapse. Contract:
+  `docs/job-status-and-actions.md`. Plan:
+  `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`.
+- **Phase 12 — Downloads table chrome.** Column header drag-reorder UI (wire
+  existing `ColumnConfig.moveColumn` + persistence); resizable column widths
+  (drag handles + persist in `ColumnConfig`); multi-select row actions (plan
+  **reverses** parent §5.4 “no row selection” and ships selection + batch
+  actions in this phase); queue-row drag-reorder if still desired at plan time.
+  **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no
+  merged transfer column). Builds on Phase 11’s manager Home (rail; Status
+  hidden by default) — do not reintroduce filter chips. Multi-select batch
+  verbs match row / playlist group eligibility
+  (`job-status-and-actions.md` §8); Force start only when exactly one eligible
+  row is selected.
+- **Phase 13 — Polish.** Success + chip-refresh-failure toasts; native
+  notifications for backgrounded failures; the first-run-cards → table
+  transition + emptied-table state; full keyboard-nav + VoiceOver +
+  reduced-motion pass over every screen (last — audits every earlier screen).
+  **Bundle Aurora typefaces** (Sora / Inter / JetBrains Mono under
+  `Sources/App/Resources/Fonts/**` + `ATSApplicationFontsPath`; then apply any
+  Aurora body-face swap decided in this phase). **Product-name decision
+  (spec §14)** — pick the real name and find-and-replace
+  `MediaGrabber` / `app.mediagrabber.mac`. **App icon** (`.icns` / `.xcassets`).
+  **Share Extension first-enable hint** — evaluate a first-run nudge (macOS
+  disables Share Extensions until enabled once). **Debug menu** — review
+  whether a `DebugFlags` Debug menu is warranted. **Home banner → footer** —
+  fixed footer; info/warning content moves into HealthStrip chips. **Per-host
+  adaptive concurrency** — cap trio per `RateHost`; `Scheduler.nextDownloads`
+  per-host slot accounting (additive on Phase 6 seams). *Hint (UI review
+  2026-09-12):* first-run empty Home — redesign kicker / headline / step-card
+  copy and composition. *Hint (UI review 2026-09-12):* Aurora body face —
+  replace Inter with a more distinctive grotesk (with font bundling above).
+- **Phase 14 — Post-v1 maturity.** Playlist-group aggregate state (engine);
+  real metadata-probe token bucket + visibility; POT/shield rotation;
+  always-on-cookies model; remote `player_client` order JSON; per-site helpers
+  beyond YouTube; optional UX extras (subtitles/embed, menu bar, schedules,
+  stats, bandwidth graphs, per-skin light/dark, compact breakpoint);
+  evaluate `.shieldDown` halt + `.userReset` soft transition (ship or drop in
+  plan); Sparkle/notarization/bundled deps only if Developer ID exists. Full
+  stub in parent §12.1.
+

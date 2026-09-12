@@ -108,7 +108,7 @@ public final class OnboardingInstaller {
             launch: pipxLaunch(["install", "bgutil-ytdlp-pot-provider"])
         )
 
-        // TODO(Task 11): real canary probe of a known-stable URL.
+        // Real canary probe → Phase 11 (shared with Diagnostics).
         steps[.testRun] = canProceedToHome ? .done : .pending
     }
 

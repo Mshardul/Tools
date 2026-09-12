@@ -2,7 +2,7 @@
 
 **Status:** draft, tracks §5 of the design spec
 **Date:** 2026-08-28
-**Working name:** MediaGrabber (final name deferred — spec §14)
+**Working name:** MediaGrabber (final name — Phase 13 / spec §14)
 
 This is the source of truth for visual design. Mockups in `mockups/` mirror
 these values; if they disagree, this file wins.
@@ -203,7 +203,7 @@ first-run cards).
 
 - **First run, no download ever made:** header + paste field + the **three step
   cards** ("Paste a link · Pick a format · Press Grab") fill the body. **No
-  Downloads table is rendered** — no headers, filter chips, or Columns button.
+  Downloads table is rendered** — no headers, status rail, or Columns button.
   The runway is not shown either (no link yet).
 - **After the first Grab:** the step cards are gone permanently. The Downloads
   table (with its toolbar) is rendered from now on. The field sits above it; the
@@ -240,18 +240,19 @@ The "resolve link & arm Grab" pattern.
 
 #### 4.2.3 Downloads table
 
-One table, newest at top. One **row per video** (a playlist contributes N rows, grouped — §4.2.4).
+One table, newest at top. One **row per video** (a playlist contributes N rows, grouped — §4.2.4). Product contract for status / rail / actions: `docs/job-status-and-actions.md`.
 
-**Above the table:**
-- **Filter chips** — `All · Downloading · Done · Needs attention`. "Needs attention" shows a count badge when > 0.
-- **`⊞ Columns` button** (right-aligned) — opens a dropdown of checkboxes to show/hide columns.
+**Layout:** status **left rail** + table body (not top filter chips).
 
-**Columns:** 16, one active sort at a time (`↕` cycles asc → desc → off).
+- **Rail** — `All · Downloading · Done · Inactive`. Inactive shows a count badge when > 0 (failed + cancelled). Mapping: Downloading = probing, running, queued, paused, waitingForNetwork, cooldown; Done = completed; Inactive = failed, cancelled.
+- **`⊞ Columns` button** — opens a dropdown of checkboxes to show/hide columns.
+
+**Columns:** one active sort at a time (`↕` cycles asc → desc → off). **Status** kept but **hidden by default** (rail is the everyday filter); labels are the nine `JobState`s 1:1 (plain aliases). Detail → Remark.
 
 | Column | Default | Hideable | Reorderable | Sort | Filter |
 |---|---|---|---|---|---|
 | Title | ✓ visible | no | yes | yes | yes (text) |
-| Status | ✓ visible | yes | yes | yes | yes (checklist) |
+| Status | hidden | yes | yes | yes | yes (checklist) |
 | Progress | ✓ visible | yes | yes | yes | — |
 | Speed | ✓ visible | yes | yes | yes | — |
 | ETA | ✓ visible | yes | yes | yes | — |
@@ -259,6 +260,7 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 | Quality | ✓ visible | yes | yes | yes | yes (checklist — 1080p / 720p / … / m4a / mp3) |
 | Size | ✓ visible | yes | yes | yes | — |
 | Site | hidden | yes | yes | yes | yes (checklist) |
+| Remark | hidden | yes | yes | yes | — |
 | Added at | hidden | yes | yes | yes | — |
 | Finished at | hidden | yes | yes | yes | — |
 | Duration | hidden | yes | yes | yes | — |
@@ -267,26 +269,27 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 | Client used | hidden | yes | yes | yes | yes (checklist) |
 | **Actions** | ✓ visible | **no** | **no (pinned last)** | — | — |
 
-- **Column headers are draggable** to reorder (except Actions, pinned last).
+- **Column headers are draggable** to reorder (except Actions, pinned last). *(Phase 12 if chrome not yet shipped.)*
 - Column order, visibility, the active sort column + direction, and active filters **persist** as a `ColumnConfig` in `columns.json` (separate from `Preferences`; see spec §4).
 - A column whose data source is not yet populated (`Attempt`, `Client used`) shows an em-dash and still sorts; a checklist filter with only a "(none)" option is allowed.
 - Nil values always sort **last**, regardless of direction.
 - There is **no "Playlist" column** — a playlist's membership is shown by the group header + indented child rows + spine (§4.2.4), not a column.
-- No per-row expansion. No detail view. No row selection. Ever — the Actions column is the entire per-row interaction model.
+- No per-row expansion. No detail view. Row selection → Phase 12. The Actions column is the primary per-row interaction model.
 
 **Cell treatments:**
-- *Title* — motif spinner prefix on an actively-downloading row; playlist children indented with the spine connector (§4.2.4).
-- *Status* — utility-face pill with a leading state dot: `queued` (`--accent-2`; shows `queued · #N` position), `probing`, `downloading` (`--accent`, glowing dot), `paused`, `waiting for network`, `cooling down` (`--warn`), `saved` (`--dim`), `couldn't verify you` / other failures (`--danger`), `cancelled`. Failure text is the plain-English reason, not an error code.
+- *Title* — motif spinner prefix on an actively-downloading row; playlist children indented with the spine connector (§4.2.4); full title as hover tooltip when truncated.
+- *Remark* (optional column / hover+focus) — queue `#N`, backoff / host rate, failure reason sentence — never invents a second status vocabulary.
+- *Status* (optional column) — plain 1:1 label only; never free text.
 - *Progress* — thin bar (`--bar-fill`), only on active rows; blank otherwise.
 - *Speed*, *ETA* — utility face, `--dim`; blank on non-running rows.
 - *Type* — `Audio` / `Video`. *Quality* — the selector (`1080p` … or `m4a` / `mp3`). Both `--dim`.
 - *Size* — known total; `--dim`; em-dash until known.
 - *Site* — utility face, `--dim`.
-- *Actions* — contextual icon buttons (glyphs per §3.4): pause/resume, cancel, force-start, retry, retry-with-cookies, reveal-in-Finder, open-in-browser, remove, show-log (opens the raw log file in the default text editor — no in-app log view). Every button is laid out; one whose action does not apply to the row's state renders disabled.
+- *Actions* — contextual icon buttons (glyphs per §3.4) per `job-status-and-actions.md`: pause/resume, cancel, force-start (conditional), restart / restart-with-sign-in, reveal-in-Finder, open-in-browser, remove (deletes entry), show-log. Offer only enabled actions for the state (~5 max).
 
 #### 4.2.4 Playlist group in the table
 
-- **Group header row** — spans the table above the playlist's videos. Contains: a disclosure caret (collapses/expands the whole group), the playlist name, a rollup (`N items · M done` + a mini progress bar), and group actions (Pause all · Retry failed · Cancel all). Background `--accent-2` at low alpha.
+- **Group header row** — spans the table above the playlist's videos. Contains: a disclosure caret (collapses/expands the whole group), the playlist name, a rollup (`N items · M done` + a mini progress bar), and group actions (Pause all · Restart failed · Cancel all — see `job-status-and-actions.md` §3b). Background `--accent-2` at low alpha. Show the group when any child matches the selected rail.
 - **Child rows** — the playlist's videos, indented. A single **continuous vertical spine** runs down the left at the indent position. Each child has a short horizontal connector from the spine to its content.
 - **Row divider lines between children start *after* the spine** (indented to align with content) — they never cross it, so the spine reads as one unbroken line.
 - **Collapsed** — children hidden; the header row remains, showing the rollup only.
@@ -308,7 +311,7 @@ Opens automatically when a resolved link is a playlist, **before** any rows are 
 
 - **Bottom-right**, stacked, transient (≈ 4s, auto-dismiss), one line + optional action.
 - Fires for: **download successes** (`<title> saved` + `Reveal`) and **health-chip refresh failures** (the reason a `↻` fix did not work).
-- **Per-job download failures do not toast.** They surface via the row Status cell + the "Needs attention" filter-chip badge.
+- **Per-job download failures do not toast.** They surface via row treatment + the Inactive rail badge.
 - While the app is **backgrounded**, a failure fires a **native macOS notification** (not a toast).
 - Engine/host conditions use the bottom banner (§4.1), never a toast.
 

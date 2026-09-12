@@ -30,10 +30,14 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
    "minimum that passes this phase," no shape a later phase must replace. If the
    confirmation dialog is in scope, it gets its real skinned UI + design-system
    entry now.
-2. **Deferred → a one-line hint in the phase that owns it.** Don't fully solve
-   it, don't silently drop it. Pick its phase, add the briefest pointer there
-   (a few words — "review X", "plan Y") so it surfaces when that phase starts.
-   Hints live in the parent design spec §12 or the target phase's spec.
+2. **Park in a numbered phase (never orphan).** Don't fully solve it in the wrong
+   phase, don't silently drop it, and **never** leave a floating "Phase N
+   follow-ups / deferrals" bucket or "out of scope for this phase" without an
+   owner. Pick the phase that owns it, add the briefest pointer there (a few
+   words — "review X", "plan Y") so it surfaces when that phase starts. Hints
+   live in the parent design spec §12 or the target phase's spec. If no
+   existing phase fits, insert a new sibling phase and renumber (rule 4).
+   Product-level **never** belongs in parent §13 — not as a phase deferral.
 3. **Completed phases are closed.** No blame, no rework to match a later rule,
    no framing current work as fixing past mistakes. If current work must touch
    completed-phase code (e.g. the P2 engine rework demoting `DownloadJob`), do
@@ -172,12 +176,14 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
   servname provided", not "getaddrinfo". `ProgressParser`'s signature list
   covers both — keep macOS phrasing in it.
 
-## Known Phase 1 gaps (tracked in ticket-backlog.md, not bugs)
+## Known Phase 1 gaps (parked in later phases — not bugs)
 
 - Aurora typefaces (Sora / Inter / JetBrains Mono) are not bundled — `Skin`'s
-  font accessors fall back to the system face.
-- Onboarding's `testRun` canary is auto-pass (real probe needs later-task types).
+  font accessors fall back to the system face. → **Phase 13**.
+- Onboarding's `testRun` canary is auto-pass. → **Phase 11** (real canary shared
+  with Diagnostics).
 - No queue / persistence / resume — a quit mid-download loses the job.
+  *(closed by Phase 2.)*
 
 ## Python
 
