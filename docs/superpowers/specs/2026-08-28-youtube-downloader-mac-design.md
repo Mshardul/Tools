@@ -106,7 +106,7 @@ apps/media-grabber/
 
 - `AppMain.swift` — `@main`, a single `WindowGroup`, no Settings scene
 - `AppModel.swift` — root `@Observable`: dependency state, queue, current page, banner, toasts
-- `MainWindow.swift` — window shell: brand row, health strip, nav, docked bottom banner, page switch (Home / Preferences / Diagnostics / Onboarding takeover)
+- `MainWindow.swift` — window shell: brand row, health strip, nav, docked bottom banner, page switch (Home / Preferences / About / Onboarding takeover)
 - **Home/**
   - `HomeView.swift` — paste field, probe status, runway (Link · Type · Format · Language · Save to), Grab; hosts the Downloads table
   - `RunwaySlot.swift` — one labelled slot (a dropdown or a resolved value) with a filled / hollow state
@@ -114,14 +114,16 @@ apps/media-grabber/
   - `DownloadsTable.swift` — column-model rendering: show/hide, column-header drag-reorder, per-column sort + filter menus, the synced 2-axis scroll, the virtualised row body, the playlist group header + spine (queue-row drag-reorder is deferred — no phase yet)
   - `DownloadRow.swift` — one video row: status pill, progress, contextual action buttons. No expansion.
   - `ColumnsMenu.swift` — the `⊞ Columns` checkbox menu
-- `HealthStrip.swift` — the ambient-state chips (shield, engine freshness, online, per-host cooldown). Refreshable chips (`shield`, `engine`) grow a `↻` that runs the background fix (restart the POT provider / upgrade yt-dlp); the online chip is passive. On success a refreshable chip goes green; on failure the chip stays bad (the error toast is Phase 11). The cooldown chip has no `↻` — clicking it opens a why / when-it-clears / Retry-now popover (Retry-now only for a circuit-open host).
+- `HealthStrip.swift` — the ambient-state chips (shield, engine freshness, online, per-host cooldown). Refreshable chips (`shield`, `engine`) grow a `↻` that runs the background fix (restart the POT provider / reinstall yt-dlp to its declared minimum) and enter a uniform busy state while it runs; the online chip is passive. On success a refreshable chip goes green; on failure the chip stays bad (the error toast is Phase 12). The cooldown chip has no `↻` — clicking it opens a why / when-it-clears / Retry-now popover (Retry-now only for a circuit-open host).
 - `WarningBanner.swift` — the engine/host-level banner, chosen by a `BannerReason` priority resolver (circuit open, network down, POT provider down). Dependency-missing is the onboarding takeover, not a banner. Host cooldown is the chip + Status cell.
 - `Toasts.swift` — the bottom-right toast stack
 - **Preferences/**
   - `PreferencesView.swift` — grouped sidebar + pane host
-  - `DownloadsSettings.swift`, `AppearanceSettings.swift` (skin + palette pickers), `NetworkSettings.swift`, `CookiesSettings.swift`, `UpdatesSettings.swift`, `LogsPrivacySettings.swift`, `AdvancedSettings.swift` — the 7 panes (contents in `docs/design-system.md` §4.6)
+  - `DownloadsSettings.swift`, `AppearanceSettings.swift` (skin + palette pickers), `NetworkSettings.swift`, `CookiesSettings.swift`, `UpdatesSettings.swift`, `LogsPrivacySettings.swift`, `AdvancedSettings.swift`, `DiagnosticsView.swift` (Run check → report card; Copy report; Share diagnostic bundle) — the 8 panes (contents in `docs/design-system.md` §4.6)
 - `OnboardingView.swift` — the first-run / deps-missing checklist (Homebrew, downloader + media tools, bot-check shield, test run); blocks Home until yt-dlp + ffmpeg are present
-- `DiagnosticsView.swift` — Run check → report card; Copy report; Copy diagnostic bundle
+- **About/**
+  - `AboutView.swift` — the About tab: identity block, MediaGrabber / yt-dlp / ffmpeg version rows with certainty-tracked action buttons, a Diagnostics link
+  - `DeveloperView.swift` — the Developer tab: identity header, "Connect with me" platform links, credit rows
 - **Theme/**
   - `SkinEnvironment.swift` — resolves the active `Skin` + `Palette` into SwiftUI environment values (fonts, radii, colours, elevation modifier)
   - `MotifView.swift` — the reel / orb, driven by an `isActive` flag; honours reduce-motion
@@ -133,9 +135,9 @@ Downloads table, reached through the "Done" filter chip.
 
 **Onboarding/**
 
-- `EnvironmentProbe.swift` — locate `brew`, `yt-dlp`, `ffmpeg`, `pipx`, and the POT provider; read versions; produce a staleness verdict
+- `EnvironmentProbe.swift` — locate `brew`, `yt-dlp`, `ffmpeg`, `pipx`, and the POT provider; read versions; compare yt-dlp's version against the app's declared minimum to produce a drift verdict
 - `OnboardingInstaller.swift` — drive first-run setup: Homebrew (show the official install command + Copy, or run it in Terminal.app), then `brew install yt-dlp ffmpeg`, then `pipx install bgutil-ytdlp-pot-provider`; stream progress
-- `YtDlpUpdater.swift` — "Update yt-dlp" → `brew upgrade yt-dlp` (or `yt-dlp -U` where brew's copy allows it); surface the result
+- `YtDlpUpdater.swift` — re-runs `brew reinstall yt-dlp` (or `upgrade`) to bring an installed version below the declared minimum back up to it; never an unconditional "upgrade to latest"; surface the result
 - `ProcessRunner.swift` — async `Process` launch + line-stream helper (pure, testable)
 
 **PotProvider/**
@@ -277,21 +279,21 @@ contract.
 
 ### 5.2 App chrome
 
-- **Brand row** — the wordmark (motif + name) on the left; nav (`Home · Preferences · Diagnostics`) on the right as in-app page links. The active page has a filled background.
-- **Health strip** — below the brand row: small chips carrying ambient state — `bot-check shield`, `engine` (yt-dlp freshness), `online` / `offline`, and a per-host cooldown / circuit chip shown only while a host is cooling or paused. A green dot means ok, amber means attention. A chip in a bad state may grow a `↻` refresh icon at its right edge; clicking it runs that chip's background fix:
+- **Brand row** — the wordmark (motif + name) on the left; nav (`Home · Preferences · About`) on the right as in-app page links. The active page has a filled background. Diagnostics is not a nav item — it is a Preferences pane (§5.9); the nav's third slot is About (§5.12), a destination most users open at least once, unlike Diagnostics.
+- **Health strip** — below the brand row: small chips carrying ambient state — `bot-check shield`, `engine` (yt-dlp version drift against the app's declared minimum), `online` / `offline`, and a per-host cooldown / circuit chip shown only while a host is cooling or paused. A green dot means ok, amber means attention. A chip in a bad state may grow a `↻` icon at its right edge; clicking it runs that chip's background fix and enters a busy state while the fix runs — the `↻` glyph spins, the dot dims to a pulsing neutral state, and the icon is disabled for the duration so a second click can't overlap the action (disabled under `prefers-reduced-motion`, per §5.11). This busy treatment is uniform across every chip that can act, not specific to one chip:
   - `shield · offline` → restart the POT provider process, re-run its health check
-  - `engine · stale` → `brew upgrade yt-dlp` (or `yt-dlp -U`), re-read the version
+  - `engine · update available` → re-run the pinned yt-dlp reinstall (§10.1a), re-read the version
   - `engine · missing` (a dependency is gone) → *not a refresh* — routes back to Onboarding as a hard block
 
   The **online / offline chip is passive** — no `↻`, no re-poll control. A single
   engine-owned, debounced `NWPathMonitor` subscription is the network truth
   (`QueueSnapshot.isOnline`); re-reading the monitor would not change it. On
   success a refreshable chip goes green and the icon disappears. On failure the
-  chip stays bad; the error toast is Phase 11. The cooldown chip has no
+  chip stays bad; the error toast is Phase 12. The cooldown chip has no
   `↻`; clicking it opens a popover — which hosts are cooling or paused, the live
   `m:ss` until a cooldown clears, and a Retry-now button only for a circuit-open
   host.
-- **Warning banner** — docked to the bottom of the window, floating over the table, with the table reserving bottom padding so its last row never hides under it. Reserved for **engine / host-level** conditions only. Content is chosen by a `BannerReason` priority resolver (`depMissing` > `networkDown` > `circuitOpen`, then `potProviderDown`) — not a `switch` on `queueHalt`. One sentence; the action button is optional (`networkDown` has none). A host cooldown is the chip + Status cell, not a banner. yt-dlp staleness is the engine-freshness chip, not a banner.
+- **Warning banner** — docked to the bottom of the window, floating over the table, with the table reserving bottom padding so its last row never hides under it. Reserved for **engine / host-level** conditions only. Content is chosen by a `BannerReason` priority resolver (`depMissing` > `networkDown` > `circuitOpen`, then `potProviderDown`) — not a `switch` on `queueHalt`. One sentence; the action button is optional (`networkDown` has none). A host cooldown is the chip + Status cell, not a banner. yt-dlp version drift is the engine-freshness chip, not a banner.
 
 ### 5.3 Home
 
@@ -306,11 +308,13 @@ contract.
 
 - One table, newest on top, **one row per video**. The paste field, filter chips, `⊞ Columns` button, and column header row are a fixed region; the rows scroll independently below (rows virtualised — thousands of rows without full materialisation). When visible columns overflow the width the body and the header row scroll horizontally in sync.
 - Above it: filter chips (`All · Downloading · Done · Needs attention`, the last with a count badge; a "Clear filters" button appears when the active filters hide every row) and a `⊞ Columns` button (a checkbox menu, all 16 columns).
-- **16 columns, full table in design-system §4.2.3.** Default-visible: Title · Status · Progress · Speed · ETA · Type · Quality · Size · **Actions**. Hidden by default: Site · Added at · Finished at · Duration · Destination · Attempt · Client used.
+- **17 columns, full table in design-system §4.2.3.** Default-visible: Title · Status · Progress · Speed · ETA · Type · Quality · Size · **Actions**. Hidden by default: Site · Remark · Added at · Finished at · Duration · Destination · Attempt · Client used.
 - Columns are **draggable to reorder**. Actions is pinned last and cannot hide or move; Title cannot hide but can move. Column order, visibility, the active sort, and filters persist.
 - **One active sort column** (`↕` cycles asc → desc → off; a new column's `↕` clears the previous); per-column **filter** (`▽` opens a menu) where meaningful; Progress / Speed / ETA / Size are sort-only; Actions is neither. Nil values sort last regardless of direction.
-- The Status cell shows the plain-language state (`queued` shows `· #N` position); a failure shows its reason sentence. The Actions column carries the contextual buttons: pause / resume, cancel, **force-start `⏫`**, retry, retry-with-cookies `🔑`, reveal in Finder, open in browser, remove, and show log (opens the raw log file in the default text editor). Every button is laid out; one that does not apply to the row's state renders disabled.
-- **There is no per-row expansion, no detail view, and no row selection.** Failure detail is the status reason plus the row actions plus the external log.
+- **Title** truncates with an ellipsis at a fixed max width and carries the full title as a tooltip on hover — a row's height never grows to fit a long title.
+- **Site** shows the host's friendly display name (`YouTube`, `Vimeo`, `SoundCloud`, `Internet Archive`), the same mapping `HealthController`'s per-host chip already uses — never the raw domain.
+- The **Status** cell is a closed set of plain-language states (`downloading`, `queued`, `paused`, `cooling down`, `retrying`, `saved`, `cancelled`, `failed`) — reliable to sort and filter on because it never carries row-specific free text. Any per-row detail — a queue position, a resume countdown, an attempt count, a failure's reason sentence — is a separate **Remark** cell (hidden by default). The Actions column carries the contextual buttons: pause / resume, cancel, **force-start `⏫`**, retry, retry-with-cookies `🔑`, reveal in Finder, open in browser, remove, and show log (opens the raw log file in the default text editor). Every button is laid out in a fixed order; one that does not apply to the row's state renders disabled — never hidden. Ten possible buttons total, but no state ever offers more than 5 at once, so the row never needs an overflow treatment.
+- **There is no per-row expansion, no detail view, and no row selection.** Failure detail is the Remark cell plus the row actions plus the external log.
 
 ### 5.5 Playlist group in the table
 
@@ -354,20 +358,45 @@ The exact command is always shown even though the label uses plain language.
 
 An in-app page with a grouped left rail and a right pane of `label + control`
 fields, each with a one-line helper. Plain-language labels ("At the same time",
-not `maxConcurrentDownloads`). Seven panes — Downloads, Appearance, Network,
-Sign-in & cookies, Updates, Logs & privacy, Advanced. Full contents are in
-`docs/design-system.md` §4.6. Appearance holds the Skin and Palette pickers.
+not `maxConcurrentDownloads`). Eight panes — Downloads, Appearance, Network,
+Sign-in & cookies (YouTube group); Updates, Logs & privacy, Advanced, Diagnostics
+(System group). Full contents are in `docs/design-system.md` §4.6. Appearance
+holds the Skin and Palette pickers. Diagnostics sits in the System group rather
+than the top-level nav — it is a status/support tool a small share of users open,
+not a primary destination.
+
+**Updates** holds settings only: an "automatically check for app updates" toggle
+and an "notify when the downloader is outdated" toggle. It shows no version
+number and no action button — every version and every action (`Check for
+updates`, `Update`, `↻ Update`) lives on About (§5.12), never duplicated here.
 
 ### 5.10 Diagnostics
 
-An in-app page with one primary button, **Run check**, which runs a canary probe
-and then shows a report card — rows of `key : value` coloured by verdict:
-canary result and time, yt-dlp version and freshness, ffmpeg version, bot-check
-shield health and port, cookie source and readability, the detected client, the
-`player_client` rotation order, an active cooldown, and network / VPN status.
-**Copy report** puts a redacted plain-text block on the clipboard. **Copy
-diagnostic bundle** produces the `DiagnosticBundle` zip; that action lives only
-here.
+A Preferences pane (System group) rather than a top-level destination. Opening
+it pre-populates from state the engine and session already have — the shield,
+cooldown, and network chips are live in `HealthController` regardless of this
+page, so the report card shows their current values immediately; the canary row
+and the version rescans show their last-known values, marked "not yet run this
+session," until **Run check** — the page's one primary button, laid out beside
+the pane's title — refreshes everything. The report card is rows of `key :
+value` coloured by verdict: canary result and time, yt-dlp version and drift
+against the app's declared minimum, ffmpeg version, bot-check shield health and
+port, cookie source and readability, the detected client, the `player_client`
+rotation order, an active cooldown, and network / VPN status. A yt-dlp row
+behind the declared minimum shows an inline `↻ Update` button next to it
+(§10.1a) — the same action as the HealthStrip's `engine` chip.
+
+**Copy report** puts a redacted plain-text block on the clipboard. **Share
+diagnostic bundle** hands the `DiagnosticBundle` zip (app-log tail, the
+most-recent job's log, and this report) to the system share sheet
+(`NSSharingServicePicker` — Mail, AirDrop, Save to Files, and so on), the same
+mechanism the Phase 10 Share Extension already uses; that action lives only
+here. The two buttons carry equal visual weight — one produces clipboard text,
+the other hands off a file, and neither is more "primary" than the other.
+
+The real canary probe this page runs (a `MetadataProbe` of a known-stable
+Creative-Commons URL) is the same one Onboarding's `testRun` step calls — one
+canary concept, not two; Onboarding no longer auto-passes that step.
 
 ### 5.11 Window and quality floor
 
@@ -377,6 +406,43 @@ launch. Quality floor: full keyboard navigation, visible focus, VoiceOver
 labels on every icon button, `prefers-reduced-motion` honoured (the motif stops
 spinning), and the window usable narrow — the table scrolls horizontally inside
 its own container and the page never scrolls sideways.
+
+### 5.12 About
+
+The third top-level nav destination, replacing Diagnostics there. A two-tab page
+(About, Developer) using the same fixed-rail-plus-scrolling-pane shell as
+Preferences. The HealthStrip stays global chrome — present here exactly as on
+Home and Preferences.
+
+**About** opens with a centred identity block (app mark, name, version), then
+every version this app tracks and every action that can change one of them —
+nothing here is duplicated in Preferences → Updates, which holds only the
+settings that govern *whether* a check happens. Each version row's action
+button tracks how certain the app is that an update exists:
+
+- **No button** — current; nothing to do. Applies once a check has resolved and
+  found nothing newer (the same "no lingering button" pattern already used for
+  the Full Disk Access row once granted, §5.9's Sign-in & cookies pane).
+- **"Check for updates"** — shown only for MediaGrabber's own version, only
+  before a GitHub-release check has resolved this session; a real network call
+  is genuinely unresolved until it returns.
+- **"Update" / "↻ Update"** — shown once an update is confirmed available.
+  "Update" (MediaGrabber) opens the release page for the user to download and
+  replace the app manually (§10.2); "↻ Update" (yt-dlp) re-runs the pinned
+  reinstall (§10.1a) inline, the same action as the HealthStrip `engine` chip
+  and the Diagnostics report row.
+
+yt-dlp's row never shows "Check for updates" — its drift check is a local
+version compare against the app's declared minimum, always immediately
+certain, never a pending network call. A Diagnostics row also links from About,
+for the health-check / support-bundle actions that live there.
+
+**Developer** opens with the same identity-block treatment — an avatar, a name,
+a one-line headline — then a "Connect with me" row (label left, a row of
+platform icon-links right: GitHub, LinkedIn, personal site, X) and credit rows
+(source code, report an issue, license). GitHub and LinkedIn use their real
+brand marks as small bundled image assets; platforms with no standard mark use
+a generic icon.
 
 ## 6. Data flow (one download)
 
@@ -530,7 +596,7 @@ which re-invokes `yt-dlp` after an exit) rather than one hiding the other.
   and re-queues parked jobs at the tail. Retries are not burned against a dead
   link.
 - **VPN hint** — a bot-check error plus an active VPN / utun interface → tell the user plainly: disable the VPN or add cookies.
-- **yt-dlp staleness** — on launch and once daily, compare the resolved yt-dlp's `--version` to the latest GitHub release date; if more than ~14 days stale, the engine-freshness `HealthStrip` chip goes amber with a `↻` that runs `brew upgrade yt-dlp` (or `yt-dlp -U`). YouTube breakage is usually just a stale binary, so this is high-value. Staleness is a chip, never a banner.
+- **yt-dlp version drift** — on every launch (a local version compare, no network call, so no throttling is needed), compare the resolved yt-dlp's `--version` against a minimum-known-good version the app declares (a hardcoded constant, bumped by hand per app release — never fetched remotely, per §13). Older-than-declared is the only drift verdict; newer-than-declared reads as current — brew naturally moves forward and that is expected, not a problem. On drift the engine-freshness `HealthStrip` chip goes amber with a `↻` that re-runs a version-pinned brew install to bring yt-dlp back to the declared minimum (§10.1a) — never an unconditional "upgrade to latest," since an unpinned upgrade risks breaking the app against a yt-dlp release it has not been tested with. YouTube breakage is usually just an outdated binary, so this is high-value. Drift is a chip, never a banner.
 - **POT provider health** — if the `bgutil-pot` process is unhealthy or down, a banner: "Bot-check protection is offline — some downloads may fail or be low-res" with a Restart button.
 
 ### 7.9 Failure UX
@@ -558,7 +624,7 @@ which re-invokes `yt-dlp` after an exit) rather than one hiding the other.
 - Every yt-dlp process: launch (argv **redacted**), exit code, wall time, bytes, average speed, `player_client` used.
 - Every rate-limit event: trigger (`429` / `throttle` / `botCheck`), host, concurrency at the time, cooldown length, backoff attempt number.
 - Scheduler decisions: concurrency raised / lowered (from → to, and why); circuit breaker open / close.
-- Dependency checks: found?, versions, staleness verdict.
+- Dependency checks: found?, versions, yt-dlp drift verdict.
 - Error classification: the raw yt-dlp error (truncated) → the mapped `ErrorClass`.
 - Completion integrity: expected vs actual duration, verdict.
 - App lifecycle: launch; quit (clean / with N active); queue restored (N jobs).
@@ -567,7 +633,7 @@ which re-invokes `yt-dlp` after an exit) rather than one hiding the other.
 
 - `~/Library/Logs/MediaGrabber/jobs/<jobID>.log` — verbatim yt-dlp stdout + stderr, preceded by a header: the **redacted** argv, yt-dlp version, ffmpeg version, cookie source, chosen `player_client`, timestamp.
 - Kept for completed jobs; pruned with the history cap (200 jobs) and a 30-day age cap.
-- "Show Log" on a row opens this file in the default text editor. "Copy diagnostic bundle" (Diagnostics page only) → `DiagnosticBundle` zips the app-log tail, the most recent or selected job's log, and the Diagnostics report.
+- "Show Log" on a row opens this file in the default text editor. "Share diagnostic bundle" (Diagnostics page only) → `DiagnosticBundle` zips the app-log tail, the most-recent job's log, and the Diagnostics report, handed to the system share sheet.
 
 ### 8.4 Diagnostics panel
 
@@ -617,13 +683,33 @@ which gets the environment ready:
 Ongoing: `EnvironmentProbe` re-runs on launch; a missing or broken dependency
 routes back to the relevant onboarding step, not a crash.
 
+### 10.1a yt-dlp version pin
+
+The app declares a minimum-known-good yt-dlp version as a hardcoded constant
+(alongside the other tunable constants in `EngineTuning`), bumped by hand when
+a compatibility issue is found or verified fixed — never fetched from a remote
+source (§13). Homebrew keeps no versioned formula for yt-dlp, so this is a
+*soft* pin: the app cannot force an install onto an exact version, only detect
+and correct drift below its declared floor. `↻ Update` (on the HealthStrip
+chip, the Diagnostics report row, and About) re-runs `brew reinstall yt-dlp` (or
+`upgrade`) to bring the installed version back to at least the declared
+minimum — never an unconditional "upgrade to latest," since the app has not
+been tested against arbitrary future yt-dlp releases. A version string that
+cannot be parsed into comparable components is treated as unknown, not stale —
+never a false-alarm drift verdict on a future yt-dlp version-format change.
+
 ### 10.2 App self-update
 
-A **GitHub-release check** (not Sparkle — Sparkle wants signed updates). On
-launch, throttled to daily, hit the Releases API; if there is a newer release,
-show a non-blocking "New version — download" that opens the release page. The
-user replaces the app manually and redoes the one-time Gatekeeper step. Revisit
-Sparkle if a Developer ID account is obtained.
+A **GitHub-release check** (not Sparkle — Sparkle wants signed updates), for
+MediaGrabber's own version. Throttled to daily; on launch (and on the About
+page's manual "Check for updates" — §5.12) hit the Releases API. Before a check
+has resolved this session, About's MediaGrabber row reads "Check for updates";
+once resolved with nothing newer, no button shows; once a newer release is
+found, the row shows "Update," which opens the release page. The HealthStrip
+carries no equivalent chip for this — engine-freshness is a yt-dlp concept
+(§10.1a), not an app-version one. The user replaces the app manually and redoes
+the one-time Gatekeeper step. Revisit Sparkle if a Developer ID account is
+obtained.
 
 ## 11. Testing
 
@@ -635,7 +721,7 @@ manual smoke checklist.
 - `ProgressParser`: fixture yt-dlp progress lines → `ProgressEvent`s.
 - `ProgressParser` error classification: fixture stderr → `ErrorClass`.
 - `YtDlpArguments`: `DownloadRequest` + attempt context → the expected argv (including plugin-dirs, POT URL, the `player_client` for the attempt number); **and** the redacted view.
-- `EnvironmentProbe`: parse `brew` / `yt-dlp` / `ffmpeg` / `pipx` presence and versions from fixture output; the staleness verdict.
+- `EnvironmentProbe`: parse `brew` / `yt-dlp` / `ffmpeg` / `pipx` presence and versions from fixture output; the drift verdict against the declared minimum, including an unparseable version treated as unknown rather than stale.
 - `PlayerClientRotation`: attempt N → the correct client.
 - `PotProviderProcess`: health-check parsing; the restart-on-crash logic (with a fake process).
 - `Backoff`: jitter within bounds, the sequence, the cap, `Retry-After` honoured.
@@ -699,7 +785,7 @@ manual smoke checklists cover the rest.
 
 ### 12.1 Phases (intent — detailed when reached)
 
-Eleven phases. The boundaries are **dependency cuts**: each phase is picked as
+Twelve phases. The boundaries are **dependency cuts**: each phase is picked as
 soon as everything it needs is built, and its scope is drawn so that no work
 item inside it waits on a work item in a later phase. A phase that lays out a
 shell (a banner, a chip strip, a pane, an enum) does so complete; later phases
@@ -774,7 +860,7 @@ add cases and wiring, never relayout — §12.2.
   button). Status cell + cooldown chip show a live `m:ss` via `TimelineView`.
   `--concurrent-fragments` is 4 when the host is `.normal`, 1 otherwise. Rate
   state is in-memory only. Per-host adaptive concurrency is a backlog deferral.
-  Engine-freshness chip is Phase 10.
+  Engine-freshness chip is Phase 11.
 
 - **Phase 7 — YouTube hardening (shipped).** Spec + plan:
   `docs/superpowers/specs/archived/2026-09-07-media-grabber-phase-7.md`,
@@ -837,32 +923,61 @@ add cases and wiring, never relayout — §12.2.
   surfaced during manual smoke, hinted forward to Phase 12 — app icon,
   Share Extension first-enable nudge (§12.1 Phase 12).
 
-- **Phase 11 — Diagnostics, staleness, updater.** The Diagnostics page
-  (Run check → report card → Copy report /
-  Copy diagnostic bundle); the `DiagnosticBundle` zip; the yt-dlp staleness
-  daily check; `YtDlpUpdater`; the Updates pane rows (Phase 3). The
-  engine-freshness `HealthStrip` chip is emitted here from `HealthController`
-  (no Phase 6 slot) — amber when yt-dlp is stale, `↻` runs the upgrade;
-  staleness is a chip, never a banner. The report card reflects Phase 4 / 6 /
-  7 state, so it comes after them. *Hint: `DebugFlags` (`-MG*` launch args,
-  struct from Phase 2) has grown across phases — add a Debug menu bound to it
-  here if warranted.* *Hint: update the `screens.html` mockup — the Diagnostics
-  screen (before-run and after-run states) and the Updates pane fill here;
-  both are stepless / header-only in the current snapshot.* *Hint: Copy report
-  and Copy diagnostic bundle write the clipboard — call
-  `IncomingLinkController.markAppPasteboardWrite(_:)` with the same string at
-  each write site so the clipboard sniff (Phase 9) ignores our own copy.*
+- **Phase 11 — Diagnostics, About, updates.** Diagnostics moves into
+  Preferences (System group) rather than top-level nav — a status/support tool
+  a small share of users open, not a primary destination (§5.10); its report
+  card, Copy report, and Share diagnostic bundle actions are built here, and
+  the real canary probe closes the tracked Phase 1 gap where Onboarding's
+  `testRun` auto-passed (one canary concept, shared by both). `DiagnosticBundle`
+  zips the app-log tail, the most-recent job's log, and the report, handed to
+  the system share sheet.
+
+  yt-dlp version pinning (§10.1a): the app declares a minimum-known-good
+  version, checked on every launch (a local compare, no network, no
+  throttling); the `engine` `HealthStrip` chip (no Phase 6 slot) goes amber on
+  drift, with a `↻` that re-runs a version-pinned `brew reinstall yt-dlp` —
+  never an unconditional upgrade. The same action is available inline on the
+  Diagnostics report row and on About. Every chip with a `↻` action gains a
+  busy state while it runs (glyph spins, dot pulses, icon disabled) — applied
+  uniformly to this chip and the existing shield-restart chip, not just the
+  new one.
+
+  About (§5.12) replaces Diagnostics as the third top-level nav item — two
+  tabs, About and Developer. About shows every version this app tracks
+  (MediaGrabber, yt-dlp, ffmpeg) and every action that can change one, with a
+  button verb that tracks certainty (nothing shown / "Check for updates" /
+  "Update"); Developer carries an identity header, a "Connect with me" row of
+  platform links, and credit rows. The MediaGrabber GitHub-release self-update
+  check (§10.2) is built here, not Phase 12, since About's version rows need
+  their real backing logic in the phase that builds them — no stub state
+  shipped. Preferences → Updates (Phase 3, previously stepless) is filled with
+  settings only (an auto-check toggle for each of MediaGrabber and yt-dlp) —
+  no version numbers or action buttons there; those live exclusively on About.
+
+  The Downloads table's Status column becomes a closed enum, with per-row free
+  text (queue position, resume countdown, attempt count, failure reason) moved
+  to a new hidden-by-default Remark column (§5.4) — this and the Site column's
+  switch to friendly host names (`YouTube` not `youtube.com`, matching
+  `HealthController`'s existing per-host naming) are both Home-table changes
+  that surfaced during this phase's design pass and are made here since they
+  do not depend on anything later.
+
+  *Hint: `DebugFlags` (`-MG*` launch args, struct from Phase 2) has grown
+  across phases — add a Debug menu bound to it here if warranted.* *Hint: Copy
+  report and Share diagnostic bundle write the clipboard / hand off a file —
+  call `IncomingLinkController.markAppPasteboardWrite(_:)` with the copied
+  string at the Copy report write site so the clipboard sniff (Phase 9) ignores
+  our own copy.*
 
 - **Phase 12 — Polish.** Success and chip-refresh-failure toasts; native macOS notifications for
   backgrounded failures; the first-run cards → table transition and the
   emptied-table state; a full keyboard-navigation, VoiceOver, and
-  `prefers-reduced-motion` pass over every screen; the GitHub-release
-  self-update check (§10.2). Last because the a11y pass audits every screen
-  the earlier phases built. *Hint (from Phase 10):* app icon — no
-  `.icns`/`.xcassets` exists yet, app-wide gap. *Hint (from Phase 10):*
-  Share Extension first-enable nudge — macOS disables Share Extensions by
-  default until enabled once in Privacy & Security → Extensions; evaluate a
-  first-run hint.
+  `prefers-reduced-motion` pass over every screen (§12.2's a11y sweep). Last
+  because the a11y pass audits every screen the earlier phases built. *Hint
+  (from Phase 10):* app icon — no `.icns`/`.xcassets` exists yet, app-wide
+  gap. *Hint (from Phase 10):* Share Extension first-enable nudge — macOS
+  disables Share Extensions by default until enabled once in Privacy &
+  Security → Extensions; evaluate a first-run hint.
 
 ### 12.2 Shells built complete, filled later
 
@@ -880,7 +995,7 @@ means no screen is built twice.
 | `QueueSnapshot.queueHalt` + `engine.revalidate()` | Phase 2 — `QueueHaltReason?`, `.depMissing` case (scheduler stops, `AppModel` shows Onboarding takeover); `revalidate()` re-checks deps and clears `.depMissing` only, called on onboarding completion. `QueueSnapshot` also carries `hostRateSummary` + `isOnline` | Phase 6 — adds derived `.circuitOpen` and hard `.networkDown`; circuit reset is `resetCircuit` / `resetAllCircuits`, not `revalidate()`. Banner "Retry now" and the cooldown-chip popover call those |
 | Downloads-table row-action bar | Phase 2 — every `RowAction` button laid out in fixed order; `availableActions: Set<RowAction>` per job from the engine; buttons not in the set render disabled | Phase 4 (`retry`, `showLog` — the `.failed` arm reads `ErrorClass.presentation.offeredActions`; `showLog` on every run state), Phase 5 (`retryWithCookies` `🔑`) — the engine adds them to the set, no UI change |
 | `WarningBanner` | Phase 2 — the docked shell + `BannerContent { text, buttonTitle?, action? }`, always nil | Phase 6 wires a `BannerReason` priority resolver (`depMissing` > `networkDown` > `circuitOpen`; optional button — `networkDown` has none); Phase 7 adds `potProviderDown` as one resolver entry (Restart → `restartShield`; not a `QueueHaltReason`) |
-| `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction, countdownUntil? }`; `ChipInteraction` = `none \| refresh \| popover(PopoverKind)` (data, the strip renders interaction) | Phase 6 ships `HealthController` + online + cooldown chips + `.popover(.hostRate)`; Phase 7 adds the bot-check shield chip + live `.refresh` (`↻`); Phase 10 adds the engine-freshness chip; Phase 11 the chip-refresh toast |
+| `HealthStrip` | Phase 2 — the chip row + `HealthChip { label, dot, interaction, countdownUntil? }`; `ChipInteraction` = `none \| refresh \| popover(PopoverKind)` (data, the strip renders interaction) | Phase 6 ships `HealthController` + online + cooldown chips + `.popover(.hostRate)`; Phase 7 adds the bot-check shield chip + live `.refresh` (`↻`); Phase 11 adds the engine-freshness chip and a uniform busy state for every actionable chip; Phase 12 the chip-refresh toast |
 | `ConfirmationRequest` + dialog host | Phase 2 — `ConfirmationRequest { title, message, confirmTitle, cancelTitle?, isDestructive, suppressionKey? }` (`cancelTitle == nil` → single-button notice), `AppModel.confirm(_:) async -> Bool`, one skinned dialog host (design-system §4.8); P2 users: duplicate-submit, graceful quit, reveal-missing (notice), write-failure (notice) — all `suppressionKey: nil` | Phase 8 "cancel all" (`suppressionKey: "playlist-cancel-all"`) and any later dialog — just call `confirm(...)` |
 | `ErrorClass` emit paths + failure UI | Phase 2 wires `incomplete` / `diskFull` / `permissionDenied` · Phase 4 the generic-set classifier signatures + the `FailurePresentation` model (`{ sentence, offeredActions }` keyed off `ErrorClass`, one switch) + `ErrorClass.key` | Phase 5 (`cookieReadFailed`) · Phase 7 (`botCheck`, `sabrGated`, `formatsMissing` on jobs; `potProviderDown` presentation sentence exists, chrome-only, never a row terminal state) |
 | `PreferencesView` panes | Phase 3 — all 7 panes; Downloads / Appearance / Network / Logs & privacy / Advanced filled, Sign-in & cookies + Updates stepless | Phase 4 (retry engine consuming `maxAutoRetries`), Phase 5 (the whole Sign-in & cookies pane — browser picker, Firefox-profile picker, Full Disk Access row, Learn more, tip), Phase 7 (Downloads **Audio language** policy row), Phase 10 (`autoCheckUpdates`) |
@@ -899,10 +1014,10 @@ an engine-internal model; `JobSnapshot` values on the stream replace direct
 binding. Both are part of the Phase 2 engine rework — the mutation invariant
 that requires them postdates Phase 1.
 
-**Accepted large rework** — the a11y sweep in Phase 11 reopens every screen from
-Phases 1–10 for keyboard / VoiceOver / reduce-motion. This is a chosen tradeoff:
+**Accepted large rework** — the a11y sweep in Phase 12 reopens every screen from
+Phases 1–11 for keyboard / VoiceOver / reduce-motion. This is a chosen tradeoff:
 one consolidated pass rather than a per-phase DoD line item. The risk is that if
-Phase 11 is cut or deferred, a11y ships incomplete.
+Phase 12 is cut or deferred, a11y ships incomplete.
 
 ## 13. Out of scope for v1
 

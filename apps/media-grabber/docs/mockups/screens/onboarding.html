@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MediaGrabber — Onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="screens.css">
+<style>.filenav{max-width:1060px;margin:0 auto 18px;font-family:var(--font-display);font-size:13px}
+.filenav a{color:var(--dim);text-decoration:none;padding:6px 10px;border-radius:var(--r-chip)}
+.filenav a.on{background:var(--panel);color:var(--text);font-weight:600}</style>
+</head>
+<body>
+
+<div class="switch">
+  <b>Theme</b>
+  <button data-s="aurora" class="on">Aurora</button>
+  <button data-s="tapedeck">Tape Deck</button>
+  &nbsp;&nbsp;<b>Palette</b>
+  <span id="palset"></span>
+</div>
+
+<nav class="filenav"><a href="onboarding.html" class="on">Onboarding</a> · <a href="home.html">Home</a> · <a href="preferences.html">Preferences</a> · <a href="about.html">About</a> · <a href="dialog.html">Dialog</a></nav>
+
+<div class="doc" id="doc">
+<div class="screen" id="s2-1">
+    <div class="cap"><b>2.1</b> First-run setup</div>
+    <div class="sub">Full-window takeover, blocks Home until yt-dlp + ffmpeg present. See <a href="../../design-system.md">design-system §4.5.</a></div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span></div>
+      <div class="body-scroll">
+        <div class="onb">
+          <div class="kicker">First run</div>
+          <h1>Let’s get you set up.</h1>
+          <p class="lead">MediaGrabber uses a few free command-line tools to do the actual downloading. One-time setup — about two minutes.</p>
+          <div class="step done"><div class="ic"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div class="body"><h3>Homebrew</h3><p>Found at /opt/homebrew/bin/brew.</p></div></div>
+          <div class="step now"><div class="ic">2</div><div class="body"><h3>Downloader + media tools</h3><p>Installs yt-dlp and ffmpeg. Required.</p><div class="cmd">brew install yt-dlp ffmpeg <button>Copy</button></div><button class="go">Install now</button></div></div>
+          <div class="step"><div class="ic">3</div><div class="body"><h3>Bot-check shield</h3><p>Installs the proof-of-origin helper so YouTube downloads don’t get blocked. Recommended.</p><div class="cmd">pipx install bgutil-ytdlp-pot-provider <button>Copy</button></div></div></div>
+          <div class="step"><div class="ic">4</div><div class="body"><h3>Test run</h3><p>We’ll grab a few seconds of a known video to confirm everything works.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s2-2">
+    <div class="cap"><b>2.2</b> First-run setup — Homebrew missing</div>
+    <div class="sub">Homebrew step failed: install command, Copy, Open in Terminal, Re-check. Other steps stay pending.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span></div>
+      <div class="body-scroll">
+        <div class="onb">
+          <div class="kicker">First run</div>
+          <h1>Let’s get you set up.</h1>
+          <div class="step fail now"><div class="ic"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div><div class="body"><h3>Homebrew</h3><p>The package manager the other tools install through.</p>
+            <div class="cmd">/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" <button>Copy</button></div>
+            <div class="rowbtns"><button class="btn-txt">Open in Terminal</button><button class="btn-txt">Re-check</button></div>
+          </div></div>
+          <div class="step"><div class="ic">2</div><div class="body"><h3>Downloader + media tools</h3><p>yt-dlp and ffmpeg — required to download.</p></div></div>
+          <div class="step"><div class="ic">3</div><div class="body"><h3>Bot-check shield</h3><p>Helps with sites that challenge automated access. Optional.</p></div></div>
+          <div class="step"><div class="ic">4</div><div class="body"><h3>Test run</h3><p>A quick check that everything works.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PALS = {
+    aurora:  [["mint","Mint & Iris"],["lime","Lime & Forest"],["magenta","Magenta & Violet"]],
+    tapedeck:[["teal","Teal & Rust"],["plum","Plum & Blush"],["navy","Navy & Aqua"]],
+  };
+  const root = document.documentElement;
+  let theme = "aurora", pal = "mint";
+  function apply(){
+    root.setAttribute("data-theme", theme);
+    root.setAttribute("data-palette", pal);
+    document.querySelectorAll('.switch [data-s]').forEach(b=>b.classList.toggle('on', b.dataset.s===theme));
+    const box = document.getElementById('palset'); box.innerHTML = "";
+    PALS[theme].forEach(([id,label])=>{
+      const b=document.createElement('button'); b.textContent=label; b.className = id===pal?'on':'';
+      b.onclick=()=>{pal=id;apply()}; box.appendChild(b);
+    });
+  }
+  document.querySelectorAll('.switch [data-s]').forEach(b=>{
+    b.onclick=()=>{theme=b.dataset.s; pal=PALS[theme][0][0]; apply()};
+  });
+  apply();
+</script>
+</body>
+</html>

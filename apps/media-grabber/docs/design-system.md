@@ -180,16 +180,16 @@ new glyph is introduced for it.
 
 ### 4.1 App chrome
 
-- **Brand row** — wordmark (motif + name) left; nav right (`Home · Preferences · Diagnostics`) as in-app page links. Active page gets a filled `--panel` background.
-- **Health strip** — below the brand row. Small utility-face chips carrying ambient state: `bot-check shield`, `engine` (yt-dlp freshness), `online`, and a `<host> · cooldown m:ss` chip that appears only during a cooldown. Green dot = ok, amber dot = attention.
-  - **When a chip is in a bad state, a refresh icon `↻` appears at its right edge.** Clicking it puts the chip in a `checking…` state and runs that chip's fix routine in the background:
+- **Brand row** — wordmark (motif + name) left; nav right (`Home · Preferences · About`) as in-app page links. Active page gets a filled `--panel` background. Diagnostics is not a nav item — it is a Preferences pane (§4.6); About (§4.8) is the third top-level destination, replacing Diagnostics there.
+- **Health strip** — below the brand row. Small utility-face chips carrying ambient state: `bot-check shield`, `engine` (yt-dlp version drift against the app's declared minimum), `online`, and a `<host> · cooldown m:ss` chip that appears only during a cooldown. Green dot = ok, amber dot = attention.
+  - **When a chip is in a bad state, a `↻` icon appears at its right edge.** Clicking it runs that chip's fix routine in the background and puts the chip in a **busy state** for the duration — the `↻` glyph spins, the dot dims to a pulsing neutral state, and the icon is disabled so a second click can't overlap the action (disabled under `prefers-reduced-motion`; the glyph and dot simply hold still). This busy treatment is uniform across every chip that can act:
     | chip bad state | `↻` runs |
     |---|---|
     | `shield · offline` | restart the POT provider process, re-run its health check |
-    | `engine · stale` | `brew upgrade yt-dlp` (or `yt-dlp -U`), re-read the version |
+    | `engine · update available` | re-run a version-pinned `brew reinstall yt-dlp` (or `upgrade`) to the app's declared minimum, re-read the version — never an unconditional upgrade to latest |
     | `offline` | re-poll `NWPathMonitor` |
     | `engine · missing` (dependency gone) | *not a refresh* — routes back to Onboarding; hard block |
-  - On success the chip flips green and the icon disappears. On failure an **error toast** shows the reason and the chip stays in its bad state (icon remains).
+  - On success the chip flips green and the icon disappears. On failure an **error toast** shows the reason and the chip stays in its bad state (icon remains, no longer busy).
   - The `cooldown m:ss` chip is not an error — no refresh icon. Clicking it opens a small popover: why the cooldown happened, when it clears, and a **Retry now** button.
 - **Warning banner** — docked to the **bottom** of the window, floating over the table, `left/right: 16`, `bottom: 16`. The table gets bottom padding (≈ 78–82px) so its last row never sits under the banner. Reserved for **engine / host-level** conditions only: cooldown explainer, circuit-breaker open, dependency missing, POT provider down. One sentence + one action button. The theme styles it as a solid warm fill (Tape Deck: `--accent` on `--ink` border; Aurora: `--banner-fill` gradient).
 
@@ -225,8 +225,8 @@ The "resolve link & arm Grab" pattern.
   `--sp-3` gap between the two — not a shared border. Rounded on all corners.
   A row of labelled slots:
   - `Link` — filled when the probe resolves to a downloadable item
-  - `Type` — `SkinnedSegment` (§4.9) — Video / Audio; seeded from last-used or Preferences
-  - `Format` — contextual: `SkinnedPicker` (§4.10) quality rungs this probe actually offers (video), or
+  - `Type` — `SkinnedSegment` (§4.10) — Video / Audio; seeded from last-used or Preferences
+  - `Format` — contextual: `SkinnedPicker` (§4.11) quality rungs this probe actually offers (video), or
     `SkinnedSegment` `M4A` / `MP3` (audio); seeded from last-used or Preferences
   - `Language` — `SkinnedPicker` of this probe's audio tracks; always filled
     (last pick if offered, else Preferences YouTube-default / Original policy,
@@ -327,18 +327,24 @@ Opens automatically when a resolved link is a playlist, **before** any rows are 
 
 - In-app page (nav item). Not a separate macOS Settings window.
 - **Fixed window height.** The left rail never scrolls (the window is tall
-  enough for every rail item). The right pane scrolls independently.
+  enough for every rail item). The right pane scrolls independently — the
+  pane's title, sub, and rule stay fixed above that scroll region; only the
+  rows below them scroll, with their own bottom padding so the last row never
+  sits flush against the window edge.
 - **Left rail** — three group captions, each item highlighted when selected:
   - **General:** Downloads · Appearance · Network
   - **YouTube:** Sign-in & cookies
-  - **System:** Updates · Logs & privacy · Advanced
+  - **System:** Updates · Logs & privacy · Advanced · Diagnostics
 - **Right pane** — the selected pane. Two-column rows: `label` (13, `--text`,
   semibold) + optional `helper` (11.5, `--dim`) stacked on the left; control
   right-aligned; a `--hair` divider between rows. A row with no helper renders
   label-only. Pane title 20 / heavy in `--headline` with a rule under it, a
   one-line `--dim` sub above the rule.
-- **Stepless panes** (Sign-in & cookies, Updates) render title + sub + one
+- **Stepless panes** (Sign-in & cookies) render title + sub + one
   plain-language "coming in a later update" line — no rows, no controls.
+- Diagnostics is a rail item here, not a top-level nav destination (§4.1) — it
+  is a status/support tool a small share of users open, not a page most users
+  need regularly.
 
 Rows per pane (control → backing field on `Preferences`, unless noted):
 
@@ -382,8 +388,17 @@ live.
 **Sign-in & cookies** — stepless. Sub *"Sign in to reach private or
 age-restricted videos."* Body: *"Cookie sign-in is coming in a later update."*
 
-**Updates** — stepless. Sub *"Check for new versions of the app and the
-downloader."* Body: *"Update checks are coming in a later update."*
+**Updates** — sub *"Check for new versions of the app and the downloader."*
+Settings only — no version number, no action button anywhere in this pane.
+Every version and every action (`Check for updates`, `Update`, `↻ Update`)
+lives on About (§4.8), never duplicated here.
+| Label | Helper | Control | Backs |
+|---|---|---|---|
+| Check for app updates automatically | Looks for a newer MediaGrabber release once a day. | toggle | `autoCheckAppUpdates` |
+| Notify when the downloader is outdated | Warn if yt-dlp falls behind the version this app expects. | toggle | `autoCheckYtDlpUpdates` |
+
+New `Preferences` fields this pane introduces: `autoCheckAppUpdates: Bool`
+(default true), `autoCheckYtDlpUpdates: Bool` (default true).
 
 **Logs & privacy** — sub *"What the app records, and where to find it."*
 | Label | Helper | Control | Action |
@@ -406,34 +421,109 @@ New `Preferences` fields this section introduces: `detectClipboardLinks: Bool`
 
 ### 4.7 Diagnostics
 
-- In-app page. One primary button: **Run check**.
-- Runs a canary probe, then shows a **report card** — rows of `key : value`, values coloured by verdict (`--accent` ok, `--warn` attention, `--danger` bad): canary result + time, yt-dlp version + freshness, ffmpeg version, bot-check shield health + port, cookie source + readability, detected client, **player_client rotation order** (read-only), active cooldown, network + VPN status.
-- **Copy report** — puts a redacted plain-text block on the clipboard (redaction per spec §8.5).
-- **Copy diagnostic bundle** — the `DiagnosticBundle` zip (app-log tail + job log + this report). This is the only place it lives (not in Preferences).
+- A Preferences pane (§4.6, System group), not a top-level page.
+- Opens pre-populated from state the engine/session already have — the
+  shield, cooldown, and network chips are live in `HealthController`
+  regardless of this pane, so the report card shows their current values on
+  open; the canary row and the version rescans read "not yet run this
+  session" until **Run check** — laid out beside the pane's title, not below
+  it — refreshes everything.
+- The **report card** — rows of `key : value`, values coloured by verdict
+  (`--accent` ok, `--warn` attention, `--danger` bad): canary result + time,
+  yt-dlp version + drift against the app's declared minimum, ffmpeg version,
+  bot-check shield health + port, cookie source + readability, detected
+  client, **player_client rotation order** (read-only), active cooldown,
+  network + VPN status. A yt-dlp row behind the declared minimum shows an
+  inline **↻ Update** button that re-runs the pinned reinstall — the same
+  action as the HealthStrip `engine` chip (§4.1) and About's yt-dlp row
+  (§4.8).
+- **Copy report** — puts a redacted plain-text block on the clipboard
+  (redaction per spec §8.5).
+- **Share diagnostic bundle** — hands the `DiagnosticBundle` zip (app-log
+  tail + the most-recent job's log + this report) to the system share sheet
+  (`NSSharingServicePicker`) — Mail, AirDrop, Save to Files, and so on. This
+  is the only place either action lives (not in Preferences → Updates or
+  About). The two buttons carry equal visual weight — one produces clipboard
+  text, the other hands off a file; neither is more primary than the other.
 
 ---
 
-### 4.8 Confirmation dialog
+### 4.8 About
+
+The third top-level nav destination (§4.1), replacing Diagnostics there. A
+two-tab page (About, Developer) over the same fixed-rail-plus-scrolling-pane
+shell as Preferences (§4.6). The health strip stays global chrome — present
+here exactly as on Home and Preferences.
+
+**About** opens with a centred identity block — app mark, name, version — then
+every version this app tracks and every action that can change one, so nothing
+here is duplicated in Preferences → Updates (§4.6), which holds only the
+settings that govern *whether* a check happens.
+
+| Label | Control | Notes |
+|---|---|---|
+| MediaGrabber | nothing shown / button "Check for updates" / button "Update" | see button-verb rule below |
+| Downloader (yt-dlp) | version text / version text + button "↻ Update" | never "Check for updates" — see below |
+| ffmpeg | version text | read-only, no update path |
+| Diagnostics | button "Open Diagnostics" | links to the Preferences pane (§4.7) |
+
+**Button-verb rule** — each version row's action tracks how certain the app is
+that an update exists:
+- **Nothing shown** — current; nothing to do. The same "no lingering button"
+  pattern already used for the Full Disk Access row once granted (§4.6,
+  Sign-in & cookies).
+- **"Check for updates"** — MediaGrabber only, before its GitHub-release check
+  has resolved this session; a real network call is genuinely unresolved
+  until it returns (spec §10.2).
+- **"Update" / "↻ Update"** — once an update is confirmed available. "Update"
+  (MediaGrabber) opens the release page; "↻ Update" (yt-dlp) re-runs the
+  pinned reinstall (spec §10.1a) inline — the same action as the HealthStrip
+  `engine` chip (§4.1) and the Diagnostics report row (§4.7).
+
+yt-dlp's row never shows "Check for updates" — its drift check is a local
+version compare against the app's declared minimum, always immediately
+certain, never a pending network call.
+
+**Developer** opens with the same identity-block treatment — an avatar, a
+name, a one-line headline — then:
+| Label | Control |
+|---|---|
+| Connect with me | a row of platform icon-links (GitHub, LinkedIn, personal site, X), right-aligned |
+| Source code | button "GitHub" |
+| Report an issue | button "GitHub Issues" |
+| License | button "Open" |
+
+GitHub and LinkedIn use their real brand marks as small bundled image assets;
+platforms with no standard mark (personal site, X) use a generic icon.
+
+---
+
+### 4.9 Confirmation dialog
 
 A reusable modal the app raises a handful of times across its life (duplicate submit, graceful quit, reveal-target-missing, persistence write failure). One host, driven by `AppModel.pendingConfirmation`.
 
 - **Scrim** — the whole window dims behind a `--ground` fill at ~60% alpha; clicks on the scrim do nothing (the choice is explicit).
-- **Card** — centered, `max-width` ~420 px, theme card treatment: `--panel-solid` fill, theme border + `cardRadius` + elevation shadow. Padding `s5` all round, `s4` between rows.
+- **Card** — centered, `max-width` ~420 px, theme card treatment: `--panel-solid` fill, theme border + `cardRadius` + elevation shadow. Padding `s5` all round.
 - **Layout**, top to bottom:
-  - Optional **warning glyph** (§3.4) — shown only when `isDestructive`, tinted `--danger`.
-  - **Title** — `displayFont` 15 semibold, `--headline`.
-  - **Message** — `bodyFont` 13, `--dim`, wraps freely.
+  - **Icon + title, inline** — every dialog carries one of three icon types, never omitted: **info** (a circled `i`, tinted `--accent-2`), **warning** (the triangle-alert glyph, tinted `--warn`), or **error** (a circled `x`, tinted `--danger`). The icon sits at 19×19 directly beside the title on one row — not stacked above it. Title is `displayFont` 15 semibold, `--headline`.
+  - **Message** — `bodyFont` 13, `--dim`, **one line, truncated with an ellipsis** — copy is written short enough that truncation should not normally trigger; this is a ceiling, not a wrapping mechanism.
   - Optional **"Don't ask again"** checkbox row — present only when `suppressionKey != nil`; ticking it and confirming persists suppression to `AppStorage` under that key.
   - **Buttons**, right-aligned, `s2` gap:
     - **Cancel** — plain / `--panel`, `controlRadius`. Omitted entirely in notice mode (`cancelTitle == nil`).
     - **Confirm** — filled: `--danger` when `isDestructive`, else `--accent` (theme `--go` gradient on Aurora). `--onAccent` label.
 - **Motion** — card scales/fades in over `--dur` / `--ease`; disabled under reduce-motion (appears instantly).
 - **Keyboard** — Return confirms; Esc cancels (or dismisses a notice). Initial focus is on **Cancel** for a destructive action, **Confirm** otherwise.
-- **VoiceOver** — the card is a modal alert (`.isModal`), focus is trapped inside it, and the message text is read on present.
+- **VoiceOver** — the card is a modal alert (`.isModal`), focus is trapped inside it, and the icon type + title + message are all read on present (the icon type is announced, not just shown visually — e.g. "Error: Reset settings?").
+- **Type by dialog** — of the eight dialogs in the app today: Reset settings and Quit-while-downloading are **error** (destructive); the remaining six (file moved, log unavailable, download-again, already-in-queue, grab-this-link, link-couldn't-open) are **info** — plain notices or reversible choices, none of them a warning of harm. **Warning** exists in the type system for a future dialog (e.g. a low-disk-space caution) — no current dialog uses it.
+- **Per-dialog override** — the "already in queue" duplicate-submit dialog
+  (a re-add of a still-queued URL) inverts the button rule above:
+  **Cancel** is filled/primary and **Download Again** is plain/secondary,
+  since leaving the item queued once is the expected outcome of an
+  almost-always-accidental duplicate paste, not "Download Again."
 
 ---
 
-### 4.9 SkinnedSegment
+### 4.10 SkinnedSegment
 
 A skinned segmented control, `import SwiftUI` only, generic over the option type.
 
@@ -457,7 +547,7 @@ struct SkinnedSegment<Option: Hashable>: View {
 **Used by:** Theme (Appearance), Media type (Downloads + runway), Audio format
 (Downloads + runway).
 
-### 4.10 SkinnedPicker
+### 4.11 SkinnedPicker
 
 A skinned dropdown. **It is a popover, not a modal** — picking one value from a
 short list is a lightweight, anchored interaction.

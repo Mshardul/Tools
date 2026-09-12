@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MediaGrabber — Preferences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="screens.css">
+<style>.filenav{max-width:1060px;margin:0 auto 18px;font-family:var(--font-display);font-size:13px}
+.filenav a{color:var(--dim);text-decoration:none;padding:6px 10px;border-radius:var(--r-chip)}
+.filenav a.on{background:var(--panel);color:var(--text);font-weight:600}</style>
+</head>
+<body>
+
+<div class="switch">
+  <b>Theme</b>
+  <button data-s="aurora" class="on">Aurora</button>
+  <button data-s="tapedeck">Tape Deck</button>
+  &nbsp;&nbsp;<b>Palette</b>
+  <span id="palset"></span>
+</div>
+
+<nav class="filenav"><a href="onboarding.html">Onboarding</a> · <a href="home.html">Home</a> · <a href="preferences.html" class="on">Preferences</a> · <a href="about.html">About</a> · <a href="dialog.html">Dialog</a></nav>
+
+<div class="doc" id="doc">
+<div class="screen" id="s3-1">
+    <div class="cap"><b>3.1</b> Preferences — Downloads</div>
+    <div class="sub">Fixed 980×720 window. Rail never scrolls. Title/subtitle/rule stay fixed; only the row list scrolls, with its own bottom padding. See <a href="../../design-system.md">design-system §4.6.</a></div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a class="on">Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Downloads</h2>
+          <p class="psub">Defaults for new downloads. Change any of these per download on the Home screen.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Downloads folder</div><div class="fc"><span class="pick nochev">~/Downloads</span></div></div>
+          <div class="field2"><div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span></div></div>
+          <div class="field2"><div class="fl">Automatic retries<small>Attempts before the app asks you what to do.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">3</span><button>+</button></span></div></div>
+          <div class="field2"><div class="fl">Media type</div><div class="fc"><span class="seg"><button class="on">Video</button><button>Audio</button></span></div></div>
+          <div class="field2"><div class="fl">Video quality<small>Highest available if the exact height isn't offered.</small></div><div class="fc"><span class="pick"><span class="ptxt">1080p</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2"><div class="fl">Audio language<small>Used when this video has that kind of track.</small></div><div class="fc"><span class="seg"><button class="on">YouTube default</button><button>Original</button></span></div></div>
+          <div class="field2"><div class="fl">Audio format</div><div class="fc"><span class="seg"><button class="on">M4A</button><button>MP3</button></span></div></div>
+          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2 row-noborder"><div class="fl">Clipboard detection<small>Offer to grab links you copy.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+        </div></div>
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720 · rail width 200 · pane padding s6 = 30 · row divider 1 px <code>--hair</code> · rail never scrolls; <code>.main-scroll</code> (rows only) is the <code>overflow:auto</code> region, not the header.</p>
+  </div>
+
+<div class="screen" id="s3-2">
+    <div class="cap"><b>3.2</b> Preferences — Appearance</div>
+    <div class="sub">Theme = SkinnedSegment; Palette = 3 split-fill swatches, selected one outlined. Both apply live.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a class="on">Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Appearance</h2>
+          <p class="psub">Pick a look. Theme sets the personality; palette sets the colours.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Theme<small>Aurora is dark and luminous. Tape Deck is warm and light.</small></div><div class="fc"><span class="seg"><button class="on">Aurora</button><button>Tape Deck</button></span></div></div>
+          <div class="field2 row-noborder"><div class="fl">Palette</div><div class="fc"><div class="swatches">
+            <span class="sw on"><span class="tile"><i class="swatch-mint"></i><i class="swatch-iris"></i></span><span>Mint &amp; Iris</span></span>
+            <span class="sw"><span class="tile"><i class="swatch-lime"></i><i class="swatch-forest"></i></span><span>Lime &amp; Forest</span></span>
+            <span class="sw"><span class="tile"><i class="swatch-magenta"></i><i class="swatch-violet"></i></span><span>Magenta &amp; Violet</span></span>
+          </div></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-3">
+    <div class="cap"><b>3.3</b> Preferences — Network</div>
+    <div class="sub">Speed limit stepper shows "Off" at 0. Flags apply to new downloads only.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a class="on">Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Network</h2>
+          <p class="psub">Applied to new downloads.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Proxy server<small>http://host:port — blank for none.</small></div><div class="fc"><input type="text" placeholder="http://host:port"></div></div>
+          <div class="field2"><div class="fl">Force IPv4<small>Can help when connections stall.</small></div><div class="fc"><span class="toggle"></span></div></div>
+          <div class="field2 row-noborder"><div class="fl">Speed limit<small>Applies to each download separately.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">Off</span><button>+</button></span></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-4-1">
+    <div class="cap"><b>3.4.1</b> Preferences — Sign-in &amp; cookies, Firefox</div>
+    <div class="sub">Opt-in. Browser picker includes None. Firefox-profile picker shown at 2+ profiles.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="pick"><span class="ptxt">default-release</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
+          <p class="tip-block">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-4-2">
+    <div class="cap"><b>3.4.2</b> Preferences — Sign-in &amp; cookies, Safari (FDA not granted)</div>
+    <div class="sub">Full Disk Access row shows only for Safari.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2"><div class="fl"><span class="dot warn"></span> Full Disk Access<small>MediaGrabber needs Full Disk Access to read Safari's sign-in.</small></div><div class="fc"><button class="btn-txt">Open System Settings</button></div></div>
+          <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
+          <p class="tip-block">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-4-3">
+    <div class="cap"><b>3.4.3</b> Preferences — Sign-in &amp; cookies, None (default)</div>
+    <div class="sub">Default state. Learn-more and tip rows hidden.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2 row-noborder"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-4-4">
+    <div class="cap"><b>3.4.4</b> Preferences — Sign-in &amp; cookies, pending retry</div>
+    <div class="sub">Reached via the <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg> row action with no browser set; picking a browser retries the job.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="pending"><span class="wg"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>Pick a browser to retry "Interview with the director" with your sign-in.</span></div>
+          <div class="field2 row-noborder"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-4-5">
+    <div class="cap"><b>3.4.5</b> Preferences — Sign-in &amp; cookies, Safari (FDA granted)</div>
+    <div class="sub">Full Disk Access row collapses to a confirmation line once granted.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2"><div class="fl">Full Disk Access</div><div class="fc"><span class="note note-full-width"><span class="dot ok"></span> Full Disk Access granted.</span></div></div>
+          <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
+          <p class="tip-block">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-4-6">
+    <div class="cap"><b>3.4.6</b> Preferences — Sign-in &amp; cookies, Firefox (no profiles)</div>
+    <div class="sub">Firefox selected but no profile found on the machine.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Sign-in &amp; cookies</h2>
+          <p class="psub">Sign in to reach private or age-restricted videos.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="hint-inline">No Firefox profiles found.</span></div></div>
+          <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
+          <p class="tip-block">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-5">
+    <div class="cap"><b>3.5</b> Preferences — Updates (settings only)</div>
+    <div class="sub">Settings only — two toggles, no version numbers, no action buttons. Versions + actions live in About (about.html).</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip warn"><span class="dot warn"></span>engine · update available <button class="chip-fix"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a class="on">Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Updates</h2>
+          <p class="psub">Check for new versions of the app and the downloader.</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">Check for app updates automatically<small>Looks for a newer MediaGrabber release once a day.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Notify when the downloader is outdated<small>Warn if yt-dlp falls behind the version this app expects.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-6">
+    <div class="cap"><b>3.6</b> Preferences — Logs &amp; privacy</div>
+    <div class="sub">Three rows: two button actions and a toggle.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a class="on">Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Logs &amp; privacy</h2>
+          <p class="psub">What the app records, and where to find it.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Log files</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="field2"><div class="fl">Verbose logging<small>More detail for troubleshooting.</small></div><div class="fc"><span class="toggle"></span></div></div>
+          <div class="field2 row-noborder"><div class="fl">Privacy details</div><div class="fc"><button class="btn-txt">Open</button></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-7">
+    <div class="cap"><b>3.7</b> Preferences — Advanced</div>
+    <div class="sub">Reset options only. "Reset settings" in --danger style.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a><a>Diagnostics</a>
+        </div>
+        <div class="main">
+          <h2>Advanced</h2>
+          <p class="psub">Reset options. These don't touch your downloaded files.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="field2"><div class="fl">Reset columns<small>Table layout back to default.</small></div><div class="fc"><button class="btn-txt">Reset</button></div></div>
+          <div class="field2 row-noborder"><div class="fl">Reset settings<small>All preferences back to default. Downloads are untouched.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s3-8">
+    <div class="cap"><b>3.8</b> Preferences — control details</div>
+    <div class="sub">Pane-region fragments, not full windows: concurrency note, custom filename field, open picker popover, HealthStrip chip busy state.</div>
+    <div class="app app-tall">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="body-scroll frag-pad">
+
+        <div class="frag">
+          <div class="fraglabel">1 · Concurrency note — "Simultaneous downloads" row, expanded</div>
+          <div class="field2 row-noborder-top">
+            <div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div>
+            <div class="fc">
+              <span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span>
+              <span class="note"><span class="wg"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><span>3 still running — the new limit applies as they finish.</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="frag">
+          <div class="fraglabel">2 · Custom filename — "Filename format" row with Custom… selected</div>
+          <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Custom…</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="field2 row-noborder"><div class="fl">Template</div><div class="fc"><input type="text" class="mono input-wide" value="%(title)s - %(id)s.%(ext)s"></div></div>
+        </div>
+
+        <div class="frag frag-tall">
+          <div class="fraglabel">3 · Open picker popover — "Filename format" SkinnedPicker, popover open</div>
+          <div class="field2 row-noborder"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div></div>
+          <div class="pop popover-filename">
+            <div class="ph">File naming</div>
+            <div class="prow"><span class="pt"><span class="ck"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Title</span><span class="pst">Never Gonna Give You Up.mp4</span></div>
+            <div class="prow row-highlight"><span class="pt"><span class="ck"></span>Title – channel</span><span class="pst">Never Gonna Give You Up - Rick Astley.mp4</span></div>
+            <div class="prow"><span class="pt"><span class="ck"></span>Date – title</span><span class="pst">2009-10-25 - Never Gonna Give You Up.mp4</span></div>
+            <div class="prow"><span class="pt"><span class="ck"></span>Custom…</span></div>
+          </div>
+        </div>
+
+        <div class="frag">
+          <div class="fraglabel">4 · Chip busy state — HealthStrip, an action in progress</div>
+          <div class="health health-bare">
+            <span class="chip warn busy"><span class="dot busy"></span>engine · updating <button class="chip-fix spin" disabled><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span>
+            <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+            <span class="chip"><span class="dot ok"></span>online</span>
+          </div>
+          <p class="fragnote">Any chip with a <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> action (shield restart, engine update) shows this state while it runs — glyph spins, dot pulses, <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> disabled so a second tap can't overlap it. Disabled under reduce-motion. Same treatment for every actionable chip, not just this one.</p>
+        </div>
+
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — file-naming picker popover ≈ 320 pt wide (content-sized, clamped <code>[trigger … 340pt]</code>) · concurrency-note row grows in height, no other row does.</p>
+  </div>
+
+<div class="screen" id="s6-1">
+    <div class="cap"><b>6.1</b> Preferences — Diagnostics, before Run check</div>
+    <div class="sub">Pre-populated from live engine/session state on open. Canary row and version rescans show last-known values until Run check refreshes them. See <a href="../../design-system.md">design-system §4.7.</a></div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a class="on">Diagnostics</a>
+        </div>
+        <div class="main">
+          <div class="diagtop"><h2>Diagnostics</h2><button class="runbtn">Run check</button></div>
+          <p class="psub">Check the app's health when something looks wrong.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="lastrun">Last run: not yet run this session</div>
+          <div class="report">
+            <div class="rrow"><span class="rk">Canary probe</span><span class="rv"><span class="rt">not yet run this session</span></span></div>
+            <div class="rrow"><span class="rk">yt-dlp</span><span class="rv ok">2026.08.19 · current</span></div>
+            <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
+            <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
+            <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv">none active</span></div>
+            <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s6-2">
+    <div class="cap"><b>6.2</b> Preferences — Diagnostics, after Run check (healthy)</div>
+    <div class="sub">Every row refreshed by the canary + rescan. Both copy actions available once a report exists.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a class="on">Diagnostics</a>
+        </div>
+        <div class="main">
+          <div class="diagtop"><h2>Diagnostics</h2><button class="runbtn">Run check</button></div>
+          <p class="psub">Check the app's health when something looks wrong.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="lastrun">Last run: just now</div>
+          <div class="report">
+            <div class="rrow"><span class="rk">Canary probe</span><span class="rv ok">passed · 1.2 s</span></div>
+            <div class="rrow"><span class="rk">yt-dlp</span><span class="rv ok">2026.08.19 · current</span></div>
+            <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
+            <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
+            <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv">none active</span></div>
+            <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+          </div>
+          <div class="diag-btns">
+            <button class="copy">Copy report</button>
+            <button class="copy">Share diagnostic bundle</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s6-3">
+    <div class="cap"><b>6.3</b> Preferences — Diagnostics, yt-dlp below minimum (+ busy state)</div>
+    <div class="sub">yt-dlp below the app's declared minimum version. Inline <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> Update re-runs the pinned reinstall; the HealthStrip chip mirrors the same action.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip warn"><span class="dot warn"></span>engine · update available <button class="chip-fix"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a class="on">Diagnostics</a>
+        </div>
+        <div class="main">
+          <div class="diagtop"><h2>Diagnostics</h2><button class="runbtn">Run check</button></div>
+          <p class="psub">Check the app's health when something looks wrong.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="lastrun">Last run: just now</div>
+          <div class="report">
+            <div class="rrow"><span class="rk">Canary probe</span><span class="rv ok">passed · 1.4 s</span></div>
+            <div class="rrow"><span class="rk">yt-dlp</span><span class="rv warn">2026.05.02 · update available (2026.07.10) <button class="inline-fix"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> Update</button></span></div>
+            <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
+            <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
+            <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv">none active</span></div>
+            <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+          </div>
+          <div class="diag-btns">
+            <button class="copy">Copy report</button>
+            <button class="copy">Share diagnostic bundle</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PALS = {
+    aurora:  [["mint","Mint & Iris"],["lime","Lime & Forest"],["magenta","Magenta & Violet"]],
+    tapedeck:[["teal","Teal & Rust"],["plum","Plum & Blush"],["navy","Navy & Aqua"]],
+  };
+  const root = document.documentElement;
+  let theme = "aurora", pal = "mint";
+  function apply(){
+    root.setAttribute("data-theme", theme);
+    root.setAttribute("data-palette", pal);
+    document.querySelectorAll('.switch [data-s]').forEach(b=>b.classList.toggle('on', b.dataset.s===theme));
+    const box = document.getElementById('palset'); box.innerHTML = "";
+    PALS[theme].forEach(([id,label])=>{
+      const b=document.createElement('button'); b.textContent=label; b.className = id===pal?'on':'';
+      b.onclick=()=>{pal=id;apply()}; box.appendChild(b);
+    });
+  }
+  document.querySelectorAll('.switch [data-s]').forEach(b=>{
+    b.onclick=()=>{theme=b.dataset.s; pal=PALS[theme][0][0]; apply()};
+  });
+  apply();
+</script>
+</body>
+</html>

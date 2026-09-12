@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MediaGrabber — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="screens.css">
+<style>.filenav{max-width:1060px;margin:0 auto 18px;font-family:var(--font-display);font-size:13px}
+.filenav a{color:var(--dim);text-decoration:none;padding:6px 10px;border-radius:var(--r-chip)}
+.filenav a.on{background:var(--panel);color:var(--text);font-weight:600}</style>
+</head>
+<body>
+
+<div class="switch">
+  <b>Theme</b>
+  <button data-s="aurora" class="on">Aurora</button>
+  <button data-s="tapedeck">Tape Deck</button>
+  &nbsp;&nbsp;<b>Palette</b>
+  <span id="palset"></span>
+</div>
+
+<nav class="filenav"><a href="onboarding.html">Onboarding</a> · <a href="home.html" class="on">Home</a> · <a href="preferences.html">Preferences</a> · <a href="about.html">About</a> · <a href="dialog.html">Dialog</a></nav>
+
+<div class="doc" id="doc">
+<div class="screen" id="s1-1">
+    <div class="cap"><b>1.1</b> Home — first run (no download ever made)</div>
+    <div class="sub">No table, no runway. Header, paste field, and three step cards fill the body. See <a href="../../design-system.md">design-system §4.2.1.</a> The window is a drop target.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health">
+        <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+        <span class="chip"><span class="dot ok"></span>engine · current</span>
+        <span class="chip"><span class="dot ok"></span>online</span>
+      </div>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste. Pick. Grab.</div>
+          <h1 class="head">One link in. One file out.</h1>
+          <div class="field solo"><input placeholder="Paste a link"></div>
+        </div>
+        <div class="stepcards">
+          <div class="grid3">
+            <div class="c"><div class="n">1</div><h4>Paste a link</h4><p>Any video page URL.</p></div>
+            <div class="c"><div class="n">2</div><h4>Pick a format</h4><p>Video quality or audio only.</p></div>
+            <div class="c"><div class="n">3</div><h4>Press Grab</h4><p>It saves to your folder.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720 (the app's <code>.defaultSize</code>), 1 CSS px = 1 pt.</p>
+  </div>
+
+<div class="screen" id="s1-2">
+    <div class="cap"><b>1.2</b> Home — link resolved (runway + table)</div>
+    <div class="sub">After the first Grab: paste field + runway (Link · Type · Format · Language · Save to), Downloads table below. See <a href="../../design-system.md">design-system §4.2.2.</a></div>
+    <div class="phase-note">(the live backoff countdown, the cooldown health chip + banner, and the success toast arrive in later phases)</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health">
+        <span class="chip"><span class="dot warn"></span>shield · offline <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+        <span class="chip"><span class="dot ok"></span>engine · current</span>
+        <span class="chip"><span class="dot ok"></span>online</span>
+        <span class="chip warn"><span class="dot warn"></span>youtube · cooldown 4:12</span>
+      </div>
+      <div class="body-home">
+        <div class="hero hero-tight">
+          <div class="paste-stack">
+          <div class="field">
+            <input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ">
+            <span class="status"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Big Buck Bunny</span>
+          </div>
+          <div class="runway">
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Big Buck Bunny</span></span></div>
+            <div class="rstep ok"><span class="rl">Type</span>
+              <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
+            <div class="rstep ok"><span class="rl">Format</span>
+              <span class="pick"><span class="ptxt">1080p</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick"><span class="ptxt">Japanese (original)</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span>
+              <span class="pick"><span class="ptxt">Downloads</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rgo"><button class="go">Grab</button></div>
+          </div>
+          </div>
+        </div>
+        <div class="tablewrap fill">
+          <div class="toolbar">
+            <button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button>
+            <button class="fc">Needs attention <span class="badge">2</span></button>
+            <button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button>
+          </div>
+          <div class="table-scroll">
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Title <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Site <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Format <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Status <span class="sortbtn active">↓</span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th class="col-hidden-default"><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Remark <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Progress <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Speed / ETA <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti" title="Big Buck Bunny">Big Buck Bunny</span></td><td class="site">YouTube</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td class="col-hidden-default"></td><td><span class="bar"><i class="bar-62"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Talks — episode 12">Talks — episode 12</span></td><td class="site">Vimeo</td><td>Video · 720p</td><td><span class="st s-queue">queued</span></td><td class="col-hidden-default">#2</td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Studio session — take 3">Studio session — take 3</span></td><td class="site">SoundCloud</td><td>Audio · M4A</td><td><span class="st s-pause">paused</span></td><td class="col-hidden-default"></td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Lo-fi beats to study to">Lo-fi beats to study to</span></td><td class="site">YouTube</td><td>Audio · M4A</td><td><span class="st s-cool">cooling down</span></td><td class="col-hidden-default">resumes 4:12</td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Interview with the director">Interview with the director</span></td><td class="site">Vimeo</td><td>Video · 720p</td><td><span class="st s-fail">failed</span></td><td class="col-hidden-default">Couldn’t read your browser’s sign-in.</td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="How the engine was built">How the engine was built</span></td><td class="site">YouTube</td><td>Video · 1080p</td><td><span class="st s-fail">failed</span></td><td class="col-hidden-default">This video is private.</td><td></td><td>—</td><td><div class="acts"><button disabled><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Field recording — dawn chorus">Field recording — dawn chorus</span></td><td class="site">Internet Archive</td><td>Audio · M4A</td><td><span class="st s-dl">retrying</span></td><td class="col-hidden-default">attempt 3 of 5</td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Conference keynote 2024">Conference keynote 2024</span></td><td class="site">YouTube</td><td>Video · 1080p → 720p</td><td><span class="st s-done">saved</span></td><td class="col-hidden-default"></td><td></td><td>done</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Old mix — cancelled">Old mix — cancelled</span></td><td class="site">Internet Archive</td><td>Audio · MP3</td><td><span class="st s-done">cancelled</span></td><td class="col-hidden-default"></td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+          </tbody></table>
+          </div>
+          <div class="toaststack"><div class="toast"><span class="tk"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Conference keynote 2024 saved <a>Reveal</a></div></div>
+          <div class="banner"><span>Bot-check protection is offline — some downloads may fail or be low-res.</span><button>Restart</button></div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720. Paste + runway + filter chips stay fixed; only the row body scrolls. SkinnedPicker trigger ≈ 34 pt tall; runway slots divided by a 1 pt hairline.</p>
+  </div>
+
+<div class="screen" id="s1-3">
+    <div class="cap"><b>1.3</b> Home — column filter menu open</div>
+    <div class="sub">Paste field only, no runway (no link yet). Site filter menu open; sort + drag-handle per column header.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll">
+        <div class="hero hero-tight">
+          <div class="field solo"><input placeholder="Paste a link"></div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention</button><button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button></div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Title <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Site <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn active"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span>
+              <div class="fmenu">
+                <div class="fh">Filter · Site</div>
+                <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> youtube.com</label>
+                <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> vimeo.com</label>
+                <label><span class="box"></span> soundcloud.com</label>
+                <div class="fact"><button>Clear</button><button class="pri">Apply</button></div>
+              </div></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Format <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Status <span class="sortbtn active">↓</span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th class="col-hidden-default"><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Remark <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Added <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti" title="Big Buck Bunny">Big Buck Bunny</span></td><td class="site">YouTube</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td class="col-hidden-default"></td><td>just now</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Interview with the director">Interview with the director</span></td><td class="site">Vimeo</td><td>Video · 720p</td><td><span class="st s-fail">failed</span></td><td class="col-hidden-default">Couldn’t read your browser’s sign-in.</td><td>5m ago</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s1-4">
+    <div class="cap"><b>1.4</b> Home — first run, link resolved</div>
+    <div class="sub">First run: kicker, headline, and step cards stay. Runway appears under the paste field. No Downloads table yet.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health">
+        <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+        <span class="chip"><span class="dot ok"></span>engine · current</span>
+        <span class="chip"><span class="dot ok"></span>online</span>
+      </div>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste. Pick. Grab.</div>
+          <h1 class="head">One link in. One file out.</h1>
+          <div class="paste-stack">
+          <div class="field">
+            <input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ">
+            <span class="status"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Big Buck Bunny</span>
+          </div>
+          <div class="runway">
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Big Buck Bunny</span></span></div>
+            <div class="rstep ok"><span class="rl">Type</span>
+              <span class="seg"><button class="on">Video</button><button>Audio</button></span></div>
+            <div class="rstep ok"><span class="rl">Format</span>
+              <span class="pick"><span class="ptxt">1080p</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick"><span class="ptxt">Japanese (original)</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span>
+              <span class="pick"><span class="ptxt">Downloads</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rgo"><button class="go">Grab</button></div>
+          </div>
+          </div>
+        </div>
+        <div class="stepcards">
+          <div class="grid3">
+            <div class="c"><div class="n">1</div><h4>Paste a link</h4><p>Any video page URL.</p></div>
+            <div class="c"><div class="n">2</div><h4>Pick a format</h4><p>Video quality or audio only.</p></div>
+            <div class="c"><div class="n">3</div><h4>Press Grab</h4><p>It saves to your folder.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s1-5">
+    <div class="cap"><b>1.5</b> Home — probe failed</div>
+    <div class="sub">Probe failure copy sits inside the paste card, under the field, in --danger.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health">
+        <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+        <span class="chip"><span class="dot ok"></span>engine · current</span>
+        <span class="chip"><span class="dot ok"></span>online</span>
+      </div>
+      <div class="body-scroll">
+        <div class="hero">
+          <div class="kicker">Paste. Pick. Grab.</div>
+          <h1 class="head">One link in. One file out.</h1>
+          <div class="field solo col">
+            <div class="field-row"><input value="not-a-url"></div>
+            <div class="probe-err">That doesn't look like a valid link.</div>
+          </div>
+        </div>
+        <div class="stepcards">
+          <div class="grid3">
+            <div class="c"><div class="n">1</div><h4>Paste a link</h4><p>Any video page URL.</p></div>
+            <div class="c"><div class="n">2</div><h4>Pick a format</h4><p>Video quality or audio only.</p></div>
+            <div class="c"><div class="n">3</div><h4>Press Grab</h4><p>It saves to your folder.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s1-6">
+    <div class="cap"><b>1.6</b> Home — audio runway</div>
+    <div class="sub">Type = Audio swaps Format to an M4A / MP3 SkinnedSegment.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health">
+        <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+        <span class="chip"><span class="dot ok"></span>engine · current</span>
+        <span class="chip"><span class="dot ok"></span>online</span>
+      </div>
+      <div class="body-scroll">
+        <div class="hero hero-tight">
+          <div class="paste-stack">
+          <div class="field">
+            <input value="https://soundcloud.com/artist/track">
+            <span class="status"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Studio session — take 3</span>
+          </div>
+          <div class="runway">
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Studio session — take 3</span></span></div>
+            <div class="rstep ok"><span class="rl">Type</span>
+              <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
+            <div class="rstep ok"><span class="rl">Format</span>
+              <span class="seg"><button class="on">M4A</button><button>MP3</button></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick"><span class="ptxt">Default</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span>
+              <span class="pick"><span class="ptxt">Downloads</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rgo"><button class="go">Grab</button></div>
+          </div>
+          </div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention</button><button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button></div>
+          <table><thead><tr>
+            <th>Title</th><th>Site</th><th>Format</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti" title="Conference keynote 2024">Conference keynote 2024</span></td><td class="site">YouTube</td><td>Video · 1080p</td><td><span class="st s-done">saved</span></td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s1-7">
+    <div class="cap"><b>1.7</b> Home — Columns menu open</div>
+    <div class="sub">Checkbox menu of all 16 columns. Title and Actions are pinned (Actions cannot hide).</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll">
+        <div class="hero hero-tight">
+          <div class="field solo"><input placeholder="Paste a link"></div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar">
+            <button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention</button>
+            <button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button>
+            <div class="colmenu">
+              <div class="fh">Columns</div>
+              <label class="locked"><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Title</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Status</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Progress</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Speed</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> ETA</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Type</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Quality</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Size</label>
+              <label><span class="box"></span> Site</label>
+              <label><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Added at</label>
+              <label><span class="box"></span> Finished at</label>
+              <label><span class="box"></span> Duration</label>
+              <label><span class="box"></span> Destination</label>
+              <label><span class="box"></span> Attempt</label>
+              <label><span class="box"></span> Client used</label>
+              <label class="locked"><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Actions</label>
+            </div>
+          </div>
+          <table><thead><tr>
+            <th>Title</th><th>Status</th><th>Progress</th><th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti" title="Big Buck Bunny">Big Buck Bunny</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-62"></i></span></td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s1-8">
+    <div class="cap"><b>1.8</b> Home — filtered empty</div>
+    <div class="sub">Rows exist but none match the active chip / column filters. "Clear filters" appears; header row stays.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll body-scroll-col">
+        <div class="hero hero-tight">
+          <div class="field solo"><input placeholder="Paste a link"></div>
+        </div>
+        <div class="tablewrap fill">
+          <div class="toolbar">
+            <button class="fc">All</button><button class="fc">Downloading</button><button class="fc">Done</button>
+            <button class="fc on">Needs attention <span class="badge">0</span></button>
+            <span class="toolbar-right">
+              <button class="clear">Clear filters</button>
+              <button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button>
+            </span>
+          </div>
+          <table><thead><tr>
+            <th>Title</th><th>Site</th><th>Status</th><th>Actions</th></tr></thead></table>
+          <div class="empty-table">No downloads match this filter.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s5-1">
+    <div class="cap"><b>5.1</b> Playlist link → picker modal</div>
+    <div class="sub">Playlist resolved on a Home that already has rows — paste + runway + table under the overlay, same layout as <a href="#s1-2">1.2</a>. See <a href="../../design-system.md">design-system §4.2.4</a>.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll">
+        <div class="hero hero-tight">
+          <div class="paste-stack">
+          <div class="field"><input value="https://www.youtube.com/playlist?list=PLbpi6…"><span class="status"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> “Focus — deep work” · 24 items</span></div>
+          <div class="runway">
+            <div class="rstep ok"><span class="rl">Link</span><span class="rv"><span class="rt">Focus — deep work</span></span></div>
+            <div class="rstep ok"><span class="rl">Type</span>
+              <span class="seg"><button>Video</button><button class="on">Audio</button></span></div>
+            <div class="rstep ok"><span class="rl">Format</span>
+              <span class="pick"><span class="ptxt">M4A</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Language</span>
+              <span class="pick"><span class="ptxt">Default</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rstep ok"><span class="rl">Save to</span>
+              <span class="pick"><span class="ptxt">Rips</span> <span class="cv"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></div>
+            <div class="rgo"><button class="go">Grab</button></div>
+          </div>
+          </div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button></div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Title <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Site <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Format <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Status <span class="sortbtn active">↓</span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th class="col-hidden-default"><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Remark <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Progress <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Speed / ETA <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti" title="Big Buck Bunny">Big Buck Bunny</span></td><td class="site">YouTube</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td class="col-hidden-default"></td><td><span class="bar"><i class="bar-62"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Talks — episode 12">Talks — episode 12</span></td><td class="site">Vimeo</td><td>Video · 720p</td><td><span class="st s-queue">queued</span></td><td class="col-hidden-default">#2</td><td></td><td>—</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr><td><span class="ti" title="Conference keynote 2024">Conference keynote 2024</span></td><td class="site">YouTube</td><td>Video · 1080p → 720p</td><td><span class="st s-done">saved</span></td><td class="col-hidden-default"></td><td></td><td>done</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="backdrop">
+        <div class="modal">
+          <div class="mh"><div class="mt">Choose videos to download</div><div class="ms">Focus — deep work · youtube.com · by Ambient Dept · 24 items</div></div>
+          <div class="mbann">This playlist is already in your queue.</div>
+          <div class="mtools"><a>Select all</a><a>Select none</a><span class="searchwrap"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg><input class="search" placeholder="Filter"></span></div>
+          <div class="mlist">
+            <div class="mrow"><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="thumb"></span><span class="mn">01 — Sunrise Loop</span><span class="md">4:12</span></div>
+            <div class="mrow"><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="thumb"></span><span class="mn">02 — Tidewater</span><span class="md">6:30</span></div>
+            <div class="mrow warned"><span class="box"></span><span class="thumb"></span><span class="mn">03 — Pale Grid</span><span class="mwarn">Already saved</span><span class="md">3:58</span></div>
+            <div class="mrow"><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="thumb"></span><span class="mn">04 — Long Exposure</span><span class="md">8:01</span></div>
+            <div class="mrow off"><span class="box"></span><span class="thumb"></span><span class="mn">05 — Marginalia</span><span class="md">5:20</span></div>
+            <div class="mrow"><span class="box on"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="thumb"></span><span class="mn">06 — Slow Ferry</span><span class="md">7:44</span></div>
+          </div>
+          <div class="mf"><span class="count">12 of 24 selected · 2 already in queue · ≈ 1:12:45</span><span class="sp"></span><button class="btn">Cancel</button><button class="go">Add 12</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s5-2">
+    <div class="cap"><b>5.2</b> Playlist videos in the table — group header + spine</div>
+    <div class="sub">Group header + continuous spine + group actions; one ungrouped row by recency. See <a href="../../design-system.md">design-system §4.2.4.</a></div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="body-scroll">
+        <div class="hero hero-tight">
+          <div class="paste-stack">
+          <div class="field solo"><input placeholder="Paste a link"></div>
+          </div>
+        </div>
+        <div class="tablewrap short">
+          <div class="toolbar"><button class="fc on">All</button><button class="fc">Downloading</button><button class="fc">Done</button><button class="fc">Needs attention <span class="badge">1</span></button><button class="colbtn"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Columns</button></div>
+          <table><thead><tr>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Title <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Status <span class="sortbtn active">↓</span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th class="col-hidden-default"><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Remark <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Progress <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Speed / ETA <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Type <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th><span class="thc"><span class="grip"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg></span>Quality <span class="sortbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></span> <span class="filtbtn"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></span></th>
+            <th>Actions</th></tr></thead><tbody>
+            <tr><td><span class="ti" title="Big Buck Bunny">Big Buck Bunny</span></td><td><span class="st s-dl">downloading</span></td><td class="col-hidden-default"></td><td><span class="bar"><i class="bar-62"></i></span></td><td>4.2 MB/s · 0:38</td><td>Video</td><td>1080p</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr class="ghead"><td colspan="8"><div class="gh">
+              <span class="caret"><svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span> Focus — deep work
+              <span class="meta2">· 12 items · 4 done <span class="gminibar"><i class="bar-33"></i></span></span>
+              <span class="gact"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg> Pause all</button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> Retry failed</button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg> Cancel all</button></span>
+            </div></td></tr>
+            <tr class="child"><td><span class="ti" title="01 — Sunrise Loop">01 — Sunrise Loop</span></td><td><span class="st s-dl">downloading</span></td><td class="col-hidden-default"></td><td><span class="bar"><i class="bar-80"></i></span></td><td>3.1 MB/s · 0:12</td><td>Audio</td><td>M4A</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr class="child"><td><span class="ti" title="02 — Tidewater">02 — Tidewater</span></td><td><span class="st s-queue">queued</span></td><td class="col-hidden-default">#3</td><td></td><td>—</td><td>Audio</td><td>M4A</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr class="child"><td><span class="ti" title="04 — Long Exposure">04 — Long Exposure</span></td><td><span class="st s-fail">failed</span></td><td class="col-hidden-default">Couldn’t read your browser’s sign-in.</td><td></td><td>—</td><td>Audio</td><td>M4A</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 21 9.6-9.6"/><path d="m7.5 15.5 2.3 2.3a1 1 0 0 1 0 1.4l-2.1 2.1a1 1 0 0 1-1.4 0L4 19"/><circle cx="15.5" cy="7.5" r="5.5"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+            <tr class="child"><td><span class="ti" title="06 — Slow Ferry">06 — Slow Ferry</span></td><td><span class="st s-done">saved</span></td><td class="col-hidden-default"></td><td></td><td>done</td><td>Audio</td><td>M4A</td><td><div class="acts"><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg></button><button><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PALS = {
+    aurora:  [["mint","Mint & Iris"],["lime","Lime & Forest"],["magenta","Magenta & Violet"]],
+    tapedeck:[["teal","Teal & Rust"],["plum","Plum & Blush"],["navy","Navy & Aqua"]],
+  };
+  const root = document.documentElement;
+  let theme = "aurora", pal = "mint";
+  function apply(){
+    root.setAttribute("data-theme", theme);
+    root.setAttribute("data-palette", pal);
+    document.querySelectorAll('.switch [data-s]').forEach(b=>b.classList.toggle('on', b.dataset.s===theme));
+    const box = document.getElementById('palset'); box.innerHTML = "";
+    PALS[theme].forEach(([id,label])=>{
+      const b=document.createElement('button'); b.textContent=label; b.className = id===pal?'on':'';
+      b.onclick=()=>{pal=id;apply()}; box.appendChild(b);
+    });
+  }
+  document.querySelectorAll('.switch [data-s]').forEach(b=>{
+    b.onclick=()=>{theme=b.dataset.s; pal=PALS[theme][0][0]; apply()};
+  });
+  apply();
+</script>
+</body>
+</html>

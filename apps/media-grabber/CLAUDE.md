@@ -19,8 +19,8 @@ in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
 `2026-09-10-media-grabber-phase-9.md`, Phase 10
 `2026-09-11-media-grabber-phase-10-share-extension.md`
 (spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
-not this app-local one). Next: Phase 11 — Diagnostics, staleness, updater
-(not yet planned).
+not this app-local one). Next: Phase 11 — Diagnostics, About, updates
+(brainstormed; not yet planned).
 
 ## Phase scoping — three rules
 

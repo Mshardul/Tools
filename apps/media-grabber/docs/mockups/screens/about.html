@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MediaGrabber — About</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="screens.css">
+<style>.filenav{max-width:1060px;margin:0 auto 18px;font-family:var(--font-display);font-size:13px}
+.filenav a{color:var(--dim);text-decoration:none;padding:6px 10px;border-radius:var(--r-chip)}
+.filenav a.on{background:var(--panel);color:var(--text);font-weight:600}</style>
+</head>
+<body>
+
+<div class="switch">
+  <b>Theme</b>
+  <button data-s="aurora" class="on">Aurora</button>
+  <button data-s="tapedeck">Tape Deck</button>
+  &nbsp;&nbsp;<b>Palette</b>
+  <span id="palset"></span>
+</div>
+
+<nav class="filenav"><a href="onboarding.html">Onboarding</a> · <a href="home.html">Home</a> · <a href="preferences.html">Preferences</a> · <a href="about.html" class="on">About</a> · <a href="dialog.html">Dialog</a></nav>
+
+<div class="doc" id="doc">
+<div class="screen" id="s7-1-1">
+    <div class="cap"><b>7.1.1</b> About — the app, before an app-update check has run</div>
+    <div class="sub">Before an app-update check has run this session — button reads "Check for updates." yt-dlp/ffmpeg show their known state (local compare, no network needed).</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a class="on">About</a><a>Developer</a>
+        </div>
+        <div class="main">
+          <div class="about-mark"><span class="orb big"></span></div>
+          <h2 class="about-center">MediaGrabber</h2>
+          <p class="psub about-center">Version 1.4.0</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">MediaGrabber<small>Not checked yet this session.</small></div><div class="fc"><button class="btn-txt">Check for updates</button></div></div>
+            <div class="field2"><div class="fl">Downloader (yt-dlp)</div><div class="fc"><span class="verstat ok">2026.08.19 · current</span></div></div>
+            <div class="field2"><div class="fl">ffmpeg</div><div class="fc"><span class="verstat ok">7.1</span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Diagnostics<small>Run a health check or copy a report for support.</small></div><div class="fc"><button class="btn-txt">Open Diagnostics</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s7-1-2">
+    <div class="cap"><b>7.1.2</b> About — the app, checked and up to date</div>
+    <div class="sub">Checked and current — no button shown, nothing to act on.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a class="on">About</a><a>Developer</a>
+        </div>
+        <div class="main">
+          <div class="about-mark"><span class="orb big"></span></div>
+          <h2 class="about-center">MediaGrabber</h2>
+          <p class="psub about-center">Version 1.4.0</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">MediaGrabber</div><div class="fc"><span class="verstat ok">up to date</span></div></div>
+            <div class="field2"><div class="fl">Downloader (yt-dlp)</div><div class="fc"><span class="verstat ok">2026.08.19 · current</span></div></div>
+            <div class="field2"><div class="fl">ffmpeg</div><div class="fc"><span class="verstat ok">7.1</span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Diagnostics<small>Run a health check or copy a report for support.</small></div><div class="fc"><button class="btn-txt">Open Diagnostics</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="screen" id="s7-1-3">
+    <div class="cap"><b>7.1.3</b> About — the app, updates confirmed available</div>
+    <div class="sub">Updates confirmed available. "Update" opens the MediaGrabber release page; "<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> Update" re-runs the yt-dlp pinned reinstall — same action as the <a href="preferences.html#s6-3">Diagnostics report row</a>.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip warn"><span class="dot warn"></span>engine · update available <button class="chip-fix"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></button></span><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a class="on">About</a><a>Developer</a>
+        </div>
+        <div class="main">
+          <div class="about-mark"><span class="orb big"></span></div>
+          <h2 class="about-center">MediaGrabber</h2>
+          <p class="psub about-center">Version 1.4.0</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">MediaGrabber<small>Version 1.5.0 is available.</small></div><div class="fc"><button class="btn-txt">Update</button></div></div>
+            <div class="field2"><div class="fl">Downloader (yt-dlp)</div><div class="fc"><span class="verstat warn">2026.05.02 · update available <button class="inline-fix"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> Update</button></span></div></div>
+            <div class="field2"><div class="fl">ffmpeg</div><div class="fc"><span class="verstat ok">7.1</span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Diagnostics<small>Run a health check or copy a report for support.</small></div><div class="fc"><button class="btn-txt">Open Diagnostics</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Button-verb rule</b> — three states per row: nothing shown (current, nothing to do) · "Check for updates" (unresolved, network call pending — MediaGrabber only) · "Update" / "<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg> Update" (confirmed available).</p>
+  </div>
+
+<div class="screen" id="s7-2">
+    <div class="cap"><b>7.2</b> About — Developer</div>
+    <div class="sub">Avatar + name + headline header, matching About's own identity block. "Connect with me" row: label left, icon links right.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a>About</a><a class="on">Developer</a>
+        </div>
+        <div class="main">
+          <div class="dev-mark"><span class="avatar">SL</span></div>
+          <h2 class="about-center">Shardul Lingwal</h2>
+          <p class="psub about-center">Solo developer, building in the open.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Connect with me</div><div class="fc"><div class="iconrow">
+            <button class="iconlink" title="GitHub">GH</button>
+            <button class="iconlink" title="LinkedIn">in</button>
+            <button class="iconlink" title="Personal site"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></button>
+            <button class="iconlink" title="X / Twitter">X</button>
+          </div></div></div>
+          <div class="field2"><div class="fl">Source code</div><div class="fc"><button class="btn-txt">GitHub</button></div></div>
+          <div class="field2"><div class="fl">Report an issue</div><div class="fc"><button class="btn-txt">GitHub Issues</button></div></div>
+          <div class="field2 row-noborder"><div class="fl">License</div><div class="fc"><button class="btn-txt">Open</button></div></div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const PALS = {
+    aurora:  [["mint","Mint & Iris"],["lime","Lime & Forest"],["magenta","Magenta & Violet"]],
+    tapedeck:[["teal","Teal & Rust"],["plum","Plum & Blush"],["navy","Navy & Aqua"]],
+  };
+  const root = document.documentElement;
+  let theme = "aurora", pal = "mint";
+  function apply(){
+    root.setAttribute("data-theme", theme);
+    root.setAttribute("data-palette", pal);
+    document.querySelectorAll('.switch [data-s]').forEach(b=>b.classList.toggle('on', b.dataset.s===theme));
+    const box = document.getElementById('palset'); box.innerHTML = "";
+    PALS[theme].forEach(([id,label])=>{
+      const b=document.createElement('button'); b.textContent=label; b.className = id===pal?'on':'';
+      b.onclick=()=>{pal=id;apply()}; box.appendChild(b);
+    });
+  }
+  document.querySelectorAll('.switch [data-s]').forEach(b=>{
+    b.onclick=()=>{theme=b.dataset.s; pal=PALS[theme][0][0]; apply()};
+  });
+  apply();
+</script>
+</body>
+</html>

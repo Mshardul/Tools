@@ -6,461 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Sora:wght@400;500;600;700&family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* =====================================================================
-   MEDIAGRABBER — maintained mockup. Snapshot of shipped screens
-   (Phases 1–5) plus later-phase pages left as drawn until those
-   phases are planned. Tokens mirror ../design-system.md.
-   Switch theme/palette with the bar at the top (writes
-   data-theme / data-palette on <html>). This is a meta file — the few
-   phase references in captions are deliberate.
-   ===================================================================== */
-
-/* ---------- Aurora palettes (dark) ---------- */
-:root,
-:root[data-theme="aurora"][data-palette="mint"]{
-  --ground:#0C1013; --panel-solid:#0E1117; --panel:rgba(255,255,255,.05); --panel-hi:rgba(255,255,255,.08);
-  --stroke:rgba(255,255,255,.12); --hair:rgba(255,255,255,.06);
-  --text:#EDF0F5; --dim:#9AA3B2; --faint:#6B7480; --headline:#F4F6FA; --on-accent:#07080B;
-  --accent:#5EF2C8; --accent-2:#8B7BFF; --warn:#FFC24B; --danger:#FF7A6B;
-  --go-fill:linear-gradient(135deg,#5EF2C8,#8B7BFF);
-  --orb:conic-gradient(from 0deg,#5EF2C8,#8B7BFF,#FF7A6B,#5EF2C8);
-  --bar-fill:linear-gradient(90deg,#5EF2C8,#8B7BFF);
-  --banner-fill:linear-gradient(90deg,#FF7A6B,#FFC24B);
-  --glow-a:rgba(94,242,200,.14); --glow-b:rgba(139,123,255,.16);
-  --s-dl:transparent; --s-done:transparent; --s-fail:transparent; --s-cool:transparent; --s-queue:transparent;
-}
-:root[data-theme="aurora"][data-palette="lime"]{
-  --ground:#0A0F0C; --panel-solid:#0C1210; --stroke:rgba(190,255,210,.13);
-  --text:#E9F2EC; --dim:#93A99C; --faint:#5F7268; --headline:#F2F8F3;
-  --accent:#B6F04A; --accent-2:#4ED6A0; --warn:#F2C14E; --danger:#FF6F6F;
-  --go-fill:linear-gradient(135deg,#B6F04A,#4ED6A0);
-  --orb:conic-gradient(from 0deg,#B6F04A,#4ED6A0,#F2C14E,#B6F04A);
-  --bar-fill:linear-gradient(90deg,#B6F04A,#4ED6A0);
-  --banner-fill:linear-gradient(90deg,#FF6F6F,#F2C14E);
-  --glow-a:rgba(182,240,74,.16); --glow-b:rgba(78,214,160,.14);
-}
-:root[data-theme="aurora"][data-palette="magenta"]{
-  --ground:#100C14; --panel-solid:#120E16; --stroke:rgba(230,190,255,.14);
-  --text:#F1EAF5; --dim:#A996B5; --faint:#7A6B85; --headline:#F7F2FA;
-  --accent:#F25C9E; --accent-2:#9B6BFF; --warn:#FFC24B; --danger:#FF6B6B;
-  --go-fill:linear-gradient(135deg,#F25C9E,#9B6BFF);
-  --orb:conic-gradient(from 0deg,#F25C9E,#9B6BFF,#5ED6E8,#F25C9E);
-  --bar-fill:linear-gradient(90deg,#F25C9E,#9B6BFF);
-  --banner-fill:linear-gradient(90deg,#FF6B6B,#FFC24B);
-  --glow-a:rgba(242,92,158,.16); --glow-b:rgba(155,107,255,.16);
-}
-
-/* ---------- Tape Deck palettes (light) ---------- */
-:root[data-theme="tapedeck"]{
-  --hair:rgba(43,33,24,.18);
-  --go-fill:var(--go); --orb:none; --glow-a:transparent; --glow-b:transparent;
-  --panel-hi:rgba(0,0,0,.04);
-}
-:root[data-theme="tapedeck"][data-palette="teal"]{
-  --ground:#F3E9D8; --panel-solid:#FBF4E6; --panel:#F3E9D8; --stroke:#2B2118;
-  --text:#2B2118; --dim:#8A7A60; --faint:#8A7A60; --headline:#2B2118; --on-accent:#2B2118;
-  --brand:#0E5C57; --accent:#D2601A; --accent-2:#0E5C57; --warn:#9C5A00; --danger:#B4472A;
-  --go:#E4A11B; --bar-fill:#D2601A; --banner-fill:#D2601A;
-  --s-dl:#CFE3E1; --s-done:#D9E8C8; --s-fail:#F3D2C3; --s-cool:#F6E2B8; --s-queue:#FBF4E6;
-}
-:root[data-theme="tapedeck"][data-palette="plum"]{
-  --ground:#EFE9E9; --panel-solid:#FBF5F5; --panel:#EFE9E9; --stroke:#281E26;
-  --text:#281E26; --dim:#8B8088; --faint:#8B8088; --headline:#281E26; --on-accent:#281E26;
-  --brand:#5A2E52; --accent:#E98C89; --accent-2:#5A2E52; --warn:#8C5A0C; --danger:#C25B57;
-  --go:#E8B24A; --bar-fill:#E98C89; --banner-fill:#E98C89;
-  --hair:rgba(40,30,38,.18);
-  --s-dl:#E1DCEC; --s-done:#D8E6D0; --s-fail:#F4D6D6; --s-cool:#F3E3C0; --s-queue:#FBF5F5;
-}
-:root[data-theme="tapedeck"][data-palette="navy"]{
-  --ground:#E7E9E7; --panel-solid:#F5F6F3; --panel:#E7E9E7; --stroke:#1B222A;
-  --text:#1B222A; --dim:#7C838A; --faint:#7C838A; --headline:#1B222A; --on-accent:#1B222A;
-  --brand:#1F3350; --accent:#2FA69A; --accent-2:#1F3350; --warn:#805C14; --danger:#D9694C;
-  --go:#F2B12E; --bar-fill:#2FA69A; --banner-fill:#2FA69A;
-  --hair:rgba(27,34,42,.18);
-  --s-dl:#D6E6E3; --s-done:#D8E6D0; --s-fail:#F3D8CC; --s-cool:#F6E6B6; --s-queue:#F5F6F3;
-}
-
-/* ---------- theme-independent tokens ---------- */
-:root{
-  --r-window:18px; --r-card:14px; --r-control:9px; --r-pill:20px; --r-chip:7px;
-  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:30px; --sp-8:44px;
-  --font-display:"Sora",system-ui,sans-serif; --font-body:"Inter",system-ui,sans-serif; --font-mono:"JetBrains Mono",monospace;
-  --ease:cubic-bezier(.2,.7,.2,1); --dur:160ms;
-  --border-w:1px; --elev-card:0 0 0 1px rgba(255,255,255,.02),0 24px 60px rgba(0,0,0,.6);
-  --console-elev:0 0 0 1px var(--glow-a),0 0 32px var(--glow-b);
-}
-:root[data-theme="tapedeck"]{
-  --r-window:14px; --r-card:12px; --r-control:8px; --r-chip:6px;
-  --font-display:"Bricolage Grotesque",system-ui,sans-serif; --font-body:"DM Sans",system-ui,sans-serif; --font-mono:"DM Mono",monospace;
-  --border-w:2px; --elev-card:8px 8px 0 rgba(0,0,0,.35);
-  --console-elev:none;
-}
-
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#08090b;font-family:var(--font-body);color:var(--text);padding:24px;-webkit-font-smoothing:antialiased}
-:root[data-theme="tapedeck"] body{background:#d8cdb8}
-
-/* switcher */
-.switch{max-width:1060px;margin:0 auto 24px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-family:var(--font-mono);font-size:12px;color:#aaa}
-:root[data-theme="tapedeck"] .switch{color:#4a3f2f}
-.switch b{color:#fff}
-:root[data-theme="tapedeck"] .switch b{color:#2b2118}
-.switch button{font-family:var(--font-mono);font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid #444;background:transparent;color:inherit;cursor:pointer}
-.switch button.on{background:#fff;color:#111;border-color:#fff}
-:root[data-theme="tapedeck"] .switch button{border-color:#8a7a60}
-:root[data-theme="tapedeck"] .switch button.on{background:#2b2118;color:#f3e9d8;border-color:#2b2118}
-
-/* TOC */
-.toc{max-width:1060px;margin:0 auto 40px;padding:18px 22px;border:1px solid #333;border-radius:12px;background:#0e0f12;font-family:var(--font-mono);font-size:12px;line-height:1.9}
-:root[data-theme="tapedeck"] .toc{background:#efe6d4;border-color:#8a7a60;color:#3b3020}
-.toc h2{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#888;margin-bottom:10px}
-:root[data-theme="tapedeck"] .toc h2{color:#6a5c44}
-.toc a{color:#8fd8c4;text-decoration:none}
-:root[data-theme="tapedeck"] .toc a{color:#0E5C57}
-.toc a:hover{text-decoration:underline}
-.toc .grp{color:#ddd;font-weight:500}
-:root[data-theme="tapedeck"] .toc .grp{color:#2b2118}
-.toc .row{display:block}
-
-.doc{max-width:1060px;margin:0 auto}
-.section-head{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#8fd8c4;border-bottom:1px solid #333;padding-bottom:8px;margin:56px 0 24px}
-:root[data-theme="tapedeck"] .section-head{color:#0E5C57;border-color:#8a7a60}
-.section-head:first-of-type{margin-top:8px}
-
-.screen{margin-bottom:44px}
-.screen .cap{font-family:var(--font-mono);font-size:12px;color:#ddd;margin-bottom:8px;letter-spacing:.03em}
-:root[data-theme="tapedeck"] .screen .cap{color:#3b3020}
-.screen .cap b{color:var(--accent)}
-:root[data-theme="tapedeck"] .screen .cap b{color:#0E5C57}
-.screen .sub{font-size:12px;color:#999;margin-bottom:14px;line-height:1.6;max-width:74ch}
-:root[data-theme="tapedeck"] .screen .sub{color:#5a4d38}
-.screen .phase-note{font-family:var(--font-mono);font-size:11px;color:#8a8f98;margin-bottom:12px}
-:root[data-theme="tapedeck"] .screen .phase-note{color:#6a5c44}
-
-/* ============ APP WINDOW — fixed 980 x 720, 1 CSS px = 1 pt ============ */
-.app{width:980px;height:720px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-window);overflow:hidden;position:relative;box-shadow:var(--elev-card);display:flex;flex-direction:column}
-.hdr{display:flex;align-items:center;gap:var(--sp-3);padding:15px var(--sp-5);border-bottom:var(--border-w) solid var(--stroke);flex:none}
-:root[data-theme="tapedeck"] .hdr{background:var(--brand)}
-.orb{width:20px;height:20px;border-radius:50%;background:var(--orb);flex:none}
-:root[data-theme="aurora"] .orb{animation:spin 6s linear infinite}
-:root[data-theme="tapedeck"] .orb{background:none;border:3px solid var(--panel-solid);position:relative}
-:root[data-theme="tapedeck"] .orb::before,:root[data-theme="tapedeck"] .orb::after{content:"";position:absolute;inset:0;margin:auto;background:var(--panel-solid)}
-:root[data-theme="tapedeck"] .orb::before{width:3px;height:12px} :root[data-theme="tapedeck"] .orb::after{width:12px;height:3px}
-.wm{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-.02em}
-:root[data-theme="tapedeck"] .wm{color:var(--panel-solid);font-weight:800}
-.nav{margin-left:auto;display:flex;gap:var(--sp-1)}
-.nav a{font-family:var(--font-display);font-size:12px;color:var(--dim);text-decoration:none;padding:7px 12px;border-radius:var(--r-chip)}
-:root[data-theme="tapedeck"] .nav a{color:var(--panel-solid);font-family:var(--font-mono);text-transform:uppercase;font-size:11px;letter-spacing:.06em}
-.nav a.on{background:var(--panel);color:var(--text)}
-:root[data-theme="tapedeck"] .nav a.on{background:var(--panel-solid);color:var(--brand)}
-
-.health{display:flex;gap:9px;padding:11px var(--sp-5);flex-wrap:wrap;border-bottom:var(--border-w) solid var(--stroke);flex:none}
-:root[data-theme="tapedeck"] .health{background:var(--ground)}
-.chip{font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:var(--r-pill);background:var(--panel);border:1px solid var(--stroke);display:flex;align-items:center;gap:6px;color:var(--dim)}
-:root[data-theme="tapedeck"] .chip{border-width:1.5px;background:var(--panel-solid);color:var(--text)}
-.chip .dot{width:6px;height:6px;border-radius:50%}
-.chip .dot.ok{background:var(--accent-2)} :root[data-theme="aurora"] .chip .dot.ok{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.chip .dot.warn{background:var(--warn)} :root[data-theme="aurora"] .chip .dot.warn{box-shadow:0 0 8px var(--warn)}
-.chip.warn{color:var(--warn);border-color:var(--warn)}
-.fl .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.fl .dot.warn{background:var(--warn)}
-.fl .dot.ok{background:var(--accent)}
-
-.body-scroll{flex:1;min-height:0;overflow:auto}
-/* Home with paste/runway + table: chrome stays put; only row body scrolls */
-.body-home{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.body-home>.hero{flex:none}
-.tablewrap.fill>.toolbar{flex:none}
-.table-scroll{flex:1;min-height:0;overflow:auto}
-.table-scroll thead th{position:sticky;top:0;z-index:2;background:var(--panel-solid)}
-
-.hero{padding:var(--sp-6) var(--sp-5) var(--sp-5)}
-.kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:var(--sp-2)}
-:root[data-theme="tapedeck"] .kicker{color:var(--brand)}
-h1.head{font-family:var(--font-display);font-weight:700;font-size:32px;line-height:1.04;letter-spacing:-.03em;max-width:18ch;margin-bottom:var(--sp-4);color:var(--headline)}
-:root[data-theme="tapedeck"] h1.head{font-weight:800}
-h1.head em{font-style:normal;color:var(--accent)}
-
-/* paste field + runway */
-.paste-stack{display:flex;flex-direction:column;gap:var(--sp-3)}
-.field{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:10px;align-items:center}
-.field.col{flex-direction:column;align-items:stretch;gap:8px}
-.field-row{display:flex;gap:10px;align-items:center}
-.field input{flex:1;min-width:0;background:transparent;border:none;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none}
-.field input::placeholder{color:var(--faint)}
-.field .status{font-family:var(--font-mono);font-size:11px;color:var(--accent);white-space:nowrap}
-:root[data-theme="tapedeck"] .field .status{color:var(--brand)}
-.field .status.err{color:var(--danger)}
-.probe-err{font-size:12px;color:var(--danger);line-height:1.4}
-.runway{background:var(--panel-hi);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:12px;display:flex;gap:0;align-items:stretch;box-shadow:var(--console-elev);width:100%}
-.rstep{flex:1;display:flex;flex-direction:column;gap:6px;padding:0 14px;position:relative;min-width:0}
-.rstep + .rstep::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--hair)}
-.rstep .rl{font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint)}
-/* value row: same control height for link text, segment, and pickers */
-.rstep>.rv,.rstep>.seg,.rstep>.pick{height:34px;box-sizing:border-box;min-width:0;max-width:100%}
-.rstep .rv{font-family:var(--font-display);font-size:13px;display:flex;gap:6px;align-items:center;min-width:0;overflow:hidden}
-.rstep .rv .rt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rstep.ok .rv::before{content:"●";color:var(--accent);font-size:8px;flex:none;line-height:1}
-.rstep.wait .rv{color:var(--faint)} .rstep.wait .rv::before{content:"○";color:var(--faint);font-size:8px;flex:none;line-height:1}
-.rgo{flex:none;display:flex;align-items:center;padding-left:14px;border-left:1px solid var(--hair)}
-.go{background:var(--go-fill);color:var(--on-accent);border:none;border-radius:var(--r-control);padding:0 24px;font-family:var(--font-display);font-weight:700;font-size:14px;cursor:pointer;min-height:44px}
-:root[data-theme="tapedeck"] .go{border:2px solid var(--panel-solid)}
-.go[disabled]{opacity:.3;cursor:not-allowed;filter:grayscale(.5)}
-
-/* skinned segmented control — same 34px control height as .pick */
-.seg{display:inline-flex;align-items:stretch;height:34px;box-sizing:border-box;border:var(--border-w) solid var(--stroke);border-radius:var(--r-chip);background:var(--panel);overflow:hidden}
-.seg button{font-family:var(--font-display);font-size:12px;padding:0 14px;min-width:62px;text-align:center;border:none;background:transparent;color:var(--dim);cursor:pointer;border-right:1px solid var(--hair)}
-.seg button:last-child{border-right:none}
-.seg button.on{background:var(--panel-solid);color:var(--text);font-weight:600}
-:root[data-theme="aurora"] .seg button.on{box-shadow:inset 0 0 0 1px var(--stroke)}
-
-/* skinned picker trigger — fixed height; long labels ellipsize, never grow */
-.pick{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:12px;height:34px;padding:0 12px;border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);background:var(--panel);color:var(--text);cursor:pointer;box-sizing:border-box;min-width:0;max-width:100%;overflow:hidden}
-.pick .ptxt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pick .cv{color:var(--faint);font-size:10px;flex:none}
-.pick.nochev{cursor:pointer}
-
-/* skinned picker popover */
-.pop{position:absolute;z-index:30;min-width:200px;max-width:340px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);box-shadow:var(--elev-card);padding:8px;box-sizing:border-box}
-:root[data-theme="aurora"] .pop{box-shadow:0 0 0 1px var(--glow-a),0 0 34px var(--glow-b),0 24px 60px rgba(0,0,0,.6)}
-.pop .ph{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);padding:6px 8px 8px;border-bottom:1px solid var(--hair);margin-bottom:4px}
-.pop .prow{display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:var(--r-chip);cursor:pointer}
-.pop .prow:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
-.pop .prow .pt{font-family:var(--font-body);font-size:12.5px;color:var(--text);display:flex;align-items:center;gap:8px}
-.pop .prow .pt .ck{color:var(--accent);font-size:11px;width:12px;display:inline-block}
-.pop .prow .pst{font-family:var(--font-mono);font-size:10.5px;color:var(--dim)}
-
-/* table */
-.tablewrap{padding:6px var(--sp-5) 82px;position:relative}
-.tablewrap.short{padding-bottom:24px}
-.toolbar{display:flex;gap:var(--sp-2);margin:var(--sp-4) 0 var(--sp-3);flex-wrap:wrap;align-items:center;position:relative}
-.toolbar .fc{font-family:var(--font-display);font-size:11px;padding:6px 12px;border-radius:var(--r-pill);border:1px solid var(--stroke);background:transparent;color:var(--dim);cursor:pointer}
-.toolbar .fc.on{background:var(--panel);color:var(--text)}
-.toolbar .fc .badge{background:var(--danger);color:#fff;border-radius:20px;padding:0 5px;font-size:9px;margin-left:5px}
-.toolbar .colbtn{margin-left:auto;font-family:var(--font-mono);font-size:11px;padding:6px 12px;border-radius:var(--r-chip);border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer}
-.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.toolbar-right .colbtn{margin-left:0}
-.toolbar .clear{font-family:var(--font-body);font-size:12px;padding:6px 4px;border:none;background:transparent;color:var(--accent);cursor:pointer}
-.empty-table{flex:1;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:13px;padding:80px 24px;text-align:center}
-.tablewrap.fill{display:flex;flex-direction:column;flex:1;min-height:0}
-
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{text-align:left;font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);padding:8px;border-bottom:var(--border-w) solid var(--stroke);white-space:nowrap;position:relative}
-.thc{display:inline-flex;align-items:center;gap:6px;cursor:grab}
-.thc .grip{color:var(--faint);font-size:9px;opacity:.5}
-.thc .sortbtn,.thc .filtbtn{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;border:1px solid transparent;color:var(--faint);cursor:pointer;font-size:11px}
-.thc .sortbtn:hover,.thc .filtbtn:hover{border-color:var(--stroke);color:var(--text)}
-.thc .sortbtn.active{color:var(--accent);border-color:var(--accent)}
-.thc .filtbtn.active{color:var(--accent-2);border-color:var(--accent-2);background:var(--panel)}
-.fmenu{position:absolute;top:30px;left:0;z-index:20;background:var(--panel-solid);border:1px solid var(--stroke);border-radius:var(--r-control);box-shadow:0 12px 40px rgba(0,0,0,.55);padding:8px;width:190px}
-.fmenu .fh{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);padding:4px 6px 8px}
-.fmenu label{display:flex;align-items:center;gap:8px;padding:6px;font-family:var(--font-body);font-size:12px;color:var(--text);border-radius:6px;cursor:pointer;text-transform:none;letter-spacing:0}
-.fmenu label:hover{background:var(--panel)}
-.fmenu .box{width:14px;height:14px;border:1px solid var(--stroke);border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px}
-.fmenu .box.on{background:var(--accent-2);border-color:var(--accent-2);color:var(--on-accent)}
-.fmenu .fact{display:flex;gap:6px;margin-top:6px;padding-top:8px;border-top:1px solid var(--hair)}
-.fmenu .fact button{flex:1;font-family:var(--font-display);font-size:11px;padding:6px;border-radius:6px;border:1px solid var(--stroke);background:transparent;color:var(--dim);cursor:pointer}
-.fmenu .fact button.pri{background:var(--panel);color:var(--text)}
-.colmenu{position:absolute;right:0;top:36px;z-index:20;background:var(--panel-solid);border:1px solid var(--stroke);border-radius:var(--r-control);box-shadow:0 12px 40px rgba(0,0,0,.55);padding:8px;width:180px;max-height:280px;overflow:auto}
-.colmenu .fh{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);padding:4px 6px 8px}
-.colmenu label{display:flex;align-items:center;gap:8px;padding:5px 6px;font-family:var(--font-body);font-size:12px;color:var(--text);border-radius:6px;cursor:pointer}
-.colmenu label:hover{background:var(--panel)}
-.colmenu label.locked{opacity:.5;cursor:not-allowed}
-.colmenu .box{width:13px;height:13px;border:1px solid var(--stroke);border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;font-size:9px}
-.colmenu .box.on{background:var(--accent-2);border-color:var(--accent-2);color:var(--on-accent)}
-
-tbody td{padding:11px 8px;border-bottom:1px solid var(--hair);vertical-align:middle}
-tbody tr:hover td{background:var(--panel)}
-.ti{display:flex;align-items:center;gap:8px}
-.rr{width:14px;height:14px;border-radius:50%;background:var(--orb);flex:none}
-:root[data-theme="aurora"] .rr{animation:spin 2s linear infinite}
-:root[data-theme="tapedeck"] .rr{background:none;border:2px solid var(--text);position:relative;animation:spin 2s linear infinite}
-:root[data-theme="tapedeck"] .rr::after{content:"";position:absolute;inset:0;margin:auto;width:2px;height:8px;background:var(--text)}
-.site{font-family:var(--font-mono);font-size:12px;color:var(--dim)}
-.st{font-family:var(--font-mono);font-size:10px;padding:3px 9px;border:1px solid var(--stroke);border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:5px}
-:root[data-theme="tapedeck"] .st{border-width:1.5px}
-.st::before{content:"";width:5px;height:5px;border-radius:50%}
-.s-dl{color:var(--accent)} .s-dl::before{background:var(--accent)} :root[data-theme="aurora"] .s-dl::before{box-shadow:0 0 6px var(--accent)}
-:root[data-theme="tapedeck"] .s-dl{background:var(--s-dl);color:var(--text)}
-.s-done{color:var(--dim)} .s-done::before{background:var(--dim)} :root[data-theme="tapedeck"] .s-done{background:var(--s-done);color:var(--text)}
-.s-fail{color:var(--danger)} .s-fail::before{background:var(--danger)} :root[data-theme="tapedeck"] .s-fail{background:var(--s-fail);color:var(--text)}
-.s-cool{color:var(--warn)} .s-cool::before{background:var(--warn)} :root[data-theme="tapedeck"] .s-cool{background:var(--s-cool);color:var(--text)}
-.s-queue{color:var(--accent-2)} .s-queue::before{background:var(--accent-2)} :root[data-theme="tapedeck"] .s-queue{background:var(--s-queue);color:var(--text)}
-.s-pause{color:var(--dim)} .s-pause::before{background:var(--dim)}
-.bar{height:6px;width:110px;overflow:hidden;background:rgba(150,150,150,.18);border-radius:var(--r-pill)}
-:root[data-theme="tapedeck"] .bar{border:1.5px solid var(--stroke);height:7px}
-.bar>i{display:block;height:100%;background:var(--bar-fill)}
-:root[data-theme="aurora"] .bar>i{box-shadow:0 0 10px var(--glow-a)}
-.acts{display:flex;gap:4px}
-.acts button{width:27px;height:27px;cursor:pointer;font-size:11px;background:var(--panel);border:1px solid var(--stroke);color:var(--text);border-radius:var(--r-chip)}
-.acts button[disabled]{opacity:.3;cursor:not-allowed}
-:root[data-theme="tapedeck"] .acts button{border-width:1.5px}
-
-/* playlist group */
-.ghead td{background:var(--panel-hi);border-bottom:var(--border-w) solid var(--stroke);padding:10px 8px}
-:root[data-theme="aurora"] .ghead td{background:color-mix(in srgb,var(--accent-2) 10%,transparent)}
-.gh{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:600;font-size:13px}
-.gh .caret{width:16px;height:16px;border:1px solid var(--stroke);border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:var(--dim);cursor:pointer}
-.gh .meta2{font-family:var(--font-mono);font-size:11px;color:var(--dim);font-weight:400;display:flex;align-items:center;gap:8px}
-.gh .gminibar{display:inline-block;width:110px;height:5px;background:rgba(150,150,150,.2);border-radius:20px;overflow:hidden}
-.gh .gminibar>i{display:block;height:100%;background:var(--bar-fill)}
-.gh .gact{margin-left:auto;display:flex;gap:5px}
-.gh .gact button{font-family:var(--font-display);font-size:10px;padding:4px 9px;border-radius:var(--r-chip);border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer}
-.child td:first-child{position:relative;padding-left:28px}
-.child td:first-child::before{content:"";position:absolute;left:12px;top:-11px;bottom:-11px;width:1px;background:var(--stroke)}
-.child:last-of-type td:first-child::before{bottom:50%}
-.child td:first-child::after{content:"";position:absolute;left:12px;top:50%;width:10px;height:1px;background:var(--stroke)}
-.child td{border-bottom-color:transparent}
-.child td:first-child{border-bottom:1px solid var(--hair)}
-.child td:not(:first-child){border-bottom:1px solid var(--hair)}
-
-/* warning banner */
-.banner{position:absolute;left:16px;right:16px;bottom:16px;padding:12px 16px;display:flex;align-items:center;gap:11px;font-size:13px;border-radius:11px;background:var(--banner-fill);color:#141210;box-shadow:0 10px 34px rgba(0,0,0,.45);z-index:5}
-:root[data-theme="tapedeck"] .banner{border:2px solid var(--stroke);color:var(--panel-solid)}
-.banner strong{font-family:var(--font-display);font-weight:600}
-.banner button{margin-left:auto;padding:6px 14px;font-weight:600;cursor:pointer;border:none;background:rgba(0,0,0,.16);color:inherit;border-radius:8px;font-size:12px}
-:root[data-theme="tapedeck"] .banner button{background:var(--panel-solid);color:var(--text);border:1.5px solid var(--stroke)}
-
-/* toast */
-.toaststack{position:absolute;right:16px;bottom:82px;display:flex;flex-direction:column;gap:8px;z-index:6}
-.toast{background:var(--panel-solid);border:1px solid var(--stroke);border-radius:var(--r-control);padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 30px rgba(0,0,0,.4);min-width:240px}
-.toast .tk{color:var(--accent)}
-.toast a{margin-left:auto;color:var(--accent-2);text-decoration:underline;cursor:pointer;font-size:11px}
-
-/* playlist picker modal */
-.backdrop{position:absolute;inset:0;background:rgba(4,5,7,.55);display:flex;align-items:center;justify-content:center;z-index:8}
-:root[data-theme="tapedeck"] .backdrop{background:rgba(43,33,24,.4)}
-.modal{width:560px;max-width:92%;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-window);box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
-.modal .mh{padding:16px 18px;border-bottom:1px solid var(--stroke)}
-.modal .mt{font-family:var(--font-display);font-weight:600;font-size:15px}
-.modal .ms{font-family:var(--font-mono);font-size:11px;color:var(--dim);margin-top:2px}
-.modal .mtools{display:flex;gap:10px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--hair)}
-.modal .mtools a{color:var(--accent-2);text-decoration:underline;cursor:pointer;font-family:var(--font-mono);font-size:11px}
-.modal .mtools .search{margin-left:auto;background:var(--panel);border:1px solid var(--stroke);border-radius:var(--r-chip);padding:6px 10px;font-family:var(--font-mono);font-size:11px;color:var(--dim);width:140px}
-.mlist{max-height:280px;overflow:auto}
-.mrow{display:flex;align-items:center;gap:12px;padding:9px 18px;border-bottom:1px solid var(--hair);cursor:pointer}
-.mrow:hover{background:var(--panel)}
-.mrow.off{opacity:.42}
-.mrow .box{width:16px;height:16px;border:1px solid var(--stroke);border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center;font-size:10px}
-.mrow .box.on{background:var(--accent-2);border-color:var(--accent-2);color:var(--on-accent)}
-.mrow .thumb{width:52px;height:30px;border-radius:5px;background:linear-gradient(135deg,#25384a,#141f28);border:1px solid var(--stroke);flex:none}
-.mrow .mn{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mrow .md{font-family:var(--font-mono);font-size:10px;color:var(--dim)}
-.mrow .mwarn{font-family:var(--font-mono);font-size:10px;color:var(--warn);flex:none;margin-left:auto}
-.mrow.warned{background:color-mix(in srgb,var(--warn) 6%,transparent)}
-.modal .mbann{padding:10px 18px;font-family:var(--font-body);font-size:12px;font-weight:600;color:var(--warn);background:var(--panel-hi);border-bottom:1px solid var(--hair)}
-.modal .mf{padding:14px 18px;border-top:1px solid var(--stroke);display:flex;align-items:center;gap:12px}
-.modal .mf .count{font-family:var(--font-mono);font-size:12px;color:var(--dim)}
-.modal .mf .sp{margin-left:auto}
-.btn{background:var(--panel);border:1px solid var(--stroke);color:var(--text);border-radius:var(--r-control);padding:9px 16px;font-family:var(--font-display);font-size:12px;cursor:pointer}
-
-/* confirmation dialog */
-.scrim{position:absolute;inset:0;background:color-mix(in srgb,var(--ground) 60%,transparent);display:flex;align-items:center;justify-content:center;z-index:9}
-.cdialog{width:100%;max-width:420px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);box-shadow:var(--elev-card);padding:var(--sp-5)}
-.cdialog .cglyph{font-size:22px;color:var(--danger);margin-bottom:var(--sp-3)}
-.cdialog .ct{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--headline);margin-bottom:var(--sp-3)}
-.cdialog .cm{font-family:var(--font-body);font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:var(--sp-4)}
-.cdialog .cbtns{display:flex;justify-content:flex-end;gap:var(--sp-2)}
-.cdialog .cbtns button{font-family:var(--font-display);font-size:12px;padding:9px 16px;border-radius:var(--r-control);cursor:pointer;border:var(--border-w) solid var(--stroke);background:var(--panel);color:var(--text)}
-.cdialog .cbtns button.focusring{box-shadow:0 0 0 2px var(--accent);outline:none}
-.cdialog .cbtns button.danger{background:var(--danger);border-color:var(--danger);color:#fff}
-.cdialog .cbtns button.ok{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-
-/* onboarding */
-.onb{padding:var(--sp-8) var(--sp-6);max-width:620px;margin:0 auto}
-.onb h1{font-family:var(--font-display);font-weight:700;font-size:26px;letter-spacing:-.02em;margin-bottom:var(--sp-2);color:var(--headline)}
-.onb p.lead{font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:var(--sp-6)}
-.step{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--hair)}
-.step .ic{width:28px;height:28px;border-radius:50%;border:1px solid var(--stroke);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;flex:none}
-.step.done .ic{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-.step.now .ic{border-color:var(--accent);color:var(--accent)}
-.step .body h3{font-family:var(--font-display);font-size:14px;margin-bottom:3px}
-.step .body p{font-size:12px;color:var(--dim);line-height:1.6}
-.step .body .cmd{font-family:var(--font-mono);font-size:11px;background:var(--ground);border:1px solid var(--stroke);border-radius:var(--r-chip);padding:8px 10px;margin-top:8px;color:var(--dim);display:flex;align-items:center;gap:8px}
-.step .body .cmd button{margin-left:auto;font-family:var(--font-display);font-size:10px;padding:4px 8px;border-radius:5px;border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer}
-.step .body .go{margin-top:10px;padding:8px 16px;min-height:0;font-size:12px}
-.step .body .rowbtns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.step.fail .ic{border-color:var(--danger);color:var(--danger)}
-
-/* preferences */
-.prefs{display:flex;height:100%}
-.prefs .side{width:200px;flex:none;border-right:var(--border-w) solid var(--stroke);padding:var(--sp-4) var(--sp-2);overflow:hidden}
-.prefs .side a{display:block;font-family:var(--font-display);font-size:13px;color:var(--dim);text-decoration:none;padding:8px 12px;border-radius:var(--r-chip)}
-.prefs .side a.on{background:var(--panel);color:var(--text)}
-.prefs .side .grp{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);padding:14px 12px 6px}
-.prefs .main{flex:1;padding:var(--sp-6);overflow:auto}
-.prefs .main h2{font-family:var(--font-display);font-weight:800;font-size:20px;color:var(--headline);margin-bottom:var(--sp-1)}
-:root[data-theme="aurora"] .prefs .main h2{font-weight:700}
-.prefs .main > p.psub{font-size:12px;color:var(--dim);margin-bottom:var(--sp-3);line-height:1.5}
-.prefs .main .rule{border-bottom:var(--border-w) solid var(--stroke);margin-bottom:var(--sp-3)}
-.field2{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding:14px 0;border-bottom:1px solid var(--hair)}
-.field2 .fl{font-size:13px;font-weight:600;color:var(--text)}
-.field2 .fl small{display:block;color:var(--dim);font-size:11.5px;font-weight:400;margin-top:3px;line-height:1.5;max-width:40ch}
-.field2 .fc{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-.field2 .fc input[type=text]{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);padding:8px 10px;font-family:var(--font-mono);font-size:12px;color:var(--text);min-width:220px}
-.field2 .fc input.mono{font-family:var(--font-mono)}
-.stepper{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:13px}
-.stepper .val{min-width:34px;text-align:center}
-.stepper button{width:26px;height:26px;border:var(--border-w) solid var(--stroke);background:var(--panel);color:var(--text);border-radius:6px;cursor:pointer}
-.toggle{width:34px;height:20px;border-radius:20px;background:var(--panel-hi);border:1px solid var(--stroke);position:relative;cursor:pointer;display:inline-block}
-.toggle::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--dim);top:2px;left:2px;transition:all var(--dur)}
-.toggle.on{background:var(--accent)} .toggle.on::after{left:16px;background:var(--on-accent)}
-.btn-txt{font-family:var(--font-display);font-size:12px;padding:8px 14px;border:var(--border-w) solid var(--stroke);border-radius:var(--r-control);background:var(--panel);color:var(--text);cursor:pointer}
-.btn-txt.danger{color:var(--danger);border-color:var(--danger)}
-.swatches{display:flex;gap:14px}
-.swatches .sw{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
-.swatches .sw .tile{width:56px;height:38px;border-radius:8px;border:1px solid var(--stroke);overflow:hidden;display:flex}
-.swatches .sw .tile i{flex:1}
-.swatches .sw.on .tile{outline:2px solid var(--accent);outline-offset:2px}
-.swatches .sw span{font-family:var(--font-body);font-size:10.5px;color:var(--text)}
-.stepless{padding:var(--sp-8) 0;max-width:44ch}
-.stepless p.later{font-size:12.5px;color:var(--faint);margin-top:var(--sp-3);line-height:1.6}
-.note{display:flex;gap:8px;align-items:flex-start;font-family:var(--font-body);font-size:11.5px;color:var(--dim);line-height:1.5;max-width:34ch}
-.note .dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:none;margin-top:3px}
-.note .dot.ok{background:var(--accent)}
-.note .wg{color:var(--warn);flex:none}
-.pending{display:flex;align-items:flex-start;gap:8px;padding:12px 0 4px;font-size:12px;color:var(--text);line-height:1.5}
-.pending .wg{color:var(--warn);flex:none}
-
-/* control-details fragments */
-.frag{border:1px dashed var(--stroke);border-radius:var(--r-card);padding:var(--sp-4);margin-bottom:var(--sp-4);position:relative;background:var(--panel-solid)}
-.frag .fraglabel{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:var(--sp-3)}
-.frag .field2{border-bottom:1px solid var(--hair)}
-.frag .field2:last-child{border-bottom:none}
-
-/* diagnostics */
-.diag{padding:var(--sp-6) var(--sp-5)}
-.diag .runbtn{background:var(--go-fill);color:var(--on-accent);border:none;border-radius:var(--r-control);padding:12px 22px;font-family:var(--font-display);font-weight:700;font-size:14px;cursor:pointer;margin-bottom:var(--sp-5)}
-:root[data-theme="tapedeck"] .diag .runbtn{border:2px solid var(--panel-solid)}
-.report{border:1px solid var(--stroke);border-radius:var(--r-card);overflow:hidden}
-.report .rrow{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--hair);font-size:13px}
-.report .rrow:last-child{border-bottom:none}
-.report .rk{font-family:var(--font-mono);font-size:12px;color:var(--dim)}
-.report .rv{font-family:var(--font-mono);font-size:12px}
-.report .rv.ok{color:var(--accent)} .report .rv.warn{color:var(--warn)}
-.diag .copy{margin-top:14px;font-family:var(--font-display);font-size:12px;padding:8px 16px;border:1px solid var(--stroke);background:var(--panel);color:var(--text);border-radius:var(--r-chip);cursor:pointer}
-
-/* first-run step cards */
-.stepcards{padding:24px var(--sp-5) 40px}
-.stepcards .lead{text-align:center;font-family:var(--font-display);font-weight:600;font-size:16px;margin-bottom:18px;color:var(--headline)}
-.stepcards .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:660px;margin:0 auto}
-.stepcards .c{background:var(--panel);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);padding:16px}
-.stepcards .n{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:8px}
-.stepcards .c h4{font-family:var(--font-display);font-size:13px;margin-bottom:4px}
-.stepcards .c p{font-size:12px;color:var(--dim);line-height:1.5}
-.field.solo{border-radius:var(--r-card);border-bottom:var(--border-w) solid var(--stroke)}
-.field .paste{background:var(--panel-hi);border:1px solid var(--stroke);color:var(--dim);border-radius:var(--r-control);padding:0 12px;font-family:var(--font-mono);font-size:11px;min-height:40px;cursor:pointer}
-
-/* key structural dimensions — caption under the block, not an overlay */
-.dims{font-family:var(--font-mono);font-size:11px;color:#8a8f98;margin-top:10px;line-height:1.7}
-:root[data-theme="tapedeck"] .dims{color:#6a5c44}
-.dims b{color:#aeb4bd;font-weight:500}
-:root[data-theme="tapedeck"] .dims b{color:#2b2118}
-
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-</style>
+<link rel="stylesheet" href="screens.css">
 </head>
 <body>
 
@@ -522,7 +68,7 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">No table, no runway. Header + paste field + the three step cards fill the body. See design-system §4.2.1. The whole window is a drop target — a link dragged onto it (or copied to the clipboard, or sent via Services) fills the field and probes; no dedicated drop chrome.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health">
         <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
         <span class="chip"><span class="dot ok"></span>engine · current</span>
@@ -553,7 +99,7 @@ tbody tr:hover td{background:var(--panel)}
     <div class="phase-note">(the live backoff countdown, the cooldown health chip + banner, and the success toast arrive in later phases)</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health">
         <span class="chip"><span class="dot warn"></span>shield · offline ↻</span>
         <span class="chip"><span class="dot ok"></span>engine · current</span>
@@ -561,7 +107,7 @@ tbody tr:hover td{background:var(--panel)}
         <span class="chip warn"><span class="dot warn"></span>youtube · cooldown 4:12</span>
       </div>
       <div class="body-home">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+        <div class="hero hero-tight">
           <div class="paste-stack">
           <div class="field">
             <input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ">
@@ -596,7 +142,7 @@ tbody tr:hover td{background:var(--panel)}
             <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
             <th><span class="thc"><span class="grip">⠿</span>Speed / ETA <span class="sortbtn">↕</span></span></th>
             <th>Actions</th></tr></thead><tbody>
-            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td><span class="ti">Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-62"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr><td>Talks — episode 12</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-queue">queued · #2</span></td><td></td><td>—</td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
             <tr><td>Studio session — take 3</td><td class="site">soundcloud.com</td><td>Audio · M4A</td><td><span class="st s-pause">paused</span></td><td></td><td>—</td><td><div class="acts"><button>▶</button><button>✕</button></div></td></tr>
             <tr><td>Lo-fi beats to study to</td><td class="site">youtube.com</td><td>Audio · M4A</td><td><span class="st s-cool">cooling down</span></td><td></td><td>resumes 4:12</td><td><div class="acts"><button>▶</button><button>✕</button></div></td></tr>
@@ -621,10 +167,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">After the first Grab: paste field only (no kicker, no headline, no step cards). No link → runway hidden. Site filter menu open; sort + drag-handle per header.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="body-scroll">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
         <div class="tablewrap short">
@@ -643,7 +189,7 @@ tbody tr:hover td{background:var(--panel)}
             <th><span class="thc"><span class="grip">⠿</span>Status <span class="sortbtn active">↓</span> <span class="filtbtn">▽</span></span></th>
             <th><span class="thc"><span class="grip">⠿</span>Added <span class="sortbtn">↕</span></span></th>
             <th>Actions</th></tr></thead><tbody>
-            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td>just now</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td><span class="ti">Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td>just now</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr><td>Interview with the director</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td>5m ago</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
           </tbody></table>
         </div>
@@ -657,7 +203,7 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Still first-run: kicker, headline, and step cards stay. Runway appears under the paste field. No Downloads table yet.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health">
         <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
         <span class="chip"><span class="dot ok"></span>engine · current</span>
@@ -703,7 +249,7 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Failure copy sits inside the paste card, under the field, in <code>--danger</code>. One representative sentence; other <code>MetadataError</code> strings share this layout.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health">
         <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
         <span class="chip"><span class="dot ok"></span>engine · current</span>
@@ -735,14 +281,14 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Type = Audio swaps Format to an M4A / MP3 SkinnedSegment. After first Grab: no kicker or step cards.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health">
         <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
         <span class="chip"><span class="dot ok"></span>engine · current</span>
         <span class="chip"><span class="dot ok"></span>online</span>
       </div>
       <div class="body-scroll">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+        <div class="hero hero-tight">
           <div class="paste-stack">
           <div class="field">
             <input value="https://soundcloud.com/artist/track">
@@ -779,10 +325,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Checkbox menu of all 16 columns. Title and Actions are pinned (Actions cannot hide). Distinct from the per-column filter popover in 1.3.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="body-scroll">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
         <div class="tablewrap short">
@@ -811,7 +357,7 @@ tbody tr:hover td{background:var(--panel)}
           </div>
           <table><thead><tr>
             <th>Title</th><th>Status</th><th>Progress</th><th>Actions</th></tr></thead><tbody>
-            <tr><td>Big Buck Bunny</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td>Big Buck Bunny</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-62"></i></span></td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
           </tbody></table>
         </div>
       </div>
@@ -824,10 +370,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Rows exist but none match the active chip / column filters. <code>Clear filters</code> appears; the header row stays; body copy is <code>No downloads match this filter.</code></div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="display:flex;flex-direction:column">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll body-scroll-col">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
         <div class="tablewrap fill">
@@ -898,23 +444,22 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 3.1 Downloads -->
   <div class="screen" id="s3-1">
     <div class="cap"><b>3.1</b> Preferences — Downloads</div>
-    <div class="sub">Fixed 980×720 window. Rail never scrolls; right pane scrolls independently — shown mid-scroll (top rows clipped). See design-system §4.6.</div>
+    <div class="sub">Fixed 980×720 window. Rail never scrolls. Title/subtitle/rule stay fixed; only the row list below them scrolls, with its own bottom padding so the last row never sits flush against the frame edge. See design-system §4.6.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a class="on">Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
-        <div class="main" style="padding-top:0">
-          <div style="height:70px"></div>
+        <div class="main">
           <h2>Downloads</h2>
           <p class="psub">Defaults for new downloads. Change any of these per download on the Home screen.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Downloads folder</div><div class="fc"><span class="pick nochev">~/Downloads</span></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Downloads folder</div><div class="fc"><span class="pick nochev">~/Downloads</span></div></div>
           <div class="field2"><div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span></div></div>
           <div class="field2"><div class="fl">Automatic retries<small>Attempts before the app asks you what to do.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">3</span><button>+</button></span></div></div>
           <div class="field2"><div class="fl">Media type</div><div class="fc"><span class="seg"><button class="on">Video</button><button>Audio</button></span></div></div>
@@ -922,12 +467,11 @@ tbody tr:hover td{background:var(--panel)}
           <div class="field2"><div class="fl">Audio language<small>Used when this video has that kind of track.</small></div><div class="fc"><span class="seg"><button class="on">YouTube default</button><button>Original</button></span></div></div>
           <div class="field2"><div class="fl">Audio format</div><div class="fc"><span class="seg"><button class="on">M4A</button><button>MP3</button></span></div></div>
           <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv">▾</span></span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Clipboard detection<small>Offer to grab links you copy.</small></div><div class="fc"><span class="toggle on"></span></div></div>
-          <div style="height:40px"></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl">Clipboard detection<small>Offer to grab links you copy.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+        </div></div>
       </div>
     </div>
-    <p class="dims"><b>Dimensions</b> — window 980 × 720 · rail width 200 · pane padding s6 = 30 · row divider 1 px <code>--hair</code> · rail never scrolls, pane region is <code>overflow:auto</code> (shown mid-scroll).</p>
+    <p class="dims"><b>Dimensions</b> — window 980 × 720 · rail width 200 · pane padding s6 = 30 · row divider 1 px <code>--hair</code> · rail never scrolls; <code>.main-scroll</code> (rows only) is the <code>overflow:auto</code> region, not the header.</p>
   </div>
 
   <!-- 3.2 Appearance -->
@@ -936,25 +480,25 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Theme = SkinnedSegment; Palette = 3 split-fill swatches, selected one outlined. Both apply live.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a class="on">Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Appearance</h2>
           <p class="psub">Pick a look. Theme sets the personality; palette sets the colours.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Theme<small>Aurora is dark and luminous. Tape Deck is warm and light.</small></div><div class="fc"><span class="seg"><button class="on">Aurora</button><button>Tape Deck</button></span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Palette</div><div class="fc"><div class="swatches">
-            <span class="sw on"><span class="tile"><i style="background:#5EF2C8"></i><i style="background:#8B7BFF"></i></span><span>Mint &amp; Iris</span></span>
-            <span class="sw"><span class="tile"><i style="background:#B6F04A"></i><i style="background:#4ED6A0"></i></span><span>Lime &amp; Forest</span></span>
-            <span class="sw"><span class="tile"><i style="background:#F25C9E"></i><i style="background:#9B6BFF"></i></span><span>Magenta &amp; Violet</span></span>
+          <div class="main-scroll"><div class="field2"><div class="fl">Theme<small>Aurora is dark and luminous. Tape Deck is warm and light.</small></div><div class="fc"><span class="seg"><button class="on">Aurora</button><button>Tape Deck</button></span></div></div>
+          <div class="field2 row-noborder"><div class="fl">Palette</div><div class="fc"><div class="swatches">
+            <span class="sw on"><span class="tile"><i class="swatch-mint"></i><i class="swatch-iris"></i></span><span>Mint &amp; Iris</span></span>
+            <span class="sw"><span class="tile"><i class="swatch-lime"></i><i class="swatch-forest"></i></span><span>Lime &amp; Forest</span></span>
+            <span class="sw"><span class="tile"><i class="swatch-magenta"></i><i class="swatch-violet"></i></span><span>Magenta &amp; Violet</span></span>
           </div></div></div>
-        </div>
+        </div></div>
       </div>
     </div>
   </div>
@@ -965,177 +509,206 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Speed limit stepper shows <code>Off</code> at 0. Flags apply to new downloads only.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a class="on">Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Network</h2>
           <p class="psub">Applied to new downloads.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Proxy server<small>http://host:port — blank for none.</small></div><div class="fc"><input type="text" placeholder="http://host:port"></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Proxy server<small>http://host:port — blank for none.</small></div><div class="fc"><input type="text" placeholder="http://host:port"></div></div>
           <div class="field2"><div class="fl">Force IPv4<small>Can help when connections stall.</small></div><div class="fc"><span class="toggle"></span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Speed limit<small>Applies to each download separately.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">Off</span><button>+</button></span></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl">Speed limit<small>Applies to each download separately.</small></div><div class="fc"><span class="stepper"><button>–</button><span class="val">Off</span><button>+</button></span></div></div>
+        </div></div>
       </div>
     </div>
   </div>
 
   <!-- 3.4 Sign-in & cookies -->
-  <div class="screen" id="s3-4">
-    <div class="cap"><b>3.4</b> Preferences — Sign-in &amp; cookies</div>
-    <div class="sub">Opt-in. Browser picker includes None. Firefox-profile picker at 2+ profiles; FDA row only for Safari. Extra insets: None, pending retry, FDA granted, Firefox with no profiles.</div>
+  <!-- 3.4.1 Firefox, default state -->
+  <div class="screen" id="s3-4-1">
+    <div class="cap"><b>3.4.1</b> Preferences — Sign-in &amp; cookies, Firefox</div>
+    <div class="sub">Opt-in. Browser picker includes None. Firefox-profile picker shown at 2+ profiles.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv">▾</span></span></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="pick"><span class="ptxt">default-release</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl"></div><div class="fc"><small class="tip">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
+        </div></div>
       </div>
     </div>
-    <p class="dims"><b>Safari state</b> — browser = Safari, Full Disk Access not yet granted:</p>
+  </div>
+
+  <!-- 3.4.2 Safari, Full Disk Access not yet granted -->
+  <div class="screen" id="s3-4-2">
+    <div class="cap"><b>3.4.2</b> Preferences — Sign-in &amp; cookies, Safari (FDA not granted)</div>
+    <div class="sub">FDA row only shows for Safari.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv">▾</span></span></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv">▾</span></span></div></div>
           <div class="field2"><div class="fl"><span class="dot warn"></span> Full Disk Access<small>MediaGrabber needs Full Disk Access to read Safari's sign-in.</small></div><div class="fc"><button class="btn-txt">Open System Settings</button></div></div>
           <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl"></div><div class="fc"><small class="tip">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
+        </div></div>
       </div>
     </div>
-    <p class="dims"><b>None</b> — default. Learn-more and tip hidden:</p>
+  </div>
+
+  <!-- 3.4.3 None (default) -->
+  <div class="screen" id="s3-4-3">
+    <div class="cap"><b>3.4.3</b> Preferences — Sign-in &amp; cookies, None (default)</div>
+    <div class="sub">Default state. Learn-more and tip rows hidden — nothing to explain when no browser is selected.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv">▾</span></span></div></div>
-        </div>
+          <div class="main-scroll"><div class="field2 row-noborder"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv">▾</span></span></div></div>
+        </div></div>
       </div>
     </div>
-    <p class="dims"><b>Pending retry</b> — 🔑 with no browser set; picking a browser retries the job:</p>
+  </div>
+
+  <!-- 3.4.4 Pending retry -->
+  <div class="screen" id="s3-4-4">
+    <div class="cap"><b>3.4.4</b> Preferences — Sign-in &amp; cookies, pending retry</div>
+    <div class="sub">Reached via the 🔑 row action with no browser set; picking a browser retries the job.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="pending"><span class="wg">⚠</span><span>Pick a browser to retry "Interview with the director" with your sign-in.</span></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv">▾</span></span></div></div>
-        </div>
+          <div class="main-scroll"><div class="pending"><span class="wg">⚠</span><span>Pick a browser to retry "Interview with the director" with your sign-in.</span></div>
+          <div class="field2 row-noborder"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">None</span> <span class="cv">▾</span></span></div></div>
+        </div></div>
       </div>
     </div>
-    <p class="dims"><b>Safari — Full Disk Access granted:</b></p>
+  </div>
+
+  <!-- 3.4.5 Safari, Full Disk Access granted -->
+  <div class="screen" id="s3-4-5">
+    <div class="cap"><b>3.4.5</b> Preferences — Sign-in &amp; cookies, Safari (FDA granted)</div>
+    <div class="sub">Full Disk Access row collapses to a confirmation line once granted.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv">▾</span></span></div></div>
-          <div class="field2"><div class="fl">Full Disk Access</div><div class="fc"><span class="note" style="max-width:none"><span class="dot ok"></span> Full Disk Access granted.</span></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Safari</span> <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Full Disk Access</div><div class="fc"><span class="note note-full-width"><span class="dot ok"></span> Full Disk Access granted.</span></div></div>
           <div class="field2"><div class="fl">Cookie access for Safari</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl"></div><div class="fc"><small class="tip">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
+        </div></div>
       </div>
     </div>
-    <p class="dims"><b>Firefox — no profiles found:</b></p>
+  </div>
+
+  <!-- 3.4.6 Firefox, no profiles found -->
+  <div class="screen" id="s3-4-6">
+    <div class="cap"><b>3.4.6</b> Preferences — Sign-in &amp; cookies, Firefox (no profiles)</div>
+    <div class="sub">Edge case: Firefox selected but no profile found on the machine.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a class="on">Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Sign-in &amp; cookies</h2>
           <p class="psub">Sign in to reach private or age-restricted videos.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv">▾</span></span></div></div>
-          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span style="font-size:11.5px;color:var(--dim)">No Firefox profiles found.</span></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Browser<small>Use your browser's YouTube sign-in for age-restricted or private videos.</small></div><div class="fc"><span class="pick"><span class="ptxt">Firefox</span> <span class="cv">▾</span></span></div></div>
+          <div class="field2"><div class="fl">Firefox profile</div><div class="fc"><span class="hint-inline">No Firefox profiles found.</span></div></div>
           <div class="field2"><div class="fl">Cookie access for Firefox</div><div class="fc"><span class="pick nochev">Learn more ↗</span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl"></div><div class="fc"><small>For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl"></div><div class="fc"><small class="tip">For the most reliable results, use a browser profile that's signed in to YouTube and keep it closed while downloading.</small></div></div>
+        </div></div>
       </div>
     </div>
   </div>
 
   <!-- 3.5 Updates -->
   <div class="screen" id="s3-5">
-    <div class="cap"><b>3.5</b> Preferences — Updates (stepless)</div>
-    <div class="sub">Stepless — title, sub, one plain-language line.</div>
+    <div class="cap"><b>3.5</b> Preferences — Updates (settings only)</div>
+    <div class="sub">Settings live in Preferences, info + action live in About — toggles only here, no version numbers, no action buttons. yt-dlp's drift check is a local version-compare (no network); MediaGrabber's own release check needs GitHub Releases (§10.2).</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
-      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip warn"><span class="dot warn"></span>engine · update available <button class="chip-fix">↻</button></span><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a class="on">Updates</a><a>Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a class="on">Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Updates</h2>
           <p class="psub">Check for new versions of the app and the downloader.</p>
           <div class="rule"></div>
-          <div class="stepless"><p class="later">Update checks are coming in a later update.</p></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">Check for app updates automatically<small>Looks for a newer MediaGrabber release once a day.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Notify when the downloader is outdated<small>Warn if yt-dlp falls behind the version this app expects.</small></div><div class="fc"><span class="toggle on"></span></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1147,22 +720,22 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Three rows; two button actions and a toggle.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a class="on">Logs &amp; privacy</a><a>Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a class="on">Logs &amp; privacy</a><a>Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Logs &amp; privacy</h2>
           <p class="psub">What the app records, and where to find it.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">Log files</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Log files</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
           <div class="field2"><div class="fl">Verbose logging<small>More detail for troubleshooting.</small></div><div class="fc"><span class="toggle"></span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Privacy details</div><div class="fc"><button class="btn-txt">Open</button></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl">Privacy details</div><div class="fc"><button class="btn-txt">Open</button></div></div>
+        </div></div>
       </div>
     </div>
   </div>
@@ -1173,22 +746,22 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Reset options only. "Reset settings" in <code>--danger</code> style.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="prefs">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Advanced</h2>
           <p class="psub">Reset options. These don't touch your downloaded files.</p>
           <div class="rule"></div>
-          <div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
           <div class="field2"><div class="fl">Reset columns<small>Table layout back to default.</small></div><div class="fc"><button class="btn-txt">Reset</button></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Reset settings<small>All preferences back to default. Downloads are untouched.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
-        </div>
+          <div class="field2 row-noborder"><div class="fl">Reset settings<small>All preferences back to default. Downloads are untouched.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
+        </div></div>
       </div>
     </div>
   </div>
@@ -1196,15 +769,15 @@ tbody tr:hover td{background:var(--panel)}
   <!-- 3.8 Control details -->
   <div class="screen" id="s3-8">
     <div class="cap"><b>3.8</b> Preferences — control details</div>
-    <div class="sub">Pane-region fragments, not full windows. Concurrency note · custom filename field · open picker popover.</div>
-    <div class="app" style="height:auto;min-height:640px">
+    <div class="sub">Pane-region fragments, not full windows. Concurrency note · custom filename field · open picker popover · HealthStrip chip busy state.</div>
+    <div class="app app-tall">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
-      <div class="body-scroll" style="padding:var(--sp-6)">
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="body-scroll frag-pad">
 
         <div class="frag">
           <div class="fraglabel">1 · Concurrency note — "Simultaneous downloads" row, expanded</div>
-          <div class="field2" style="border-bottom:none;align-items:flex-start">
+          <div class="field2 row-noborder-top">
             <div class="fl">Simultaneous downloads<small>Automatically reduced if a site rate-limits you.</small></div>
             <div class="fc">
               <span class="stepper"><button>–</button><span class="val">2</span><button>+</button></span>
@@ -1216,19 +789,29 @@ tbody tr:hover td{background:var(--panel)}
         <div class="frag">
           <div class="fraglabel">2 · Custom filename — "Filename format" row with Custom… selected</div>
           <div class="field2"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Custom…</span> <span class="cv">▾</span></span></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Template</div><div class="fc"><input type="text" class="mono" value="%(title)s - %(id)s.%(ext)s" style="min-width:300px"></div></div>
+          <div class="field2 row-noborder"><div class="fl">Template</div><div class="fc"><input type="text" class="mono input-wide" value="%(title)s - %(id)s.%(ext)s"></div></div>
         </div>
 
-        <div class="frag" style="min-height:300px">
+        <div class="frag frag-tall">
           <div class="fraglabel">3 · Open picker popover — "Filename format" SkinnedPicker, popover open</div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv">▾</span></span></div></div>
-          <div class="pop" style="right:22px;top:64px;width:320px">
+          <div class="field2 row-noborder"><div class="fl">Filename format</div><div class="fc"><span class="pick"><span class="ptxt">Title</span> <span class="cv">▾</span></span></div></div>
+          <div class="pop popover-filename">
             <div class="ph">File naming</div>
             <div class="prow"><span class="pt"><span class="ck">✓</span>Title</span><span class="pst">Never Gonna Give You Up.mp4</span></div>
-            <div class="prow" style="background:color-mix(in srgb,var(--accent) 12%,transparent)"><span class="pt"><span class="ck"></span>Title – channel</span><span class="pst">Never Gonna Give You Up - Rick Astley.mp4</span></div>
+            <div class="prow row-highlight"><span class="pt"><span class="ck"></span>Title – channel</span><span class="pst">Never Gonna Give You Up - Rick Astley.mp4</span></div>
             <div class="prow"><span class="pt"><span class="ck"></span>Date – title</span><span class="pst">2009-10-25 - Never Gonna Give You Up.mp4</span></div>
             <div class="prow"><span class="pt"><span class="ck"></span>Custom…</span></div>
           </div>
+        </div>
+
+        <div class="frag">
+          <div class="fraglabel">4 · Chip busy state — HealthStrip, an action in progress</div>
+          <div class="health health-bare">
+            <span class="chip warn busy"><span class="dot busy"></span>engine · updating <button class="chip-fix spin" disabled>↻</button></span>
+            <span class="chip"><span class="dot ok"></span>bot-check shield · on</span>
+            <span class="chip"><span class="dot ok"></span>online</span>
+          </div>
+          <p class="fragnote">Any chip with a ↻ action (shield restart, engine update) shows this state while it runs — glyph spins, dot pulses, ↻ disabled so a second tap can't overlap it. Disabled under reduce-motion. Same treatment for every actionable chip, not just this one.</p>
         </div>
 
       </div>
@@ -1245,19 +828,19 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Card max-width 420 over a dimmed Advanced pane. Warn glyph tinted <code>--danger</code>; Reset in <code>--danger</code> fill; initial focus ring on Cancel. See design-system §4.8.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="prefs" style="opacity:.4">
+      <div class="prefs dimmed">
         <div class="side">
           <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
           <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
-          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a class="on">Advanced</a><a>Diagnostics</a>
         </div>
         <div class="main">
           <h2>Advanced</h2><p class="psub">Reset options. These don't touch your downloaded files.</p><div class="rule"></div>
-          <div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
-          <div class="field2" style="border-bottom:none"><div class="fl">Reset settings<small>All preferences back to default.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
-        </div>
+          <div class="main-scroll"><div class="field2"><div class="fl">App data</div><div class="fc"><button class="btn-txt">Show in Finder</button></div></div>
+          <div class="field2 row-noborder"><div class="fl">Reset settings<small>All preferences back to default.</small></div><div class="fc"><button class="btn-txt danger">Reset…</button></div></div>
+        </div></div>
       </div>
       <div class="scrim">
         <div class="cdialog">
@@ -1277,10 +860,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Same card, no glyph, single OK. Reveal when the file is gone.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
         <div class="tablewrap short">
@@ -1305,10 +888,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Show-log when the per-job file is gone. Same notice card.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
         <div class="tablewrap short">
@@ -1333,10 +916,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Grab of a URL that already completed. Confirm uses accent fill.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="paste-stack">
           <div class="field"><input value="https://www.youtube.com/watch?v=aqz-KE-bpKQ"><span class="status">✓ Big Buck Bunny</span></div>
           <div class="runway">
@@ -1368,13 +951,13 @@ tbody tr:hover td{background:var(--panel)}
 
   <div class="screen" id="s4-5">
     <div class="cap"><b>4.5</b> Confirmation — duplicate — already in queue</div>
-    <div class="sub">Grab of a URL that is still waiting.</div>
+    <div class="sub">Grab of a URL that is still waiting. Cancel is primary (accent-filled, rightmost, initial focus) — a duplicate paste is almost always accidental, so leaving it queued once is the expected outcome; Download Again (deliberately wanting a second copy) is the rarer secondary action.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="paste-stack">
           <div class="field"><input value="https://vimeo.com/123"><span class="status">✓ Talks — episode 12</span></div>
           <div class="runway">
@@ -1398,7 +981,7 @@ tbody tr:hover td{background:var(--panel)}
         <div class="cdialog">
           <div class="ct">Already in your queue</div>
           <div class="cm">This link is already waiting to download.</div>
-          <div class="cbtns"><button class="focusring">Cancel</button><button class="ok">Download Again</button></div>
+          <div class="cbtns"><button>Download Again</button><button class="ok focusring">Cancel</button></div>
         </div>
       </div>
     </div>
@@ -1409,16 +992,16 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Destructive, like Reset. Shown when quitting with an active job (or a halt). Confirm label is Quit Anyway.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
         <div class="tablewrap short">
           <div class="toolbar"><button class="fc on">All</button><button class="colbtn">⊞ Columns</button></div>
           <table><thead><tr><th>Title</th><th>Status</th><th>Progress</th></tr></thead><tbody>
-            <tr><td>Big Buck Bunny</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td></tr>
+            <tr><td>Big Buck Bunny</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-62"></i></span></td></tr>
           </tbody></table>
         </div>
       </div>
@@ -1438,10 +1021,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">A clipboard, drag, Services, or <code>mediagrabber://</code> link arrives while the Home field is occupied or a probe is running. Message is the candidate URL. Confirm uses accent fill. Idle instead fills the field and probes with no dialog.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="field solo"><input value="https://vimeo.com/987654"><span class="status">✓ Rehearsal cut</span></div>
         </div>
         <div class="tablewrap short">
@@ -1466,10 +1049,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">A <code>mediagrabber://open</code> link with a missing or non-web <code>url</code>. Same notice card, single OK. App is brought forward first.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
-      <div class="body-scroll" style="opacity:.4">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+      <div class="body-scroll dimmed">
+        <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
         </div>
       </div>
@@ -1492,10 +1075,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">Playlist resolved on a Home that already has rows (match §1.2 paste + runway + table under the overlay). Runway slots: Link · Type · Format · Language · Save to. Picker footer: duration + already-in-queue count; modal primary is Add M, runway primary is Grab. See design-system §4.3.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="body-scroll">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+        <div class="hero hero-tight">
           <div class="paste-stack">
           <div class="field"><input value="https://www.youtube.com/playlist?list=PLbpi6…"><span class="status">✓ “Focus — deep work” · 24 items</span></div>
           <div class="runway">
@@ -1522,7 +1105,7 @@ tbody tr:hover td{background:var(--panel)}
             <th><span class="thc"><span class="grip">⠿</span>Progress <span class="sortbtn">↕</span></span></th>
             <th><span class="thc"><span class="grip">⠿</span>Speed / ETA <span class="sortbtn">↕</span></span></th>
             <th>Actions</th></tr></thead><tbody>
-            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td><span class="ti">Big Buck Bunny</span></td><td class="site">youtube.com</td><td>Video · 1080p</td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-62"></i></span></td><td>4.2 MB/s · 0:38</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr><td>Talks — episode 12</td><td class="site">vimeo.com</td><td>Video · 720p</td><td><span class="st s-queue">queued · #2</span></td><td></td><td>—</td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
             <tr><td>Conference keynote 2024</td><td class="site">youtube.com</td><td>Video · 1080p → 720p</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
           </tbody></table>
@@ -1553,10 +1136,10 @@ tbody tr:hover td{background:var(--panel)}
     <div class="sub">After the first Grab: paste + runway + table. Group header + continuous spine + group actions; one ungrouped row by recency. Columns match Home defaults (Title, Status, Progress, …). See design-system §4.2.4.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>Diagnostics</a></nav></div>
+        <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
       <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
       <div class="body-scroll">
-        <div class="hero" style="padding-top:var(--sp-4);padding-bottom:var(--sp-3)">
+        <div class="hero hero-tight">
           <div class="paste-stack">
           <div class="field solo"><input placeholder="Paste a link"></div>
           </div>
@@ -1571,13 +1154,13 @@ tbody tr:hover td{background:var(--panel)}
             <th><span class="thc"><span class="grip">⠿</span>Type <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
             <th><span class="thc"><span class="grip">⠿</span>Quality <span class="sortbtn">↕</span> <span class="filtbtn">▽</span></span></th>
             <th>Actions</th></tr></thead><tbody>
-            <tr><td><span class="ti"><span class="rr"></span>Big Buck Bunny</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:62%"></i></span></td><td>4.2 MB/s · 0:38</td><td>Video</td><td>1080p</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr><td><span class="ti">Big Buck Bunny</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-62"></i></span></td><td>4.2 MB/s · 0:38</td><td>Video</td><td>1080p</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr class="ghead"><td colspan="7"><div class="gh">
               <span class="caret">▾</span> Focus — deep work
-              <span class="meta2">· 12 items · 4 done <span class="gminibar"><i style="width:33%"></i></span></span>
+              <span class="meta2">· 12 items · 4 done <span class="gminibar"><i class="bar-33"></i></span></span>
               <span class="gact"><button>⏸ Pause all</button><button>↻ Retry failed</button><button>✕ Cancel all</button></span>
             </div></td></tr>
-            <tr class="child"><td><span class="ti"><span class="rr"></span>01 — Sunrise Loop</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i style="width:80%"></i></span></td><td>3.1 MB/s · 0:12</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
+            <tr class="child"><td><span class="ti">01 — Sunrise Loop</span></td><td><span class="st s-dl">downloading</span></td><td><span class="bar"><i class="bar-80"></i></span></td><td>3.1 MB/s · 0:12</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>⏸</button><button>✕</button></div></td></tr>
             <tr class="child"><td>02 — Tidewater</td><td><span class="st s-queue">queued · #3</span></td><td></td><td>—</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>⏫</button><button>✕</button></div></td></tr>
             <tr class="child"><td>04 — Long Exposure</td><td><span class="st s-fail">Couldn’t read your browser’s sign-in.</span></td><td></td><td>—</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>↻</button><button>🔑</button><button>✕</button></div></td></tr>
             <tr class="child"><td>06 — Slow Ferry</td><td><span class="st s-done">saved</span></td><td></td><td>done</td><td>Audio</td><td>M4A</td><td><div class="acts"><button>📂</button><button>✕</button></div></td></tr>
@@ -1590,16 +1173,59 @@ tbody tr:hover td{background:var(--panel)}
   <!-- ================= §6 DIAGNOSTICS ================= -->
   <div class="section-head">§6 Diagnostics</div>
 
+  <!-- 6.1 pre-run, pre-populated from live state -->
   <div class="screen" id="s6-1">
-    <div class="cap"><b>6.1</b> Diagnostics — report card</div>
-    <div class="sub">Run check → report card. See design-system §4.7.</div>
-    <div class="phase-note">(depiction is refined when this screen's phase is detailed)</div>
+    <div class="cap"><b>6.1</b> Preferences — Diagnostics, before Run check</div>
+    <div class="sub">Diagnostics is a Preferences pane (System group), not top-level nav — it's a status/support tool a small share of users open, not a primary destination. Page pre-populates from already-known engine/session state on open (shield, cooldown, network are already live in <code>HealthController</code>); the canary row and version rescans show their last-known values with a "not yet run this session" note until <b>Run check</b> refreshes everything. See design-system §4.7.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
-        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">Diagnostics</a></nav></div>
-      <div class="body-scroll">
-        <div class="diag">
-          <button class="runbtn">Run check</button>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a class="on">Diagnostics</a>
+        </div>
+        <div class="main">
+          <div class="diagtop"><h2>Diagnostics</h2><button class="runbtn">Run check</button></div>
+          <p class="psub">Check the app's health when something looks wrong.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="lastrun">Last run: not yet run this session</div>
+          <div class="report">
+            <div class="rrow"><span class="rk">Canary probe</span><span class="rv"><span class="rt">not yet run this session</span></span></div>
+            <div class="rrow"><span class="rk">yt-dlp</span><span class="rv ok">2026.08.19 · current</span></div>
+            <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
+            <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
+            <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv">none active</span></div>
+            <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6.2 after run, all healthy -->
+  <div class="screen" id="s6-2">
+    <div class="cap"><b>6.2</b> Preferences — Diagnostics, after Run check (healthy)</div>
+    <div class="sub">Every row refreshed by the canary + rescan. Both copy actions available once a report exists. Run check sits in a normal flex header row next to the title, not floated — no overlap with the report card below it.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a class="on">Diagnostics</a>
+        </div>
+        <div class="main">
+          <div class="diagtop"><h2>Diagnostics</h2><button class="runbtn">Run check</button></div>
+          <p class="psub">Check the app's health when something looks wrong.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="lastrun">Last run: just now</div>
           <div class="report">
             <div class="rrow"><span class="rk">Canary probe</span><span class="rv ok">passed · 1.2 s</span></div>
             <div class="rrow"><span class="rk">yt-dlp</span><span class="rv ok">2026.08.19 · current</span></div>
@@ -1607,11 +1233,170 @@ tbody tr:hover td{background:var(--panel)}
             <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
             <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
             <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
-            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv warn">active · 4:12 left</span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv">none active</span></div>
             <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
           </div>
-          <button class="copy">Copy report</button>
+          <div class="diag-btns">
+            <button class="copy">Copy report</button>
+            <button class="copy">Share diagnostic bundle</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6.3 after run, yt-dlp below the declared minimum, plus the chip busy state -->
+  <div class="screen" id="s6-3">
+    <div class="cap"><b>6.3</b> Preferences — Diagnostics, yt-dlp below minimum (+ busy state)</div>
+    <div class="sub">Soft pin: the app declares a minimum-known-good yt-dlp version (a hardcoded constant, bumped by hand per app release — never fetched remotely). Installed-older-than-declared is the only drift verdict; installed-newer is fine and reads as current. User-facing verb is <b>Update</b> (the pin/reinstall-to-minimum mechanism is internal, never shown). Left inset: the HealthStrip chip's busy state while the update runs — glyph spins, dot pulses, ↻ disabled — same treatment for this chip and the existing shield-restart chip, so a second tap can't overlap the action.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a class="on">Preferences</a><a>About</a></nav></div>
+      <div class="health"><span class="chip warn"><span class="dot warn"></span>engine · update available <button class="chip-fix">↻</button></span><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <div class="grp">General</div><a>Downloads</a><a>Appearance</a><a>Network</a>
+          <div class="grp">YouTube</div><a>Sign-in &amp; cookies</a>
+          <div class="grp">System</div><a>Updates</a><a>Logs &amp; privacy</a><a>Advanced</a><a class="on">Diagnostics</a>
         </div>
+        <div class="main">
+          <div class="diagtop"><h2>Diagnostics</h2><button class="runbtn">Run check</button></div>
+          <p class="psub">Check the app's health when something looks wrong.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="lastrun">Last run: just now</div>
+          <div class="report">
+            <div class="rrow"><span class="rk">Canary probe</span><span class="rv ok">passed · 1.4 s</span></div>
+            <div class="rrow"><span class="rk">yt-dlp</span><span class="rv warn">2026.05.02 · update available (2026.07.10) <button class="inline-fix">↻ Update</button></span></div>
+            <div class="rrow"><span class="rk">ffmpeg</span><span class="rv ok">7.1</span></div>
+            <div class="rrow"><span class="rk">bot-check shield</span><span class="rv ok">healthy · 127.0.0.1:41xxx</span></div>
+            <div class="rrow"><span class="rk">Cookies</span><span class="rv ok">Safari · readable</span></div>
+            <div class="rrow"><span class="rk">Detected client</span><span class="rv"><span class="rt">tv</span></span></div>
+            <div class="rrow"><span class="rk">YouTube cooldown</span><span class="rv">none active</span></div>
+            <div class="rrow"><span class="rk">Network</span><span class="rv ok">online · no VPN detected</span></div>
+          </div>
+          <div class="diag-btns">
+            <button class="copy">Copy report</button>
+            <button class="copy">Share diagnostic bundle</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= §7 ABOUT ================= -->
+  <div class="section-head">§7 About</div>
+
+  <!-- 7.1.1 About the app — unsure state -->
+  <div class="screen" id="s7-1-1">
+    <div class="cap"><b>7.1.1</b> About — the app, before an app-update check has run</div>
+    <div class="sub">Top-level nav slot freed by demoting Diagnostics (6.1) — About is a destination most users open at least once, unlike Diagnostics. Same fixed-rail-plus-scrolling-pane shell as Preferences, two tabs instead of seven panes. HealthStrip stays global chrome. Every version + every action button lives here, never in Preferences → Updates (settings only, §3.5). Button verb tracks certainty: MediaGrabber's own release check needs GitHub Releases (§10.2) and is genuinely unresolved until it returns, so it reads "Check for updates"; yt-dlp's drift check is a local version-compare, always immediately certain, so it never shows this middle state.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a class="on">About</a><a>Developer</a>
+        </div>
+        <div class="main">
+          <div class="about-mark"><span class="orb big"></span></div>
+          <h2 class="about-center">MediaGrabber</h2>
+          <p class="psub about-center">Version 1.4.0</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">MediaGrabber<small>Not checked yet this session.</small></div><div class="fc"><button class="btn-txt">Check for updates</button></div></div>
+            <div class="field2"><div class="fl">Downloader (yt-dlp)</div><div class="fc"><span class="verstat ok">2026.08.19 · current</span></div></div>
+            <div class="field2"><div class="fl">ffmpeg</div><div class="fc"><span class="verstat ok">7.1</span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Diagnostics<small>Run a health check or copy a report for support.</small></div><div class="fc"><button class="btn-txt">Open Diagnostics</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7.1.2 About the app — up to date -->
+  <div class="screen" id="s7-1-2">
+    <div class="cap"><b>7.1.2</b> About — the app, checked and up to date</div>
+    <div class="sub">Once resolved and current, the button disappears entirely — nothing to act on. Same "no lingering button" pattern already used for the Full Disk Access row once granted (§3.4.5): a plain confirmation reads better than a disabled action.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a class="on">About</a><a>Developer</a>
+        </div>
+        <div class="main">
+          <div class="about-mark"><span class="orb big"></span></div>
+          <h2 class="about-center">MediaGrabber</h2>
+          <p class="psub about-center">Version 1.4.0</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">MediaGrabber</div><div class="fc"><span class="verstat ok">up to date</span></div></div>
+            <div class="field2"><div class="fl">Downloader (yt-dlp)</div><div class="fc"><span class="verstat ok">2026.08.19 · current</span></div></div>
+            <div class="field2"><div class="fl">ffmpeg</div><div class="fc"><span class="verstat ok">7.1</span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Diagnostics<small>Run a health check or copy a report for support.</small></div><div class="fc"><button class="btn-txt">Open Diagnostics</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7.1.3 About the app — updates confirmed available -->
+  <div class="screen" id="s7-1-3">
+    <div class="cap"><b>7.1.3</b> About — the app, updates confirmed available</div>
+    <div class="sub">The verb only ever says "Update" once the app is certain there's something to update to. "Update" for MediaGrabber opens the release page (§10.2, manual replace — no Sparkle); "↻ Update" for yt-dlp re-runs the pinned reinstall inline (§6.3) and mirrors the HealthStrip chip's own ↻.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip warn"><span class="dot warn"></span>engine · update available <button class="chip-fix">↻</button></span><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a class="on">About</a><a>Developer</a>
+        </div>
+        <div class="main">
+          <div class="about-mark"><span class="orb big"></span></div>
+          <h2 class="about-center">MediaGrabber</h2>
+          <p class="psub about-center">Version 1.4.0</p>
+          <div class="rule"></div>
+          <div class="main-scroll">
+            <div class="field2"><div class="fl">MediaGrabber<small>Version 1.5.0 is available.</small></div><div class="fc"><button class="btn-txt">Update</button></div></div>
+            <div class="field2"><div class="fl">Downloader (yt-dlp)</div><div class="fc"><span class="verstat warn">2026.05.02 · update available <button class="inline-fix">↻ Update</button></span></div></div>
+            <div class="field2"><div class="fl">ffmpeg</div><div class="fc"><span class="verstat ok">7.1</span></div></div>
+            <div class="field2 row-noborder"><div class="fl">Diagnostics<small>Run a health check or copy a report for support.</small></div><div class="fc"><button class="btn-txt">Open Diagnostics</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="dims"><b>Button-verb rule</b> — three states per row: nothing shown (current, nothing to do) · "Check for updates" (unresolved, network call pending — MediaGrabber only) · "Update" / "↻ Update" (confirmed available).</p>
+  </div>
+
+  <!-- 7.2 Developer — "Connect with me" row, icons right-aligned -->
+  <div class="screen" id="s7-2">
+    <div class="cap"><b>7.2</b> About — Developer</div>
+    <div class="sub">One field2 row, "Connect with me" as the label (left), the icon row as its control (right) — same pattern every other row in the app already uses, so the icons get a visible label without a standalone unlabeled strip. Adding a platform later is a new glyph in the same row, not a new row.</div>
+    <div class="app">
+      <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
+        <nav class="nav"><a>Home</a><a>Preferences</a><a class="on">About</a></nav></div>
+      <div class="health"><span class="chip"><span class="dot ok"></span>bot-check shield · on</span><span class="chip"><span class="dot ok"></span>engine · current</span><span class="chip"><span class="dot ok"></span>online</span></div>
+      <div class="prefs">
+        <div class="side">
+          <a>About</a><a class="on">Developer</a>
+        </div>
+        <div class="main">
+          <h2>Developer</h2>
+          <p class="psub">Built by one person, in the open.</p>
+          <div class="rule"></div>
+          <div class="main-scroll"><div class="field2"><div class="fl">Connect with me</div><div class="fc"><div class="iconrow">
+            <button class="iconlink" title="GitHub">GH</button>
+            <button class="iconlink" title="LinkedIn">in</button>
+            <button class="iconlink" title="Personal site">🌐</button>
+            <button class="iconlink" title="X / Twitter">X</button>
+          </div></div></div>
+          <div class="field2"><div class="fl">Source code</div><div class="fc"><button class="btn-txt">GitHub</button></div></div>
+          <div class="field2"><div class="fl">Report an issue</div><div class="fc"><button class="btn-txt">GitHub Issues</button></div></div>
+          <div class="field2 row-noborder"><div class="fl">License</div><div class="fc"><button class="btn-txt">Open</button></div></div>
+        </div></div>
       </div>
     </div>
   </div>

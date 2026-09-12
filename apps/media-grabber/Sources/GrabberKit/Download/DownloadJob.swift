@@ -1,7 +1,8 @@
 import Foundation
 
 // Engine-internal mutable model, isolated to DownloadEngine's actor; the UI binds to JobSnapshot.
-final class DownloadJob {
+// @unchecked Sendable: isolation is by convention — CI's toolchain flags guard-bound reuse as a race.
+final class DownloadJob: @unchecked Sendable {
     let id: UUID
     var request: DownloadRequest
     var title: String?

@@ -119,20 +119,35 @@ are in spec §12.2.
   `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
   `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
   Deferrals surfaced during smoke, hinted forward to Phase 12 (below).
-- **Phase 11 — Diagnostics, staleness, updater.** Diagnostics page (Run
-  check → report card → Copy report / Copy diagnostic bundle);
-  `DiagnosticBundle` zip; yt-dlp staleness banner + daily check;
-  `YtDlpUpdater`; Updates pane rows. Report card reflects Phase 4 / 6 /
-  7 state.
+- **Phase 11 — Diagnostics, About, updates.** Diagnostics moves into
+  Preferences (System group) rather than top-level nav; report card, Copy
+  report, and Share diagnostic bundle (system share sheet, not a plain
+  clipboard copy) built here, plus the real canary probe shared with
+  Onboarding's `testRun`. yt-dlp version pinning: a declared minimum-known-good
+  version, checked on every launch (local compare, no network), with a `↻`
+  action (uniform busy state across every actionable chip) that reinstalls to
+  the declared minimum — never an unconditional upgrade. About replaces
+  Diagnostics as the third top-level nav item (About + Developer tabs); every
+  version and action button (MediaGrabber, yt-dlp, ffmpeg) lives there, with a
+  button verb tracking certainty (nothing shown / "Check for updates" /
+  "Update"); the MediaGrabber GitHub-release self-update check (spec §10.2)
+  is built here rather than Phase 12, since About's rows need real backing
+  logic in the phase that builds them. Preferences → Updates is filled with
+  settings only (two auto-check toggles), no version numbers or actions.
+  Downloads table: Status becomes a closed enum with per-row detail moved to a
+  new hidden-by-default Remark column; Site shows friendly host names. Report
+  card reflects Phase 4 / 6 / 7 state.
 - **Phase 12 — Polish.** Success + chip-refresh-failure toasts; native
   notifications for backgrounded failures;
   the first-run-cards → table transition + emptied-table state; full
-  keyboard-nav + VoiceOver + reduced-motion pass over every screen;
-  GitHub-release self-update check (spec §10.2). Last — the a11y pass audits
-  every earlier screen. **Row actions:** hide inactive action icons instead of
-  rendering the full disabled bar (Phase 2 spec required all glyphs visible;
-  revisit for less visual noise). **App icon:** no `.icns`/`.xcassets` exists
-  yet (surfaced Phase 10 — Share sheet grid shows the blank-document icon).
-  **Share Extension first-enable hint:** macOS disables Share Extensions by
-  default until enabled once in Privacy & Security → Extensions (surfaced
-  Phase 10 smoke) — evaluate a first-run nudge here.
+  keyboard-nav + VoiceOver + reduced-motion pass over every screen. Last — the
+  a11y pass audits every earlier screen. **App icon:** no `.icns`/`.xcassets`
+  exists yet — Share sheet grid shows the blank-document icon. **Share
+  Extension first-enable hint:** macOS disables Share Extensions by default
+  until enabled once in Privacy & Security → Extensions — evaluate a
+  first-run nudge here. **Debug menu:** review whether a `DebugFlags` Debug
+  menu is warranted.
+- **Home screen banner → footer.** The bottom warning/info banner on Home
+  becomes a fixed footer; the info/warning content it currently shows moves
+  into the HealthStrip chips instead. Not detailed yet — pick this up and
+  design it in depth when its phase is reached.
