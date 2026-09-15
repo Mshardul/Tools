@@ -10,6 +10,10 @@ public final class FakeEnvironmentProbe: EnvironmentProbing, @unchecked Sendable
         self.reports = LockedBox(reports)
     }
 
+    public convenience init(ready: Bool) {
+        self.init(.with(ytDlp: ready, ffmpeg: ready))
+    }
+
     public var probeCount: Int {
         callCount.read { $0 }
     }

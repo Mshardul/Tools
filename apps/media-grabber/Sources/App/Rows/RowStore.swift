@@ -3,14 +3,14 @@ import GrabberKit
 import Observation
 
 enum FilterChip: String, CaseIterable {
-    case all, downloading, done, needsAttention
+    case all, downloading, done, inactive
 }
 
 struct ChipCounts: Equatable {
     var all = 0
     var downloading = 0
     var done = 0
-    var needsAttention = 0
+    var inactive = 0
 }
 
 enum VisibleItem: Equatable, Identifiable {
@@ -224,16 +224,12 @@ final class RowStore {
         for row in rows {
             counts.all += 1
             switch row.snapshot.state {
-            case .probing, .running, .queued, .paused:
+            case .probing, .running, .queued, .paused, .waitingForNetwork, .cooldown:
                 counts.downloading += 1
             case .completed:
                 counts.done += 1
-            case .cancelled:
-                break
-            case .failed, .cooldown:
-                counts.needsAttention += 1
-            case .waitingForNetwork:
-                counts.downloading += 1
+            case .failed, .cancelled:
+                counts.inactive += 1
             }
         }
         chipCounts = counts
@@ -253,21 +249,21 @@ final class RowStore {
             isDownloadingState(row.snapshot.state)
         case .done:
             row.snapshot.state == .completed
-        case .needsAttention:
-            isNeedsAttentionState(row.snapshot.state)
+        case .inactive:
+            isInactiveState(row.snapshot.state)
         }
     }
 
     private func isDownloadingState(_ state: JobState) -> Bool {
         switch state {
-        case .queued, .probing, .running, .paused, .waitingForNetwork: true
+        case .queued, .probing, .running, .paused, .waitingForNetwork, .cooldown: true
         default: false
         }
     }
 
-    private func isNeedsAttentionState(_ state: JobState) -> Bool {
+    private func isInactiveState(_ state: JobState) -> Bool {
         switch state {
-        case .failed, .cooldown: true
+        case .failed, .cancelled: true
         default: false
         }
     }

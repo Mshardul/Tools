@@ -3,7 +3,7 @@ import SwiftUI
 
 enum ColumnMetrics {
     private static let widths: [ColumnID: CGFloat] = [
-        .title: 200, .status: 150, .progress: 100,
+        .title: 200, .status: 150, .remark: 160, .progress: 100,
         .speed: 72, .eta: 72, .type: 72, .quality: 72,
         .size: 80, .duration: 80, .site: 96,
         .addedAt: 120, .finishedAt: 120, .destination: 120,
@@ -11,7 +11,7 @@ enum ColumnMetrics {
     ]
 
     private static let titles: [ColumnID: String] = [
-        .title: "Title", .status: "Status", .progress: "Progress",
+        .title: "Title", .status: "Status", .remark: "Remark", .progress: "Progress",
         .speed: "Speed", .eta: "ETA", .type: "Type", .quality: "Quality",
         .size: "Size", .site: "Site", .addedAt: "Added at",
         .finishedAt: "Finished at", .duration: "Duration",

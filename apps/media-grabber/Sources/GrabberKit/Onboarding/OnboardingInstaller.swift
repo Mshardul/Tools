@@ -34,13 +34,16 @@ public final class OnboardingInstaller {
 
     private let probe: EnvironmentProbing
     private let runner: ProcessRunning
+    private let injectedMetadataProbe: MetadataProbing?
 
     public init(
         probe: EnvironmentProbing = EnvironmentProbe(),
-        runner: ProcessRunning = ProcessRunner()
+        runner: ProcessRunning = ProcessRunner(),
+        metadataProbe: MetadataProbing? = nil
     ) {
         self.probe = probe
         self.runner = runner
+        injectedMetadataProbe = metadataProbe
         steps = Dictionary(
             uniqueKeysWithValues: OnboardingStepID.allCases.map { ($0, .pending) }
         )
@@ -108,8 +111,24 @@ public final class OnboardingInstaller {
             launch: pipxLaunch(["install", "bgutil-ytdlp-pot-provider"])
         )
 
-        // Real canary probe → Phase 11 (shared with Diagnostics).
-        steps[.testRun] = canProceedToHome ? .done : .pending
+        steps[.testRun] = await runCanaryProbe(ytDlpPath: report.ytDlp?.path)
+    }
+
+    private func runCanaryProbe(ytDlpPath: URL?) async -> OnboardingStepState {
+        guard canProceedToHome else {
+            return .pending
+        }
+        let result: Result<MediaMetadata, MetadataError> = if let injectedMetadataProbe {
+            await injectedMetadataProbe.probe(CanaryProbe.url)
+        } else {
+            await CanaryProbe.run(ytDlpPath: ytDlpPath, runner: runner)
+        }
+        switch result {
+        case .success:
+            return .done
+        case let .failure(error):
+            return .failed(reason: "\(error)")
+        }
     }
 
     private func runStreaming(

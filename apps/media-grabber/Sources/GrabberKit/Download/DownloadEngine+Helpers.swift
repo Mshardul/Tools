@@ -1,10 +1,15 @@
 import Foundation
 
 extension DownloadEngine {
-    static func availableActions(for state: JobState) -> Set<RowAction> {
+    static func availableActions(
+        for state: JobState,
+        isImmediatelySchedulable: Bool = false
+    ) -> Set<RowAction> {
         switch state {
         case .queued:
-            [.pause, .cancel, .forceStart, .remove, .openInBrowser]
+            isImmediatelySchedulable
+                ? [.cancel, .remove, .openInBrowser]
+                : [.cancel, .forceStart, .remove, .openInBrowser]
         case .probing:
             [.cancel, .remove, .openInBrowser]
         case .running:
@@ -12,13 +17,13 @@ extension DownloadEngine {
         case .paused:
             [.resume, .cancel, .remove, .openInBrowser, .showLog]
         case .waitingForNetwork:
-            [.cancel, .remove, .openInBrowser]
+            [.cancel, .remove, .openInBrowser, .showLog]
         case .cooldown:
-            [.forceStart, .cancel, .remove, .openInBrowser]
+            [.forceStart, .cancel, .remove, .openInBrowser, .showLog]
         case .completed:
             [.reveal, .remove, .openInBrowser, .showLog]
         case .cancelled:
-            [.remove, .openInBrowser, .showLog]
+            [.retry, .remove, .openInBrowser, .showLog]
         case let .failed(errorClass):
             errorClass.presentation.offeredActions.union([.remove, .openInBrowser, .showLog])
         }

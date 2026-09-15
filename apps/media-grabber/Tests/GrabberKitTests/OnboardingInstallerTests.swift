@@ -111,4 +111,41 @@ final class OnboardingInstallerTests: XCTestCase {
             .contains("some detail line"))
         XCTAssertFalse(sut.canProceedToHome)
     }
+
+    func test_testRunStep_realProbeSucceeds_marksStepDone() async {
+        let fakeMetadataProbe = FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny"))
+        let installer = OnboardingInstaller(
+            probe: FakeEnvironmentProbe(.with(brew: true, ytDlp: true, ffmpeg: true)),
+            runner: FakeProcessRunner(),
+            metadataProbe: fakeMetadataProbe
+        )
+        await installer.start()
+        XCTAssertEqual(installer.steps[.testRun], .done)
+    }
+
+    func test_testRunStep_probeFails_marksStepFailed() async {
+        let fakeMetadataProbe = FakeMetadataProbe(default: .failure(.network))
+        let installer = OnboardingInstaller(
+            probe: FakeEnvironmentProbe(.with(brew: true, ytDlp: true, ffmpeg: true)),
+            runner: FakeProcessRunner(),
+            metadataProbe: fakeMetadataProbe
+        )
+        await installer.start()
+        if case .failed = installer.steps[.testRun] {
+            // acceptable
+        } else {
+            XCTFail("expected .testRun failed, got \(String(describing: installer.steps[.testRun]))")
+        }
+    }
+
+    func test_testRunStep_probesTheKnownCanaryURL() async {
+        let fakeMetadataProbe = FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny"))
+        let installer = OnboardingInstaller(
+            probe: FakeEnvironmentProbe(.with(brew: true, ytDlp: true, ffmpeg: true)),
+            runner: FakeProcessRunner(),
+            metadataProbe: fakeMetadataProbe
+        )
+        await installer.start()
+        XCTAssertEqual(fakeMetadataProbe.probedURLs.last, CanaryProbe.url)
+    }
 }

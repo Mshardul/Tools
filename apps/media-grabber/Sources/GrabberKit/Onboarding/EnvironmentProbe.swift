@@ -27,6 +27,14 @@ public struct EnvironmentReport: Sendable, Equatable {
     public var isReadyForDownloads: Bool {
         ytDlp != nil && ffmpeg != nil
     }
+
+    public var ytDlpDriftVerdict: YtDlpDriftVerdict? {
+        guard let ytDlp else { return nil }
+        return DottedVersion.driftVerdict(
+            installedRaw: ytDlp.version,
+            minimumRaw: EngineTuning.default.minimumYtDlpVersion
+        )
+    }
 }
 
 public protocol EnvironmentProbing: Sendable {

@@ -65,7 +65,9 @@ final class EngineRetryIntentTests: XCTestCase {
         return id
     }
 
-    func test_resumePath_networkDownWithPart_keepsAttemptAndPart() async {
+    // "Restart" (UI) is always fresh (attempt = 0), even for a transient class like networkDown
+    // with a resumable .part on disk — no resume-vs-fresh split, per the locked contract.
+    func test_retryPath_networkDownWithPart_resetsAttemptDeletesPart() async {
         let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
         let (dir, part) = destWithPart(stem: "Clip")
         let runner = FakeProcessRunner()
@@ -87,11 +89,13 @@ final class EngineRetryIntentTests: XCTestCase {
         let attemptBefore = job(collector, id)?.attempt ?? -1
         XCTAssertGreaterThan(attemptBefore, 0)
 
+        await engine.setCap(0)
         await engine.retry(id)
-        _ = await collector.waitForState(id) { $0 == .queued || $0 == .running }
+        let after = await engine.currentSnapshot().jobs.first { $0.id == id }
 
-        XCTAssertEqual(job(collector, id)?.attempt, attemptBefore, "resume keeps attempt")
-        XCTAssertTrue(FileManager.default.fileExists(atPath: part.path), ".part kept")
+        XCTAssertEqual(after?.attempt, 0, "restart always resets attempt")
+        XCTAssertEqual(after?.state, .queued)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: part.path), ".part deleted")
     }
 
     func test_retryPath_rateLimited_resetsAttemptDeletesPart() async {
@@ -152,6 +156,30 @@ final class EngineRetryIntentTests: XCTestCase {
         XCTAssertEqual(after?.state, .queued)
         XCTAssertNil(after?.integrityVerdict, "integrity fields cleared on retry")
         XCTAssertNil(after?.actualQuality)
+    }
+
+    func test_retryPath_cancelledJob_restartsFresh() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
+        let runner = FakeProcessRunner()
+        runner.perRunDelay = .seconds(30)
+        runner.script(Fix.completingScript(), forPathEndingIn: "yt-dlp")
+        let probe = FakeMetadataProbe()
+        probe.result(FakeMetadataProbe.success(title: "Clip"))
+        let engine = engine(runner, probe, clock: clock)
+        let collector = EventCollector(engine.events)
+
+        let id = await submitJob(engine, Fix.request())
+        _ = await collector.waitForState(id) { $0 == .queued }
+        await engine.cancel(id)
+        _ = await collector.waitForState(id) { $0 == .cancelled }
+
+        await engine.setCap(0)
+        await engine.retry(id)
+        _ = await collector.waitForState(id) { $0 == .queued || $0 == .probing }
+        let after = await engine.currentSnapshot().jobs.first { $0.id == id }
+
+        XCTAssertEqual(after?.attempt, 0)
+        XCTAssertNotEqual(after?.state, .cancelled)
     }
 
     func test_noOpOnNonRetryableClass() async {

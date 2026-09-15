@@ -4,6 +4,7 @@ import SwiftUI
 enum DotState: Equatable {
     case ok
     case attention
+    case busy
 }
 
 enum PopoverKind: Equatable {
@@ -12,7 +13,7 @@ enum PopoverKind: Equatable {
 
 enum ChipInteraction: Equatable {
     case none
-    case refresh
+    case refresh(isBusy: Bool)
     case popover(PopoverKind)
 }
 
@@ -20,7 +21,7 @@ struct HealthChip: Identifiable {
     let id: String
     let label: String
     let dot: DotState
-    let interaction: ChipInteraction
+    var interaction: ChipInteraction
     var countdownUntil: Date?
 }
 
@@ -29,6 +30,7 @@ struct HealthStrip: View {
     var onRefresh: ((HealthChip) -> Void)?
 
     @Environment(\.theme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var openPopoverID: String?
 
     var body: some View {
@@ -62,18 +64,28 @@ struct HealthStrip: View {
             )) {
                 HostRatePopover()
             }
-        case .refresh:
+        case let .refresh(isBusy):
             Button {
-                onRefresh?(chip)
+                if !isBusy {
+                    onRefresh?(chip)
+                }
             } label: {
                 HStack(spacing: Spacing.s1) {
                     chipBody(chip)
                     Text("↻")
                         .font(theme.monoFont(11, .regular))
                         .foregroundStyle(theme.palette.dim)
+                        .rotationEffect(isSpinning(isBusy, reduceMotion: reduceMotion) ? .degrees(360) : .degrees(0))
+                        .animation(
+                            isSpinning(isBusy, reduceMotion: reduceMotion)
+                                ? .linear(duration: 0.9).repeatForever(autoreverses: false)
+                                : .default,
+                            value: isSpinning(isBusy, reduceMotion: reduceMotion)
+                        )
                 }
             }
             .buttonStyle(.plain)
+            .disabled(isBusy)
         case .none:
             chipBody(chip)
         }
@@ -92,8 +104,7 @@ struct HealthStrip: View {
 
     private func chipLabel(_ chip: HealthChip, suffix: String) -> some View {
         HStack(spacing: Spacing.s1) {
-            Circle()
-                .fill(chip.dot == .ok ? theme.palette.accent : theme.palette.warn)
+            dotView(chip.dot)
                 .frame(width: 7, height: 7)
             Text(chip.label + suffix)
                 .font(theme.monoFont(11, .regular))
@@ -105,5 +116,33 @@ struct HealthStrip: View {
             theme.palette.panel,
             in: RoundedRectangle(cornerRadius: theme.chipRadius)
         )
+    }
+
+    func isPulsing(_ dot: DotState, reduceMotion: Bool) -> Bool {
+        dot == .busy && !reduceMotion
+    }
+
+    func isSpinning(_ isBusy: Bool, reduceMotion: Bool) -> Bool {
+        isBusy && !reduceMotion
+    }
+
+    @ViewBuilder
+    private func dotView(_ dot: DotState) -> some View {
+        switch dot {
+        case .ok:
+            Circle().fill(theme.palette.accent)
+        case .attention:
+            Circle().fill(theme.palette.warn)
+        case .busy:
+            TimelineView(.animation(paused: !isPulsing(dot, reduceMotion: reduceMotion))) { context in
+                let opacity = isPulsing(dot, reduceMotion: reduceMotion)
+                    ? 0.4 + 0.6 * abs(context.date.timeIntervalSinceReferenceDate
+                        .truncatingRemainder(dividingBy: 1.2) / 1.2 * 2 - 1)
+                    : 1.0
+                Circle()
+                    .fill(theme.palette.faint)
+                    .opacity(opacity)
+            }
+        }
     }
 }

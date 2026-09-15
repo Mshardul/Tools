@@ -16,7 +16,13 @@ struct MainWindow: View {
                 Divider().overlay(theme.palette.hair)
                 HealthStrip(chips: appModel.healthChips) { chip in
                     if chip.id == "shield" {
-                        Task { await appModel.restartShield() }
+                        Task {
+                            appModel.healthController.markBusy(chipID: "shield")
+                            await appModel.restartShield()
+                            appModel.healthController.clearBusy(chipID: "shield")
+                        }
+                    } else if chip.id == "engine" {
+                        Task { await appModel.restartYtDlp() }
                     }
                 }
                 Divider().overlay(theme.palette.hair)

@@ -262,20 +262,25 @@ extension HomeView {
                 .padding(.horizontal, Spacing.s6)
                 .padding(.top, Spacing.s4)
 
-            DownloadsTable(
-                store: appModel.rowStore,
-                columnConfig: $appModel.columnConfig,
-                scrollToRowID: $appModel.scrollToRowID,
-                onAction: { id, action in
-                    Task { await appModel.handleRowAction(id, action: action) }
-                },
-                onPlaylistGroupAction: { id, action in
-                    Task { await appModel.handlePlaylistGroupAction(id, action: action) }
-                },
-                onTogglePlaylistGroupCollapsed: { id, isCollapsed in
-                    appModel.setPlaylistGroupCollapsed(id: id, isCollapsed)
-                }
-            )
+            HStack(alignment: .top, spacing: 0) {
+                HomeRail(store: appModel.rowStore)
+
+                DownloadsTable(
+                    store: appModel.rowStore,
+                    columnConfig: $appModel.columnConfig,
+                    scrollToRowID: $appModel.scrollToRowID,
+                    onAction: { id, action in
+                        Task { await appModel.handleRowAction(id, action: action) }
+                    },
+                    onPlaylistGroupAction: { id, action in
+                        Task { await appModel.handlePlaylistGroupAction(id, action: action) }
+                    },
+                    onTogglePlaylistGroupCollapsed: { id, isCollapsed in
+                        appModel.setPlaylistGroupCollapsed(id: id, isCollapsed)
+                    }
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             .padding(.top, Spacing.s5)
             .frame(maxHeight: .infinity)
         }

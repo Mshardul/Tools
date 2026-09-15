@@ -9,8 +9,18 @@ final class AvailableActionsTests: XCTestCase {
         DownloadEngine.availableActions(for: state)
     }
 
-    func test_queued() {
-        XCTAssertEqual(actions(.queued), [.pause, .cancel, .forceStart, .remove, .openInBrowser])
+    func test_queued_immediatelySchedulable_noForceStart() {
+        XCTAssertEqual(
+            DownloadEngine.availableActions(for: .queued, isImmediatelySchedulable: true),
+            [.cancel, .remove, .openInBrowser]
+        )
+    }
+
+    func test_queued_notImmediatelySchedulable_offersForceStart() {
+        XCTAssertEqual(
+            DownloadEngine.availableActions(for: .queued, isImmediatelySchedulable: false),
+            [.cancel, .forceStart, .remove, .openInBrowser]
+        )
     }
 
     func test_probing_hasNoPauseOrShowLog() {
@@ -29,8 +39,8 @@ final class AvailableActionsTests: XCTestCase {
         XCTAssertEqual(actions(.completed), [.reveal, .remove, .openInBrowser, .showLog])
     }
 
-    func test_cancelled_hasShowLog() {
-        XCTAssertEqual(actions(.cancelled), [.remove, .openInBrowser, .showLog])
+    func test_cancelled_offersRestart() {
+        XCTAssertEqual(actions(.cancelled), [.retry, .remove, .openInBrowser, .showLog])
     }
 
     func test_failedActionsFromPresentation_rateLimited() {
@@ -56,24 +66,24 @@ final class AvailableActionsTests: XCTestCase {
     }
 
     func test_waitingForNetwork_and_cooldown() {
-        XCTAssertEqual(actions(.waitingForNetwork), [.cancel, .remove, .openInBrowser])
+        XCTAssertEqual(actions(.waitingForNetwork), [.cancel, .remove, .openInBrowser, .showLog])
         XCTAssertEqual(
             actions(.cooldown(until: Date(timeIntervalSince1970: 0))),
-            [.forceStart, .cancel, .remove, .openInBrowser]
+            [.forceStart, .cancel, .remove, .openInBrowser, .showLog]
         )
     }
 
     func testCooldownOffersForceStart() {
         let set = DownloadEngine.availableActions(for: .cooldown(until: .now))
         XCTAssertTrue(set.contains(.forceStart))
-        XCTAssertTrue(set.isSuperset(of: [.cancel, .remove, .openInBrowser]))
+        XCTAssertTrue(set.isSuperset(of: [.cancel, .remove, .openInBrowser, .showLog]))
         XCTAssertFalse(set.contains(.pause))
     }
 
     func testWaitingForNetworkHasNoForceStart() {
         let set = DownloadEngine.availableActions(for: .waitingForNetwork)
         XCTAssertFalse(set.contains(.forceStart))
-        XCTAssertEqual(set, [.cancel, .remove, .openInBrowser])
+        XCTAssertEqual(set, [.cancel, .remove, .openInBrowser, .showLog])
     }
 
     func test_retryWithCookies_onlyForCookieRelevantFailures() {
@@ -130,7 +140,7 @@ final class AvailableActionsTests: XCTestCase {
             guard let job = snapshot.jobs.first(where: { $0.id == id }) else { continue }
             XCTAssertEqual(
                 job.availableActions,
-                DownloadEngine.availableActions(for: job.state),
+                DownloadEngine.availableActions(for: job.state, isImmediatelySchedulable: true),
                 "\(job.state)"
             )
         }

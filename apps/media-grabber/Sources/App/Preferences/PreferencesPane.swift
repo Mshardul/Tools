@@ -6,6 +6,7 @@ enum PreferencesPane: String, CaseIterable, Hashable {
     case updates
     case logsPrivacy
     case advanced
+    case diagnostics
 
     var title: String {
         switch self {
@@ -16,6 +17,7 @@ enum PreferencesPane: String, CaseIterable, Hashable {
         case .updates: "Updates"
         case .logsPrivacy: "Logs & privacy"
         case .advanced: "Advanced"
+        case .diagnostics: "Diagnostics"
         }
     }
 
@@ -35,6 +37,8 @@ enum PreferencesPane: String, CaseIterable, Hashable {
             "What the app records, and where to find it."
         case .advanced:
             "Reset options. These don't touch your downloaded files."
+        case .diagnostics:
+            "Check the app's health when something looks wrong."
         }
     }
 
@@ -42,7 +46,7 @@ enum PreferencesPane: String, CaseIterable, Hashable {
         switch self {
         case .downloads, .appearance, .network: .general
         case .cookies: .youtube
-        case .updates, .logsPrivacy, .advanced: .system
+        case .updates, .logsPrivacy, .advanced, .diagnostics: .system
         }
     }
 }

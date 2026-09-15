@@ -50,61 +50,97 @@ final class RowStatusTextTests: XCTestCase {
         concurrencyReducedToOne: true
     )
 
-    func testCooldownStateJob() {
-        let text = RowStatusText.text(
-            for: snap(.cooldown(until: future), cooldownUntil: future),
-            maxAutoRetries: 5,
-            rate: nil
-        )
-        XCTAssertEqual(text, "Cooling down")
+    // MARK: - Status is 1:1 with JobState, never invented
+
+    func test_queued_isPlainQueued() {
+        XCTAssertEqual(RowStatusText.text(for: snap(.queued)), "Queued")
     }
 
-    func testCoolingHostQueuedJob() {
-        let text = RowStatusText.text(for: snap(.queued), maxAutoRetries: 5, rate: cooling(future))
-        XCTAssertEqual(text, "Cooling down")
+    func test_queued_stillPlainQueued_evenWhenHostCooling() {
+        XCTAssertEqual(RowStatusText.text(for: snap(.queued)), "Queued")
     }
 
-    func testCircuitOpenHostQueuedJob() {
-        let text = RowStatusText.text(for: snap(.queued), maxAutoRetries: 5, rate: open)
-        XCTAssertEqual(text, "Rate-limited — paused")
-    }
-
-    func testBackoffQueuedJob() {
-        let text = RowStatusText.text(
-            for: snap(.queued, cooldownUntil: future, attempt: 2),
-            maxAutoRetries: 5,
-            rate: nil
-        )
-        XCTAssertEqual(text, "Retrying")
-    }
-
-    func testPlainQueued() {
-        XCTAssertEqual(RowStatusText.text(for: snap(.queued), maxAutoRetries: 5, rate: nil), "Queued")
-    }
-
-    func testWaitingForNetwork() {
-        let text = RowStatusText.text(for: snap(.waitingForNetwork), maxAutoRetries: 5, rate: nil)
-        XCTAssertEqual(text, "Waiting for network")
-    }
-
-    func testBotCheckWithoutVPN() {
-        let text = RowStatusText.text(for: snap(.failed(.botCheck)), maxAutoRetries: 5, rate: nil)
+    func test_cooldownState_isCoolingDown() {
         XCTAssertEqual(
-            text,
-            "Failed — Couldn't verify you. Try again, or add browser cookies in Preferences."
+            RowStatusText.text(for: snap(.cooldown(until: future), cooldownUntil: future)),
+            "Cooling down"
         )
     }
 
-    func testBotCheckWithVPN() {
-        let text = RowStatusText.text(
+    func test_waitingForNetwork() {
+        XCTAssertEqual(RowStatusText.text(for: snap(.waitingForNetwork)), "Waiting for network")
+    }
+
+    func test_failed_isPlainFailed_noSentence() {
+        XCTAssertEqual(RowStatusText.text(for: snap(.failed(.botCheck))), "Failed")
+    }
+
+    func test_running_isDownloading() {
+        XCTAssertEqual(RowStatusText.text(for: snap(.running)), "Downloading")
+    }
+
+    // MARK: - Remark carries the detail Status no longer invents
+
+    func test_remark_plainQueued_noPositionGiven_isEmpty() {
+        let remark = RowRemarkText.text(for: snap(.queued), queuePosition: nil, rate: nil)
+        XCTAssertEqual(remark, "")
+    }
+
+    func test_remark_queuedWithPosition_isHashN() {
+        let remark = RowRemarkText.text(for: snap(.queued), queuePosition: 3, rate: nil)
+        XCTAssertEqual(remark, "#3")
+    }
+
+    func test_remark_coolingHostQueuedJob_isWaitReason() {
+        let remark = RowRemarkText.text(for: snap(.queued), queuePosition: 1, rate: cooling(future))
+        XCTAssertTrue(remark.hasPrefix("Try again in"))
+    }
+
+    func test_remark_circuitOpenHostQueuedJob_isRateLimited() {
+        let remark = RowRemarkText.text(for: snap(.queued), queuePosition: 1, rate: open)
+        XCTAssertEqual(remark, "Rate-limited")
+    }
+
+    func test_remark_backoffQueuedJob_isWaitReason() {
+        let remark = RowRemarkText.text(
+            for: snap(.queued, cooldownUntil: future, attempt: 2),
+            queuePosition: nil,
+            rate: nil
+        )
+        XCTAssertTrue(remark.hasPrefix("Try again in"))
+    }
+
+    func test_remark_waitingForNetwork_isNoConnection() {
+        let remark = RowRemarkText.text(for: snap(.waitingForNetwork), queuePosition: nil, rate: nil)
+        XCTAssertEqual(remark, "No connection")
+    }
+
+    func test_remark_cooldown_isCountdown() {
+        let remark = RowRemarkText.text(
+            for: snap(.cooldown(until: future), cooldownUntil: future),
+            queuePosition: nil,
+            rate: nil
+        )
+        XCTAssertTrue(remark.hasPrefix("Try again in"))
+    }
+
+    func test_remark_running_isEmpty() {
+        let remark = RowRemarkText.text(for: snap(.running), queuePosition: nil, rate: nil)
+        XCTAssertEqual(remark, "")
+    }
+
+    func test_remark_botCheckWithoutVPN() {
+        let remark = RowRemarkText.text(for: snap(.failed(.botCheck)), queuePosition: nil, rate: nil)
+        XCTAssertEqual(remark, "Couldn't verify you. Try again, or add browser cookies in Preferences.")
+    }
+
+    func test_remark_botCheckWithVPN() {
+        let remark = RowRemarkText.text(
             for: snap(.failed(.botCheck)),
-            maxAutoRetries: 5,
+            queuePosition: nil,
             rate: nil,
             vpnActive: true
         )
-        XCTAssertEqual(
-            text,
-            "Failed — Couldn't verify you. Turn off your VPN, or add browser cookies in Preferences."
-        )
+        XCTAssertEqual(remark, "Couldn't verify you. Turn off your VPN, or add browser cookies in Preferences.")
     }
 }

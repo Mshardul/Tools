@@ -149,6 +149,10 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func cancel(_: UUID) async {}
     func remove(_: UUID) async {}
     func forceStart(_: UUID) async {}
+    func willForceStartEvict(_: UUID) async -> Bool {
+        false
+    }
+
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
 

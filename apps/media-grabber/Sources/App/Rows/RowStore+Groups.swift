@@ -361,7 +361,7 @@ extension RowStore {
 
     private func isCancellable(_ state: JobState) -> Bool {
         switch state {
-        case .queued, .paused, .probing, .running:
+        case .queued, .paused, .probing, .running, .cooldown, .waitingForNetwork:
             true
         default:
             false

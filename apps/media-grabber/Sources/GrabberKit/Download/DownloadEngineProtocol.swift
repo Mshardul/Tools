@@ -20,6 +20,7 @@ public protocol DownloadEngineProtocol: Sendable {
     func cancel(_ id: UUID) async
     func remove(_ id: UUID) async
     func forceStart(_ id: UUID) async
+    func willForceStartEvict(_ id: UUID) async -> Bool
     func resetCircuit(_ host: RateHost) async
     func resetAllCircuits() async
 

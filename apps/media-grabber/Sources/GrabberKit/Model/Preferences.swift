@@ -100,6 +100,26 @@ public final class Preferences: @unchecked Sendable {
         set { defaults.set(newValue, forKey: "mg.detectClipboardLinks") }
     }
 
+    // MARK: - Updates
+
+    public var autoCheckAppUpdates: Bool {
+        get {
+            defaults.object(forKey: "mg.autoCheckAppUpdates") == nil
+                ? true
+                : defaults.bool(forKey: "mg.autoCheckAppUpdates")
+        }
+        set { defaults.set(newValue, forKey: "mg.autoCheckAppUpdates") }
+    }
+
+    public var autoCheckYtDlpUpdates: Bool {
+        get {
+            defaults.object(forKey: "mg.autoCheckYtDlpUpdates") == nil
+                ? true
+                : defaults.bool(forKey: "mg.autoCheckYtDlpUpdates")
+        }
+        set { defaults.set(newValue, forKey: "mg.autoCheckYtDlpUpdates") }
+    }
+
     // MARK: - Network
 
     public var proxyURL: String? {
@@ -243,7 +263,8 @@ public final class Preferences: @unchecked Sendable {
         "mg.theme", "mg.palette", "mg.detectClipboardLinks", "mg.proxyURL",
         "mg.forceIPv4", "mg.speedLimitKBps", "mg.lastVideoHeight",
         "mg.lastMediaType", "mg.lastAudioFormat", "mg.cookiesFromBrowser",
-        "mg.defaultAudioLanguagePolicy", "mg.lastAudioLanguage"
+        "mg.defaultAudioLanguagePolicy", "mg.lastAudioLanguage",
+        "mg.autoCheckAppUpdates", "mg.autoCheckYtDlpUpdates"
     ]
 
     // MARK: - Helpers

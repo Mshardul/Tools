@@ -63,6 +63,7 @@ public struct EngineTuning: Sendable, Equatable {
     public var potRestartBackoffSeconds: Int
     public var metadataProbeLimit: Int
     public var metadataProbeWindowSeconds: Int
+    public var minimumYtDlpVersion: String
 
     public init(
         ytDlp: YtDlpTuning,
@@ -78,7 +79,8 @@ public struct EngineTuning: Sendable, Equatable {
         potHealthTimeoutSeconds: Int = 2,
         potRestartBackoffSeconds: Int = 2,
         metadataProbeLimit: Int = 3,
-        metadataProbeWindowSeconds: Int = 60
+        metadataProbeWindowSeconds: Int = 60,
+        minimumYtDlpVersion: String = "2026.01.01"
     ) {
         self.ytDlp = ytDlp
         self.backoffLadder = backoffLadder
@@ -94,6 +96,7 @@ public struct EngineTuning: Sendable, Equatable {
         self.potRestartBackoffSeconds = potRestartBackoffSeconds
         self.metadataProbeLimit = metadataProbeLimit
         self.metadataProbeWindowSeconds = metadataProbeWindowSeconds
+        self.minimumYtDlpVersion = minimumYtDlpVersion
     }
 
     public static let `default` = EngineTuning(
@@ -110,7 +113,8 @@ public struct EngineTuning: Sendable, Equatable {
         potHealthTimeoutSeconds: 2,
         potRestartBackoffSeconds: 2,
         metadataProbeLimit: 3,
-        metadataProbeWindowSeconds: 60
+        metadataProbeWindowSeconds: 60,
+        minimumYtDlpVersion: "2026.01.01"
     )
 
     // Every unset / malformed key keeps the default.
@@ -137,6 +141,7 @@ public struct EngineTuning: Sendable, Equatable {
             maxSleepInterval: intValue("MG_YTDLP_MAX_SLEEP_INTERVAL", base.maxSleepInterval)
         )
         let rateLimit = resolveRateLimitTuning(environment)
+        let minimumVersion = environment["MG_MIN_YTDLP_VERSION"] ?? EngineTuning.default.minimumYtDlpVersion
         return EngineTuning(
             ytDlp: ytDlp,
             backoffLadder: resolveLadder(environment["MG_BACKOFF_LADDER"]),
@@ -163,7 +168,8 @@ public struct EngineTuning: Sendable, Equatable {
             metadataProbeWindowSeconds: intValue(
                 "MG_METADATA_PROBE_WINDOW_SECONDS",
                 EngineTuning.default.metadataProbeWindowSeconds
-            )
+            ),
+            minimumYtDlpVersion: minimumVersion
         )
     }
 

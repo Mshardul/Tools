@@ -71,6 +71,7 @@ struct PreferencesView: View {
         case .updates: UpdatesPane()
         case .logsPrivacy: LogsPrivacyPane()
         case .advanced: AdvancedPane()
+        case .diagnostics: DiagnosticsPane()
         }
     }
 }

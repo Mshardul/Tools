@@ -104,6 +104,7 @@ struct DownloadRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .padding(.leading, playlistIndent(for: column))
+                .help(column == .title ? (row.snapshot.title ?? "") : "")
         }
     }
 
@@ -112,25 +113,22 @@ struct DownloadRow: View {
     }
 
     private var statusCell: some View {
-        let deadline = row.snapshot.cooldownUntil ?? row.hostCooldownDeadline
-        return HStack(spacing: Spacing.s1) {
+        HStack(spacing: Spacing.s1) {
             Circle()
                 .fill(RowStatusStyle.dotColor(for: row.snapshot.state, palette: theme.palette))
                 .frame(width: 6, height: 6)
-            if let deadline, deadline > .now {
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    statusLabel(
-                        "\(TablePresentation.statusDisplay(for: row)) — "
-                            + CountdownFormat.mmss(until: deadline, now: context.date)
-                    )
-                }
-            } else {
-                statusLabel(TablePresentation.statusDisplay(for: row))
-            }
+            statusLabel(TablePresentation.statusDisplay(for: row))
         }
         .padding(.horizontal, Spacing.s2)
         .padding(.vertical, Spacing.s1)
         .background(theme.palette.panel, in: Capsule())
+        .help(liveRemarkText)
+    }
+
+    private var liveRemarkText: String {
+        let text = TablePresentation.remarkDisplay(for: row)
+        guard !text.isEmpty else { return TablePresentation.statusDisplay(for: row) }
+        return text
     }
 
     private func statusLabel(_ text: String) -> some View {

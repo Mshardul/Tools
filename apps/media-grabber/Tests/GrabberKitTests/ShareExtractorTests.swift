@@ -3,6 +3,7 @@ import Foundation
 import UniformTypeIdentifiers
 import XCTest
 
+@MainActor
 final class ShareExtractorTests: XCTestCase {
     private func item(url: URL) -> NSExtensionItem {
         let provider = NSItemProvider(object: url as NSURL)

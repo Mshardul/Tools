@@ -12,7 +12,7 @@ final class PreferencesPaneTests: XCTestCase {
     func test_railOrder() {
         XCTAssertEqual(PreferencesRailGroup.general.panes, [.downloads, .appearance, .network])
         XCTAssertEqual(PreferencesRailGroup.youtube.panes, [.cookies])
-        XCTAssertEqual(PreferencesRailGroup.system.panes, [.updates, .logsPrivacy, .advanced])
+        XCTAssertEqual(PreferencesRailGroup.system.panes, [.updates, .logsPrivacy, .advanced, .diagnostics])
     }
 
     func test_pageDeepLinkDefault() {
@@ -40,5 +40,13 @@ final class PreferencesPaneTests: XCTestCase {
             SignInCookiesPane.pendingBannerText(jobTitle: nil),
             "Pick a browser to retry \"this download\" with your sign-in."
         )
+    }
+
+    func test_diagnosticsPane_isInSystemGroup() {
+        XCTAssertEqual(PreferencesPane.diagnostics.group, .system)
+    }
+
+    func test_diagnosticsPane_hasATitle() {
+        XCTAssertEqual(PreferencesPane.diagnostics.title, "Diagnostics")
     }
 }

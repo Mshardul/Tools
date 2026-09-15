@@ -177,9 +177,10 @@ public actor DownloadEngine: DownloadEngineProtocol {
         case .probing:
             probeTask?.cancel()
             markCancelled(id)
-        case .queued, .paused:
+        case .queued, .paused, .cooldown, .waitingForNetwork:
+            cancelDeferral(id)
             markCancelled(id)
-        default:
+        case .completed, .cancelled, .failed:
             break
         }
     }
@@ -201,6 +202,13 @@ public actor DownloadEngine: DownloadEngineProtocol {
         emitSnapshot()
         logEvent(.jobRemoved(id: id, wasRunning: wasRunning))
         evaluateSchedule()
+    }
+
+    public func willForceStartEvict(_ id: UUID) async -> Bool {
+        guard let job = jobs.first(where: { $0.id == id }),
+              job.state == .queued || isCooldownState(job.state)
+        else { return false }
+        return runningJobs().count >= effectiveCap
     }
 
     public func forceStart(_ id: UUID) async {

@@ -70,6 +70,20 @@ final class ColumnConfigTests: XCTestCase {
         XCTAssertTrue(ColumnConfig.default.visibleColumns.contains(.addedAt))
     }
 
+    func test_statusHiddenByDefault() {
+        XCTAssertFalse(ColumnConfig.default.visibleColumns.contains(.status))
+    }
+
+    func test_remarkHiddenByDefault() {
+        XCTAssertFalse(ColumnConfig.default.visibleColumns.contains(.remark))
+    }
+
+    func test_remarkColumnCanBeShown() {
+        var config = ColumnConfig.default
+        config.setColumnVisible(.remark, visible: true)
+        XCTAssertTrue(config.visibleColumns.contains(.remark))
+    }
+
     func test_roundTripCodable() throws {
         var original = ColumnConfig.default
         original.sortColumn = .addedAt

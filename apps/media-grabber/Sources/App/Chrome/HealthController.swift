@@ -7,15 +7,30 @@ import Observation
 final class HealthController {
     private(set) var chips: [HealthChip] = []
 
-    func update(snapshot: QueueSnapshot, now _: Date) {
+    func update(snapshot: QueueSnapshot, now _: Date, environmentReport: EnvironmentReport?) {
         var next: [HealthChip] = [
-            shieldChip(snapshot.shieldStatus),
-            onlineChip(snapshot.isOnline)
+            shieldChip(snapshot.shieldStatus)
         ]
+        if let engineChip = engineChip(environmentReport?.ytDlpDriftVerdict) {
+            next.append(engineChip)
+        }
+        next.append(onlineChip(snapshot.isOnline))
         if let cooldown = hostRateChip(snapshot.hostRateSummary) {
             next.append(cooldown)
         }
         chips = next
+    }
+
+    func markBusy(chipID: String) {
+        guard let index = chips.firstIndex(where: { $0.id == chipID }) else { return }
+        guard case .refresh = chips[index].interaction else { return }
+        chips[index].interaction = .refresh(isBusy: true)
+    }
+
+    func clearBusy(chipID: String) {
+        guard let index = chips.firstIndex(where: { $0.id == chipID }) else { return }
+        guard case .refresh = chips[index].interaction else { return }
+        chips[index].interaction = .refresh(isBusy: false)
     }
 
     private func shieldChip(_ status: ShieldStatus) -> HealthChip {
@@ -27,7 +42,22 @@ final class HealthController {
                 id: "shield",
                 label: "shield · offline",
                 dot: .attention,
-                interaction: .refresh
+                interaction: .refresh(isBusy: false)
+            )
+        }
+    }
+
+    private func engineChip(_ verdict: YtDlpDriftVerdict?) -> HealthChip? {
+        guard let verdict else { return nil }
+        switch verdict {
+        case .current, .unknown:
+            return HealthChip(id: "engine", label: "engine · current", dot: .ok, interaction: .none)
+        case .drift:
+            return HealthChip(
+                id: "engine",
+                label: "engine · update available",
+                dot: .attention,
+                interaction: .refresh(isBusy: false)
             )
         }
     }

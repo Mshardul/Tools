@@ -136,4 +136,24 @@ final class EnvironmentProbeTests: XCTestCase {
             )
         }
     }
+
+    func test_environmentReport_driftVerdict_nilWhenYtDlpMissing() {
+        let report = EnvironmentReport(brew: nil, ytDlp: nil, ffmpeg: nil)
+        XCTAssertNil(report.ytDlpDriftVerdict)
+    }
+
+    func test_environmentReport_driftVerdict_currentWhenAtOrAboveMinimum() {
+        let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2099.01.01")
+        let report = EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: nil)
+        XCTAssertEqual(report.ytDlpDriftVerdict, .current)
+    }
+
+    func test_environmentReport_driftVerdict_driftWhenBelowMinimum() {
+        let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2000.01.01")
+        let report = EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: nil)
+        guard case .drift = report.ytDlpDriftVerdict else {
+            XCTFail("expected drift verdict, got \(String(describing: report.ytDlpDriftVerdict))")
+            return
+        }
+    }
 }

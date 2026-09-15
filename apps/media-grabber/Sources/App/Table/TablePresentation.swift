@@ -11,6 +11,8 @@ enum TablePresentation {
         switch column {
         case .status:
             statusDisplay(for: row)
+        case .remark:
+            remarkDisplay(for: row)
         case .progress:
             progressLabel(for: row)
         case .speed:
@@ -63,38 +65,11 @@ enum TablePresentation {
     }
 
     static func statusDisplay(for row: RowModel) -> String {
-        if showsQueueBadge(row), let badge = row.queueBadge {
-            return "queued · \(badge)"
-        }
-        switch row.snapshot.state {
-        case .queued: return queuedDisplay(for: row)
-        case .probing: return "probing"
-        case .running: return "downloading"
-        case .paused: return "paused"
-        case .waitingForNetwork: return "waiting for network"
-        case .cooldown: return "cooling down"
-        case .completed: return "saved"
-        case .cancelled: return "cancelled"
-        case .failed:
-            return row.statusText.replacingOccurrences(of: "Failed — ", with: "")
-        }
+        row.statusText
     }
 
-    private static func showsQueueBadge(_ row: RowModel) -> Bool {
-        row.snapshot.state == .queued && row.rateDisplay == nil && row.snapshot.attempt == 0
-    }
-
-    private static func queuedDisplay(for row: RowModel) -> String {
-        if case .circuitOpen = row.rateDisplay?.state {
-            return "rate-limited — paused"
-        }
-        if case .cooldown = row.rateDisplay?.state {
-            return "cooling down"
-        }
-        if row.snapshot.attempt > 0, let until = row.snapshot.cooldownUntil, until > .now {
-            return "retrying"
-        }
-        return "queued"
+    static func remarkDisplay(for row: RowModel) -> String {
+        row.remarkText
     }
 
     static func progressLabel(for row: RowModel) -> String {

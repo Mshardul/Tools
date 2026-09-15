@@ -5,7 +5,12 @@ extension DownloadEngine {
 
     func buildSnapshot() -> QueueSnapshot {
         QueueSnapshot(
-            jobs: jobs.map { $0.snapshot(availableActions: Self.availableActions(for: $0.state)) },
+            jobs: jobs.map { job in
+                job.snapshot(availableActions: Self.availableActions(
+                    for: job.state,
+                    isImmediatelySchedulable: isImmediatelySchedulable(job)
+                ))
+            },
             revision: revision,
             queueHalt: effectiveQueueHalt(),
             generatedAt: .now,
@@ -13,6 +18,12 @@ extension DownloadEngine {
             isOnline: isOnline,
             shieldStatus: shieldStatus
         )
+    }
+
+    func isImmediatelySchedulable(_ job: DownloadJob) -> Bool {
+        job.state == .queued
+            && !deferrals.contains { $0.id == job.id }
+            && !rateLimiter.blocked(host: RateHost(urlString: job.request.url), now: dependencies.clock.now)
     }
 
     // The raw halt plus derived reasons (an open circuit) the queue must surface as halted.

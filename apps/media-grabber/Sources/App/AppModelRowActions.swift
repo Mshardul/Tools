@@ -17,8 +17,8 @@ extension AppModel {
         case .pause: await engine.pause(id)
         case .resume: await engine.resume(id)
         case .cancel: await engine.cancel(id)
-        case .remove: await removeRow(id)
-        case .forceStart: await engine.forceStart(id)
+        case .remove: await confirmedRemove(id)
+        case .forceStart: await confirmedForceStart(id)
         case .reveal: await reveal(jobID: id)
         case .openInBrowser: openInBrowser(jobID: id)
         case .retry: await engine.retry(id)
@@ -56,6 +56,34 @@ extension AppModel {
         rowStore.applyGroups(playlistGroups)
     }
 
+    private func confirmedForceStart(_ id: UUID) async {
+        if await engine.willForceStartEvict(id) {
+            let confirmed = await confirm(AppModelDialogs.forceStartEvictionConfirmation())
+            guard confirmed else { return }
+        }
+        await engine.forceStart(id)
+    }
+
+    private func confirmedRemove(_ id: UUID) async {
+        guard let row = rowStore.rows.first(where: { $0.id == id }) else { return }
+        if needsRemoveConfirm(row.snapshot) {
+            let confirmed = await confirm(AppModelDialogs.removeConfirmation())
+            guard confirmed else { return }
+        }
+        await removeRow(id)
+    }
+
+    private func needsRemoveConfirm(_ snapshot: JobSnapshot) -> Bool {
+        switch snapshot.state {
+        case .cancelled, .failed:
+            false
+        case .completed:
+            snapshot.outputFiles.contains { FileManager.default.fileExists(atPath: $0.path) }
+        default:
+            true
+        }
+    }
+
     private func removeRow(_ id: UUID) async {
         let removedGroupID = rowStore.rows.first { $0.id == id }?.snapshot.playlistGroupID
         await engine.remove(id)
@@ -84,7 +112,7 @@ extension AppModel {
     }
 
     private func retryFailed(_ children: [RowModel]) async {
-        for child in children where child.snapshot.state.isFailed {
+        for child in children where child.snapshot.state.isFailedOrCancelled {
             await engine.retry(child.id)
         }
     }
@@ -133,16 +161,18 @@ extension AppModel {
 }
 
 private extension JobState {
-    var isFailed: Bool {
-        if case .failed = self {
-            return true
+    var isFailedOrCancelled: Bool {
+        switch self {
+        case .failed, .cancelled:
+            true
+        default:
+            false
         }
-        return false
     }
 
     var isPlaylistCancellable: Bool {
         switch self {
-        case .queued, .paused, .probing, .running:
+        case .queued, .paused, .probing, .running, .cooldown, .waitingForNetwork:
             true
         default:
             false

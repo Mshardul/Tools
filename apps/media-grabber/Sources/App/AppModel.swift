@@ -3,16 +3,6 @@ import GrabberKit
 import Observation
 
 @MainActor
-final class AppModelConfirmer: Confirming, @unchecked Sendable {
-    weak var model: AppModel?
-
-    func confirm(_ request: ConfirmationRequest) async -> Bool {
-        guard let model else { return false }
-        return await model.confirm(request)
-    }
-}
-
-@MainActor
 @Observable
 final class AppModel {
     enum Page: Equatable {
@@ -31,6 +21,7 @@ final class AppModel {
 
     private(set) var pendingCookieRetryJobID: UUID?
     private(set) var needsOnboarding = false
+    private(set) var latestEnvironmentReport: EnvironmentReport?
     private(set) var lastSubmittedJobID: UUID?
     var homeFieldText = ""
     var resolved: ResolvedLink?
@@ -88,7 +79,8 @@ final class AppModel {
 
     let engine: DownloadEngineProtocol
     let vpnDetector: any VPNDetecting
-    private let envProbe: EnvironmentProbing
+    let envProbe: EnvironmentProbing
+    let ytDlpUpdater: YtDlpUpdating
     let log: LogWriter
     let persistence: (any QueuePersisting)?
     let revealSink: RevealSink
@@ -104,6 +96,7 @@ final class AppModel {
         prefs: Preferences,
         log: LogWriter,
         envProbe: EnvironmentProbing = EnvironmentProbe(),
+        ytDlpUpdater: YtDlpUpdating = YtDlpUpdater(),
         debugFlags: DebugFlags = DebugFlags(),
         revealSink: RevealSink = WorkspaceRevealSink(),
         openURLSink: OpenURLSink = WorkspaceOpenURLSink(),
@@ -119,6 +112,7 @@ final class AppModel {
         self.prefs = prefs
         self.log = log
         self.envProbe = envProbe
+        self.ytDlpUpdater = ytDlpUpdater
         self.debugFlags = debugFlags
         self.revealSink = revealSink
         self.openURLSink = openURLSink
@@ -167,6 +161,7 @@ final class AppModel {
             return
         }
         let report = await envProbe.probe()
+        latestEnvironmentReport = report
         needsOnboarding = !report.isReadyForDownloads
     }
 
@@ -176,8 +171,9 @@ final class AppModel {
         await refreshOnboardingState()
     }
 
-    func restartShield() async {
-        await engine.restartShield()
+    // Setter lives beside the private(set) property; AppModelDiagnostics.swift calls it to refresh after a restart.
+    func setLatestEnvironmentReport(_ report: EnvironmentReport) {
+        latestEnvironmentReport = report
     }
 
     func confirm(_ request: ConfirmationRequest) async -> Bool {
@@ -370,7 +366,7 @@ extension AppModel {
                 if case let .snapshot(snapshot) = event {
                     rowStore.applyGroups(playlistGroups)
                     hostRateSummary = snapshot.hostRateSummary
-                    healthController.update(snapshot: snapshot, now: .now)
+                    healthController.update(snapshot: snapshot, now: .now, environmentReport: latestEnvironmentReport)
                     recomputeBanner(snapshot)
                     applySnapshot(snapshot)
                 }

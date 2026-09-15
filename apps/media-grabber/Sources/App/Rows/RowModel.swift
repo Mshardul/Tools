@@ -63,6 +63,7 @@ final class RowModel: Identifiable {
 
     // Cached display strings — recomputed on patch only when their source field changed.
     private(set) var statusText = ""
+    private(set) var remarkText = ""
     private(set) var speedText = ""
     private(set) var etaText = ""
     private(set) var formattedSize = "—"
@@ -140,9 +141,12 @@ final class RowModel: Identifiable {
         changes: RowFieldChanges
     ) {
         if changes.refreshStatus {
-            statusText = Self.status(
+            statusText = Self.status(for: next)
+        }
+        if changes.refreshStatus || changes.badge {
+            remarkText = Self.remark(
                 for: next,
-                maxAutoRetries: maxAutoRetries,
+                queuePosition: queuePosition,
                 rate: rateDisplay,
                 vpnActive: vpnActive
             )
@@ -185,12 +189,7 @@ final class RowModel: Identifiable {
             playlistIndex: known.playlistIndex,
             integrityVerdict: known.integrityVerdict, availableActions: known.availableActions
         )
-        statusText = Self.status(
-            for: snapshot,
-            maxAutoRetries: maxAutoRetries,
-            rate: rateDisplay,
-            vpnActive: vpnActive
-        )
+        statusText = Self.status(for: snapshot)
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
         formattedSize = Self.size(for: snapshot)
@@ -198,9 +197,10 @@ final class RowModel: Identifiable {
     }
 
     private func recomputeAll(queuePosition: Int?) {
-        statusText = Self.status(
+        statusText = Self.status(for: snapshot)
+        remarkText = Self.remark(
             for: snapshot,
-            maxAutoRetries: maxAutoRetries,
+            queuePosition: queuePosition,
             rate: rateDisplay,
             vpnActive: vpnActive
         )
@@ -219,15 +219,19 @@ final class RowModel: Identifiable {
 // MARK: - Derivations
 
 extension RowModel {
-    static func status(
+    static func status(for snapshot: JobSnapshot) -> String {
+        RowStatusText.text(for: snapshot)
+    }
+
+    static func remark(
         for snapshot: JobSnapshot,
-        maxAutoRetries: Int = 5,
+        queuePosition: Int?,
         rate: HostRateDisplayState? = nil,
         vpnActive: Bool = false
     ) -> String {
-        RowStatusText.text(
+        RowRemarkText.text(
             for: snapshot,
-            maxAutoRetries: maxAutoRetries,
+            queuePosition: queuePosition,
             rate: rate,
             vpnActive: vpnActive
         )
@@ -259,7 +263,7 @@ extension RowModel {
 
     static func site(for snapshot: JobSnapshot) -> String {
         guard let extractor = snapshot.extractor else { return "—" }
-        return siteMap[extractor.lowercased()] ?? extractor
+        return SiteNames.display(extractor)
     }
 
     static func type(for snapshot: JobSnapshot) -> String {
@@ -282,16 +286,6 @@ extension RowModel {
         guard snapshot.state == .queued, snapshot.attempt == 0, let position else { return nil }
         return "#\(position)"
     }
-
-    private static let siteMap: [String: String] = [
-        "youtube": "YouTube",
-        "youtube:tab": "YouTube",
-        "youtu.be": "YouTube",
-        "m.youtube.com": "YouTube",
-        "vimeo": "Vimeo",
-        "archive.org": "Internet Archive",
-        "generic": "Web"
-    ]
 
     private static func byteString(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()

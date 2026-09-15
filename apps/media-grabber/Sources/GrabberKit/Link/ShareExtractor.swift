@@ -1,6 +1,10 @@
 import Foundation
 import UniformTypeIdentifiers
 
+// Only ever touched on MainActor (share extension UI, and MainActor tests);
+// this unblocks Swift 6 region isolation from flagging the array as sent across actors.
+extension NSExtensionItem: @retroactive @unchecked Sendable {}
+
 @MainActor
 public enum ShareExtractor {
     public static func extractURL(from items: [NSExtensionItem]) async -> URL? {

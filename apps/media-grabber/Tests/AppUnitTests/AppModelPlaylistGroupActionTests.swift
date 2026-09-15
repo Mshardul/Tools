@@ -116,7 +116,7 @@ final class AppModelPlaylistGroupActionTests: XCTestCase {
         XCTAssertEqual(persistence.playlistGroupSaves.last?.first?.isCollapsed, true)
     }
 
-    func test_removeLastPlaylistChildDropsRegistryRow() async {
+    func test_removeLastPlaylistChildDropsRegistryRow() async throws {
         let engine = FakeEngine()
         let persistence = FakeQueuePersisting()
         let model = makeModel(engine: engine, persistence: persistence)
@@ -126,7 +126,12 @@ final class AppModelPlaylistGroupActionTests: XCTestCase {
         ])))
         model.rowStore.applyGroups(model.playlistGroups)
 
-        await model.handleRowAction(jobID(1), action: .remove)
+        let action = Task {
+            await model.handleRowAction(jobID(1), action: .remove)
+        }
+        try await pollUntil { model.pendingConfirmation != nil }
+        model.resolveConfirmation(true, suppressFutures: false)
+        await action.value
 
         XCTAssertEqual(engine.removedIDs, [jobID(1)])
         XCTAssertTrue(model.playlistGroups.isEmpty)

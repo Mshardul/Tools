@@ -36,32 +36,43 @@ final class RowModelStatusTests: XCTestCase {
         )
     }
 
-    func test_status_queuedWithBackoffShowsRetrying() {
+    func test_status_queuedWithBackoffStaysPlainQueued() {
         let snap = snapshot(
             state: .queued,
             attempt: 2,
             cooldownUntil: Date().addingTimeInterval(60)
         )
-        XCTAssertEqual(RowModel.status(for: snap, maxAutoRetries: 5), "Retrying")
+        XCTAssertEqual(RowModel.status(for: snap), "Queued")
+    }
+
+    func test_remark_queuedWithBackoffShowsWaitReason() {
+        let snap = snapshot(
+            state: .queued,
+            attempt: 2,
+            cooldownUntil: Date().addingTimeInterval(60)
+        )
+        XCTAssertTrue(RowModel.remark(for: snap, queuePosition: nil, rate: nil).hasPrefix("Try again in"))
     }
 
     func test_status_queuedAttemptButNoFutureCooldownIsQueued() {
         let snap = snapshot(state: .queued, attempt: 2)
-        XCTAssertEqual(RowModel.status(for: snap, maxAutoRetries: 5), "Queued")
+        XCTAssertEqual(RowModel.status(for: snap), "Queued")
     }
 
     func test_status_queuedAttemptZeroIsPlainQueued() {
-        XCTAssertEqual(
-            RowModel.status(for: snapshot(state: .queued, attempt: 0), maxAutoRetries: 5),
-            "Queued"
-        )
+        XCTAssertEqual(RowModel.status(for: snapshot(state: .queued, attempt: 0)), "Queued")
     }
 
-    func test_status_failedUsesPresentationSentence() {
+    func test_status_failedIsPlainFailed_noSentence() {
+        let snap = snapshot(state: .failed(.rateLimited()), attempt: 5)
+        XCTAssertEqual(RowModel.status(for: snap), "Failed")
+    }
+
+    func test_remark_failedUsesPresentationSentence() {
         let snap = snapshot(state: .failed(.rateLimited()), attempt: 5)
         XCTAssertEqual(
-            RowModel.status(for: snap, maxAutoRetries: 5),
-            "Failed — The site is limiting how fast we can download right now."
+            RowModel.remark(for: snap, queuePosition: nil, rate: nil),
+            "The site is limiting how fast we can download right now."
         )
     }
 
@@ -87,7 +98,7 @@ final class RowModelStatusTests: XCTestCase {
         XCTAssertEqual(fresh.queueBadge, "#3")
     }
 
-    func test_patch_rateDisplayChangeUpdatesStatus() {
+    func test_patch_rateDisplayChangeUpdatesRemarkNotStatus() {
         let model = RowModel(snapshot(state: .queued), queuePosition: 1)
         XCTAssertEqual(model.statusText, "Queued")
         let deadline = Date().addingTimeInterval(60)
@@ -97,7 +108,8 @@ final class RowModelStatusTests: XCTestCase {
             concurrencyReducedToOne: true
         )
         model.patch(snapshot(state: .queued), queuePosition: 1, rate: cooling)
-        XCTAssertEqual(model.statusText, "Cooling down")
+        XCTAssertEqual(model.statusText, "Queued")
+        XCTAssertTrue(model.remarkText.hasPrefix("Try again in"))
         XCTAssertEqual(model.hostCooldownDeadline, deadline)
     }
 }

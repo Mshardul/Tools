@@ -111,6 +111,32 @@ final class PreferencesTests: XCTestCase {
         XCTAssertEqual(Preferences(defaults: defaults).cookiesFromBrowser, .none)
     }
 
+    func test_autoCheckAppUpdates_defaultsTrue() {
+        let prefs = Preferences(defaults: defaults)
+        XCTAssertTrue(prefs.autoCheckAppUpdates)
+    }
+
+    func test_autoCheckAppUpdates_persists() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.autoCheckAppUpdates = false
+        let reloaded = Preferences(defaults: defaults)
+        XCTAssertFalse(reloaded.autoCheckAppUpdates)
+    }
+
+    func test_autoCheckYtDlpUpdates_defaultsTrue() {
+        let prefs = Preferences(defaults: defaults)
+        XCTAssertTrue(prefs.autoCheckYtDlpUpdates)
+    }
+
+    func test_resetToDefaults_resetsBothUpdateToggles() {
+        let prefs = Preferences(defaults: defaults)
+        prefs.autoCheckAppUpdates = false
+        prefs.autoCheckYtDlpUpdates = false
+        prefs.resetToDefaults()
+        XCTAssertTrue(prefs.autoCheckAppUpdates)
+        XCTAssertTrue(prefs.autoCheckYtDlpUpdates)
+    }
+
     func test_resetToDefaults_clearsCookiesFromBrowser() {
         let prefs = Preferences(defaults: defaults)
         prefs.cookiesFromBrowser = .safari

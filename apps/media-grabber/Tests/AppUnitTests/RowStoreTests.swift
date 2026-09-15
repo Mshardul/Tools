@@ -127,13 +127,14 @@ final class RowStoreTests: XCTestCase {
             snap(1, state: .running),
             snap(2, state: .completed),
             snap(3, state: .failed(.networkDown)),
-            snap(4, state: .cooldown(until: .init()))
+            snap(4, state: .cooldown(until: .init())),
+            snap(5, state: .cancelled)
         ])))
 
-        XCTAssertEqual(store.chipCounts.all, 4)
-        XCTAssertEqual(store.chipCounts.downloading, 1)
+        XCTAssertEqual(store.chipCounts.all, 5)
+        XCTAssertEqual(store.chipCounts.downloading, 2)
         XCTAssertEqual(store.chipCounts.done, 1)
-        XCTAssertEqual(store.chipCounts.needsAttention, 2)
+        XCTAssertEqual(store.chipCounts.inactive, 2)
     }
 
     func test_resync_rebuildsFromSnapshot() {
@@ -167,7 +168,7 @@ final class RowStoreTests: XCTestCase {
         XCTAssertEqual(store.rows[2].queueBadge, "#2")
     }
 
-    func test_hostRateSummaryReachesRowModelStatus() {
+    func test_hostRateSummaryReachesRowModelRemark_statusStaysQueued() {
         let store = RowStore()
         let job = snap(1, state: .queued)
         let cooling = HostRateDisplayState(
@@ -179,7 +180,8 @@ final class RowStoreTests: XCTestCase {
             [job],
             hostRateSummary: [job.rateHost: cooling]
         )))
-        XCTAssertEqual(store.rows.first?.statusText, "Cooling down")
+        XCTAssertEqual(store.rows.first?.statusText, "Queued")
+        XCTAssertTrue(store.rows.first?.remarkText.hasPrefix("Try again in") ?? false)
         XCTAssertNotNil(store.rows.first?.hostCooldownDeadline)
     }
 }

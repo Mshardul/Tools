@@ -60,6 +60,26 @@ enum AppModelDialogs {
         )
     }
 
+    static func forceStartEvictionConfirmation() -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Start this now?",
+            message: "The oldest download in progress will go back to the queue.",
+            confirmTitle: "Start now",
+            cancelTitle: "Cancel"
+        )
+    }
+
+    static func removeConfirmation() -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Remove this download?",
+            message: "This deletes it from your list, along with any partial file and its log.",
+            confirmTitle: "Remove",
+            cancelTitle: "Cancel",
+            isDestructive: true,
+            suppressionKey: "remove-download"
+        )
+    }
+
     static func playlistCancelAllConfirmation() -> ConfirmationRequest {
         ConfirmationRequest(
             title: "Cancel this playlist?",

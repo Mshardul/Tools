@@ -22,11 +22,11 @@ final class HealthControllerTests: XCTestCase {
 
     func testShieldMissingIsFirstChipOfflineRefresh() {
         let controller = HealthController()
-        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now)
+        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: nil)
         XCTAssertEqual(controller.chips[0].id, "shield")
         XCTAssertEqual(controller.chips[0].label, "shield · offline")
         XCTAssertEqual(controller.chips[0].dot, .attention)
-        XCTAssertEqual(controller.chips[0].interaction, .refresh)
+        XCTAssertEqual(controller.chips[0].interaction, .refresh(isBusy: false))
         XCTAssertEqual(controller.chips[1].label, "online")
     }
 
@@ -34,7 +34,8 @@ final class HealthControllerTests: XCTestCase {
         let controller = HealthController()
         controller.update(
             snapshot: snapshot(online: true, summary: [:], shield: .running(port: 4416)),
-            now: .now
+            now: .now,
+            environmentReport: nil
         )
         XCTAssertEqual(controller.chips[0].label, "shield")
         XCTAssertEqual(controller.chips[0].dot, .ok)
@@ -44,14 +45,14 @@ final class HealthControllerTests: XCTestCase {
 
     func testOnlineChipAlwaysPresent() {
         let controller = HealthController()
-        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now)
+        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: nil)
         XCTAssertEqual(controller.chips.count, 2)
         XCTAssertEqual(controller.chips[1].label, "online")
     }
 
     func testOfflineChipLabel() {
         let controller = HealthController()
-        controller.update(snapshot: snapshot(online: false, summary: [:]), now: .now)
+        controller.update(snapshot: snapshot(online: false, summary: [:]), now: .now, environmentReport: nil)
         XCTAssertEqual(controller.chips[1].label, "offline")
     }
 
@@ -64,7 +65,7 @@ final class HealthControllerTests: XCTestCase {
             concurrencyReducedToOne: true
         )]
         let controller = HealthController()
-        controller.update(snapshot: snapshot(online: true, summary: summary), now: now)
+        controller.update(snapshot: snapshot(online: true, summary: summary), now: now, environmentReport: nil)
         XCTAssertEqual(controller.chips.count, 3)
         let cooldown = controller.chips[2]
         XCTAssertEqual(cooldown.label, "YouTube")
@@ -84,7 +85,8 @@ final class HealthControllerTests: XCTestCase {
         let controller = HealthController()
         controller.update(
             snapshot: snapshot(online: true, summary: [youtube: display, vimeo: display]),
-            now: now
+            now: now,
+            environmentReport: nil
         )
         XCTAssertEqual(controller.chips.count, 3)
         XCTAssertEqual(controller.chips[2].label, "2 sites cooling down")
@@ -99,7 +101,101 @@ final class HealthControllerTests: XCTestCase {
             concurrencyReducedToOne: true
         )]
         let controller = HealthController()
-        controller.update(snapshot: snapshot(online: true, summary: summary), now: now)
+        controller.update(snapshot: snapshot(online: true, summary: summary), now: now, environmentReport: nil)
         XCTAssertEqual(controller.chips[2].label, "YouTube — paused")
+    }
+
+    func testMarkBusySetsRefreshInteractionToBusy() {
+        let controller = HealthController()
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .down),
+            now: .now,
+            environmentReport: nil
+        )
+        controller.markBusy(chipID: "shield")
+        let chip = controller.chips.first { $0.id == "shield" }
+        XCTAssertEqual(chip?.interaction, .refresh(isBusy: true))
+    }
+
+    func testClearBusyReturnsRefreshInteractionToNotBusy() {
+        let controller = HealthController()
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .down),
+            now: .now,
+            environmentReport: nil
+        )
+        controller.markBusy(chipID: "shield")
+        controller.clearBusy(chipID: "shield")
+        let chip = controller.chips.first { $0.id == "shield" }
+        XCTAssertEqual(chip?.interaction, .refresh(isBusy: false))
+    }
+
+    func testMarkBusyOnUnknownChipIDDoesNothing() {
+        let controller = HealthController()
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .running(port: 4416)),
+            now: .now,
+            environmentReport: nil
+        )
+        let chipCountBefore = controller.chips.count
+        controller.markBusy(chipID: "nonexistent")
+        XCTAssertEqual(controller.chips.count, chipCountBefore)
+    }
+
+    func testSubsequentSnapshotUpdateClearsBusyState() {
+        let controller = HealthController()
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .down),
+            now: .now,
+            environmentReport: nil
+        )
+        controller.markBusy(chipID: "shield")
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .running(port: 4416)),
+            now: .now,
+            environmentReport: nil
+        )
+        let chip = controller.chips.first { $0.id == "shield" }
+        XCTAssertEqual(chip?.interaction, ChipInteraction.none)
+    }
+
+    func testEngineChipCurrentVersionShowsOkChip() {
+        let controller = HealthController()
+        let report = EnvironmentReport(
+            brew: nil,
+            ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2099.01.01"),
+            ffmpeg: nil
+        )
+        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: report)
+        let chip = controller.chips.first { $0.id == "engine" }
+        XCTAssertEqual(chip?.dot, .ok)
+        XCTAssertEqual(chip?.interaction, ChipInteraction.none)
+    }
+
+    func testEngineChipDriftedVersionShowsAttentionWithRefresh() {
+        let controller = HealthController()
+        let report = EnvironmentReport(
+            brew: nil,
+            ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2000.01.01"),
+            ffmpeg: nil
+        )
+        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: report)
+        let chip = controller.chips.first { $0.id == "engine" }
+        XCTAssertEqual(chip?.dot, .attention)
+        XCTAssertEqual(chip?.interaction, .refresh(isBusy: false))
+        XCTAssertEqual(chip?.label, "engine · update available")
+    }
+
+    func testEngineChipUnknownVersionShowsOkNotAttention() {
+        // Unparseable version reads as unknown, never as stale — never a false-alarm chip.
+        let controller = HealthController()
+        let report = EnvironmentReport(
+            brew: nil,
+            ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "nightly"),
+            ffmpeg: nil
+        )
+        controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: report)
+        let chip = controller.chips.first { $0.id == "engine" }
+        XCTAssertEqual(chip?.dot, .ok)
     }
 }

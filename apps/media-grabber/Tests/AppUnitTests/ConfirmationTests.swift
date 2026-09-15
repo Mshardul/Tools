@@ -1,6 +1,7 @@
 @testable import GrabberKit
 @testable import MediaGrabber
 import SwiftUI
+import TestSupport
 import XCTest
 
 @MainActor

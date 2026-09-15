@@ -34,6 +34,7 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var stubPlaylistSubmitIDs: [UUID]?
         var ensureCount = 0
         var restartCount = 0
+        var forceStartEvictsFor: Set<UUID> = []
     }
 
     init() {
@@ -210,6 +211,15 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     }
 
     func forceStart(_: UUID) async {}
+
+    func willForceStartEvict(_ id: UUID) async -> Bool {
+        box.read { $0.forceStartEvictsFor.contains(id) }
+    }
+
+    func stubForceStartEvicts(_ id: UUID) {
+        box.mutate { $0.forceStartEvictsFor.insert(id) }
+    }
+
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
 
@@ -237,55 +247,6 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func shutdown() async {
         box.mutate { $0.shutdownCalled = true }
-    }
-}
-
-final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
-    typealias Outcome = Result<MediaMetadata, MetadataError>
-    typealias PlaylistOutcome = Result<PlaylistDump, MetadataError>
-    private let box: LockedBox<Outcome>
-    private let playlistBox: LockedBox<PlaylistOutcome>
-    private let probed = LockedBox<[String]>([])
-    private let playlistProbed = LockedBox<[String]>([])
-
-    init(_ outcome: Outcome, playlistOutcome: PlaylistOutcome = .failure(.malformedOutput)) {
-        box = LockedBox(outcome)
-        playlistBox = LockedBox(playlistOutcome)
-    }
-
-    var probedURLs: [String] {
-        probed.read { $0 }
-    }
-
-    var probedPlaylistURLs: [String] {
-        playlistProbed.read { $0 }
-    }
-
-    func probe(_ url: String, context _: ExtractorContext) async -> Outcome {
-        probed.mutate { $0.append(url) }
-        return box.read { $0 }
-    }
-
-    func probePlaylist(_ url: String, context _: ExtractorContext) async -> PlaylistOutcome {
-        playlistProbed.mutate { $0.append(url) }
-        return playlistBox.read { $0 }
-    }
-}
-
-final class FakeEnvironmentProbe: EnvironmentProbing, @unchecked Sendable {
-    private let report: EnvironmentReport
-
-    init(ready: Bool) {
-        let tool = ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/x"), version: "1")
-        report = EnvironmentReport(
-            brew: tool,
-            ytDlp: ready ? tool : nil,
-            ffmpeg: ready ? tool : nil
-        )
-    }
-
-    func probe() async -> EnvironmentReport {
-        report
     }
 }
 

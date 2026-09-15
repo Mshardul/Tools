@@ -92,7 +92,7 @@ final class DownloadsTableTests: XCTestCase {
             availableActions: running.availableActions
         )
         let row = RowModel(running, queuePosition: nil)
-        XCTAssertEqual(TablePresentation.statusDisplay(for: row), "downloading")
+        XCTAssertEqual(TablePresentation.statusDisplay(for: row), "Downloading")
         XCTAssertEqual(TablePresentation.cellText(for: row, column: .progress), "89%")
     }
 
@@ -110,8 +110,10 @@ final class DownloadsTableTests: XCTestCase {
                 available: completed.snapshot.availableActions
             )
             switch action {
-            case .pause, .cancel, .forceStart, .remove, .openInBrowser:
+            case .cancel, .forceStart, .remove, .openInBrowser:
                 XCTAssertTrue(queuedEnabled, "\(action)")
+            case .pause:
+                XCTAssertFalse(queuedEnabled, "\(action)")
             case .reveal:
                 XCTAssertTrue(completedEnabled, "\(action)")
                 XCTAssertFalse(queuedEnabled, "\(action)")
