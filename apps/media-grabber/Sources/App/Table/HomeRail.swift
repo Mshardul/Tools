@@ -52,6 +52,7 @@ struct HomeRail: View {
                 active ? theme.palette.panel : .clear,
                 in: RoundedRectangle(cornerRadius: theme.chipRadius)
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

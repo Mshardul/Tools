@@ -280,6 +280,7 @@ contract.
 ### 5.2 App chrome
 
 - **Brand row** — the wordmark (motif + name) on the left; nav (`Home · Preferences · About`) on the right as in-app page links. The active page has a filled background. Diagnostics is not a nav item — it is a Preferences pane (§5.9); the nav's third slot is About (§5.12), a destination most users open at least once, unlike Diagnostics.
+- **Left rail** — one persistent rail below the health strip, same position/width/row style on every page; only its content changes with the active page (Home's status filters §5.4, Preferences' pane list §5.9, About's tab list §5.12). Rail selection writes the page's own selection state directly, so rail and content can't disagree.
 - **Health strip** — below the brand row: small chips carrying ambient state — `bot-check shield`, `engine` (yt-dlp version drift against the app's declared minimum), `online` / `offline`, and a per-host cooldown / circuit chip shown only while a host is cooling or paused. A green dot means ok, amber means attention. A chip in a bad state may grow a `↻` icon at its right edge; clicking it runs that chip's background fix and enters a busy state while the fix runs — the `↻` glyph spins, the dot dims to a pulsing neutral state, and the icon is disabled for the duration so a second click can't overlap the action (disabled under `prefers-reduced-motion`, per §5.11). This busy treatment is uniform across every chip that can act, not specific to one chip:
   - `shield · offline` → restart the POT provider process, re-run its health check
   - `engine · update available` → re-run the pinned yt-dlp reinstall (§10.1a), re-read the version
@@ -411,9 +412,9 @@ its own container and the page never scrolls sideways.
 ### 5.12 About
 
 The third top-level nav destination, replacing Diagnostics there. A two-tab page
-(About, Developer) using the same fixed-rail-plus-scrolling-pane shell as
-Preferences. The HealthStrip stays global chrome — present here exactly as on
-Home and Preferences.
+(About, Developer), selected via the app chrome's shared left rail (§5.2) over
+a scrolling pane — same shell as Preferences. The HealthStrip stays global
+chrome — present here exactly as on Home and Preferences.
 
 **About** opens with a centred identity block (app mark, name, version), then
 every version this app tracks and every action that can change one of them —

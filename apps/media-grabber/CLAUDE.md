@@ -19,8 +19,10 @@ in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
 `2026-09-10-media-grabber-phase-9.md`, Phase 10
 `2026-09-11-media-grabber-phase-10-share-extension.md`
 (spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
-not this app-local one). Next: Phase 11 — Diagnostics, About, updates
-(brainstormed; not yet planned).
+not this app-local one), Phase 11 — Diagnostics, About, updates + Home manager
+chrome (design lives in the parent spec §5/§12, no dedicated phase-spec doc;
+plan: repo-root `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`).
+Next: Phase 12.
 
 ## Phase scoping — three rules
 
@@ -180,10 +182,10 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 - Aurora typefaces (Sora / Inter / JetBrains Mono) are not bundled — `Skin`'s
   font accessors fall back to the system face. → **Phase 13**.
-- Onboarding's `testRun` canary is auto-pass. → **Phase 11** (real canary shared
-  with Diagnostics).
 - No queue / persistence / resume — a quit mid-download loses the job.
   *(closed by Phase 2.)*
+- Onboarding's `testRun` canary was auto-pass. *(closed by Phase 11 — real
+  `CanaryProbe` run, shared with Diagnostics' Run check.)*
 
 ## Python
 

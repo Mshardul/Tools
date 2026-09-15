@@ -96,7 +96,8 @@ stateDiagram-v2
 | `.waitingForNetwork` → `.queued` | network came back online | `applyNetworkChange(true)` → `resumeFromNetwork` | Clears the `.networkDown` halt, every parked job → `.queued` at the tail, then `evaluateSchedule`. |
 | `.cooldown(until:)` → `.queued` | cooldown deadline elapsed | `fireDueDeferrals` → `resumeIfCooldownElapsed` | Guard `until <= now`. `cooldownUntil = nil`, then `evaluateSchedule`. One dormant `deferralTask` sleeps to the earliest deadline. |
 | `.cooldown(until:)` → `.running` | user Force Start | `forceStart` | `.cooldown → .queued` inline first (clears `cooldownUntil`, `cancelDeferral`), then the normal eviction + launch path. |
-| `.failed(ErrorClass)` → `.queued` | user Retry | `retry` | Offered only when `errorClass.presentation.offeredActions` contains `.retry`. Clears `finishedAt`/`progress`/`integrityVerdict`/`actualQuality`, moves to the tail. `attempt = 0` (full budget restored) **unless** the error was transient (`.networkDown/.incomplete/.unknown`) and a usable `.part` exists — then `attempt` is kept and the job resumes. |
+| `.failed(ErrorClass)` → `.queued` | user Restart | `retry` | Offered only when `errorClass.presentation.offeredActions` contains `.retry`. Clears `finishedAt`/`progress`/`sizeBytes`/`integrityVerdict`/`actualQuality`, moves to the tail. **Always** `attempt = 0` and deletes part files — no smart-resume exception, even for a transient error with a live `.part` on disk (deliberate: Restart always starts fresh). |
+| `.cancelled` → `.queued` | user Restart | `retry` | Same `retry` path as failed — always `attempt = 0`, deletes part files, moves to the tail. |
 | `.failed(ErrorClass)` → `.queued` | user Retry with cookies | `retryWithCookies` | Offered when `offeredActions` contains `.retryWithCookies`. Sets `forceCookies = true` (sticks for the job's life), `attempt = 0` always, deletes part files. |
 | any terminal → _(evicted)_ | terminal-job count exceeds 200 | `enforceTerminalCap` | Oldest-`finishedAt` terminal jobs beyond 200 are dropped from memory and their job log deleted. |
 
@@ -134,32 +135,31 @@ The diagram draws one `.queued` node; the scheduler distinguishes the two.
 `DownloadEngine.availableActions(for:)` —
 `Sources/GrabberKit/Download/DownloadEngine+Helpers.swift`.
 
-**As shipped today** (table below). **Product target** (locked):  
-`job-status-and-actions.md` §4 / §3b — notably: no Pause on queued; Cancel wired
-on cooldown + waitingForNetwork; Restart from cancelled; Log on cooldown +
-waitingForNetwork; Force start on queued only when blocked; group Cancel all
-includes those states; Restart failed includes cancelled.
+**As shipped** (table below), matching the locked product contract:
+`job-status-and-actions.md` §4 / §3b.
 
 | state | actions (as shipped) |
 |---|---|
-| `.queued` | pause, cancel, **forceStart**, remove, openInBrowser |
+| `.queued` | cancel, **forceStart** (only when not immediately schedulable), remove, openInBrowser — **no pause** |
 | `.probing` | cancel, remove, openInBrowser |
 | `.running` | pause, cancel, remove, openInBrowser, showLog |
 | `.paused` | resume, cancel, remove, openInBrowser, showLog |
-| `.waitingForNetwork` | cancel, remove, openInBrowser — **no forceStart** |
-| `.cooldown` | **forceStart**, cancel, remove, openInBrowser |
+| `.waitingForNetwork` | cancel, remove, openInBrowser, showLog — **no forceStart** |
+| `.cooldown` | **forceStart**, cancel, remove, openInBrowser, showLog |
 | `.completed` | reveal, remove, openInBrowser, showLog |
-| `.cancelled` | remove, openInBrowser, showLog |
+| `.cancelled` | **retry** (Restart), remove, openInBrowser, showLog |
 | `.failed(errorClass)` | the error class's offered retry action(s) + remove, openInBrowser, showLog |
 
 The deliberate asymmetry: **`.cooldown` offers Force Start** (override the host
 cooldown), **`.waitingForNetwork` does not** (nothing to force with no network).
 
-Mismatch to be aware of: `availableActions` lists `.cancel` for `.cooldown` and
-`.waitingForNetwork`, but `cancel` only handles `.running`, `.probing`,
-`.queued`, and `.paused` — its `default` arm is a no-op. Cancelling a cooling or
-network-parked job currently does nothing; `remove` is the way to clear one.
-Phase 11 closes this against `job-status-and-actions.md`.
+`cancel(_:)` handles all six non-terminal states, including `.cooldown` and
+`.waitingForNetwork` — it calls `cancelDeferral` first (clearing the job's own
+deferral without touching host `RateState`), then marks the job cancelled. The
+`.queued` Force Start conditional reads
+`DownloadEngine.isImmediatelySchedulable(_:)` (mirrors the scheduler's own
+eviction-decision logic) so the button is offered only when starting the job
+now would actually evict something.
 
 ### Auto-retry budget
 

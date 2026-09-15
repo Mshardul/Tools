@@ -358,7 +358,8 @@ struct DiagnosticsPane: View {
             metadataProbe: probe,
             environmentProbe: appModel.envProbe,
             ytDlpUpdater: appModel.ytDlpUpdater,
-            sharePresenter: SharePresenter()
+            sharePresenter: SharePresenter(),
+            pasteboardMarker: { [weak appModel] text in appModel?.incomingLinkController?.markAppPasteboardWrite(text) }
         )
     }
 }

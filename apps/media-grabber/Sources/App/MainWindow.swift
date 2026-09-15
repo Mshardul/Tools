@@ -7,6 +7,7 @@ struct MainWindow: View {
     @Environment(IncomingLinkController.self) private var incomingLinks
     @Environment(\.theme) private var theme
     @State private var bannerHeight: CGFloat = 0
+    @AppStorage("mg.hasGrabbedOnce") private var hasGrabbedOnce = false
 
     var body: some View {
         @Bindable var appModel = appModel
@@ -26,12 +27,17 @@ struct MainWindow: View {
                     }
                 }
                 Divider().overlay(theme.palette.hair)
-                page
-                    .safeAreaInset(edge: .bottom, spacing: 0) {
-                        Color.clear.frame(
-                            height: appModel.bannerContent == nil ? 0 : bannerHeight + Spacing.s4
-                        )
-                    }
+                HStack(alignment: .top, spacing: 0) {
+                    rail
+                        .frame(width: 200)
+                    Divider().overlay(theme.palette.hair)
+                    page
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(
+                        height: appModel.bannerContent == nil ? 0 : bannerHeight + Spacing.s4
+                    )
+                }
             }
             .background(theme.palette.ground)
             .frame(minWidth: 820, minHeight: 560)
@@ -92,13 +98,13 @@ struct MainWindow: View {
         HStack(spacing: Spacing.s1) {
             navButton("Home", .home, page)
             navButton("Preferences", .preferences(), page)
-            navButton("Diagnostics", .diagnostics, page)
+            navButton("About", .about(), page)
         }
     }
 
     private func isActive(_ page: AppModel.Page, _ target: AppModel.Page) -> Bool {
         switch (page, target) {
-        case (.preferences, .preferences): true
+        case (.preferences, .preferences), (.about, .about): true
         default: page == target
         }
     }
@@ -129,20 +135,80 @@ struct MainWindow: View {
         case .home:
             HomeView()
         case let .preferences(pane):
-            PreferencesView(initialPane: pane)
-        case .diagnostics:
-            placeholder("Diagnostics")
+            PreferencesView(selectedPane: pane)
+        case let .about(tab):
+            AboutView(selectedTab: tab)
         }
     }
 
-    private func placeholder(_ title: String) -> some View {
-        VStack {
-            Spacer()
-            Text(title)
-                .font(theme.bodyFont(13, .regular))
-                .foregroundStyle(theme.palette.faint)
-            Spacer()
+    @ViewBuilder
+    private var rail: some View {
+        switch appModel.page {
+        case .home:
+            if showsHomeRail {
+                HomeRail(store: appModel.rowStore)
+            }
+        case let .preferences(pane):
+            preferencesRail(selected: pane)
+        case let .about(tab):
+            aboutRail(selected: tab)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var showsHomeRail: Bool {
+        hasGrabbedOnce || !appModel.rowStore.rows.isEmpty
+    }
+
+    private func preferencesRail(selected: PreferencesPane) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s4) {
+            ForEach(PreferencesRailGroup.allCases, id: \.self) { group in
+                VStack(alignment: .leading, spacing: Spacing.s1) {
+                    Text(group.caption)
+                        .font(theme.monoFont(11, .medium))
+                        .textCase(.uppercase)
+                        .foregroundStyle(theme.palette.faint)
+                        .padding(.horizontal, Spacing.s3)
+                        .padding(.bottom, 2)
+                    ForEach(group.panes, id: \.self) { pane in
+                        railButton(pane.title, active: pane == selected) {
+                            appModel.page = .preferences(pane)
+                        }
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, Spacing.s5)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private func aboutRail(selected: AboutTab) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s1) {
+            ForEach(AboutTab.allCases, id: \.self) { tab in
+                railButton(tab.title, active: tab == selected) {
+                    appModel.page = .about(tab)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, Spacing.s5)
+        .frame(maxHeight: .infinity, alignment: .top)
+    }
+
+    private func railButton(_ label: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(theme.bodyFont(13, active ? .semibold : .regular))
+                .foregroundStyle(active ? theme.palette.text : theme.palette.dim)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Spacing.s3)
+                .padding(.vertical, Spacing.s2)
+                .background(
+                    active ? theme.palette.panel : .clear,
+                    in: RoundedRectangle(cornerRadius: theme.chipRadius)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

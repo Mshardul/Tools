@@ -263,8 +263,6 @@ extension HomeView {
                 .padding(.top, Spacing.s4)
 
             HStack(alignment: .top, spacing: 0) {
-                HomeRail(store: appModel.rowStore)
-
                 DownloadsTable(
                     store: appModel.rowStore,
                     columnConfig: $appModel.columnConfig,

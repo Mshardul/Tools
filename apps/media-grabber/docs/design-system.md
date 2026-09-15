@@ -180,7 +180,12 @@ new glyph is introduced for it.
 
 ### 4.1 App chrome
 
-- **Brand row** — wordmark (motif + name) left; nav right (`Home · Preferences · About`) as in-app page links. Active page gets a filled `--panel` background. Diagnostics is not a nav item — it is a Preferences pane (§4.6); About (§4.8) is the third top-level destination, replacing Diagnostics there.
+- **Brand row** — wordmark (motif + name) left; nav right (`Home · Preferences · About`) as in-app page links. Active page gets a filled `--panel` background. Diagnostics is not a nav item — it is a Preferences pane (§4.6); About (§4.8) is the third top-level destination, replacing Diagnostics there. The brand row is the only chrome that stays fixed regardless of page.
+- **Left rail** — one persistent rail, same visual shell, sits below the health strip on every page; its *content* changes with the active page while the rail's position, width, and row styling stay identical everywhere:
+  - **Home** — the status filter rail (§4.2.3: All · Downloading · Done · Inactive), hidden until the first Grab (no rail in the first-run empty state).
+  - **Preferences** — the pane rail (§4.6: General / YouTube / System groups).
+  - **About** — the tab rail (§4.8: About / Developer).
+  Selecting a rail row updates the app's current page state directly (e.g. `.preferences(.diagnostics)`), so the rail's own selection and the page's content can never drift apart.
 - **Health strip** — below the brand row. Small utility-face chips carrying ambient state: `bot-check shield`, `engine` (yt-dlp version drift against the app's declared minimum), `online`, and a `<host> · cooldown m:ss` chip that appears only during a cooldown. Green dot = ok, amber dot = attention.
   - **When a chip is in a bad state, a `↻` icon appears at its right edge.** Clicking it runs that chip's fix routine in the background and puts the chip in a **busy state** for the duration — the `↻` glyph spins, the dot dims to a pulsing neutral state, and the icon is disabled so a second click can't overlap the action (disabled under `prefers-reduced-motion`; the glyph and dot simply hold still). This busy treatment is uniform across every chip that can act:
     | chip bad state | `↻` runs |
@@ -242,7 +247,7 @@ The "resolve link & arm Grab" pattern.
 
 One table, newest at top. One **row per video** (a playlist contributes N rows, grouped — §4.2.4). Product contract for status / rail / actions: `docs/job-status-and-actions.md`.
 
-**Layout:** status **left rail** + table body (not top filter chips).
+**Layout:** status **left rail** (the app chrome's shared rail, §4.1) + table body (not top filter chips).
 
 - **Rail** — `All · Downloading · Done · Inactive`. Inactive shows a count badge when > 0 (failed + cancelled). Mapping: Downloading = probing, running, queued, paused, waitingForNetwork, cooldown; Done = completed; Inactive = failed, cancelled.
 - **`⊞ Columns` button** — opens a dropdown of checkboxes to show/hide columns.
@@ -329,12 +334,12 @@ Opens automatically when a resolved link is a playlist, **before** any rows are 
 ### 4.6 Preferences
 
 - In-app page (nav item). Not a separate macOS Settings window.
-- **Fixed window height.** The left rail never scrolls (the window is tall
-  enough for every rail item). The right pane scrolls independently — the
-  pane's title, sub, and rule stay fixed above that scroll region; only the
-  rows below them scroll, with their own bottom padding so the last row never
-  sits flush against the window edge.
-- **Left rail** — three group captions, each item highlighted when selected:
+- **Fixed window height.** The left rail (the app chrome's shared rail, §4.1)
+  never scrolls (the window is tall enough for every rail item). The right
+  pane scrolls independently — the pane's title, sub, and rule stay fixed
+  above that scroll region; only the rows below them scroll, with their own
+  bottom padding so the last row never sits flush against the window edge.
+- **Left rail content** — three group captions, each item highlighted when selected:
   - **General:** Downloads · Appearance · Network
   - **YouTube:** Sign-in & cookies
   - **System:** Updates · Logs & privacy · Advanced · Diagnostics
@@ -454,9 +459,10 @@ New `Preferences` fields this section introduces: `detectClipboardLinks: Bool`
 ### 4.8 About
 
 The third top-level nav destination (§4.1), replacing Diagnostics there. A
-two-tab page (About, Developer) over the same fixed-rail-plus-scrolling-pane
-shell as Preferences (§4.6). The health strip stays global chrome — present
-here exactly as on Home and Preferences.
+two-tab page (About, Developer), selected via the app chrome's shared left
+rail (§4.1) over a scrolling pane — same shell as Preferences (§4.6). The
+health strip stays global chrome — present here exactly as on Home and
+Preferences.
 
 **About** opens with a centred identity block — app mark, name, version — then
 every version this app tracks and every action that can change one, so nothing
@@ -491,13 +497,20 @@ certain, never a pending network call.
 name, a one-line headline — then:
 | Label | Control |
 |---|---|
-| Connect with me | a row of platform icon-links (GitHub, LinkedIn, personal site, X), right-aligned |
+| Connect with me | a row of platform icon-links, right-aligned |
 | Source code | button "GitHub" |
 | Report an issue | button "GitHub Issues" |
 | License | button "Open" |
 
-GitHub and LinkedIn use their real brand marks as small bundled image assets;
-platforms with no standard mark (personal site, X) use a generic icon.
+Shipped with GitHub only (real profile URL). LinkedIn, personal site, and X
+were designed but are commented out pending real URLs for those accounts —
+add them to `DeveloperLinks` in `DeveloperView.swift` and uncomment their
+`iconLink` rows when available. The mockup's own brand-mark treatment
+(`docs/mockups/screens/about.html` §7.2) uses plain text-glyph badges ("GH",
+"in") rather than real bundled images — the shipped app matches that, since
+no image-asset catalog exists elsewhere in the app and a two-letter glyph
+reads fine at this size; a personal site or X row would use a generic `globe`
+SF Symbol / text glyph the same way when added.
 
 ---
 

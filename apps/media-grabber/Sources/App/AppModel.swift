@@ -8,7 +8,7 @@ final class AppModel {
     enum Page: Equatable {
         case home
         case preferences(PreferencesPane = .downloads)
-        case diagnostics
+        case about(AboutTab = .about)
     }
 
     var page: Page = .home {
