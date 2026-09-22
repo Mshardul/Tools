@@ -1,8 +1,9 @@
 # Downloads table chrome — design
 
-**Status:** implemented — plan:
-`docs/superpowers/plans/2026-09-22-media-grabber-downloads-table-chrome.md`.
-Review this file as the single source for Phase 12 design.
+**Status:** shipped — archived at
+`docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md`
+and
+`docs/superpowers/plans/archived/2026-09-22-media-grabber-downloads-table-chrome.md`.
 
 **Owner phase:** Phase 12 (Downloads table chrome).  
 **Parent:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3/§5.4, §12.1 Phase 12.  
@@ -31,9 +32,9 @@ drag-reorder lands on the same AppKit grid — not in this phase.
 - Pure SwiftUI `Table` as the grid
 - Keeping today’s `LazyVStack` row stack as the long-term engine
 - `NSHostingView` per cell as the default cell path (see §1)
-- First-run empty Home copy redesign / Aurora body-face swap → Phase 13
-- Live column-width readout while dragging → Phase 13
-- Full a11y sweep beyond what this chrome needs to ship correctly → Phase 13
+- First-run empty Home copy redesign / Aurora body-face swap → **Phase 14**
+- Live column-width readout while dragging → **Phase 13**
+- Full a11y sweep beyond what this chrome needs to ship correctly → **Phase 13**
 
 ---
 

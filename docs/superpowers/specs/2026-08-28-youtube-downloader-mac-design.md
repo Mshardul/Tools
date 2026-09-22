@@ -3,7 +3,7 @@
 **Status:** ready for implementation planning
 **Date:** 2026-08-28
 **Leaf:** `apps/media-grabber/` (working directory name; product name is
-chosen in Phase 13 — see §14)
+chosen at Phase 14 Step 0 branding gate — see §14)
 
 ---
 
@@ -20,7 +20,7 @@ chosen in Phase 13 — see §14)
 - [11. Testing](#11-testing)
 - [12. Implementation phasing](#12-implementation-phasing)
 - [13. Never for this product](#13-never-for-this-product)
-- [14. Release decisions (Phase 13)](#14-release-decisions-phase-13)
+- [14. Release decisions (Phase 14 Step 0)](#14-release-decisions-phase-14-step-0)
 
 ---
 
@@ -299,7 +299,7 @@ contract.
 ### 5.3 Home
 
 - **Hero:** a kicker, a headline, and the paste field. No dashboard or stats widget.
-- **First run, no download ever made:** the paste field plus three step cards ("Paste a link · Pick a format · Press Grab") fill the body. There is **no Downloads table** (no headers, status rail, or Columns button) and **no runway** (there is no link yet). *(First-run copy/layout polish → Phase 13.)*
+- **First run, no download ever made:** the paste field plus three step cards ("Paste a link · Pick a format · Press Grab") fill the body. There is **no Downloads table** (no headers, status rail, or Columns button) and **no runway** (there is no link yet). *(First-run copy/layout polish → Phase 14.)*
 - **After the first Grab:** the step cards are gone permanently, and the Downloads table renders from then on. The field sits above it; the runway appears when a pasted link resolves and is hidden otherwise.
 - **Table emptied later** (every row removed): the table stays, showing a single centred line — "No downloads — paste a link above." The step cards do not return; they are first-run-only.
 - **Runway** (the resolve-and-arm pattern) — **hidden until a pasted link resolves.** On resolve, the field shows an inline `✓ <title>` and the runway appears attached below it: a strip of labelled slots — **Link · Type · Format · Language · Save to** — each a filled dot when set, a hollow dot when not. Type / Format / Language / Save-to seed from last-used or Preferences; Language is always filled (YouTube's default track, or Original when that is the Preferences policy and the video has one). Format (video) lists only this probe's offered quality rungs. **Grab** sits at the end of the runway and is **disabled until the link is resolved and downloadable** — every other slot is pre-filled; the user may change any of them before Grab. The "Save to" slot is the per-download destination override. The runway is the entire add flow — there is no separate Add sheet.
@@ -866,7 +866,7 @@ add cases and wiring, never relayout — §12.2.
   `BannerReason` priority resolver drives `WarningBanner` (`networkDown` has no
   button). Status cell + cooldown chip show a live `m:ss` via `TimelineView`.
   `--concurrent-fragments` is 4 when the host is `.normal`, 1 otherwise. Rate
-  state is in-memory only. Per-host adaptive concurrency parks in Phase 13.
+  state is in-memory only. Per-host adaptive concurrency parks in Phase 14.
   Engine-freshness chip is Phase 11.
 
 - **Phase 7 — YouTube hardening (shipped).** Spec + plan:
@@ -987,7 +987,7 @@ add cases and wiring, never relayout — §12.2.
   primacy (Install now primary; commands secondary). Phase 11 plan rewrites
   §5.3 / §5.4 + design-system + Home/onboarding mockups before implement.
   Site friendly names if not already shipped. First-run empty Home copy
-  redesign + Aurora body face stay Phase 13.
+  redesign + Aurora body face stay Phase 14.
 
   *Hint: Copy report and Share diagnostic bundle write the clipboard / hand off
   a file — call `IncomingLinkController.markAppPasteboardWrite(_:)` with the
@@ -1019,28 +1019,22 @@ add cases and wiring, never relayout — §12.2.
   (hidden by default). Detail
   when reached; leaf backlog mirrors this stub.
 
-- **Phase 13 — Polish.** Success and chip-refresh-failure toasts; native macOS notifications for
-  backgrounded failures; the first-run cards → table transition and the
-  emptied-table state; a full keyboard-navigation, VoiceOver, and
-  `prefers-reduced-motion` pass over every screen (§12.2's a11y sweep). Last
-  because the a11y pass audits every screen the earlier phases built. Bundle
-  Aurora typefaces (Sora / Inter / JetBrains Mono + `ATSApplicationFontsPath`).
-  Product-name decision (spec §14) — pick + find-and-replace. Home banner →
-  footer (content into HealthStrip chips). Per-host adaptive concurrency
-  (cap per `RateHost`; additive on Phase 6 scheduler seams). *Hint
-  (from Phase 10):* app icon — no `.icns`/`.xcassets` exists yet, app-wide
-  gap. *Hint   (from Phase 10):* Share Extension first-enable nudge — macOS
-  disables Share Extensions by default until enabled once in Privacy &
-  Security → Extensions; evaluate a first-run hint. *Hint (from Phase 12):*
-  live column-width readout while resizing (mockup only until then).
-  *Hint (UI review
-  2026-09-12):* first-run empty Home — redesign kicker / headline / step-card
-  copy and composition (plan when reached). *Hint (UI review 2026-09-12):*
-  Aurora body face — replace Inter with a more distinctive grotesk (design
-  pass; with font bundling above).
+- **Phase 13 — Polish.** *(scope locked 2026-09-23 — pick = ship end-to-end)*
+  **In:** success + chip-refresh-failure toasts; native notifications for
+  backgrounded failures; finish first-run → table + emptied-table state gaps
+  (no full first-run copy redesign); live column-width readout while resizing;
+  bundle Aurora typefaces (Sora / Inter / JetBrains Mono +
+  `ATSApplicationFontsPath` — no body-face swap); Debug menu decide-and-close;
+  Share Extension first-enable hint decide-and-close; **full a11y sweep last**
+  (keyboard / VoiceOver / `prefers-reduced-motion` on every screen after other
+  UI freezes).
+  **Out → Phase 14 Step 0 (branding gate):** product name (§14) + app icon.
+  **Out → Phase 14:** Aurora body-face swap; first-run Home copy/composition
+  redesign; Home banner → footer; per-host adaptive concurrency (engine).
 
-- **Phase 14 — Post-v1 maturity.** Engine and product work that is intentionally
-  after the Phase 13 polish / v1-name ship gate. **Playlist-group aggregate
+- **Phase 14 — Post-v1 maturity.** Opens with **Step 0 branding gate** if not
+  already done: product-name decision (§14) + find-and-replace + app icon.
+  Then engine/product work: **Playlist-group aggregate
   state** — real `PlaylistGroupState` in GrabberKit (replace UI-only roll-up and
   no-op `savePlaylistGroups` / `loadPlaylistGroups`). **Queue-row drag-reorder**
   (parked from Phase 12 — engine queue order + UI; fights active sort).
@@ -1051,7 +1045,11 @@ add cases and wiring, never relayout — §12.2.
   **Always-on-cookies model** (default Safari, silent fall back — see §7).
   **Remote `player_client` order JSON** (replace compile-time
   `PlayerClientRotation.default`). **Per-site helpers** beyond YouTube
-  (Instagram / Twitter / TikTok auto-cookies, etc.). **Optional UX extras** if
+  (Instagram / Twitter / TikTok auto-cookies, etc.). **Per-host adaptive
+  concurrency** (parked from Phase 13 — cap per `RateHost`; additive on Phase 6
+  scheduler). **Home banner → footer** (parked from Phase 13). **Aurora
+  body-face swap** + **first-run Home redesign** (parked from Phase 13).
+  **Optional UX extras** if
   still wanted at plan time: subtitles / embed-thumbnail / embed-metadata,
   menu-bar item, scheduled/recurring downloads, lifetime-stats panel,
   per-download bandwidth graphs, per-skin light/dark, compact-window
@@ -1112,20 +1110,22 @@ tokens; downloading content the user has no right to copy; Mac App Store
 distribution (unless a later decision rewrites §2). The browser extension stays
 on the repo-root BACKLOG as **T-006** (separate leaf), not a MediaGrabber phase.
 
-## 14. Release decisions (Phase 13)
+## 14. Release decisions (Phase 14 Step 0)
 
-**Product name.** Chosen at the Phase 13 ship gate; until then the code and
-directory use the working name `MediaGrabber` / `apps/media-grabber/` / bundle
-ID `app.mediagrabber.mac`. Renaming is a mechanical find-and-replace. ~20
-candidates have been checked for collisions; the video-downloader space is
-saturated (Downie, Grabbr, Parabolic, Stacher, ClipGrab, …) and every short
-string is claimed somewhere. The verified-clean options (no Mac app, no
-downloader, no dev tool, no famous brand): **Weir** (`weir.app` is free),
-**Undertow**, **Vireo**, **Freshet**. Bundle ID: `app.<name>.mac` (reverse-DNS,
-`mac` suffix leaves room for other platforms later).
+**Product name.** Chosen at Phase 14 Step 0 (branding gate); until then the
+code and directory use the working name `MediaGrabber` /
+`apps/media-grabber/` / bundle ID `app.mediagrabber.mac`. Renaming is a
+mechanical find-and-replace. ~20 candidates have been checked for collisions;
+the video-downloader space is saturated (Downie, Grabbr, Parabolic, Stacher,
+ClipGrab, …) and every short string is claimed somewhere. The verified-clean
+options (no Mac app, no downloader, no dev tool, no famous brand): **Weir**
+(`weir.app` is free), **Undertow**, **Vireo**, **Freshet**. Bundle ID:
+`app.<name>.mac` (reverse-DNS, `mac` suffix leaves room for other platforms
+later).
 
-**Icon direction.** Decided with the name (Phase 13).
+**Icon direction.** Decided with the name (Phase 14 Step 0 branding gate;
+parked out of Phase 13 polish — locked 2026-09-23).
 
 **BACKLOG.md.** Left as-is for now — no new row, T-002 (the CLI) unchanged,
-T-006's dependency unchanged. Revisit when this app reaches v1 (end of Phase
-13).
+T-006's dependency unchanged. Revisit when this app reaches v1 (after the
+Phase 14 Step 0 name gate).

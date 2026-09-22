@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift 6, SwiftUI shell, AppKit `NSTableView`, XCTest, Tuist, `mise`-pinned swiftformat/swiftlint. Deployment target macOS 14.
 
-**Spec:** `docs/superpowers/specs/2026-09-22-media-grabber-downloads-table-chrome-design.md` (primary). Also parent `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3/§5.4/§12.1 Phase 12; product contract `apps/media-grabber/docs/job-status-and-actions.md` §8; mockups `apps/media-grabber/docs/mockups/screens/{home,column-interactions}.html`; design-system `apps/media-grabber/docs/design-system.md` §4.2.
+**Spec:** `docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md` (primary). Also parent `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3/§5.4/§12.1 Phase 12; product contract `apps/media-grabber/docs/job-status-and-actions.md` §8; mockups `apps/media-grabber/docs/mockups/screens/{home,column-interactions}.html`; design-system `apps/media-grabber/docs/design-system.md` §4.2.
 
 ## Global Constraints
 

@@ -61,7 +61,7 @@ are in spec §12.2.
   `WarningBanner` `circuitOpen` / `networkDown` cases; circuit breaker;
   adaptive concurrency; `NetworkMonitor` → `waitingForNetwork`; `HealthStrip`
   online / cooldown chips. Smoke: force a 429. Per-host adaptive concurrency
-  parks in **Phase 13**.
+  parks in **Phase 14**.
 - **Phase 7 — YouTube hardening.** *(shipped)* Engine-owned shield process +
   plugin dirs; `player_client` rotation; `engine.preview` shares YouTube identity
   with Grab; probe format lists; runway Language slot + quality rungs this probe
@@ -87,7 +87,8 @@ are in spec §12.2.
   Phase 9 `mediagrabber://open` path. Spec + plan:
   `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
   `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
-  App icon + Share Extension first-enable nudge park in **Phase 13**.
+  Share Extension first-enable nudge parks in **Phase 13**; app icon parks in
+  **Phase 14 Step 0**.
 - **Phase 11 — Diagnostics, About, updates + Home manager chrome.** *(shipped)* Diagnostics
   moves into Preferences (System group) rather than top-level nav; report card,
   Copy report, and Share diagnostic bundle (system share sheet, not a plain
@@ -121,7 +122,7 @@ are in spec §12.2.
   rewrites parent §5.3 / §5.4 + design-system + Home/onboarding mockups to
   match before implement. Site friendly host names if not already shipped.
   *(First-run empty Home copy/layout redesign and Aurora body face stay
-  Phase 13.)*
+  Phase 14.)*
 
   **Status model (locked 2026-09-12):** Keep the nine `JobState` cases. Row
   status = those nine, 1:1 (aliases OK: `running`→Downloading, `completed`→Saved).
@@ -144,7 +145,7 @@ are in spec §12.2.
   cooldown + waitingForNetwork), keep expand/collapse. Contract:
   `docs/job-status-and-actions.md`. Plan:
   `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`.
-- **Phase 12 — Downloads table chrome.** Column header drag-reorder UI (wire
+- **Phase 12 — Downloads table chrome.** *(shipped)* Column header drag-reorder UI (wire
   existing `ColumnConfig.moveColumn` + persistence); resizable column widths
   (drag handles + persist in `ColumnConfig`); multi-select row actions (plan
   **reverses** parent §5.4 “no row selection” and ships selection + batch
@@ -177,32 +178,28 @@ are in spec §12.2.
   dialogs, rest of app). Cells/headers are **AppKit-drawn** with shared design
   tokens — not default `NSHostingView` per cell. Not a pure SwiftUI `Table`;
   not forever-extending today’s LazyVStack. Phase 14 row-reorder uses this
-  same grid.
-- **Phase 13 — Polish.** Success + chip-refresh-failure toasts; native
-  notifications for backgrounded failures; the first-run-cards → table
-  transition + emptied-table state; full keyboard-nav + VoiceOver +
-  reduced-motion pass over every screen (last — audits every earlier screen).
-  **Bundle Aurora typefaces** (Sora / Inter / JetBrains Mono under
-  `Sources/App/Resources/Fonts/**` + `ATSApplicationFontsPath`; then apply any
-  Aurora body-face swap decided in this phase). **Product-name decision
-  (spec §14)** — pick the real name and find-and-replace
-  `MediaGrabber` / `app.mediagrabber.mac`. **App icon** (`.icns` / `.xcassets`).
-  **Share Extension first-enable hint** — evaluate a first-run nudge (macOS
-  disables Share Extensions until enabled once). **Debug menu** — review
-  whether a `DebugFlags` Debug menu is warranted. **Home banner → footer** —
-  fixed footer; info/warning content moves into HealthStrip chips. **Per-host
-  adaptive concurrency** — cap trio per `RateHost`; `Scheduler.nextDownloads`
-  per-host slot accounting (additive on Phase 6 seams). *Hint (UI review
-  2026-09-12):* first-run empty Home — redesign kicker / headline / step-card
-  copy and composition. *Hint (UI review 2026-09-12):* Aurora body face —
-  replace Inter with a more distinctive grotesk (with font bundling above).
-  *Hint (from Phase 12):* live column-width readout while resizing.
-- **Phase 14 — Post-v1 maturity.** Playlist-group aggregate state (engine);
-  real metadata-probe token bucket + visibility; POT/shield rotation;
-  always-on-cookies model; remote `player_client` order JSON; per-site helpers
-  beyond YouTube; **queue-row drag-reorder** (parked from Phase 12); optional
-  UX extras (subtitles/embed, menu bar, schedules, stats, bandwidth graphs,
-  per-skin light/dark, compact breakpoint); evaluate `.shieldDown` halt +
-  `.userReset` soft transition (ship or drop in plan); Sparkle/notarization/
-  bundled deps only if Developer ID exists. Full stub in parent §12.1.
+  same grid. Design + plan:
+  `docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md`,
+  `docs/superpowers/plans/archived/2026-09-22-media-grabber-downloads-table-chrome.md`.
+- **Phase 13 — Polish.** *(scope locked 2026-09-23)* Success + chip-refresh-failure
+  toasts; native notifications for backgrounded failures; finish first-run →
+  table + emptied-table gaps (no full first-run copy redesign); live
+  column-width readout while resizing; bundle Aurora typefaces (Sora / Inter /
+  JetBrains Mono + `ATSApplicationFontsPath` — no body-face swap); Debug menu
+  decide-and-close; Share Extension first-enable hint decide-and-close; **full
+  a11y sweep last** (keyboard / VoiceOver / reduced-motion on every screen).
+  **Out → Phase 14 Step 0:** product name (§14) + app icon. **Out → Phase 14:**
+  Aurora body-face swap; first-run Home redesign; Home banner → footer;
+  per-host adaptive concurrency.
+- **Phase 14 — Post-v1 maturity.** **Step 0 branding gate** (name + icon) if
+  not done. Then: playlist-group aggregate state (engine); real metadata-probe
+  token bucket + visibility; POT/shield rotation; always-on-cookies model;
+  remote `player_client` order JSON; per-site helpers beyond YouTube;
+  **queue-row drag-reorder** (parked from Phase 12); **per-host adaptive
+  concurrency** + **banner → footer** + **body-face / first-run redesign**
+  (parked from Phase 13); optional UX extras (subtitles/embed, menu bar,
+  schedules, stats, bandwidth graphs, per-skin light/dark, compact breakpoint);
+  evaluate `.shieldDown` halt + `.userReset` soft transition (ship or drop in
+  plan); Sparkle/notarization/bundled deps only if Developer ID exists. Full
+  stub in parent §12.1.
 

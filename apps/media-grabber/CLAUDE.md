@@ -21,10 +21,9 @@ in `specs/`), Phase 3 `2026-08-31-media-grabber-phase-3.md`, Phase 4
 (spec + plan in the repo-root `docs/superpowers/{specs,plans}/archived/` tree,
 not this app-local one), Phase 11 — Diagnostics, About, updates + Home manager
 chrome (design lives in the parent spec §5/§12, no dedicated phase-spec doc;
-plan: repo-root `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`).
-Phase 12 — Downloads table chrome (design:
-`docs/superpowers/specs/2026-09-22-media-grabber-downloads-table-chrome-design.md`;
-plan: `docs/superpowers/plans/2026-09-22-media-grabber-downloads-table-chrome.md`).
+plan: repo-root `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`),
+Phase 12 — Downloads table chrome *(shipped)* — design + plan in
+`docs/superpowers/{specs,plans}/archived/2026-09-22-media-grabber-downloads-table-chrome*.md`.
 Next: Phase 13.
 
 ## Phase scoping — three rules
