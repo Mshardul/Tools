@@ -233,6 +233,14 @@ h1.head em{font-style:normal;color:var(--accent)}
 .toolbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .toolbar-right .colbtn{margin-left:0}
 .toolbar .clear{font-family:var(--font-body);font-size:12px;padding:6px 4px;border:none;background:transparent;color:var(--accent);cursor:pointer}
+
+/* header-row-hosted Columns button (+ optional Clear filters) — replaces the standalone toolbar row on Home table screens */
+th.th-tools{display:flex;align-items:center;justify-content:space-between;gap:16px;white-space:nowrap;padding-right:0;position:relative}
+th.th-tools::before{content:"";position:absolute;left:0;top:20%;bottom:20%;width:1px;background:var(--stroke)}
+th.th-tools .thtools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;position:relative;text-transform:none;letter-spacing:0}
+th.th-tools .colbtn{width:27px;height:27px;display:inline-flex;align-items:center;justify-content:center;padding:0;border-radius:var(--r-chip);border:1px solid var(--stroke);background:var(--panel);color:var(--text);cursor:pointer;flex:none}
+th.th-tools .clear{font-family:var(--font-body);font-size:12px;padding:6px 4px;border:none;background:transparent;color:var(--accent);cursor:pointer;white-space:nowrap}
+th.th-tools .colmenu{top:32px}
 .empty-table{flex:1;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:13px;padding:80px 24px;text-align:center}
 .tablewrap.fill{display:flex;flex-direction:column;flex:1;min-height:0}
 
@@ -277,7 +285,7 @@ th.col-hidden-default .thc::after{content:" (hidden by default)";font-size:9px;t
 .s-cool{color:var(--warn)} .s-cool::before{background:var(--warn)} :root[data-theme="tapedeck"] .s-cool{background:var(--s-cool);color:var(--text)}
 .s-queue{color:var(--accent-2)} .s-queue::before{background:var(--accent-2)} :root[data-theme="tapedeck"] .s-queue{background:var(--s-queue);color:var(--text)}
 .s-pause{color:var(--dim)} .s-pause::before{background:var(--dim)}
-.bar{height:6px;width:110px;overflow:hidden;background:rgba(150,150,150,.18);border-radius:var(--r-pill)}
+.bar{display:inline-block;height:6px;width:110px;overflow:hidden;background:rgba(150,150,150,.18);border-radius:var(--r-pill)}
 :root[data-theme="tapedeck"] .bar{border:1.5px solid var(--stroke);height:7px}
 .bar>i{display:block;height:100%;background:var(--bar-fill)}
 :root[data-theme="aurora"] .bar>i{box-shadow:0 0 10px var(--glow-a)}
@@ -511,3 +519,51 @@ th.col-hidden-default .thc::after{content:" (hidden by default)";font-size:9px;t
 .ico{width:1em;height:1em;display:inline-block;vertical-align:-0.125em;flex:none}
 .ico-sm{width:0.85em;height:0.85em}
 button .ico, .acts .ico{margin:0}
+
+/* ===== Home status rail — same shell as .prefs .side, adapted for row filters ===== */
+.body-home2{flex:1;min-height:0;display:flex}
+.mg-rail{width:160px;flex:none;border-right:var(--border-w) solid var(--stroke);padding:var(--sp-4) var(--sp-2);overflow:hidden}
+.mg-rail a{display:flex;align-items:center;justify-content:space-between;gap:8px;font-family:var(--font-display);font-size:13px;color:var(--dim);text-decoration:none;padding:8px 12px;border-radius:var(--r-chip);cursor:pointer}
+.mg-rail a.on{background:var(--panel);color:var(--text)}
+.mg-rail a .rc{font-family:var(--font-mono);font-size:10px;color:var(--faint)}
+.mg-rail a.on .rc{color:var(--dim)}
+.mg-rail a .rbadge{background:var(--danger);color:#fff;border-radius:20px;padding:1px 6px;font-size:9px;font-family:var(--font-mono)}
+.mg-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.mg-main>.hero{flex:none}
+.mg-main .tablewrap.fill{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* checkbox column (row select) */
+.selbox{width:15px;height:15px;border:1px solid var(--stroke);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--on-accent);cursor:pointer;background:var(--panel);flex:none}
+.selbox.on{background:var(--accent-2);border-color:var(--accent-2)}
+.selbox.dash{background:var(--accent-2);border-color:var(--accent-2)}
+.selbox.dash::before{content:"";width:7px;height:1.5px;background:var(--on-accent)}
+td.selcell,th.selcell{width:32px;padding-left:11px;padding-right:0}
+tr.row-selected td{background:color-mix(in srgb,var(--accent-2) 10%,transparent)}
+
+/* column-header resize handle — always-visible divider, separate from the reorder grip */
+th{padding-right:14px}
+.colrsz{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:col-resize;display:flex;align-items:center;justify-content:center}
+.colrsz::after{content:"";width:1px;height:60%;background:var(--stroke)}
+.colrsz:hover::after{background:var(--accent-2)}
+
+/* right-click batch-action context menu — adapts .pop / .fmenu popover language */
+.ctxmenu{position:absolute;z-index:40;min-width:220px;background:var(--panel-solid);border:var(--border-w) solid var(--stroke);border-radius:var(--r-card);box-shadow:var(--elev-card);padding:6px;box-sizing:border-box}
+:root[data-theme="aurora"] .ctxmenu{box-shadow:0 0 0 1px var(--glow-a),0 0 34px var(--glow-b),0 24px 60px rgba(0,0,0,.6)}
+.ctxmenu .ch{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);padding:6px 10px 8px;border-bottom:1px solid var(--hair);margin-bottom:4px}
+.ctxmenu .ci{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-chip);cursor:pointer;font-family:var(--font-body);font-size:12.5px;color:var(--text)}
+.ctxmenu .ci:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.ctxmenu .ci .ico{color:var(--dim);flex:none}
+.ctxmenu .ci.dis{color:var(--faint);cursor:not-allowed}
+.ctxmenu .ci.dis .ico{color:var(--faint)}
+.ctxmenu .ci.dis:hover{background:transparent}
+.ctxmenu .cdiv{height:1px;background:var(--hair);margin:4px 2px}
+
+/* paste field morph — resolved state keeps the field's row height; title truncates
+   on the left, a fixed-width control group (never shrinks) sits on the right */
+.field.resolved{gap:12px}
+.field .rtitle{display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto;overflow:hidden;font-family:var(--font-display);font-size:13px;color:var(--text)}
+.field .rtitle .ico{color:var(--accent);flex:none}
+:root[data-theme="tapedeck"] .field .rtitle .ico{color:var(--brand)}
+.field .rtitle .rtt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.field .rctrls{flex:none;display:flex;align-items:center;gap:8px}
+.field .rctrls .pick{max-width:132px}

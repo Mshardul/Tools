@@ -190,3 +190,8 @@ claude-usage/usage.db
 claude-usage/projects
 apps/claude-usage/usage.db
 apps/claude-usage/projects
+# Local Claude Code state / worktrees
+.claude/
+
+# Playwright MCP verification dumps (screenshots, page YAML, console logs)
+.playwright-mcp/
