@@ -307,16 +307,19 @@ contract.
 
 ### 5.4 Downloads table
 
-- One table, newest on top, **one row per video**. Manager layout: **status left rail** + paste field / Columns / column headers as the fixed region; rows scroll independently (virtualised). When visible columns overflow the width the body and the header row scroll horizontally in sync.
+- One table, newest on top, **one row per video**. Manager layout: **status left rail** + paste field / Columns / column headers as the fixed region; the Downloads **grid** scrolls inside an AppKit island (virtualised `NSTableView`). When visible columns overflow the width the body and the header row scroll horizontally in sync.
 - **Status left rail** (`All · Downloading · Done · Inactive`, badge on Inactive) **replaces** top filter chips — do not keep both. Rail mapping and row status / actions contract: `apps/media-grabber/docs/job-status-and-actions.md`.
 - **No Status column as default chrome.** Status column stays in Columns (hidden by default); rail is the everyday filter. Status labels are the nine `JobState`s 1:1 (plain-language aliases only — no invented labels such as `retrying`). Detail (queue `#N`, backoff, host rate, failure reason) → **Remark** (hover + keyboard focus; optional Columns-menu column; a11y not hover-only). Short Remark catalog: `job-status-and-actions.md` §5.
 - **Default-visible columns:** Title · Progress · Speed · ETA · Type · Quality · Size · **Actions**. Hidden by default include Status · Site · Remark · Added at · Finished at · Duration · Destination · Attempt · Client used. Full table in design-system §4.2.3.
-- Columns are **draggable to reorder** (Phase 12 ships chrome if not already). Actions is pinned last and cannot hide or move; Title cannot hide but can move. Column order, visibility, the active sort, and filters persist.
+- Columns are **draggable to reorder**. Actions is pinned last and cannot hide or move; Title cannot hide but can move. Column order, visibility, widths, the active sort, and filters persist.
 - **One active sort column** (`↕` cycles asc → desc → off; a new column's `↕` clears the previous); per-column **filter** (`▽` opens a menu) where meaningful; Progress / Speed / ETA / Size are sort-only; Actions is neither. Nil values sort last regardless of direction.
 - **Title** truncates with an ellipsis at a fixed max width and carries the full title as a tooltip on hover — a row's height never grows to fit a long title.
 - **Site** shows the host's friendly display name (`YouTube`, `Vimeo`, `SoundCloud`, `Internet Archive`), the same mapping `HealthController`'s per-host chip already uses — never the raw domain.
 - **Actions** follow `job-status-and-actions.md`: pause / resume, cancel, force-start (conditional on queued; always on cooldown), restart / restart-with-sign-in, reveal, open in browser, remove, show log. **Remove** deletes the persistence entry; **Cancel** keeps `cancelled` in history. **Restart** always starts from attempt 0. Offer only enabled actions for the row’s state (absent, not merely disabled), unless Phase 11 plan chooses otherwise. Cap ~5 icons per row.
-- **There is no per-row expansion, no detail view.** Row selection / batch actions → Phase 12. Failure detail is Remark + row actions + the external log.
+- **There is no per-row expansion, no detail view.** Failure detail is Remark + row actions + the external log.
+- **Row selection + batch** (Phase 12): checkbox column + ⌘-click toggle + Shift-click range over visible child order; header select-all = currently visible children only. Selection lives on `RowStore` (session only) and prunes to the visible set after rail / column-filter / collapse. When selection is non-empty, a **batch bar above the table** shows `N selected` + eligible verbs (`job-status-and-actions.md` §8); empty selection hides it. Per-row Actions stay visible and still target that row only.
+- **Column widths** persist on `ColumnConfig` (`columns.json`); resize every data column except Actions + the checkbox; double-click divider one-shot auto-fits to widest visible cell. Live width readout while dragging → Phase 13.
+- **Framework seam:** AppKit owns the entire Downloads grid (headers + body cells drawn with shared palette/type tokens — no default `NSHostingView` cells). SwiftUI owns shell outside that rect (rail, batch bar, Columns menu, dialogs). Flat `NSTableView` + synthetic playlist group header rows — not `NSOutlineView`. Queue-row drag-reorder → Phase 14.
 
 ### 5.5 Playlist group in the table
 
@@ -926,7 +929,7 @@ add cases and wiring, never relayout — §12.2.
   new mockups (reuses the Phase 9 field-filling screens). App icon and Share
   Extension first-enable nudge park in Phase 13 (§12.1).
 
-- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** Diagnostics moves into
+- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** *(shipped)* Diagnostics moves into
   Preferences (System group) rather than top-level nav — a status/support tool
   a small share of users open, not a primary destination (§5.10); its report
   card, Copy report, and Share diagnostic bundle actions are built here, and
@@ -995,9 +998,23 @@ add cases and wiring, never relayout — §12.2.
   existing `ColumnConfig.moveColumn` + persistence); resizable column widths
   (drag handles + persist in `ColumnConfig`); multi-select row actions (this
   phase’s plan reverses parent §5.4 “no row selection” and ships selection +
-  batch actions); queue-row drag-reorder if still desired at plan time.
-  **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no
-  merged transfer column). Builds on Phase 11’s
+  batch actions). **Queue-row drag-reorder → Phase 14** (locked 2026-09-22).
+  **Batch chrome:** bar above the table when selection non-empty (`N selected`
+  + eligible verbs); hidden when empty — not a floating footer (locked
+  2026-09-22). Per-row Actions stay while selection is active — batch bar
+  additive; row action targets that row only (locked 2026-09-22). Header
+  select-all = currently visible rows only (rail + column filters; not
+  collapsed-away playlist children) (locked 2026-09-22). On rail/column-filter
+  change: keep selected IDs still visible, drop the rest — no off-screen
+  batch (locked 2026-09-22). Resize: all data columns except Actions +
+  checkbox; double-click divider auto-fits; widths in `ColumnConfig`
+  (locked 2026-09-22). Multi-select: checkboxes + ⌘-click toggle +
+  Shift-click range on visible order (locked 2026-09-22). **Table substrate:**
+  AppKit owns the entire Downloads grid (headers + cells drawn in AppKit with
+  shared tokens); SwiftUI owns shell outside that rect — rail / batch bar /
+  dialogs (locked 2026-09-22). Not default hosted SwiftUI cells.
+  **Progress, Speed, and ETA stay separate columns** (locked
+  2026-09-12 — no merged transfer column). Builds on Phase 11’s
   manager Home — do not reintroduce filter chips; Status column stays optional
   (hidden by default). Detail
   when reached; leaf backlog mirrors this stub.
@@ -1012,9 +1029,11 @@ add cases and wiring, never relayout — §12.2.
   footer (content into HealthStrip chips). Per-host adaptive concurrency
   (cap per `RateHost`; additive on Phase 6 scheduler seams). *Hint
   (from Phase 10):* app icon — no `.icns`/`.xcassets` exists yet, app-wide
-  gap. *Hint (from Phase 10):* Share Extension first-enable nudge — macOS
+  gap. *Hint   (from Phase 10):* Share Extension first-enable nudge — macOS
   disables Share Extensions by default until enabled once in Privacy &
-  Security → Extensions; evaluate a first-run hint. *Hint (UI review
+  Security → Extensions; evaluate a first-run hint. *Hint (from Phase 12):*
+  live column-width readout while resizing (mockup only until then).
+  *Hint (UI review
   2026-09-12):* first-run empty Home — redesign kicker / headline / step-card
   copy and composition (plan when reached). *Hint (UI review 2026-09-12):*
   Aurora body face — replace Inter with a more distinctive grotesk (design
@@ -1023,9 +1042,10 @@ add cases and wiring, never relayout — §12.2.
 - **Phase 14 — Post-v1 maturity.** Engine and product work that is intentionally
   after the Phase 13 polish / v1-name ship gate. **Playlist-group aggregate
   state** — real `PlaylistGroupState` in GrabberKit (replace UI-only roll-up and
-  no-op `savePlaylistGroups` / `loadPlaylistGroups`). **Metadata-probe throttle
-  visibility** — wire a real `MetadataTokenBucket` (replace
-  `UnlimitedMetadataTokenBucket`) + probe-wait visibility on the job.
+  no-op `savePlaylistGroups` / `loadPlaylistGroups`). **Queue-row drag-reorder**
+  (parked from Phase 12 — engine queue order + UI; fights active sort).
+  **Metadata-probe throttle visibility** — wire a real `MetadataTokenBucket`
+  (replace `UnlimitedMetadataTokenBucket`) + probe-wait visibility on the job.
   **POT / shield rotation** — provider pool / burned-client set beyond single
   `PotProviderProcess` (local only; hosted/cloud POT stays §13 never).
   **Always-on-cookies model** (default Safari, silent fall back — see §7).

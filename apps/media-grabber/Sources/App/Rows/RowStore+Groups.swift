@@ -47,6 +47,7 @@ extension RowStore {
         }
 
         visibleItems = items
+        pruneSelectionToVisible()
         if groups != nextGroups {
             groups = nextGroups
         }

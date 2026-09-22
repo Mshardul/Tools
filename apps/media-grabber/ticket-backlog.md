@@ -88,7 +88,7 @@ are in spec §12.2.
   `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
   `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
   App icon + Share Extension first-enable nudge park in **Phase 13**.
-- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** Diagnostics
+- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** *(shipped)* Diagnostics
   moves into Preferences (System group) rather than top-level nav; report card,
   Copy report, and Share diagnostic bundle (system share sheet, not a plain
   clipboard copy) built here, plus the **real canary probe** shared with
@@ -148,13 +148,36 @@ are in spec §12.2.
   existing `ColumnConfig.moveColumn` + persistence); resizable column widths
   (drag handles + persist in `ColumnConfig`); multi-select row actions (plan
   **reverses** parent §5.4 “no row selection” and ships selection + batch
-  actions in this phase); queue-row drag-reorder if still desired at plan time.
+  actions in this phase). **Queue-row drag-reorder parks in Phase 14**
+  (locked 2026-09-22 — column chrome + multi-select is enough this phase;
+  row reorder needs engine order semantics and fights active sort).
   **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no
   merged transfer column). Builds on Phase 11’s manager Home (rail; Status
   hidden by default) — do not reintroduce filter chips. Multi-select batch
   verbs match row / playlist group eligibility
   (`job-status-and-actions.md` §8); Force start only when exactly one eligible
-  row is selected.
+  row is selected. **Batch chrome (locked 2026-09-22):** when selection is
+  non-empty, a bar above the table (`N selected` + eligible batch verbs)
+  appears; empty selection hides it. Not a floating footer. **Per-row Actions
+  stay visible while a selection is active** (locked 2026-09-22) — batch bar
+  is additive; a row action still targets only that row. **Header select-all
+  (locked 2026-09-22):** selects every currently visible row (after rail +
+  column filters); does not select collapsed-away playlist children.
+  **Selection vs rail/filters (locked 2026-09-22):** on rail or column-filter
+  change, keep selected job IDs that remain visible; drop the rest (no
+  “remember off-screen” batch). Empty residual → hide batch bar.
+  **Resize (locked 2026-09-22):** every data column except Actions + the
+  checkbox column; min-width clamp; double-click divider auto-fits that
+  column to widest visible cell (one-shot). Widths persist in `ColumnConfig`.
+  **Multi-select input (locked 2026-09-22):** checkboxes + ⌘-click row toggle
+  + Shift-click range (visible-row order).
+  **Table substrate (locked 2026-09-22):** AppKit owns the **entire** Downloads
+  table surface (headers, rows, selection, column resize/reorder, scroll);
+  SwiftUI owns Home chrome outside that rect (rail, batch bar, Columns menu,
+  dialogs, rest of app). Cells/headers are **AppKit-drawn** with shared design
+  tokens — not default `NSHostingView` per cell. Not a pure SwiftUI `Table`;
+  not forever-extending today’s LazyVStack. Phase 14 row-reorder uses this
+  same grid.
 - **Phase 13 — Polish.** Success + chip-refresh-failure toasts; native
   notifications for backgrounded failures; the first-run-cards → table
   transition + emptied-table state; full keyboard-nav + VoiceOver +
@@ -173,12 +196,13 @@ are in spec §12.2.
   2026-09-12):* first-run empty Home — redesign kicker / headline / step-card
   copy and composition. *Hint (UI review 2026-09-12):* Aurora body face —
   replace Inter with a more distinctive grotesk (with font bundling above).
+  *Hint (from Phase 12):* live column-width readout while resizing.
 - **Phase 14 — Post-v1 maturity.** Playlist-group aggregate state (engine);
   real metadata-probe token bucket + visibility; POT/shield rotation;
   always-on-cookies model; remote `player_client` order JSON; per-site helpers
-  beyond YouTube; optional UX extras (subtitles/embed, menu bar, schedules,
-  stats, bandwidth graphs, per-skin light/dark, compact breakpoint);
-  evaluate `.shieldDown` halt + `.userReset` soft transition (ship or drop in
-  plan); Sparkle/notarization/bundled deps only if Developer ID exists. Full
-  stub in parent §12.1.
+  beyond YouTube; **queue-row drag-reorder** (parked from Phase 12); optional
+  UX extras (subtitles/embed, menu bar, schedules, stats, bandwidth graphs,
+  per-skin light/dark, compact breakpoint); evaluate `.shieldDown` halt +
+  `.userReset` soft transition (ship or drop in plan); Sparkle/notarization/
+  bundled deps only if Developer ID exists. Full stub in parent §12.1.
 

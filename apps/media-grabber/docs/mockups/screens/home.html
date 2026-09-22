@@ -474,8 +474,8 @@
   </div>
 
 <div class="screen" id="s5-3">
-    <div class="cap"><b>5.3</b> Downloads table — multi-select batch context menu</div>
-    <div class="sub">Right-click batch menu, four rows selected with mixed states, Pause / Resume / Cancel / Remove.</div>
+    <div class="cap"><b>5.3</b> Downloads table — multi-select + batch bar</div>
+    <div class="sub">Bar above the table when selection is non-empty (<code>N selected</code> + eligible verbs). Per-row Actions stay visible.</div>
     <div class="app">
       <div class="hdr"><span class="orb"></span><span class="wm">MediaGrabber</span>
         <nav class="nav"><a class="on">Home</a><a>Preferences</a><a>About</a></nav></div>
@@ -490,6 +490,15 @@
         <div class="mg-main">
         <div class="hero hero-tight">
           <div class="field solo"><input placeholder="Paste a link"></div>
+        </div>
+        <div class="batchbar" style="display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--panel-solid);border-bottom:1px solid var(--hair);font:500 12px/1.3 var(--font-body);color:var(--text)">
+          <span>4 selected</span>
+          <button type="button" style="background:none;border:0;color:var(--accent);font:500 12px var(--font-body);cursor:pointer;padding:0">Pause</button>
+          <button type="button" style="background:none;border:0;color:var(--accent);font:500 12px var(--font-body);cursor:pointer;padding:0">Resume</button>
+          <button type="button" style="background:none;border:0;color:var(--accent);font:500 12px var(--font-body);cursor:pointer;padding:0">Cancel</button>
+          <button type="button" style="background:none;border:0;color:var(--accent);font:500 12px var(--font-body);cursor:pointer;padding:0">Remove</button>
+          <span style="flex:1"></span>
+          <button type="button" style="background:none;border:0;color:var(--dim);font:400 12px var(--font-body);cursor:pointer;padding:0">Clear</button>
         </div>
         <div class="tablewrap fill">          <div class="table-scroll">
           <table><thead><tr>
@@ -518,7 +527,7 @@
         </div>
       </div>
     </div>
-    <p class="dims"><b>Dimensions</b> — the context menu opens anchored to the cursor (shown here pinned to the triggering row for legibility); "N selected" header line only appears at 2+ selected rows. Pause and Resume each read as enabled because exactly one selected row qualifies (running, paused); a real build would grey the icon+label pair, not hide it, when zero selected rows qualify.</p>
+    <p class="dims"><b>Dimensions</b> — batch chrome is the bar above the table (<code>N selected</code> + verbs + Clear), not a floating footer. Per-row Actions remain. Optional context menu may still mirror the same verbs.</p>
   </div>
 
 </div>

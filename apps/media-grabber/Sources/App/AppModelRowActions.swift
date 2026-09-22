@@ -56,7 +56,7 @@ extension AppModel {
         rowStore.applyGroups(playlistGroups)
     }
 
-    private func confirmedForceStart(_ id: UUID) async {
+    func confirmedForceStart(_ id: UUID) async {
         if await engine.willForceStartEvict(id) {
             let confirmed = await confirm(AppModelDialogs.forceStartEvictionConfirmation())
             guard confirmed else { return }
@@ -73,7 +73,7 @@ extension AppModel {
         await removeRow(id)
     }
 
-    private func needsRemoveConfirm(_ snapshot: JobSnapshot) -> Bool {
+    func needsRemoveConfirm(_ snapshot: JobSnapshot) -> Bool {
         switch snapshot.state {
         case .cancelled, .failed:
             false
@@ -84,7 +84,7 @@ extension AppModel {
         }
     }
 
-    private func removeRow(_ id: UUID) async {
+    func removeRow(_ id: UUID) async {
         let removedGroupID = rowStore.rows.first { $0.id == id }?.snapshot.playlistGroupID
         await engine.remove(id)
         guard let groupID = removedGroupID else { return }

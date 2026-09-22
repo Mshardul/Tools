@@ -26,26 +26,29 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
     public var sortColumn: ColumnID?
     public var sortDirection: SortDirection?
     public var columnFilters: [ColumnID: [String]]
+    public var columnWidths: [ColumnID: Double]
 
     public init(
         visibleColumns: [ColumnID] = ColumnID.defaultVisible + [.actions],
         columnOrder: [ColumnID] = ColumnID.defaultOrder,
         sortColumn: ColumnID? = .addedAt,
         sortDirection: SortDirection? = .descending,
-        columnFilters: [ColumnID: [String]] = [:]
+        columnFilters: [ColumnID: [String]] = [:],
+        columnWidths: [ColumnID: Double] = [:]
     ) {
         self.visibleColumns = visibleColumns
         self.columnOrder = columnOrder
         self.sortColumn = sortColumn
         self.sortDirection = sortDirection
         self.columnFilters = columnFilters
+        self.columnWidths = columnWidths
         enforceInvariants()
     }
 
     public static let `default` = ColumnConfig()
 
     private enum CodingKeys: String, CodingKey {
-        case visibleColumns, columnOrder, sortColumn, sortDirection, columnFilters
+        case visibleColumns, columnOrder, sortColumn, sortDirection, columnFilters, columnWidths
     }
 
     public init(from decoder: Decoder) throws {
@@ -55,12 +58,18 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
         let filtersRaw = try container.decodeIfPresent(
             [String: [String]].self, forKey: .columnFilters
         ) ?? [:]
+        let widthsRaw = try container.decodeIfPresent(
+            [String: Double].self, forKey: .columnWidths
+        ) ?? [:]
         visibleColumns = visible.compactMap(ColumnID.init)
         columnOrder = order.compactMap(ColumnID.init)
         sortColumn = try container.decodeIfPresent(String.self, forKey: .sortColumn)
             .flatMap(ColumnID.init)
         sortDirection = try container.decodeIfPresent(SortDirection.self, forKey: .sortDirection)
         columnFilters = Dictionary(uniqueKeysWithValues: filtersRaw.compactMap { key, value in
+            ColumnID(rawValue: key).map { ($0, value) }
+        })
+        columnWidths = Dictionary(uniqueKeysWithValues: widthsRaw.compactMap { key, value in
             ColumnID(rawValue: key).map { ($0, value) }
         })
         enforceInvariants()
@@ -77,6 +86,11 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
             $0.value
         ) })
         try container.encode(filtersRaw, forKey: .columnFilters)
+        let widthsRaw = Dictionary(uniqueKeysWithValues: columnWidths.map { (
+            $0.key.rawValue,
+            $0.value
+        ) })
+        try container.encode(widthsRaw, forKey: .columnWidths)
     }
 
     // Actions is pinned last + always visible; Title is always visible.
@@ -104,6 +118,12 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
         visibleColumns = visibleColumns.filter { known.contains($0) }
         columnOrder = columnOrder.filter { known.contains($0) }
         columnFilters = columnFilters.filter { known.contains($0.key) }
+        columnWidths = columnWidths.filter { known.contains($0.key) && $0.key != .actions }
+    }
+
+    public mutating func setColumnWidth(_ column: ColumnID, _ width: Double) {
+        guard column != .actions, width.isFinite, width > 0 else { return }
+        columnWidths[column] = width
     }
 
     public func orderedVisibleColumns() -> [ColumnID] {
@@ -139,8 +159,9 @@ public struct ColumnConfig: Codable, Sendable, Equatable {
         enforceInvariants()
     }
 
+    // Destination `.actions` means "place just before Actions" (Actions stays pinned last).
     public mutating func moveColumn(from source: ColumnID, to destination: ColumnID) {
-        guard source != .actions, destination != .actions, source != destination else { return }
+        guard source != .actions, source != destination else { return }
         guard let fromIndex = columnOrder.firstIndex(of: source),
               let toIndex = columnOrder.firstIndex(of: destination)
         else { return }

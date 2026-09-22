@@ -12,10 +12,12 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     private struct State {
         var submitted: [(DownloadRequest, Bool)] = []
         var paused: [UUID] = []
+        var resumed: [UUID] = []
         var cancelled: [UUID] = []
         var removed: [UUID] = []
         var retried: [UUID] = []
         var retriedWithCookies: [UUID] = []
+        var forceStarted: [UUID] = []
         var submitResults: [SubmitResult] = []
         var hasActive = false
         var snapshot = QueueSnapshot(
@@ -55,6 +57,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.read { $0.paused }
     }
 
+    var resumedIDs: [UUID] {
+        box.read { $0.resumed }
+    }
+
     var cancelledIDs: [UUID] {
         box.read { $0.cancelled }
     }
@@ -65,6 +71,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     var retriedIDs: [UUID] {
         box.read { $0.retried }
+    }
+
+    var forceStartedIDs: [UUID] {
+        box.read { $0.forceStarted }
     }
 
     var retriedWithCookiesIDs: [UUID] {
@@ -192,7 +202,9 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { $0.paused.append(jobID) }
     }
 
-    func resume(_: UUID) async {}
+    func resume(_ jobID: UUID) async {
+        box.mutate { $0.resumed.append(jobID) }
+    }
 
     func retry(_ jobID: UUID) async {
         box.mutate { $0.retried.append(jobID) }
@@ -210,7 +222,9 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { $0.removed.append(jobID) }
     }
 
-    func forceStart(_: UUID) async {}
+    func forceStart(_ jobID: UUID) async {
+        box.mutate { $0.forceStarted.append(jobID) }
+    }
 
     func willForceStartEvict(_ id: UUID) async -> Bool {
         box.read { $0.forceStartEvictsFor.contains(id) }

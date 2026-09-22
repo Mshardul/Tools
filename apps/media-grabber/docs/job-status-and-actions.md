@@ -210,6 +210,17 @@ Used for quit prompt and in-flight motif — **not** the same set as the Downloa
 
 Batch actions use the **same** verbs and eligibility as single-row / playlist group. Apply only to selected rows that offer that action.
 
+**Chrome (locked 2026-09-22):** when ≥1 row is selected, a bar above the
+Downloads table shows `N selected` plus the eligible batch verbs; the bar
+hides when selection is empty. Not a floating footer. Per-row Actions stay
+visible; the batch bar is additive — a row action still targets only that row.
+Header select-all covers **currently visible rows only** (after rail + column
+filters); collapsed-away playlist children are not selected (locked 2026-09-22).
+On rail or column-filter change: **keep selected IDs that remain visible,
+drop the rest** — batch never applies to off-screen selection (locked
+2026-09-22). Input: checkboxes + ⌘-click toggle + Shift-click range over
+visible-row order (locked 2026-09-22).
+
 | Batch | Eligibility |
 |---|---|
 | Pause | `running` |
@@ -228,4 +239,4 @@ Inactive ────── failed, cancelled
 All ─────────── ∪
 ```
 
-Phase 11 implements this contract; keep `state-flow.md` as the as-shipped transition encyclopedia until code catches up.
+Phase 11 shipped this contract; keep `state-flow.md` as the as-shipped transition encyclopedia until any remaining engine gaps catch up.

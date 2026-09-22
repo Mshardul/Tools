@@ -80,6 +80,8 @@ final class RowStore {
     var localCollapsed: [UUID: Bool] = [:]
     private var progressBuckets: [UUID: Int] = [:]
     private(set) var lastRevision: UInt64 = 0
+    var selectedJobIDs: Set<UUID> = []
+    var selectionAnchorID: UUID?
 
     init(columnConfig: ColumnConfig = .default) {
         self.columnConfig = columnConfig

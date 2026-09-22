@@ -274,12 +274,15 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 | Client used | hidden | yes | yes | yes | yes (checklist) |
 | **Actions** | ✓ visible | **no** | **no (pinned last)** | — | — |
 
-- **Column headers are draggable** to reorder (except Actions, pinned last). *(Phase 12 if chrome not yet shipped.)*
-- Column order, visibility, the active sort column + direction, and active filters **persist** as a `ColumnConfig` in `columns.json` (separate from `Preferences`; see spec §4).
+- **Column headers are draggable** to reorder (except Actions, pinned last).
+- Column order, visibility, **widths**, the active sort column + direction, and active filters **persist** as a `ColumnConfig` in `columns.json` (separate from `Preferences`; see spec §4). Checkbox column is not a `ColumnID` — fixed width, not in `columnWidths`.
 - A column whose data source is not yet populated (`Attempt`, `Client used`) shows an em-dash and still sorts; a checklist filter with only a "(none)" option is allowed.
 - Nil values always sort **last**, regardless of direction.
 - There is **no "Playlist" column** — a playlist's membership is shown by the group header + indented child rows + spine (§4.2.4), not a column.
-- No per-row expansion. No detail view. Row selection → Phase 12. The Actions column is the primary per-row interaction model.
+- No per-row expansion. No detail view. The Actions column remains the primary per-row interaction model and stays visible while a multi-select is active.
+- **Selection column** (leading, fixed width, not a `ColumnID`) + ⌘-click / Shift-click over visible child order; header checkbox selects all currently visible children.
+- **Batch bar** (SwiftUI, above the AppKit grid): when selection is non-empty, `N selected` + eligible verbs (`job-status-and-actions.md` §8); hidden when empty. Not a floating footer.
+- **Grid substrate:** AppKit draws headers and body cells with shared palette / type / spacing tokens (`DownloadsGridTokens`). SwiftUI owns shell outside the grid (rail, batch bar, Columns menu). Do not default to `NSHostingView` per cell.
 
 **Cell treatments:**
 - *Title* — motif spinner prefix on an actively-downloading row; playlist children indented with the spine connector (§4.2.4); full title as hover tooltip when truncated.

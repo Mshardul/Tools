@@ -85,10 +85,10 @@ state with its triggers).
 
 Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
 
-Not yet built: Diagnostics / About (Phase 11), Downloads table chrome —
-column header drag-reorder, multi-select, resizable widths (Phase 12; Progress /
-Speed / ETA stay separate columns), polish / fonts / product name (Phase 13). See
-[ticket-backlog.md](ticket-backlog.md).
+Not yet built: polish / fonts / product name (Phase 13); queue-row drag-reorder
+(Phase 14). Phase 12 Downloads table chrome (AppKit grid, multi-select + batch
+bar, column resize/reorder) is implemented — Progress / Speed / ETA stay
+separate columns. See [ticket-backlog.md](ticket-backlog.md).
 
 ## Known gaps
 

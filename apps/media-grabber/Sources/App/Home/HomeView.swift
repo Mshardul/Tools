@@ -270,6 +270,12 @@ extension HomeView {
                     onAction: { id, action in
                         Task { await appModel.handleRowAction(id, action: action) }
                     },
+                    onBatchAction: { action in
+                        Task { await appModel.handleBatchAction(action) }
+                    },
+                    onClearSelection: {
+                        appModel.clearTableSelection()
+                    },
                     onPlaylistGroupAction: { id, action in
                         Task { await appModel.handlePlaylistGroupAction(id, action: action) }
                     },

@@ -91,6 +91,17 @@ enum AppModelDialogs {
         )
     }
 
+    static func batchCancelConfirmation() -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Cancel selected downloads?",
+            message: "Videos still waiting or downloading will stop. Files already saved stay.",
+            confirmTitle: "Cancel",
+            cancelTitle: "Keep",
+            isDestructive: true,
+            suppressionKey: "batch-cancel"
+        )
+    }
+
     static func probeErrorMessage(for error: MetadataError, vpnActive: Bool = false) -> String {
         switch error {
         case .badURL: "That doesn't look like a valid link."
