@@ -46,6 +46,45 @@ final class DownloadEngineSchedulerTests: XCTestCase {
         XCTAssertEqual(runner.maxConcurrent, 2)
     }
 
+    func test_sameHostAdaptiveStartCapBlocksExtraQueuedJobs() async {
+        let runner = FakeProcessRunner()
+        runner.perRunDelay = .milliseconds(200)
+        runner.script(Fix.completingScript(), forPathEndingIn: "yt-dlp")
+        let probe = FakeMetadataProbe()
+        let engine = Fix.engine(runner: runner, probe: probe, cap: 6)
+        let collector = EventCollector(engine.events)
+        let meta = MediaMetadata(
+            title: "Clip", durationSeconds: 10, isPlaylist: false,
+            sourceURL: "https://youtube.com/watch?v=a", extractor: "youtube"
+        )
+
+        var ids: [UUID] = []
+        for index in 1 ... 4 {
+            let result = await engine.submit(
+                Fix.request(url: "https://youtube.com/watch?v=\(index)"),
+                force: false,
+                prefetchedMetadata: meta
+            )
+            guard case let .queued(id) = result else { return XCTFail("expected .queued") }
+            ids.append(id)
+        }
+
+        _ = await collector.waitForState(ids[0]) { $0 == .running }
+        _ = await collector.waitForState(ids[1]) { $0 == .running }
+        try? await Task.sleep(for: .milliseconds(40))
+
+        let snap = collector.latestSnapshot()
+        let running = snap?.jobs.filter { $0.state == .running }.count ?? 0
+        let queued = snap?.jobs.filter { $0.state == .queued }.count ?? 0
+        XCTAssertEqual(running, 2, "adaptive start cap is 2 even when prefs cap is 6")
+        XCTAssertEqual(queued, 2)
+        XCTAssertLessThanOrEqual(runner.maxConcurrent, 2)
+
+        for id in ids {
+            _ = await collector.waitForState(id) { $0 == .completed }
+        }
+    }
+
     func test_burstOfThreeFreshURLs_pipelines() async {
         let runner = FakeProcessRunner()
         runner.perRunDelay = .milliseconds(120)

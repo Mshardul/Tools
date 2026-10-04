@@ -156,6 +156,10 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
 
+    func upsertPlaylistGroup(_: PersistedPlaylistGroup) async {}
+    func setPlaylistGroupCollapsed(id _: UUID, _: Bool) async {}
+    func loadPlaylistGroupsFromPersistence() async {}
+
     func preview(_: String) async -> Result<MediaMetadata, MetadataError> {
         .failure(.network)
     }

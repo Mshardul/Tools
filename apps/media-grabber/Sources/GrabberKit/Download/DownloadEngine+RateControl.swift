@@ -10,9 +10,9 @@ extension DownloadEngine {
         return dependencies.debugFlags.concurrencyCapOverride ?? preferences.maxConcurrentDownloads
     }
 
-    // The scheduler and forceStart eviction both use this — never adaptiveCap or cap alone.
+    // Global prefs ceiling — per-host adaptive caps are enforced via hostCapBlockedIDs.
     var effectiveCap: Int {
-        min(rateLimiter.adaptiveCap, cap)
+        cap
     }
 
     func blockedHostIDs(now: Date, queuedOnly: Bool) -> Set<UUID> {
@@ -21,6 +21,25 @@ extension DownloadEngine {
             guard stateMatches else { return false }
             return rateLimiter.blocked(host: RateHost(urlString: job.request.url), now: now)
         }.map(\.id))
+    }
+
+    func hostCapBlockedIDs(running: [DownloadJob]) -> Set<UUID> {
+        let runningCounts = Dictionary(
+            grouping: running, by: { RateHost(urlString: $0.request.url) }
+        ).mapValues(\.count)
+        var remaining: [RateHost: Int] = [:]
+        var blocked = Set<UUID>()
+        for job in jobs where job.state == .queued {
+            let host = RateHost(urlString: job.request.url)
+            let left = remaining[host]
+                ?? max(0, rateLimiter.adaptiveCap(for: host) - (runningCounts[host] ?? 0))
+            if left == 0 {
+                blocked.insert(job.id)
+            } else {
+                remaining[host] = left - 1
+            }
+        }
+        return blocked
     }
 
     private func jobNeedsProbe(_ job: DownloadJob) -> Bool {
@@ -42,8 +61,8 @@ extension DownloadEngine {
         evaluateSchedule()
     }
 
-    func adaptiveCapForTest() -> Int {
-        rateLimiter.adaptiveCap
+    func adaptiveCapForTest(_ host: RateHost) -> Int {
+        rateLimiter.adaptiveCap(for: host)
     }
 
     func effectiveCapForTest() -> Int {
@@ -91,6 +110,7 @@ extension DownloadEngine {
             if job.state == .probing {
                 probeTask?.cancel()
                 probeInFlight = false
+                job.probeWaitUntil = nil
             } else {
                 childTasks[job.id]?.cancel()
             }
@@ -107,7 +127,7 @@ extension DownloadEngine {
 
     public func resetCircuit(_ host: RateHost) async {
         guard rateLimiter.circuitOpenHosts.contains(host) else { return }
-        rateLimiter.resetCircuit(host: host)
+        rateLimiter.resetCircuit(host: host, now: dependencies.clock.now)
         logEvent(.circuitReset(host: host.canonical, byUser: true))
         afterRateReset()
     }
@@ -115,7 +135,7 @@ extension DownloadEngine {
     public func resetAllCircuits() async {
         let hosts = rateLimiter.circuitOpenHosts
         guard !hosts.isEmpty else { return }
-        rateLimiter.resetAllCircuits()
+        rateLimiter.resetAllCircuits(now: dependencies.clock.now)
         for host in hosts {
             logEvent(.circuitReset(host: host.canonical, byUser: true))
         }

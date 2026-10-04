@@ -100,16 +100,21 @@ final class AppModelPlaylistGroupActionTests: XCTestCase {
         XCTAssertEqual(engine.cancelledIDs, [])
     }
 
-    func test_collapseUpdatesRowStoreRegistryAndPersistence() {
+    func test_collapseUpdatesRowStoreRegistryAndPersistence() async {
         let persistence = FakeQueuePersisting()
-        let model = makeModel(persistence: persistence)
+        let engine = FakeEngine()
+        engine.attachPersistence(persistence)
+        let model = makeModel(engine: engine, persistence: persistence)
         model.playlistGroups = [group()]
+        await engine.upsertPlaylistGroup(group())
         model.rowStore.apply(.snapshot(queueSnapshot([
             snap(1, state: .queued, playlistGroupID: groupID)
         ])))
         model.rowStore.applyGroups(model.playlistGroups)
 
-        model.setPlaylistGroupCollapsed(id: groupID, true)
+        await model.setPlaylistGroupCollapsed(id: groupID, true)
+        let snapshot = await engine.currentSnapshot()
+        model.syncPlaylistGroups(from: snapshot)
 
         XCTAssertTrue(model.rowStore.groups.first?.isCollapsed == true)
         XCTAssertTrue(model.playlistGroups.first?.isCollapsed == true)
@@ -119,11 +124,13 @@ final class AppModelPlaylistGroupActionTests: XCTestCase {
     func test_removeLastPlaylistChildDropsRegistryRow() async throws {
         let engine = FakeEngine()
         let persistence = FakeQueuePersisting()
+        engine.attachPersistence(persistence)
         let model = makeModel(engine: engine, persistence: persistence)
+        let jobs = [snap(1, state: .queued, playlistGroupID: groupID)]
+        await engine.upsertPlaylistGroup(group())
+        engine.setSnapshot(queueSnapshot(jobs))
         model.playlistGroups = [group()]
-        model.rowStore.apply(.snapshot(queueSnapshot([
-            snap(1, state: .queued, playlistGroupID: groupID)
-        ])))
+        model.rowStore.apply(.snapshot(queueSnapshot(jobs)))
         model.rowStore.applyGroups(model.playlistGroups)
 
         let action = Task {

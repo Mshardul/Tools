@@ -22,7 +22,7 @@ close Debug menu + Share Extension first-enable as decide-and-ship, then run a
 full accessibility pass **last**.
 
 Working name stays `MediaGrabber`. Product name and app icon are **not** this
-phase — they open Phase 14 as Step 0.
+phase — they park in Phase 17 (moved off Phase 14 — locked 2026-10-04).
 
 ---
 
@@ -30,13 +30,13 @@ phase — they open Phase 14 as Step 0.
 
 | Item | Destination |
 |---|---|
-| Product name (§14) + find-and-replace | Phase 14 Step 0 |
-| App icon | Phase 14 Step 0 |
-| Aurora body-face swap (drop Inter) | Phase 14 |
-| First-run Home copy / composition redesign | Phase 14 |
-| Home banner → footer | Phase 14 |
+| Product name (§14) + find-and-replace | Phase 17 |
+| App icon | Phase 17 |
+| Aurora body-face swap (drop Inter) | Phase 15 |
+| First-run Home copy / composition redesign | Phase 15 |
+| Home banner → footer | Phase 15 |
 | Per-host adaptive concurrency | Phase 14 (engine) |
-| Queue-row drag-reorder | Phase 14 (parked from Phase 12) |
+| Queue-row drag-reorder | Phase 15 (parked from Phase 12) |
 
 ---
 
@@ -53,7 +53,7 @@ phase — they open Phase 14 as Step 0.
 | Debug menu | **Ship** always-present menu exposing existing `DebugFlags` (Force Onboarding, Reset State, Concurrency Cap); argv parsing stays |
 | Share Extension tip | **Ship** one-shot dismissible tip on Home after first Grab (Settings deep-link best-effort); not blocking |
 | A11y | Full keyboard / VoiceOver / `prefers-reduced-motion` sweep **last**, after other Phase 13 UI freezes |
-| Branding | Name + icon deferred to Phase 14 Step 0 |
+| Branding | Name + icon deferred to Phase 17 |
 
 ---
 

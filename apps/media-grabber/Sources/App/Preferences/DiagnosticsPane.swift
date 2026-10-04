@@ -383,7 +383,11 @@ private enum RowVerdict {
 // yt-dlp's path isn't known yet (environment not probed this session) — Run check's own
 // environment probe resolves the real path and this stand-in is discarded before it would matter.
 private struct UnavailableMetadataProbe: MetadataProbing {
-    func probe(_: String, context _: ExtractorContext) async -> Result<MediaMetadata, MetadataError> {
+    func probe(
+        _: String,
+        context _: ExtractorContext,
+        onWait _: (@Sendable (Date?) -> Void)?
+    ) async -> Result<MediaMetadata, MetadataError> {
         .failure(.ytDlpMissing)
     }
 

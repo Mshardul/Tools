@@ -3,7 +3,7 @@
 **Status:** ready for implementation planning
 **Date:** 2026-08-28
 **Leaf:** `apps/media-grabber/` (working directory name; product name is
-chosen at Phase 14 Step 0 branding gate — see §14)
+chosen at Phase 17 branding & release gate — see §14)
 
 ---
 
@@ -20,7 +20,7 @@ chosen at Phase 14 Step 0 branding gate — see §14)
 - [11. Testing](#11-testing)
 - [12. Implementation phasing](#12-implementation-phasing)
 - [13. Never for this product](#13-never-for-this-product)
-- [14. Release decisions (Phase 14 Step 0)](#14-release-decisions-phase-14-step-0)
+- [14. Release decisions (Phase 17)](#14-release-decisions-phase-17)
 
 ---
 
@@ -37,7 +37,7 @@ pick from the available formats → download). **YouTube gets full support** on
 top: a resolution picker, playlist item selection, and the complete
 resilience / cookie / `player_client` machinery in §7. Per-site helpers for
 other messy sites (Instagram / Twitter / TikTok auto-cookies, and so on) park
-in **Phase 14**.
+in **Phase 16**.
 
 **Audience:** consumer-facing, including non-technical users. The resilience
 machinery is real but stays behind plain language — "downloader + media tools",
@@ -299,7 +299,7 @@ contract.
 ### 5.3 Home
 
 - **Hero:** a kicker, a headline, and the paste field. No dashboard or stats widget.
-- **First run, no download ever made:** the paste field plus three step cards ("Paste a link · Pick a format · Press Grab") fill the body. There is **no Downloads table** (no headers, status rail, or Columns button) and **no runway** (there is no link yet). *(First-run copy/layout polish → Phase 14.)*
+- **First run, no download ever made:** the paste field plus three step cards ("Paste a link · Pick a format · Press Grab") fill the body. There is **no Downloads table** (no headers, status rail, or Columns button) and **no runway** (there is no link yet). *(First-run copy/layout polish → Phase 15.)*
 - **After the first Grab:** the step cards are gone permanently, and the Downloads table renders from then on. The field sits above it; the runway appears when a pasted link resolves and is hidden otherwise.
 - **Table emptied later** (every row removed): the table stays, showing a single centred line — "No downloads — paste a link above." The step cards do not return; they are first-run-only.
 - **Runway** (the resolve-and-arm pattern) — **hidden until a pasted link resolves.** On resolve, the field shows an inline `✓ <title>` and the runway appears attached below it: a strip of labelled slots — **Link · Type · Format · Language · Save to** — each a filled dot when set, a hollow dot when not. Type / Format / Language / Save-to seed from last-used or Preferences; Language is always filled (YouTube's default track, or Original when that is the Preferences policy and the video has one). Format (video) lists only this probe's offered quality rungs. **Grab** sits at the end of the runway and is **disabled until the link is resolved and downloadable** — every other slot is pre-filled; the user may change any of them before Grab. The "Save to" slot is the per-download destination override. The runway is the entire add flow — there is no separate Add sheet.
@@ -319,7 +319,7 @@ contract.
 - **There is no per-row expansion, no detail view.** Failure detail is Remark + row actions + the external log.
 - **Row selection + batch** (Phase 12): checkbox column + ⌘-click toggle + Shift-click range over visible child order; header select-all = currently visible children only. Selection lives on `RowStore` (session only) and prunes to the visible set after rail / column-filter / collapse. When selection is non-empty, a **batch bar above the table** shows `N selected` + eligible verbs (`job-status-and-actions.md` §8); empty selection hides it. Per-row Actions stay visible and still target that row only.
 - **Column widths** persist on `ColumnConfig` (`columns.json`); resize every data column except Actions + the checkbox; double-click divider one-shot auto-fits to widest visible cell. Live width readout while dragging → Phase 13.
-- **Framework seam:** AppKit owns the entire Downloads grid (headers + body cells drawn with shared palette/type tokens — no default `NSHostingView` cells). SwiftUI owns shell outside that rect (rail, batch bar, Columns menu, dialogs). Flat `NSTableView` + synthetic playlist group header rows — not `NSOutlineView`. Queue-row drag-reorder → Phase 14.
+- **Framework seam:** AppKit owns the entire Downloads grid (headers + body cells drawn with shared palette/type tokens — no default `NSHostingView` cells). SwiftUI owns shell outside that rect (rail, batch bar, Columns menu, dialogs). Flat `NSTableView` + synthetic playlist group header rows — not `NSOutlineView`. Queue-row drag-reorder (view order, session) → Phase 15.
 
 ### 5.5 Playlist group in the table
 
@@ -498,7 +498,7 @@ swappable resolver if a Developer ID account is ever obtained.
 
 **player_client rotation** — `--extractor-args "youtube:player_client=<c>"`,
 rotating across retry attempts. The order, held as the config constant
-`PlayerClientRotation.default` so it can change without an app release (Phase 14
+`PlayerClientRotation.default` so it can change without an app release (Phase 16
 may fetch it from a small hosted JSON):
 
 1. `tv` — the most reliable now; no token needed for many videos
@@ -520,7 +520,7 @@ action on a failed row. `CookieResolver` resolves the argument at spawn time
 > An always-on-cookies model (default `cookiesFromBrowser` to `.safari`, attempt
 > the cookie read on every download, silently fall back to no cookies on a read
 > failure, classify `cookieReadFailed` only if the cookieless download then also
-> fails) parks in **Phase 14**. `CookieResolver` is already built to support that
+> fails) parks in **Phase 16**. `CookieResolver` is already built to support that
 > unchanged.
 
 **User-Agent** — aligned to the chosen client; a small rotating pool.
@@ -673,7 +673,7 @@ output is copyable.
 - **Distribution:** the ad-hoc-signed `.app` zipped and attached to GitHub Releases. No DMG or `.pkg` (a signed one also wants an account).
 - **First launch on another Mac** (macOS 15 Sequoia removed right-click → Open): the user hits "app is damaged / unverified" → **System Settings → Privacy & Security → Open Anyway** (the button shows for ~1 h after a failed launch), or `xattr -dr com.apple.quarantine /Applications/<App>.app`. One-time. Documented in the leaf README; the repo has a `quarantine-clear` tool.
 - `Info.plist`: `LSMinimumSystemVersion 14.0`; `CFBundleURLTypes` for a custom scheme (Services / other-app handoff); a Services declaration for "Download with …".
-- **If a Developer ID account is obtained (Phase 14):** switch to hardened runtime + notarization, bundle yt-dlp / ffmpeg / the POT provider, adopt Sparkle, and ship a DMG. The dependency layer (`EnvironmentProbe`, `PotProviderProcess`) is structured so "bundled" vs "external" is a single swappable resolver.
+- **If a Developer ID account is obtained (Phase 17):** switch to hardened runtime + notarization, bundle yt-dlp / ffmpeg / the POT provider, adopt Sparkle, and ship a DMG. The dependency layer (`EnvironmentProbe`, `PotProviderProcess`) is structured so "bundled" vs "external" is a single swappable resolver.
 
 ### 10.1 Dependency acquisition — the in-app onboarding
 
@@ -714,7 +714,7 @@ found, the row shows "Update," which opens the release page. The HealthStrip
 carries no equivalent chip for this — engine-freshness is a yt-dlp concept
 (§10.1a), not an app-version one. The user replaces the app manually and redoes
 the one-time Gatekeeper step. Sparkle / notarization / bundled deps park in
-**Phase 14**, gated on obtaining a Developer ID account.
+**Phase 17**, gated on obtaining a Developer ID account.
 
 ## 11. Testing
 
@@ -987,7 +987,7 @@ add cases and wiring, never relayout — §12.2.
   primacy (Install now primary; commands secondary). Phase 11 plan rewrites
   §5.3 / §5.4 + design-system + Home/onboarding mockups before implement.
   Site friendly names if not already shipped. First-run empty Home copy
-  redesign + Aurora body face stay Phase 14.
+  redesign + Aurora body face stay Phase 15.
 
   *Hint: Copy report and Share diagnostic bundle write the clipboard / hand off
   a file — call `IncomingLinkController.markAppPasteboardWrite(_:)` with the
@@ -998,7 +998,8 @@ add cases and wiring, never relayout — §12.2.
   existing `ColumnConfig.moveColumn` + persistence); resizable column widths
   (drag handles + persist in `ColumnConfig`); multi-select row actions (this
   phase’s plan reverses parent §5.4 “no row selection” and ships selection +
-  batch actions). **Queue-row drag-reorder → Phase 14** (locked 2026-09-22).
+  batch actions). **Queue-row drag-reorder → Phase 15** (locked 2026-09-22;
+  owner renumbered 2026-10-04).
   **Batch chrome:** bar above the table when selection non-empty (`N selected`
   + eligible verbs); hidden when empty — not a floating footer (locked
   2026-09-22). Per-row Actions stay while selection is active — batch bar
@@ -1028,36 +1029,39 @@ add cases and wiring, never relayout — §12.2.
   Share Extension first-enable hint decide-and-close; **full a11y sweep last**
   (keyboard / VoiceOver / `prefers-reduced-motion` on every screen after other
   UI freezes).
-  **Out → Phase 14 Step 0 (branding gate):** product name (§14) + app icon.
-  **Out → Phase 14:** Aurora body-face swap; first-run Home copy/composition
-  redesign; Home banner → footer; per-host adaptive concurrency (engine).
+  **Out → Phase 14:** per-host adaptive concurrency (engine).
+  **Out → Phase 15:** Aurora body-face swap; first-run Home copy/composition
+  redesign; Home banner → footer.
+  **Out → Phase 17 (branding & release gate):** product name (§14) + app icon.
 
-- **Phase 14 — Post-v1 maturity.** Opens with **Step 0 branding gate** if not
-  already done: product-name decision (§14) + find-and-replace + app icon.
-  Then engine/product work: **Playlist-group aggregate
-  state** — real `PlaylistGroupState` in GrabberKit (replace UI-only roll-up and
-  no-op `savePlaylistGroups` / `loadPlaylistGroups`). **Queue-row drag-reorder**
-  (parked from Phase 12 — engine queue order + UI; fights active sort).
-  **Metadata-probe throttle visibility** — wire a real `MetadataTokenBucket`
-  (replace `UnlimitedMetadataTokenBucket`) + probe-wait visibility on the job.
-  **POT / shield rotation** — provider pool / burned-client set beyond single
-  `PotProviderProcess` (local only; hosted/cloud POT stays §13 never).
-  **Always-on-cookies model** (default Safari, silent fall back — see §7).
-  **Remote `player_client` order JSON** (replace compile-time
-  `PlayerClientRotation.default`). **Per-site helpers** beyond YouTube
-  (Instagram / Twitter / TikTok auto-cookies, etc.). **Per-host adaptive
-  concurrency** (parked from Phase 13 — cap per `RateHost`; additive on Phase 6
-  scheduler). **Home banner → footer** (parked from Phase 13). **Aurora
-  body-face swap** + **first-run Home redesign** (parked from Phase 13).
-  **Optional UX extras** if
-  still wanted at plan time: subtitles / embed-thumbnail / embed-metadata,
-  menu-bar item, scheduled/recurring downloads, lifetime-stats panel,
-  per-download bandwidth graphs, per-skin light/dark, compact-window
-  breakpoint. **`.shieldDown` queue halt** and **`.userReset`
-  soft transition** — evaluate at plan time (today’s design deliberately does
-  not halt on a dead shield; `RatePolicy.userReset` is unused); ship or drop
-  in this phase’s plan, do not leave as diagram-only. **Sparkle / notarization /
-  bundled deps** — only if a Developer ID account exists by then (§10).
+- **Phase 14 — Engine maturity.** *(shipped)*
+  Spec + plan archived:
+  `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*`.
+  Playlist-group aggregate state in GrabberKit; metadata-probe wait visibility;
+  per-host adaptive concurrency; `.userReset` through `RatePolicy`; `.shieldDown`
+  queue halt dropped (chip/banner only).
+  **Out → Phase 15:** queue-row drag-reorder; banner → footer; body-face;
+  first-run Home redesign.
+  **Out → Phase 16:** POT/shield rotation; always-on-cookies; remote
+  `player_client` JSON; per-site helpers; optional UX extras.
+  **Out → Phase 17:** product name + icon; Sparkle / notarization / bundled deps.
+
+- **Phase 15 — Table & Home finish.** *(scope locked 2026-10-04)* View-only
+  queue-row drag-reorder (session order; sort conflict confirms overwrite);
+  Aurora body-face swap (face TBD visually); first-run Home redesign (layout TBD
+  visually). **Banner → footer already shipped** (not Phase 15 work). Spec:
+  `docs/superpowers/specs/2026-10-04-media-grabber-phase-15-table-home-finish-design.md`.
+  **Out → Phase 16 / 17:** unchanged (site/identity; branding).
+
+- **Phase 16 — Site / identity maturity.** POT / shield rotation; always-on-cookies
+  model; remote `player_client` order JSON; per-site helpers beyond YouTube;
+  optional UX extras if still wanted at plan time (subtitles / embed, menu bar,
+  schedules, stats, bandwidth graphs, per-skin light/dark, compact breakpoint).
+
+- **Phase 17 — Branding & release gate.** Product-name decision (§14) +
+  find-and-replace + app icon. Revisit repo-root `BACKLOG.md` (v1 name gate).
+  **Sparkle / notarization / bundled deps** — only if a Developer ID account
+  exists by then (§10).
 
 ### 12.2 Shells built complete, filled later
 
@@ -1110,9 +1114,9 @@ tokens; downloading content the user has no right to copy; Mac App Store
 distribution (unless a later decision rewrites §2). The browser extension stays
 on the repo-root BACKLOG as **T-006** (separate leaf), not a MediaGrabber phase.
 
-## 14. Release decisions (Phase 14 Step 0)
+## 14. Release decisions (Phase 17)
 
-**Product name.** Chosen at Phase 14 Step 0 (branding gate); until then the
+**Product name.** Chosen at Phase 17 (branding & release gate); until then the
 code and directory use the working name `MediaGrabber` /
 `apps/media-grabber/` / bundle ID `app.mediagrabber.mac`. Renaming is a
 mechanical find-and-replace. ~20 candidates have been checked for collisions;
@@ -1123,9 +1127,10 @@ options (no Mac app, no downloader, no dev tool, no famous brand): **Weir**
 `app.<name>.mac` (reverse-DNS, `mac` suffix leaves room for other platforms
 later).
 
-**Icon direction.** Decided with the name (Phase 14 Step 0 branding gate;
-parked out of Phase 13 polish — locked 2026-09-23).
+**Icon direction.** Decided with the name (Phase 17 branding & release gate;
+parked out of Phase 13 polish — locked 2026-09-23; moved off Phase 14 — locked
+2026-10-04).
 
 **BACKLOG.md.** Left as-is for now — no new row, T-002 (the CLI) unchanged,
 T-006's dependency unchanged. Revisit when this app reaches v1 (after the
-Phase 14 Step 0 name gate).
+Phase 17 name gate).

@@ -42,7 +42,8 @@ enum EngineFixture {
         clock: FakeClock? = nil,
         tuning: EngineTuning = .default,
         maxAutoRetries: Int? = nil,
-        potProvider: (any PotProviding)? = nil
+        potProvider: (any PotProviding)? = nil,
+        persistence: any QueuePersisting = NoopPersisting()
     ) -> DownloadEngine {
         let prefs = preferences
             ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
@@ -60,6 +61,7 @@ enum EngineFixture {
                 jobLogDir: scratchLogDir(),
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: cap),
                 tuning: tuning,
+                persistence: persistence,
                 cookieResolverHome: resolverHome,
                 networkMonitor: networkMonitor,
                 potProvider: potProvider ?? MissingPotProvider()

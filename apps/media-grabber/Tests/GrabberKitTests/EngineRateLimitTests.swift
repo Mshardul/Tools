@@ -43,7 +43,7 @@ final class EngineRateLimitTests: XCTestCase {
         let id = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=x"))
         _ = await collector.waitForState(id) { self.isCooldown($0) }
 
-        let adaptive = await engine.adaptiveCapForTest()
+        let adaptive = await engine.adaptiveCapForTest(RateHost(urlString: "https://youtube.com/watch?v=x"))
         XCTAssertNotNil(job(collector, id)?.cooldownUntil)
         XCTAssertEqual(job(collector, id)?.attempt, 1)
         XCTAssertEqual(adaptive, 1)
@@ -95,7 +95,7 @@ final class EngineRateLimitTests: XCTestCase {
         let id = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=x"))
         _ = await collector.waitForState(id) { self.isFailed($0) }
 
-        let adaptive = await engine.adaptiveCapForTest()
+        let adaptive = await engine.adaptiveCapForTest(RateHost(urlString: "https://youtube.com/watch?v=x"))
         XCTAssertEqual(collector.latestSnapshot()?.hostRateSummary.isEmpty, true)
         XCTAssertEqual(adaptive, EngineTuning.default.adaptiveConcurrencyStart)
     }

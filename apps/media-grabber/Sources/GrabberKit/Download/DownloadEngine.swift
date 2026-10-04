@@ -16,6 +16,7 @@ public actor DownloadEngine: DownloadEngineProtocol {
     var isOnline = true
     var networkTask: Task<Void, Never>?
     var shieldStatus: ShieldStatus = .missing
+    var playlistGroupRegistry: [UUID: PersistedPlaylistGroup] = [:]
 
     let eventStream: AsyncStream<QueueEvent>
     let eventContinuation: AsyncStream<QueueEvent>.Continuation
@@ -292,12 +293,14 @@ extension DownloadEngine {
         guard queueHalt == nil else { return }
         rateLimiter.setPreferencesCap(cap)
         let now = dependencies.clock.now
+        let rateBlocked = blockedHostIDs(now: now, queuedOnly: true)
+        let hostCapBlocked = hostCapBlockedIDs(running: jobs.filter { $0.state == .running })
         let input = SchedulerInput(
             queued: snapshotsForState { $0 == .queued },
             running: snapshotsForState { $0 == .running },
             cap: effectiveCap,
             deferredIDs: Set(deferrals.map(\.id)),
-            blockedHostIDs: blockedHostIDs(now: now, queuedOnly: true),
+            blockedHostIDs: rateBlocked.union(hostCapBlocked),
             blockedProbeHostIDs: blockedHostIDs(now: now, queuedOnly: false),
             probeIdle: !probeInFlight
         )

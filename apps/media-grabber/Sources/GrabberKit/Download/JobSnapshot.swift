@@ -59,6 +59,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
     public let playlistIndex: Int?
     public let integrityVerdict: IntegrityVerdict?
     public let availableActions: Set<RowAction>
+    public let probeWaitUntil: Date?
 
     public init(
         id: UUID,
@@ -82,7 +83,8 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
         playlistGroupID: UUID?,
         playlistIndex: Int? = nil,
         integrityVerdict: IntegrityVerdict?,
-        availableActions: Set<RowAction>
+        availableActions: Set<RowAction>,
+        probeWaitUntil: Date? = nil
     ) {
         self.id = id
         self.url = url
@@ -106,5 +108,6 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
         self.playlistIndex = playlistIndex
         self.integrityVerdict = integrityVerdict
         self.availableActions = availableActions
+        self.probeWaitUntil = probeWaitUntil
     }
 }

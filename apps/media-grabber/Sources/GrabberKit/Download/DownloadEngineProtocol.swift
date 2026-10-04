@@ -24,6 +24,10 @@ public protocol DownloadEngineProtocol: Sendable {
     func resetCircuit(_ host: RateHost) async
     func resetAllCircuits() async
 
+    func upsertPlaylistGroup(_ group: PersistedPlaylistGroup) async
+    func setPlaylistGroupCollapsed(id: UUID, _ collapsed: Bool) async
+    func loadPlaylistGroupsFromPersistence() async
+
     func preview(_ url: String) async -> Result<MediaMetadata, MetadataError>
     func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError>
     func submitPlaylistItems(_ items: [PlaylistSubmitItem]) async -> [UUID]

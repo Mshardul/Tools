@@ -17,35 +17,46 @@ final class RateLimiterTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1000)
 
     func testAdaptiveCapStartsClamped() {
-        XCTAssertEqual(RateLimiter(tuning: tuning(), preferencesCap: 6).adaptiveCap, 2)
-        XCTAssertEqual(RateLimiter(tuning: tuning(), preferencesCap: 1).adaptiveCap, 1)
+        XCTAssertEqual(
+            RateLimiter(tuning: tuning(), preferencesCap: 6).adaptiveCap(for: yt), 2
+        )
+        XCTAssertEqual(
+            RateLimiter(tuning: tuning(), preferencesCap: 1).adaptiveCap(for: yt), 1
+        )
     }
 
-    func testCleanStreakRaisesCapUpToPrefsCeiling() {
+    func testCleanStreakRaisesOnlyThatHost() {
         var limiter = RateLimiter(tuning: tuning(streak: 3), preferencesCap: 4)
         for _ in 0 ..< 3 {
             limiter.recordCleanSuccess(host: yt, now: t0)
         }
-        XCTAssertEqual(limiter.adaptiveCap, 3)
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 3)
+        XCTAssertEqual(limiter.adaptiveCap(for: vimeo), 2)
         for _ in 0 ..< 3 {
             limiter.recordCleanSuccess(host: yt, now: t0)
         }
-        XCTAssertEqual(limiter.adaptiveCap, 4)
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 4)
         for _ in 0 ..< 3 {
             limiter.recordCleanSuccess(host: yt, now: t0)
         }
-        XCTAssertEqual(limiter.adaptiveCap, 4, "clamped at prefs cap")
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 4, "clamped at prefs cap")
+        XCTAssertEqual(limiter.adaptiveCap(for: vimeo), 2)
     }
 
-    func testStrikeDropsCapToOneAndResetsStreak() {
+    func testStrikeOnOneHostDoesNotSerialiseAnother() {
         var limiter = RateLimiter(tuning: tuning(streak: 3), preferencesCap: 6)
-        limiter.recordCleanSuccess(host: yt, now: t0)
-        limiter.recordCleanSuccess(host: yt, now: t0)
+        for _ in 0 ..< 3 {
+            limiter.recordCleanSuccess(host: yt, now: t0)
+        }
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 3)
+        XCTAssertEqual(limiter.adaptiveCap(for: vimeo), 2)
         limiter.recordStrike(host: yt, retryAfter: nil, lastErrorKey: "rate_limited", now: t0)
-        XCTAssertEqual(limiter.adaptiveCap, 1)
-        XCTAssertTrue(limiter.concurrencyReducedByStrike)
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 1)
+        XCTAssertEqual(limiter.adaptiveCap(for: vimeo), 2)
+        XCTAssertTrue(limiter.concurrencyReducedToOne(for: yt))
+        XCTAssertFalse(limiter.concurrencyReducedToOne(for: vimeo))
         limiter.recordCleanSuccess(host: yt, now: t0)
-        XCTAssertEqual(limiter.adaptiveCap, 1, "streak restarted from zero")
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 1, "streak restarted from zero")
     }
 
     func testBlockedTrueWhileCoolingFalseAfterDeadline() {
@@ -64,9 +75,22 @@ final class RateLimiterTests: XCTestCase {
         )
         XCTAssertEqual(limiter.circuitOpenHosts, [yt])
         XCTAssertTrue(limiter.blocked(host: yt, now: t0.addingTimeInterval(999)))
-        limiter.resetCircuit(host: yt)
+        limiter.resetCircuit(host: yt, now: t0.addingTimeInterval(10))
         XCTAssertTrue(limiter.circuitOpenHosts.isEmpty)
         XCTAssertFalse(limiter.blocked(host: yt, now: t0.addingTimeInterval(999)))
+    }
+
+    func testResetCircuitUsesUserResetPolicyPath() {
+        var limiter = RateLimiter(tuning: tuning(threshold: 2), preferencesCap: 6)
+        limiter.recordStrike(host: yt, retryAfter: 1, lastErrorKey: "rate_limited", now: t0)
+        limiter.recordStrike(
+            host: yt, retryAfter: 1, lastErrorKey: "rate_limited", now: t0.addingTimeInterval(5)
+        )
+        XCTAssertEqual(limiter.circuitOpenHosts, [yt])
+        limiter.resetCircuit(host: yt, now: t0.addingTimeInterval(10))
+        XCTAssertTrue(limiter.circuitOpenHosts.isEmpty)
+        XCTAssertEqual(limiter.state(for: yt), .normal)
+        XCTAssertNil(limiter.displaySummary(now: t0.addingTimeInterval(999))[yt])
     }
 
     func testCleanSuccessResetsStrikeSoLadderRestarts() {
@@ -88,9 +112,10 @@ final class RateLimiterTests: XCTestCase {
             limiter.recordCleanSuccess(host: yt, now: t0)
         } // cap 3
         limiter.setPreferencesCap(2)
-        XCTAssertEqual(limiter.adaptiveCap, 2)
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 2)
         limiter.setPreferencesCap(6)
-        XCTAssertEqual(limiter.adaptiveCap, 2, "a raise does not jump the cap")
+        XCTAssertEqual(limiter.adaptiveCap(for: yt), 2, "a raise does not jump the cap")
+        XCTAssertEqual(limiter.adaptiveCap(for: vimeo), 2, "untouched host stays at start")
     }
 
     func testDisplaySummaryOnlyCoolingOrOpenHosts() {

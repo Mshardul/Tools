@@ -4,19 +4,21 @@ extension DownloadEngine {
     // MARK: - Snapshot / emit
 
     func buildSnapshot() -> QueueSnapshot {
-        QueueSnapshot(
-            jobs: jobs.map { job in
-                job.snapshot(availableActions: Self.availableActions(
-                    for: job.state,
-                    isImmediatelySchedulable: isImmediatelySchedulable(job)
-                ))
-            },
+        let jobSnapshots = jobs.map { job in
+            job.snapshot(availableActions: Self.availableActions(
+                for: job.state,
+                isImmediatelySchedulable: isImmediatelySchedulable(job)
+            ))
+        }
+        return QueueSnapshot(
+            jobs: jobSnapshots,
             revision: revision,
             queueHalt: effectiveQueueHalt(),
             generatedAt: .now,
             hostRateSummary: rateLimiter.displaySummary(now: dependencies.clock.now),
             isOnline: isOnline,
-            shieldStatus: shieldStatus
+            shieldStatus: shieldStatus,
+            playlistGroups: playlistGroupSnapshots(jobSnapshots: jobSnapshots)
         )
     }
 

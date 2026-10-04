@@ -72,7 +72,7 @@ stateDiagram-v2
 |---|---|---|---|
 | _(none)_ → `.queued` | any `submit` / playlist enqueue | `DownloadEngine.submit`, `makeJob` | `DownloadJob.init` hard-codes `.queued`. No synchronous follow-on; `evaluateSchedule()` runs next. |
 | `.queued` → `.probing` | scheduler picks a job whose title/extractor/duration is missing and the single probe slot is free | `evaluateSchedule` → `Scheduler.nextProbe` → `markProbing` | One probe at a time (`probeInFlight`). Host must not be in `blockedProbeHostIDs`. |
-| `.queued` → `.running` | scheduler has a free slot (`effectiveCap − running`) and the job has full metadata | `Scheduler.nextDownloads` → `markRunning` | `effectiveCap = min(rateLimiter.adaptiveCap, cap)`. Excluded if the id is deferred or the host is rate-blocked. `markRunning` clears progress/size, sets `startedAt`, launches. |
+| `.queued` → `.running` | scheduler has a free slot (`effectiveCap − running`) and the job has full metadata | `Scheduler.nextDownloads` → `markRunning` | `effectiveCap` is the prefs concurrency ceiling. Excluded if deferred, rate-blocked, or the host is already at its per-host adaptive cap. `markRunning` clears progress/size, sets `startedAt`, launches. |
 | `.queued` → `.running` | user Force Start | `forceStart` | Guard: state is `.queued` or a cooldown state. Evicts the oldest running job if the cap is full. Overrides a host block (logs `hostBlockOverridden`) but does not touch `RateState`. |
 | `.queued` → `.cancelled` | user cancels | `cancel` (`.queued, .paused` arm) → `markCancelled` | Sets `finishedAt`, enforces the terminal cap. |
 | `.queued` → `.paused` | user pauses | `pause` | `pause` guards `state == .running`, so on a pure `.queued` job this is a no-op affordance. |
@@ -246,13 +246,13 @@ All go through `RateLimiter`, which wraps `RatePolicy.next`:
 |---|---|---|---|
 | `.strike(retryAfter:)` | `recordStrike` | `strikeHostIfRateLimited` | called unconditionally from `routeFailure` when `errorClass` is `.rateLimited`, **before** the retry-budget check (so a strike lands even on the terminal failure). Also logs `hostRateStateChanged`, and `circuitOpened` when the new state is a circuit. |
 | `.cleanSuccess` | `recordCleanSuccess` | `recordCleanSuccessFor` | from `completeIfClean` — only on a genuinely clean `.completed` download. |
-| `.userReset` | _(not wired)_ | — | `RateLimiter.resetCircuit` / `resetAllCircuits` clear the dict entry directly, bypassing `RatePolicy`. The `.userReset` case is defined but currently dead. |
+| `.userReset` | `resetCircuit` / `resetAllCircuits` | engine circuit-reset intents | Only when the host is `.circuitOpen`; applies `RatePolicy.next(..., .userReset)` then drops the entry when the result is `.normal`. |
 
 User reset comes from the warning banner's "Retry now" and the host-rate
 popover's per-host / "Retry all" buttons → `AppModel.resetCircuit` /
 `resetAllCircuits` → engine → `afterRateReset()` (bump + `evaluateSchedule`).
 
-`recordStrike` side effects: `adaptiveCap = 1` (hard drop to serial),
+`recordStrike` side effects (per host): that host's `adaptiveCap = 1`,
 `cleanStreak = 0`, `strikeLoweredCap = true`, `lastErrorKey[host] = key`.
 
 ### How `RateState` feeds back into the job machine
@@ -260,7 +260,8 @@ popover's per-host / "Retry all" buttons → `AppModel.resetCircuit` /
 1. **`blockedHostIDs` / `blockedProbeHostIDs`** — a `.queued` job (or a job
    needing a probe) whose host is `rateLimiter.blocked` is excluded from the
    scheduler. `blocked`: `.normal → false`, `.cooldown → until > now`,
-   `.circuitOpen → always true`.
+   `.circuitOpen → always true`. Host-at-cap jobs are unioned into the same
+   blocked set via `hostCapBlockedIDs` (per-host adaptive slot pressure).
 2. **`reQueueForHostRate`** — on a `.rateLimited` retryable failure, exactly one
    job per host goes `.cooldown(deadline)`; the rest stay `.queued` and are
    held out by `blockedHostIDs`. If the host is already `.circuitOpen` (no
@@ -268,17 +269,19 @@ popover's per-host / "Retry all" buttons → `AppModel.resetCircuit` /
 3. **`effectiveQueueHalt()`** derives the `.circuitOpen` queue halt (see §1).
 4. **`preview` / `previewPlaylist`** return `.failure(.hostBlocked)` when the
    host is blocked — the probe never launches.
-5. **Adaptive concurrency cap** (global, on `RateLimiter`):
-   - `adaptiveCap` starts at `min(max(1, adaptiveConcurrencyStart),
+5. **Adaptive concurrency** (per-`RateHost` on `RateLimiter`; prefs cap is global):
+   - Untouched hosts start at `min(max(1, adaptiveConcurrencyStart),
      preferencesCap)` — default start **2**.
-   - Each clean success bumps `cleanStreak`; at `cleanStreakToRaise` (default
-     **5**) `adaptiveCap += 1` (capped at the preferences cap) and the streak
-     resets.
-   - A strike drops `adaptiveCap` to 1 immediately.
-   - `concurrencyReducedByStrike` (`strikeLoweredCap && adaptiveCap == 1`)
-     drives the `HostRateDisplayState.concurrencyReducedToOne` UI flag.
-   - The engine uses `effectiveCap = min(rateLimiter.adaptiveCap, cap)` for
-     both scheduling and Force Start eviction.
+   - Each clean success bumps that host's `cleanStreak`; at
+     `cleanStreakToRaise` (default **5**) that host's `adaptiveCap += 1`
+     (capped at the preferences cap) and the streak resets.
+   - A strike drops that host's `adaptiveCap` to 1 immediately.
+   - `concurrencyReducedToOne(for:)` drives
+     `HostRateDisplayState.concurrencyReducedToOne`.
+   - Scheduler global ceiling is the preferences `cap`; a host's own adaptive
+     cap limits how many of that host's downloads may run concurrently.
+     `effectiveCap` equals the prefs `cap` (Force Start eviction uses the same
+     global ceiling).
 6. **`fragmentCount(for:)`** — host `.normal` → `concurrentFragmentsNormal`
    (4), otherwise `concurrentFragmentsThrottled` (1): a gentler yt-dlp `-N`
    for any host under pressure.
@@ -348,9 +351,12 @@ phase that will plan and ship it (or drop it in that phase’s plan).
 
 | capability | current state | phase |
 |---|---|---|
-| **Per-host adaptive concurrency cap** | `adaptiveCap` / `cleanStreak` / `strikeLoweredCap` are single scalars on `RateLimiter`; only `states` is per-host. Slot: per-`RateHost` cap trio + per-host slot accounting in `Scheduler.nextDownloads`. | **Phase 13** |
-| **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 14** |
-| **Playlist-group aggregate state** | Group roll-up is UI-only in `RowStore+Groups`; `savePlaylistGroups` / `loadPlaylistGroups` are no-op stubs. Slot: `PlaylistGroupState` in GrabberKit. | **Phase 14** |
-| **`.shieldDown` queue halt** | Dead shield does not halt the queue (by design today). Slot: `.shieldDown` on `QueueHaltReason` if plan reverses that. | **Phase 14** (ship or drop) |
-| **`.userReset` soft transition** | Defined in `RatePolicy` but never fired — reset clears the dict entry. | **Phase 14** (ship or drop) |
-| **Metadata-probe throttle visibility** | Wired bucket is `UnlimitedMetadataTokenBucket` (no-op). Slot: real bucket + probe-wait visibility. | **Phase 14** |
+| **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 16** |
+| **Queue-row drag-reorder (view order)** | AppKit grid ships; rows not yet draggable. Slot: session `RowStore` manual order + sort-overwrite confirm; engine schedule unchanged. | **Phase 15** |
+| **Aurora body-face / first-run Home redesign** | Inter still Aurora body; first-run structure live but creative pass pending. | **Phase 15** |
+
+Phase 14 shipped (and removed from this table): per-host adaptive concurrency,
+engine-owned `QueueSnapshot.playlistGroups`, `.userReset` through `RatePolicy`,
+metadata-probe wait visibility (`JobSnapshot.probeWaitUntil`). Halt-on-dead-shield
+(`.shieldDown`) was rejected — chip/banner only. Warning banner is already
+bottom-docked (former “banner → footer” park — closed, not Phase 15).

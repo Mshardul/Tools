@@ -38,6 +38,9 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var restartCount = 0
         var restartShieldResult = true
         var forceStartEvictsFor: Set<UUID> = []
+        var playlistGroups: [PersistedPlaylistGroup] = []
+        var playlistGroupSaves: [[PersistedPlaylistGroup]] = []
+        var persistence: FakeQueuePersisting?
     }
 
     init() {
@@ -112,6 +115,14 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     var restartCount: Int {
         box.read { $0.restartCount }
+    }
+
+    var playlistGroupSaves: [[PersistedPlaylistGroup]] {
+        box.read { $0.playlistGroupSaves }
+    }
+
+    func attachPersistence(_ persistence: FakeQueuePersisting) {
+        box.mutate { $0.persistence = persistence }
     }
 
     func stubPreview(_ result: Result<MediaMetadata, MetadataError>) {
@@ -220,7 +231,28 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     }
 
     func remove(_ jobID: UUID) async {
-        box.mutate { $0.removed.append(jobID) }
+        let snapshot = box.mutate { state -> QueueSnapshot in
+            state.removed.append(jobID)
+            let jobs = state.snapshot.jobs.filter { $0.id != jobID }
+            let live = Set(jobs.compactMap(\.playlistGroupID))
+            state.playlistGroups.removeAll { !live.contains($0.id) }
+            state.playlistGroupSaves.append(state.playlistGroups)
+            state.persistence?.savePlaylistGroups(state.playlistGroups)
+            state.snapshot = QueueSnapshot(
+                jobs: jobs,
+                revision: state.snapshot.revision + 1,
+                queueHalt: state.snapshot.queueHalt,
+                generatedAt: .init(),
+                hostRateSummary: state.snapshot.hostRateSummary,
+                isOnline: state.snapshot.isOnline,
+                shieldStatus: state.snapshot.shieldStatus,
+                playlistGroups: state.playlistGroups.map {
+                    PlaylistGroupSnapshot.rollup(from: jobs, registry: $0)
+                }
+            )
+            return state.snapshot
+        }
+        continuation.yield(.snapshot(snapshot))
     }
 
     func forceStart(_ jobID: UUID) async {
@@ -237,6 +269,64 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
+
+    func upsertPlaylistGroup(_ group: PersistedPlaylistGroup) async {
+        let snapshot = box.mutate { state -> QueueSnapshot in
+            if let index = state.playlistGroups.firstIndex(where: { $0.id == group.id }) {
+                state.playlistGroups[index] = group
+            } else {
+                state.playlistGroups.append(group)
+            }
+            state.playlistGroupSaves.append(state.playlistGroups)
+            state.persistence?.savePlaylistGroups(state.playlistGroups)
+            state.snapshot = withGroups(state.snapshot, groups: state.playlistGroups)
+            return state.snapshot
+        }
+        continuation.yield(.snapshot(snapshot))
+    }
+
+    func setPlaylistGroupCollapsed(id: UUID, _ collapsed: Bool) async {
+        let snapshot = box.mutate { state -> QueueSnapshot in
+            guard let index = state.playlistGroups.firstIndex(where: { $0.id == id }) else {
+                return state.snapshot
+            }
+            state.playlistGroups[index].isCollapsed = collapsed
+            state.playlistGroupSaves.append(state.playlistGroups)
+            state.persistence?.savePlaylistGroups(state.playlistGroups)
+            state.snapshot = withGroups(state.snapshot, groups: state.playlistGroups)
+            return state.snapshot
+        }
+        continuation.yield(.snapshot(snapshot))
+    }
+
+    func loadPlaylistGroupsFromPersistence() async {
+        let snapshot = box.mutate { state -> QueueSnapshot in
+            let loaded = state.persistence?.loadPlaylistGroups() ?? state.playlistGroups
+            let live = Set(state.snapshot.jobs.compactMap(\.playlistGroupID))
+            state.playlistGroups = loaded.filter { live.contains($0.id) }
+            state.snapshot = withGroups(state.snapshot, groups: state.playlistGroups)
+            return state.snapshot
+        }
+        continuation.yield(.snapshot(snapshot))
+    }
+
+    private func withGroups(
+        _ snapshot: QueueSnapshot,
+        groups: [PersistedPlaylistGroup]
+    ) -> QueueSnapshot {
+        QueueSnapshot(
+            jobs: snapshot.jobs,
+            revision: snapshot.revision + 1,
+            queueHalt: snapshot.queueHalt,
+            generatedAt: .init(),
+            hostRateSummary: snapshot.hostRateSummary,
+            isOnline: snapshot.isOnline,
+            shieldStatus: snapshot.shieldStatus,
+            playlistGroups: groups.map {
+                PlaylistGroupSnapshot.rollup(from: snapshot.jobs, registry: $0)
+            }
+        )
+    }
 
     func preview(_ url: String) async -> Result<MediaMetadata, MetadataError> {
         box.mutate { state in

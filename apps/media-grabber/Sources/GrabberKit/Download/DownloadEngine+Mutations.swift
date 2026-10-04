@@ -20,6 +20,15 @@ extension DownloadEngine {
         emitSnapshot()
     }
 
+    func setProbeWait(_ id: UUID, until: Date?) {
+        guard let job = jobs.first(where: { $0.id == id }) else { return }
+        guard job.state == .probing else { return }
+        guard job.probeWaitUntil != until else { return }
+        job.probeWaitUntil = until
+        bump()
+        emitSnapshot()
+    }
+
     func recordProbeResult(_ id: UUID, _ result: Result<MediaMetadata, MetadataError>) {
         defer {
             evaluateSchedule()
@@ -34,6 +43,7 @@ extension DownloadEngine {
         guard job.state == .probing else {
             return
         }
+        job.probeWaitUntil = nil
         switch result {
         case let .success(meta):
             job.title = meta.title
@@ -143,13 +153,13 @@ extension DownloadEngine {
     }
 
     private func recordCleanSuccessFor(_ job: DownloadJob) {
-        let before = rateLimiter.adaptiveCap
-        rateLimiter.recordCleanSuccess(
-            host: RateHost(urlString: job.request.url), now: dependencies.clock.now
-        )
-        if rateLimiter.adaptiveCap != before {
+        let host = RateHost(urlString: job.request.url)
+        let before = rateLimiter.adaptiveCap(for: host)
+        rateLimiter.recordCleanSuccess(host: host, now: dependencies.clock.now)
+        let after = rateLimiter.adaptiveCap(for: host)
+        if after != before {
             logEvent(.adaptiveConcurrencyChanged(
-                from: before, to: rateLimiter.adaptiveCap, reason: "clean_streak"
+                from: before, to: after, reason: "clean_streak"
             ))
         }
     }
@@ -157,7 +167,7 @@ extension DownloadEngine {
     // The strike is about the host — Step A, unconditional on a rate-limited exit, terminal or not.
     private func strikeHostIfRateLimited(_ errorClass: ErrorClass, host: RateHost) {
         guard case let .rateLimited(retryAfter) = errorClass else { return }
-        let before = rateLimiter.adaptiveCap
+        let before = rateLimiter.adaptiveCap(for: host)
         let fromState = describeRateState(rateLimiter.state(for: host))
         rateLimiter.recordStrike(
             host: host, retryAfter: retryAfter,
@@ -170,9 +180,10 @@ extension DownloadEngine {
         if case let .circuitOpen(_, strikes) = toState {
             logEvent(.circuitOpened(host: host.canonical, strikes: strikes))
         }
-        if rateLimiter.adaptiveCap != before {
+        let after = rateLimiter.adaptiveCap(for: host)
+        if after != before {
             logEvent(.adaptiveConcurrencyChanged(
-                from: before, to: rateLimiter.adaptiveCap, reason: "throttle"
+                from: before, to: after, reason: "throttle"
             ))
         }
     }
@@ -302,6 +313,7 @@ extension DownloadEngine {
         guard let job = jobs.first(where: { $0.id == id }) else { return }
         job.state = .cancelled
         job.finishedAt = .now
+        job.probeWaitUntil = nil
         enforceTerminalCap()
         bump()
         emitSnapshot()

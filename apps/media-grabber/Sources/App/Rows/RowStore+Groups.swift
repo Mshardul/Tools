@@ -28,6 +28,13 @@ private enum BlockSortValue: Comparable {
 extension RowStore {
     func applyGroups(_ groups: [PersistedPlaylistGroup]) {
         groupRegistry = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0) })
+        groupSnapshots = [:]
+        recomputeVisible()
+    }
+
+    func applyGroupSnapshots(_ groups: [PlaylistGroupSnapshot]) {
+        groupSnapshots = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0) })
+        groupRegistry = Dictionary(uniqueKeysWithValues: groups.map { ($0.id, $0.asPersisted) })
         recomputeVisible()
     }
 
@@ -98,10 +105,17 @@ extension RowStore {
         let allChildren = entries.map(\.row)
         let registry = groupRegistry[id]
         let group = makePlaylistGroup(id: id, registry: registry, children: allChildren)
+        let children: [RowModel]
+        if activeSortColumn == nil, let order = manualOrder {
+            let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+            children = visible.sorted { (rank[$0.id] ?? Int.max) < (rank[$1.id] ?? Int.max) }
+        } else {
+            children = visible.sorted(by: playlistIndexSort)
+        }
         return GroupBlock(
             group: group,
             allChildren: allChildren,
-            visibleChildren: visible.sorted(by: playlistIndexSort),
+            visibleChildren: children,
             originalIndex: entries.map(\.index).min() ?? 0
         )
     }
@@ -112,19 +126,25 @@ extension RowStore {
         children: [RowModel]
     ) -> PlaylistGroup {
         let snapshots = children.map(\.snapshot)
-        let completed = snapshots.filter { $0.state == .completed }.count
-        let failed = snapshots.filter { isFailed($0.state) }.count
-        let running = snapshots.filter { $0.state == .running }.count
-        let cancellable = snapshots.filter { isCancellable($0.state) }.count
+        let engine = groupSnapshots[id]
+        let completed = engine?.completedCount ?? snapshots.filter { $0.state == .completed }.count
+        let failed = engine?.failedCount ?? snapshots.filter { isFailed($0.state) }.count
+        let running = engine?.runningCount ?? snapshots.filter { $0.state == .running }.count
+        let cancellable = engine?.cancellableCount
+            ?? snapshots.filter { isCancellable($0.state) }.count
+        let total = engine?.totalCount ?? children.count
+        let fraction = engine?.rollupFraction ?? rollupFraction(snapshots)
+        let title = engine.map(\.title)
+            ?? groupTitle(registry: registry, children: snapshots)
         return PlaylistGroup(
             id: id,
-            title: groupTitle(registry: registry, children: snapshots),
-            totalCount: children.count,
+            title: title,
+            totalCount: total,
             completedCount: completed,
             failedCount: failed,
             runningCount: running,
             cancellableCount: cancellable,
-            rollupFraction: rollupFraction(snapshots),
+            rollupFraction: fraction,
             speedBytesPerSec: activeSpeed(snapshots),
             etaSeconds: activeEta(snapshots),
             sizeBytes: sumKnown(snapshots.compactMap(\.sizeBytes)),
@@ -137,18 +157,30 @@ extension RowStore {
             destinationLabel: common(snapshots.map(\.destFolder.path)),
             clientUsedLabel: common(snapshots.map { $0.playerClientUsed ?? "—" }),
             attempt: snapshots.map(\.attempt).max() ?? 0,
-            statusText: statusText(total: children.count, completed: completed, failed: failed),
-            isCollapsed: localCollapsed[id] ?? registry?.isCollapsed ?? false
+            statusText: statusText(total: total, completed: completed, failed: failed),
+            isCollapsed: localCollapsed[id] ?? engine?.isCollapsed ?? registry?.isCollapsed ?? false
         )
     }
 
     private func sorted(_ blocks: [VisibleBlock]) -> [VisibleBlock] {
-        guard let column = activeSortColumn else {
-            return blocks.sorted { originalIndex($0) < originalIndex($1) }
+        if let column = activeSortColumn {
+            return blocks.sorted { compare($0, $1, column: column) }
         }
-        return blocks.sorted { lhs, rhs in
-            compare(lhs, rhs, column: column)
+        if let order = manualOrder {
+            let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+            return blocks.sorted { lhs, rhs in
+                let left: Int = switch lhs {
+                case let .single(row, _): rank[row.id] ?? Int.max
+                case let .group(block): block.allChildren.map { rank[$0.id] ?? Int.max }.min() ?? Int.max
+                }
+                let right: Int = switch rhs {
+                case let .single(row, _): rank[row.id] ?? Int.max
+                case let .group(block): block.allChildren.map { rank[$0.id] ?? Int.max }.min() ?? Int.max
+                }
+                return left < right
+            }
         }
+        return blocks.sorted { originalIndex($0) < originalIndex($1) }
     }
 
     private func compare(_ lhs: VisibleBlock, _ rhs: VisibleBlock, column: ColumnID) -> Bool {
@@ -315,57 +347,5 @@ extension RowStore {
 
     private func progressContribution(_ snapshot: JobSnapshot) -> Double {
         Double(Self.progressBucket(for: snapshot)) / 10
-    }
-
-    private func activeSpeed(_ snapshots: [JobSnapshot]) -> Double {
-        snapshots.reduce(0) { total, snapshot in
-            guard snapshot.state == .running else { return total }
-            return total + (snapshot.progress?.speedBytesPerSec ?? 0)
-        }
-    }
-
-    private func activeEta(_ snapshots: [JobSnapshot]) -> Int? {
-        let values = snapshots.compactMap { snapshot -> Int? in
-            guard snapshot.state == .running else { return nil }
-            return snapshot.progress?.etaSeconds
-        }
-        return values.max()
-    }
-
-    private func sumKnown<T: AdditiveArithmetic>(_ values: [T]) -> T? {
-        guard !values.isEmpty else { return nil }
-        return values.reduce(.zero) { $0 + $1 }
-    }
-
-    private func groupFinishedAt(_ snapshots: [JobSnapshot]) -> Date? {
-        guard !snapshots.isEmpty, snapshots.allSatisfy({ $0.state == .completed }) else {
-            return nil
-        }
-        return snapshots.compactMap(\.finishedAt).max()
-    }
-
-    private func common(_ values: [String]) -> String {
-        guard let first = values.first else { return "—" }
-        return values.allSatisfy { $0 == first } ? first : "mixed"
-    }
-
-    private func statusText(total: Int, completed: Int, failed: Int) -> String {
-        "\(completed) done · \(failed) failed · \(total - completed - failed) queued"
-    }
-
-    private func isFailed(_ state: JobState) -> Bool {
-        if case .failed = state {
-            return true
-        }
-        return false
-    }
-
-    private func isCancellable(_ state: JobState) -> Bool {
-        switch state {
-        case .queued, .paused, .probing, .running, .cooldown, .waitingForNetwork:
-            true
-        default:
-            false
-        }
     }
 }

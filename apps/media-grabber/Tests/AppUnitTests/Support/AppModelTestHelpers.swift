@@ -18,7 +18,10 @@ enum AppModelTestHelpers {
         notificationRouter: (any NotificationRouting)? = nil,
         ytDlpUpdater: YtDlpUpdating? = nil
     ) -> AppModel {
-        AppModel(
+        if let persistence {
+            engine.attachPersistence(persistence)
+        }
+        return AppModel(
             engine: engine,
             installer: OnboardingInstaller(
                 probe: FakeEnvironmentProbe(ready: envReady),

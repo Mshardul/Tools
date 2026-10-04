@@ -27,6 +27,18 @@ extension AppModel {
         }
     }
 
+    func handleRowReorder(from fromIndex: Int, to toIndex: Int) async {
+        if columnConfig.sortColumn != nil {
+            let ok = await confirm(AppModelDialogs.sortOverwriteConfirmation())
+            guard ok else { return }
+            var config = columnConfig
+            config.sortColumn = nil
+            config.sortDirection = nil
+            columnConfig = config
+        }
+        _ = rowStore.moveVisibleItem(from: fromIndex, to: toIndex)
+    }
+
     private func retryWithCookies(_ id: UUID) async {
         if prefs.cookiesFromBrowser.isNone {
             setPendingCookieRetry(id)
@@ -48,12 +60,12 @@ extension AppModel {
         }
     }
 
-    func setPlaylistGroupCollapsed(id: UUID, _ isCollapsed: Bool) {
-        guard let index = playlistGroups.firstIndex(where: { $0.id == id }) else { return }
-        playlistGroups[index].isCollapsed = isCollapsed
+    func setPlaylistGroupCollapsed(id: UUID, _ isCollapsed: Bool) async {
+        if let index = playlistGroups.firstIndex(where: { $0.id == id }) {
+            playlistGroups[index].isCollapsed = isCollapsed
+        }
         rowStore.setCollapsed(id: id, isCollapsed)
-        persistence?.savePlaylistGroups(playlistGroups)
-        rowStore.applyGroups(playlistGroups)
+        await engine.setPlaylistGroupCollapsed(id: id, isCollapsed)
     }
 
     func confirmedForceStart(_ id: UUID) async {
@@ -85,20 +97,9 @@ extension AppModel {
     }
 
     func removeRow(_ id: UUID) async {
-        let removedGroupID = rowStore.rows.first { $0.id == id }?.snapshot.playlistGroupID
         await engine.remove(id)
-        guard let groupID = removedGroupID else { return }
-        dropPlaylistGroupIfEmpty(groupID, removing: id)
-    }
-
-    private func dropPlaylistGroupIfEmpty(_ groupID: UUID, removing removedID: UUID) {
-        let hasRemaining = rowStore.rows.contains {
-            $0.id != removedID && $0.snapshot.playlistGroupID == groupID
-        }
-        guard !hasRemaining else { return }
-        playlistGroups.removeAll { $0.id == groupID }
-        persistence?.savePlaylistGroups(playlistGroups)
-        rowStore.applyGroups(playlistGroups)
+        let snapshot = await engine.currentSnapshot()
+        syncPlaylistGroups(from: snapshot)
     }
 
     private func playlistChildren(for id: UUID) -> [RowModel] {

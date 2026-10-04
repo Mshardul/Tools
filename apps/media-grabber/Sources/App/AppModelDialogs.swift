@@ -91,6 +91,17 @@ enum AppModelDialogs {
         )
     }
 
+    static func sortOverwriteConfirmation() -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Clear sorting?",
+            message: "Moving rows turns off column sorting for this session.",
+            confirmTitle: "Move Rows",
+            cancelTitle: "Cancel",
+            isDestructive: false,
+            suppressionKey: nil
+        )
+    }
+
     static func batchCancelConfirmation() -> ConfirmationRequest {
         ConfirmationRequest(
             title: "Cancel selected downloads?",

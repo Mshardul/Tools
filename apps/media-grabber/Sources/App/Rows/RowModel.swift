@@ -33,7 +33,9 @@ private struct RowFieldChanges {
         duration = old.durationSeconds != next.durationSeconds
         kind = old.kind != next.kind
         quality = old.actualQuality != next.actualQuality
-        attempt = old.attempt != next.attempt || old.cooldownUntil != next.cooldownUntil
+        attempt = old.attempt != next.attempt
+            || old.cooldownUntil != next.cooldownUntil
+            || old.probeWaitUntil != next.probeWaitUntil
         badge = extras.badgeChanged
         retries = extras.retriesChanged
         rate = extras.rateChanged
@@ -187,7 +189,8 @@ final class RowModel: Identifiable {
             attempt: known.attempt, cooldownUntil: known.cooldownUntil,
             playerClientUsed: known.playerClientUsed, playlistGroupID: known.playlistGroupID,
             playlistIndex: known.playlistIndex,
-            integrityVerdict: known.integrityVerdict, availableActions: known.availableActions
+            integrityVerdict: known.integrityVerdict, availableActions: known.availableActions,
+            probeWaitUntil: known.probeWaitUntil
         )
         statusText = Self.status(for: snapshot)
         speedText = Self.speed(for: snapshot)

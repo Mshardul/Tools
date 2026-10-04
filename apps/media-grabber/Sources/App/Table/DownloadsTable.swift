@@ -10,6 +10,7 @@ struct DownloadsTable: View {
     let onClearSelection: () -> Void
     let onPlaylistGroupAction: (UUID, PlaylistGroupAction) -> Void
     let onTogglePlaylistGroupCollapsed: (UUID, Bool) -> Void
+    let onRowReorder: (Int, Int) -> Void
 
     @Environment(\.theme) private var theme
 
@@ -51,7 +52,8 @@ struct DownloadsTable: View {
                     scrollToRowID: $scrollToRowID,
                     onAction: onAction,
                     onPlaylistGroupAction: onPlaylistGroupAction,
-                    onTogglePlaylistGroupCollapsed: onTogglePlaylistGroupCollapsed
+                    onTogglePlaylistGroupCollapsed: onTogglePlaylistGroupCollapsed,
+                    onRowReorder: onRowReorder
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }

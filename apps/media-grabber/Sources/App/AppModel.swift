@@ -161,7 +161,9 @@ final class AppModel {
             vpnActive: vpnDetector.isVPNActive
         )
         applySnapshot(snapshot)
-        loadPlaylistGroups(for: snapshot)
+        await engine.loadPlaylistGroupsFromPersistence()
+        let withGroups = await engine.currentSnapshot()
+        loadPlaylistGroups(for: withGroups)
     }
 
     func refreshOnboardingState() async {
@@ -263,7 +265,7 @@ final class AppModel {
                 )
                 if case let .snapshot(snapshot) = event {
                     handleJobTransitions(snapshot, previousStates: previousStates)
-                    rowStore.applyGroups(playlistGroups)
+                    syncPlaylistGroups(from: snapshot)
                     hostRateSummary = snapshot.hostRateSummary
                     healthController.update(snapshot: snapshot, now: .now, environmentReport: latestEnvironmentReport)
                     recomputeBanner(snapshot)
@@ -278,7 +280,7 @@ final class AppModel {
                 maxAutoRetries: prefs.maxAutoRetries,
                 vpnActive: vpnDetector.isVPNActive
             )
-            await rowStore.applyGroups(playlistGroups)
+            syncPlaylistGroups(from: snapshot)
         }
     }
 

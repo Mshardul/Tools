@@ -25,8 +25,11 @@ plan: repo-root `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`),
 Phase 12 — Downloads table chrome *(shipped)* — design + plan in
 `docs/superpowers/{specs,plans}/archived/2026-09-22-media-grabber-downloads-table-chrome*.md`,
 Phase 13 — Polish *(shipped)* — design + plan in
-`docs/superpowers/{specs,plans}/archived/2026-09-23-media-grabber-phase-13-polish*.md`.
-Next: Phase 14.
+`docs/superpowers/{specs,plans}/archived/2026-09-23-media-grabber-phase-13-polish*.md`,
+Phase 14 — Engine maturity *(shipped)* — design + plan in
+`docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*.md`.
+Next: Phase 15 — Table & Home finish (design:
+`docs/superpowers/specs/2026-10-04-media-grabber-phase-15-table-home-finish-design.md`).
 
 ## Phase scoping — three rules
 

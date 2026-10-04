@@ -1,18 +1,21 @@
 import Foundation
 
 struct RateLimiter {
+    private struct HostConcurrency {
+        var adaptiveCap: Int
+        var cleanStreak: Int = 0
+        var strikeLoweredCap: Bool = false
+    }
+
     private var states: [RateHost: RateState] = [:]
     private var lastErrorKey: [RateHost: String] = [:]
-    private(set) var adaptiveCap: Int
-    private var cleanStreak = 0
-    private var strikeLoweredCap = false
+    private var concurrency: [RateHost: HostConcurrency] = [:]
     private var preferencesCap: Int
     private let tuning: EngineTuning
 
     init(tuning: EngineTuning, preferencesCap: Int) {
         self.tuning = tuning
         self.preferencesCap = max(1, preferencesCap)
-        adaptiveCap = min(max(1, tuning.adaptiveConcurrencyStart), self.preferencesCap)
     }
 
     // MARK: Outcomes
@@ -30,9 +33,11 @@ struct RateLimiter {
             tuning: tuning
         )
         lastErrorKey[host] = key
-        adaptiveCap = 1
-        cleanStreak = 0
-        strikeLoweredCap = true
+        var entry = concurrencyEntry(for: host)
+        entry.adaptiveCap = 1
+        entry.cleanStreak = 0
+        entry.strikeLoweredCap = true
+        concurrency[host] = entry
     }
 
     mutating func recordCleanSuccess(host: RateHost, now: Date) {
@@ -46,14 +51,16 @@ struct RateLimiter {
             states[host] = next == .normal ? nil : next
             lastErrorKey[host] = nil
         }
-        cleanStreak += 1
-        if cleanStreak >= tuning.cleanStreakToRaise {
-            adaptiveCap = min(adaptiveCap + 1, preferencesCap)
-            cleanStreak = 0
-            if adaptiveCap > 1 {
-                strikeLoweredCap = false
+        var entry = concurrencyEntry(for: host)
+        entry.cleanStreak += 1
+        if entry.cleanStreak >= tuning.cleanStreakToRaise {
+            entry.adaptiveCap = min(entry.adaptiveCap + 1, preferencesCap)
+            entry.cleanStreak = 0
+            if entry.adaptiveCap > 1 {
+                entry.strikeLoweredCap = false
             }
         }
+        concurrency[host] = entry
     }
 
     // MARK: Queries
@@ -86,8 +93,13 @@ struct RateLimiter {
         return nil
     }
 
-    var concurrencyReducedByStrike: Bool {
-        strikeLoweredCap && adaptiveCap == 1
+    func adaptiveCap(for host: RateHost) -> Int {
+        concurrency[host]?.adaptiveCap ?? startCap
+    }
+
+    func concurrencyReducedToOne(for host: RateHost) -> Bool {
+        guard let entry = concurrency[host] else { return false }
+        return entry.strikeLoweredCap && entry.adaptiveCap == 1
     }
 
     func displaySummary(now: Date) -> [RateHost: HostRateDisplayState] {
@@ -96,7 +108,7 @@ struct RateLimiter {
             out[host] = HostRateDisplayState(
                 state: state,
                 lastErrorKey: lastErrorKey[host],
-                concurrencyReducedToOne: concurrencyReducedByStrike
+                concurrencyReducedToOne: concurrencyReducedToOne(for: host)
             )
         }
         return out
@@ -110,19 +122,31 @@ struct RateLimiter {
         }
     }
 
-    // MARK: User actions
-
-    mutating func resetCircuit(host: RateHost) {
-        if case .circuitOpen = states[host] ?? .normal {
-            states[host] = nil
-            lastErrorKey[host] = nil
-        }
+    private var startCap: Int {
+        min(max(1, tuning.adaptiveConcurrencyStart), preferencesCap)
     }
 
-    mutating func resetAllCircuits() {
+    private func concurrencyEntry(for host: RateHost) -> HostConcurrency {
+        concurrency[host] ?? HostConcurrency(adaptiveCap: startCap)
+    }
+
+    // MARK: User actions
+
+    mutating func resetCircuit(host: RateHost, now: Date) {
+        guard case .circuitOpen = states[host] ?? .normal else { return }
+        let next = RatePolicy.next(
+            state: states[host] ?? .normal,
+            event: .userReset,
+            now: now,
+            tuning: tuning
+        )
+        states[host] = next == .normal ? nil : next
+        lastErrorKey[host] = nil
+    }
+
+    mutating func resetAllCircuits(now: Date) {
         for host in circuitOpenHosts {
-            states[host] = nil
-            lastErrorKey[host] = nil
+            resetCircuit(host: host, now: now)
         }
     }
 
@@ -130,6 +154,9 @@ struct RateLimiter {
 
     mutating func setPreferencesCap(_ cap: Int) {
         preferencesCap = max(1, cap)
-        adaptiveCap = min(adaptiveCap, preferencesCap)
+        for (host, var entry) in concurrency {
+            entry.adaptiveCap = min(entry.adaptiveCap, preferencesCap)
+            concurrency[host] = entry
+        }
     }
 }

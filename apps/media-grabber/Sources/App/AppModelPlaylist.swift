@@ -14,15 +14,16 @@ extension AppModel {
         })?.id
     }
 
-    func registerPlaylistGroup(id: UUID, for dump: PlaylistDump) {
-        playlistGroups.append(PersistedPlaylistGroup(
+    func registerPlaylistGroup(id: UUID, for dump: PlaylistDump) async {
+        let group = PersistedPlaylistGroup(
             id: id,
             title: dump.title,
             sourceURL: Self.trimmedPlaylistSourceURL(dump.sourceURL),
             isCollapsed: false
-        ))
-        persistence?.savePlaylistGroups(playlistGroups)
+        )
+        playlistGroups.append(group)
         rowStore.applyGroups(playlistGroups)
+        await engine.upsertPlaylistGroup(group)
     }
 
     func resolveUnsupportedPlaylistLink(_ url: String) async {
@@ -82,14 +83,11 @@ extension AppModel {
     }
 
     func loadPlaylistGroups(for snapshot: QueueSnapshot) {
-        guard let persistence else { return }
-        let liveGroupIDs = Set(snapshot.jobs.compactMap(\.playlistGroupID))
-        let storedGroups = persistence.loadPlaylistGroups()
-        let loaded = storedGroups.filter { liveGroupIDs.contains($0.id) }
-        playlistGroups = loaded
-        if loaded.count != storedGroups.count {
-            persistence.savePlaylistGroups(loaded)
-        }
-        rowStore.applyGroups(playlistGroups)
+        syncPlaylistGroups(from: snapshot)
+    }
+
+    func syncPlaylistGroups(from snapshot: QueueSnapshot) {
+        playlistGroups = snapshot.playlistGroups.map(\.asPersisted)
+        rowStore.applyGroupSnapshots(snapshot.playlistGroups)
     }
 }

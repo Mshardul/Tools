@@ -64,7 +64,7 @@ extension AppModel {
         let ids = await engine.submitPlaylistItems(items)
         guard !ids.isEmpty else { return }
         if isNewGroup {
-            registerPlaylistGroup(id: groupID, for: picker.dump)
+            await registerPlaylistGroup(id: groupID, for: picker.dump)
         }
         if let firstID = ids.first {
             setLastSubmittedJobID(firstID)

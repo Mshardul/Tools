@@ -7,7 +7,8 @@ final class RowStatusTextTests: XCTestCase {
         _ state: JobState,
         host: String = "https://youtube.com/x",
         cooldownUntil: Date? = nil,
-        attempt: Int = 0
+        attempt: Int = 0,
+        probeWaitUntil: Date? = nil
     ) -> JobSnapshot {
         JobSnapshot(
             id: UUID(),
@@ -30,7 +31,8 @@ final class RowStatusTextTests: XCTestCase {
             playerClientUsed: nil,
             playlistGroupID: nil,
             integrityVerdict: nil,
-            availableActions: []
+            availableActions: [],
+            probeWaitUntil: probeWaitUntil
         )
     }
 
@@ -126,6 +128,20 @@ final class RowStatusTextTests: XCTestCase {
 
     func test_remark_running_isEmpty() {
         let remark = RowRemarkText.text(for: snap(.running), queuePosition: nil, rate: nil)
+        XCTAssertEqual(remark, "")
+    }
+
+    func test_remark_probingWaitSlot_showsCountdown() {
+        let remark = RowRemarkText.text(
+            for: snap(.probing, probeWaitUntil: future),
+            queuePosition: nil,
+            rate: nil
+        )
+        XCTAssertTrue(remark.hasPrefix("Waiting for probe slot · "))
+    }
+
+    func test_remark_probingWithoutWait_isEmpty() {
+        let remark = RowRemarkText.text(for: snap(.probing), queuePosition: nil, rate: nil)
         XCTAssertEqual(remark, "")
     }
 

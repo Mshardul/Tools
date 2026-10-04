@@ -33,7 +33,13 @@ enum RowRemarkText {
             "Try again in " + CountdownFormat.mmss(until: until, now: .now)
         case let .failed(errorClass):
             sentence(for: errorClass, vpnActive: vpnActive)
-        case .probing, .running, .paused, .completed, .cancelled:
+        case .probing:
+            if let until = snapshot.probeWaitUntil {
+                "Waiting for probe slot · " + CountdownFormat.mmss(until: until, now: .now)
+            } else {
+                ""
+            }
+        case .running, .paused, .completed, .cancelled:
             ""
         }
     }

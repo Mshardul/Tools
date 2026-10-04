@@ -27,6 +27,7 @@ final class DownloadJob: @unchecked Sendable {
     var playerClientUsed: String?
     var playlistGroupID: UUID?
     var playlistIndex: Int?
+    var probeWaitUntil: Date?
 
     init(request: DownloadRequest, id: UUID = UUID(), addedAt: Date = .now) {
         self.id = id
@@ -49,6 +50,7 @@ final class DownloadJob: @unchecked Sendable {
         playerClientUsed = nil
         playlistGroupID = nil
         playlistIndex = nil
+        probeWaitUntil = nil
     }
 
     func snapshot(availableActions: Set<RowAction>) -> JobSnapshot {
@@ -74,7 +76,8 @@ final class DownloadJob: @unchecked Sendable {
             playlistGroupID: playlistGroupID,
             playlistIndex: playlistIndex,
             integrityVerdict: integrityVerdict,
-            availableActions: availableActions
+            availableActions: availableActions,
+            probeWaitUntil: probeWaitUntil
         )
     }
 }

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Working name stays `MediaGrabber`. No product-name/icon work — that's Phase 14 Step 0.
+- Working name stays `MediaGrabber`. No product-name/icon work — that's Phase 17.
 - No per-job failure toasts, ever (row + Inactive rail badge only) — spec §Locked decisions "Toasts".
 - Toast and native notification never double-fire for the same event — spec's double-fire table (Architecture → Feedback path).
 - No first-run copy/layout redesign — only close the existing gaps against parent §5.3.

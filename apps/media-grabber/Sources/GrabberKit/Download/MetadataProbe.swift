@@ -45,13 +45,21 @@ public enum MetadataError: Error, Sendable, Equatable {
 }
 
 public protocol MetadataProbing: Sendable {
-    func probe(_ url: String, context: ExtractorContext) async -> Result<MediaMetadata, MetadataError>
+    func probe(
+        _ url: String,
+        context: ExtractorContext,
+        onWait: (@Sendable (Date?) -> Void)?
+    ) async -> Result<MediaMetadata, MetadataError>
     func probePlaylist(_ url: String, context: ExtractorContext) async -> Result<PlaylistDump, MetadataError>
 }
 
 public extension MetadataProbing {
+    func probe(_ url: String, context: ExtractorContext = .none) async -> Result<MediaMetadata, MetadataError> {
+        await probe(url, context: context, onWait: nil)
+    }
+
     func probe(_ url: String) async -> Result<MediaMetadata, MetadataError> {
-        await probe(url, context: .none)
+        await probe(url, context: .none, onWait: nil)
     }
 }
 
@@ -75,9 +83,10 @@ public actor MetadataProbe: MetadataProbing {
 
     public func probe(
         _ url: String,
-        context: ExtractorContext = .none
+        context: ExtractorContext = .none,
+        onWait: (@Sendable (Date?) -> Void)? = nil
     ) async -> Result<MediaMetadata, MetadataError> {
-        await enqueue {
+        await enqueue(onWait: onWait) {
             await self.runProbe(url, context: context)
         }
     }
@@ -86,18 +95,19 @@ public actor MetadataProbe: MetadataProbing {
         _ url: String,
         context: ExtractorContext = .none
     ) async -> Result<PlaylistDump, MetadataError> {
-        await enqueue {
+        await enqueue(onWait: nil) {
             await self.runPlaylistProbe(url, context: context)
         }
     }
 
     private func enqueue<Output: Sendable>(
+        onWait: (@Sendable (Date?) -> Void)?,
         _ operation: @escaping @Sendable () async -> Result<Output, MetadataError>
     ) async -> Result<Output, MetadataError> {
         let predecessor = tail
         let work = Task { () -> Result<Output, MetadataError> in
             await predecessor.value
-            await bucket.acquire()
+            await bucket.acquire(onWait: onWait)
             if Task.isCancelled {
                 return .failure(.malformedOutput)
             }

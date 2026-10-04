@@ -42,6 +42,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
     var onColumnReorder: ((ColumnID, ColumnID) -> Void)?
     var onCycleSort: ((ColumnID) -> Void)?
     var onToggleFilter: ((ColumnID, String) -> Void)?
+    var onRowReorder: ((Int, Int) -> Void)?
 
     var keyboardFocusRow = -1
 
@@ -123,6 +124,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
         tableView.dataSource = self
         tableView.delegate = self
         tableView.columnAutoresizingStyle = .sequentialColumnAutoresizingStyle
+        configureRowDragging()
         tableView.onRowClick = { [weak self] row, column, flags in
             self?.handleRowClick(row: row, column: column, flags: flags)
         }

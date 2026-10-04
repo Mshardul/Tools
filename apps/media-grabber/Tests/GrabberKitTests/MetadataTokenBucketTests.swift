@@ -29,6 +29,29 @@ final class MetadataTokenBucketTests: XCTestCase {
         XCTAssertTrue(finished.read { $0 })
     }
 
+    func testAcquireReportsWaitDeadlineThenClears() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 1000))
+        let bucket = MetadataTokenBucket(limit: 1, windowSeconds: 60, clock: clock)
+        await bucket.acquire(onWait: nil)
+
+        let reported = LockedBox<[Date?]>([])
+        let waiter = Task {
+            await bucket.acquire { until in
+                reported.mutate { $0.append(until) }
+            }
+        }
+        await Task.yield()
+        await Task.yield()
+
+        let mid = reported.read { $0 }
+        XCTAssertTrue(mid.contains { $0 != nil })
+        XCTAssertEqual(mid.compactMap(\.self).last, Date(timeIntervalSince1970: 1060))
+
+        clock.advance(by: .seconds(60))
+        await waiter.value
+        XCTAssertEqual(reported.read { $0.last! }, nil)
+    }
+
     func testCancelledAcquireDoesNotStealToken() async {
         let clock = CancellableClock(now: Date(timeIntervalSince1970: 0))
         let bucket = MetadataTokenBucket(limit: 3, windowSeconds: 60, clock: clock)

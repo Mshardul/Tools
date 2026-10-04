@@ -282,7 +282,10 @@ extension HomeView {
                         Task { await appModel.handlePlaylistGroupAction(id, action: action) }
                     },
                     onTogglePlaylistGroupCollapsed: { id, isCollapsed in
-                        appModel.setPlaylistGroupCollapsed(id: id, isCollapsed)
+                        Task { await appModel.setPlaylistGroupCollapsed(id: id, isCollapsed) }
+                    },
+                    onRowReorder: { from, to in
+                        Task { await appModel.handleRowReorder(from: from, to: to) }
                     }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

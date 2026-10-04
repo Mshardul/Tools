@@ -100,7 +100,11 @@ private final class CancellationObservingMetadataProbe: MetadataProbing, @unchec
 
     private let box = LockedBox(State())
 
-    func probe(_: String, context _: ExtractorContext) async -> Result<MediaMetadata, MetadataError> {
+    func probe(
+        _: String,
+        context _: ExtractorContext,
+        onWait _: (@Sendable (Date?) -> Void)?
+    ) async -> Result<MediaMetadata, MetadataError> {
         box.mutate { $0.started = true }
         do {
             try await withTaskCancellationHandler {

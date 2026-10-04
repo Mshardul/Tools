@@ -19,7 +19,9 @@ extension DownloadEngine {
                 return
             }
             let context = await makeContext(url: url, attempt: 0, forceCookies: forceCookies)
-            let result = await probe.probe(url, context: context)
+            let result = await probe.probe(url, context: context) { [weak self] until in
+                Task { await self?.setProbeWait(id, until: until) }
+            }
             await recordProbeResult(id, result)
         }
     }

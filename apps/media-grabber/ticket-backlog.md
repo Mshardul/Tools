@@ -88,7 +88,7 @@ are in spec §12.2.
   `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
   `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
   Share Extension first-enable nudge parks in **Phase 13**; app icon parks in
-  **Phase 14 Step 0**.
+  **Phase 17**.
 - **Phase 11 — Diagnostics, About, updates + Home manager chrome.** *(shipped)* Diagnostics
   moves into Preferences (System group) rather than top-level nav; report card,
   Copy report, and Share diagnostic bundle (system share sheet, not a plain
@@ -122,7 +122,7 @@ are in spec §12.2.
   rewrites parent §5.3 / §5.4 + design-system + Home/onboarding mockups to
   match before implement. Site friendly host names if not already shipped.
   *(First-run empty Home copy/layout redesign and Aurora body face stay
-  Phase 14.)*
+  Phase 15.)*
 
   **Status model (locked 2026-09-12):** Keep the nine `JobState` cases. Row
   status = those nine, 1:1 (aliases OK: `running`→Downloading, `completed`→Saved).
@@ -149,8 +149,8 @@ are in spec §12.2.
   existing `ColumnConfig.moveColumn` + persistence); resizable column widths
   (drag handles + persist in `ColumnConfig`); multi-select row actions (plan
   **reverses** parent §5.4 “no row selection” and ships selection + batch
-  actions in this phase). **Queue-row drag-reorder parks in Phase 14**
-  (locked 2026-09-22 — column chrome + multi-select is enough this phase;
+  actions in this phase). **Queue-row drag-reorder parks in Phase 15**
+  (locked 2026-09-22; owner renumbered 2026-10-04 — column chrome + multi-select is enough this phase;
   row reorder needs engine order semantics and fights active sort).
   **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no
   merged transfer column). Builds on Phase 11’s manager Home (rail; Status
@@ -177,7 +177,7 @@ are in spec §12.2.
   SwiftUI owns Home chrome outside that rect (rail, batch bar, Columns menu,
   dialogs, rest of app). Cells/headers are **AppKit-drawn** with shared design
   tokens — not default `NSHostingView` per cell. Not a pure SwiftUI `Table`;
-  not forever-extending today’s LazyVStack. Phase 14 row-reorder uses this
+  not forever-extending today’s LazyVStack. Phase 15 row-reorder uses this
   same grid. Design + plan:
   `docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md`,
   `docs/superpowers/plans/archived/2026-09-22-media-grabber-downloads-table-chrome.md`.
@@ -188,18 +188,22 @@ are in spec §12.2.
   JetBrains Mono + `ATSApplicationFontsPath` — no body-face swap); Debug menu
   decide-and-close; Share Extension first-enable hint decide-and-close; **full
   a11y sweep last** (keyboard / VoiceOver / reduced-motion on every screen).
-  **Out → Phase 14 Step 0:** product name (§14) + app icon. **Out → Phase 14:**
-  Aurora body-face swap; first-run Home redesign; Home banner → footer;
-  per-host adaptive concurrency.
-- **Phase 14 — Post-v1 maturity.** **Step 0 branding gate** (name + icon) if
-  not done. Then: playlist-group aggregate state (engine); real metadata-probe
-  token bucket + visibility; POT/shield rotation; always-on-cookies model;
-  remote `player_client` order JSON; per-site helpers beyond YouTube;
-  **queue-row drag-reorder** (parked from Phase 12); **per-host adaptive
-  concurrency** + **banner → footer** + **body-face / first-run redesign**
-  (parked from Phase 13); optional UX extras (subtitles/embed, menu bar,
-  schedules, stats, bandwidth graphs, per-skin light/dark, compact breakpoint);
-  evaluate `.shieldDown` halt + `.userReset` soft transition (ship or drop in
-  plan); Sparkle/notarization/bundled deps only if Developer ID exists. Full
-  stub in parent §12.1.
+  **Out → Phase 14:** per-host adaptive concurrency. **Out → Phase 15:**
+  Aurora body-face swap; first-run Home redesign; Home banner → footer.
+  **Out → Phase 17:** product name (§14) + app icon.
+- **Phase 14 — Engine maturity.** *(shipped)* Playlist-group aggregate state in
+  GrabberKit (`QueueSnapshot.playlistGroups`); metadata-probe wait visibility
+  (`probeWaitUntil`); per-host adaptive concurrency; `.userReset` through
+  `RatePolicy`; `.shieldDown` halt dropped. Spec + plan archived under
+  `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*`.
+- **Phase 15 — Table & Home finish.** *(scope locked 2026-10-04)* View-only
+  queue-row drag-reorder (session); Aurora body-face swap; first-run Home
+  redesign. Banner → footer already shipped. Spec:
+  `docs/superpowers/specs/2026-10-04-media-grabber-phase-15-table-home-finish-design.md`.
+- **Phase 16 — Site / identity maturity.** POT/shield rotation; always-on-cookies;
+  remote `player_client` order JSON; per-site helpers beyond YouTube; optional
+  UX extras (evaluate at plan time).
+- **Phase 17 — Branding & release gate.** Product name (§14) + find-and-replace
+  + app icon; revisit repo-root `BACKLOG.md`. Sparkle / notarization / bundled
+  deps only if Developer ID exists. Full stub in parent §12.1.
 

@@ -9,6 +9,7 @@ struct DownloadsGridView: NSViewRepresentable {
     let onAction: (UUID, RowAction) -> Void
     let onPlaylistGroupAction: (UUID, PlaylistGroupAction) -> Void
     let onTogglePlaylistGroupCollapsed: (UUID, Bool) -> Void
+    let onRowReorder: (Int, Int) -> Void
 
     @Environment(\.theme) private var theme
 
@@ -88,6 +89,7 @@ struct DownloadsGridView: NSViewRepresentable {
             columnConfig = config
             store.setColumnConfig(config)
         }
+        controller.onRowReorder = onRowReorder
     }
 
     @MainActor

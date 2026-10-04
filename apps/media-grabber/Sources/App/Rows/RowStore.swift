@@ -77,11 +77,13 @@ final class RowStore {
     var columnConfig: ColumnConfig
     private var modelsByID: [UUID: RowModel] = [:]
     var groupRegistry: [UUID: PersistedPlaylistGroup] = [:]
+    var groupSnapshots: [UUID: PlaylistGroupSnapshot] = [:]
     var localCollapsed: [UUID: Bool] = [:]
     private var progressBuckets: [UUID: Int] = [:]
     private(set) var lastRevision: UInt64 = 0
     var selectedJobIDs: Set<UUID> = []
     var selectionAnchorID: UUID?
+    var manualOrder: [UUID]?
 
     init(columnConfig: ColumnConfig = .default) {
         self.columnConfig = columnConfig
@@ -89,6 +91,9 @@ final class RowStore {
 
     func setColumnConfig(_ config: ColumnConfig) {
         columnConfig = config
+        if config.sortColumn != nil {
+            manualOrder = nil
+        }
         recomputeVisible()
     }
 
@@ -158,8 +163,14 @@ final class RowStore {
             progressBuckets[job.id] = Self.progressBucket(for: job)
         }
         recomputeChipCounts()
+        var orderChanged = false
+        if manualOrder != nil {
+            let before = manualOrder
+            reconcileManualOrderWithRows()
+            orderChanged = before != manualOrder
+        }
 
-        if structuralChange || sortIsProgressLike || groupBucketChange {
+        if structuralChange || sortIsProgressLike || groupBucketChange || orderChanged {
             recomputeVisible()
         }
     }
@@ -294,22 +305,28 @@ final class RowStore {
     }
 
     private func sorted(_ input: [RowModel]) -> [RowModel] {
-        guard let column = columnConfig.sortColumn else { return input }
-        let ascending = columnConfig.sortDirection != .descending
-        return input.sorted { lhs, rhs in
-            let left = sortKey(lhs, column: column)
-            let right = sortKey(rhs, column: column)
-            switch (left, right) {
-            case let (leftValue?, rightValue?):
-                return ascending ? leftValue < rightValue : leftValue > rightValue
-            case (nil, _?):
-                return false
-            case (_?, nil):
-                return true
-            case (nil, nil):
-                return false
+        if let column = columnConfig.sortColumn {
+            let ascending = columnConfig.sortDirection != .descending
+            return input.sorted { lhs, rhs in
+                let left = sortKey(lhs, column: column)
+                let right = sortKey(rhs, column: column)
+                switch (left, right) {
+                case let (leftValue?, rightValue?):
+                    return ascending ? leftValue < rightValue : leftValue > rightValue
+                case (nil, _?):
+                    return false
+                case (_?, nil):
+                    return true
+                case (nil, nil):
+                    return false
+                }
             }
         }
+        if let order = manualOrder {
+            let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+            return input.sorted { (rank[$0.id] ?? Int.max) < (rank[$1.id] ?? Int.max) }
+        }
+        return input
     }
 
     private func progressBucketChanged(id: UUID) -> Bool {

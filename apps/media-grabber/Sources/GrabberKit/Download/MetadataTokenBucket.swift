@@ -1,13 +1,21 @@
 import Foundation
 
 public protocol MetadataTokenBucketing: Sendable {
-    func acquire() async
+    func acquire(onWait: (@Sendable (Date?) -> Void)?) async
+}
+
+public extension MetadataTokenBucketing {
+    func acquire() async {
+        await acquire(onWait: nil)
+    }
 }
 
 public struct UnlimitedMetadataTokenBucket: MetadataTokenBucketing {
     public init() {}
 
-    public func acquire() async {}
+    public func acquire(onWait: (@Sendable (Date?) -> Void)?) async {
+        onWait?(nil)
+    }
 }
 
 public actor MetadataTokenBucket: MetadataTokenBucketing {
@@ -22,9 +30,10 @@ public actor MetadataTokenBucket: MetadataTokenBucketing {
         self.clock = clock
     }
 
-    public func acquire() async {
+    public func acquire(onWait: (@Sendable (Date?) -> Void)?) async {
         while true {
             if Task.isCancelled {
+                onWait?(nil)
                 return
             }
 
@@ -33,6 +42,7 @@ public actor MetadataTokenBucket: MetadataTokenBucketing {
 
             if stamps.count < limit {
                 stamps.append(now)
+                onWait?(nil)
                 return
             }
 
@@ -40,9 +50,12 @@ public actor MetadataTokenBucket: MetadataTokenBucketing {
                 continue
             }
 
-            await clock.sleep(until: oldest.addingTimeInterval(window))
+            let next = oldest.addingTimeInterval(window)
+            onWait?(next)
+            await clock.sleep(until: next)
 
             if Task.isCancelled {
+                onWait?(nil)
                 return
             }
         }
