@@ -54,6 +54,7 @@ struct HealthStrip: View {
                 chipBody(chip)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(HealthChipAccessibility.popoverLabel(chipLabel: chip.label))
             .popover(isPresented: Binding(
                 get: { openPopoverID == chip.id },
                 set: {
@@ -86,6 +87,7 @@ struct HealthStrip: View {
             }
             .buttonStyle(.plain)
             .disabled(isBusy)
+            .accessibilityLabel(HealthChipAccessibility.refreshLabel(id: chip.id))
         case .none:
             chipBody(chip)
         }
@@ -106,6 +108,7 @@ struct HealthStrip: View {
         HStack(spacing: Spacing.s1) {
             dotView(chip.dot)
                 .frame(width: 7, height: 7)
+                .accessibilityHidden(true)
             Text(chip.label + suffix)
                 .font(theme.monoFont(11, .regular))
                 .foregroundStyle(theme.palette.dim)

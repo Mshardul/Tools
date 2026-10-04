@@ -33,6 +33,7 @@ let project = Project(
                 "NSHumanReadableCopyright": "MIT",
                 "CFBundleShortVersionString": "$(MARKETING_VERSION)",
                 "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+                "ATSApplicationFontsPath": ".",
                 "CFBundleURLTypes": [
                     [
                         "CFBundleURLName": "MediaGrabber",
@@ -54,7 +55,7 @@ let project = Project(
                 ]
             ]),
             sources: ["Sources/App/**"],
-            resources: ["PRIVACY.md"],
+            resources: ["PRIVACY.md", "Resources/Fonts/**"],
             dependencies: [.target(name: "GrabberKit"), .target(name: "ShareExtension")],
             settings: .settings(base: [
                 "CODE_SIGN_IDENTITY": "-",

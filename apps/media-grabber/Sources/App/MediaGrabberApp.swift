@@ -71,6 +71,9 @@ struct MediaGrabberApp: App {
         }
         .defaultSize(width: 980, height: 720)
         .windowResizability(.contentMinSize)
+        .commands {
+            DebugMenuCommands(appModel: appModel, relauncher: AppRelauncher())
+        }
     }
 
     @ViewBuilder

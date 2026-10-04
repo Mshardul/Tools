@@ -28,7 +28,7 @@ public protocol DownloadEngineProtocol: Sendable {
     func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError>
     func submitPlaylistItems(_ items: [PlaylistSubmitItem]) async -> [UUID]
     func ensureShield() async
-    func restartShield() async
+    func restartShield() async -> Bool
 
     func shutdown() async
 }

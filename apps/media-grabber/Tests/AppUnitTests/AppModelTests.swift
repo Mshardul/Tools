@@ -30,7 +30,8 @@ final class AppModelTests: XCTestCase {
         revealSink: FakeRevealSink = FakeRevealSink(),
         openURLSink: FakeOpenURLSink = FakeOpenURLSink(),
         engineJobLogDir: URL? = nil,
-        persistence: FakeQueuePersisting? = nil
+        persistence: FakeQueuePersisting? = nil,
+        notificationRouter: (any NotificationRouting)? = nil
     ) -> AppModel {
         AppModelTestHelpers.makeModel(
             defaults: defaults,
@@ -41,7 +42,8 @@ final class AppModelTests: XCTestCase {
             revealSink: revealSink,
             openURLSink: openURLSink,
             engineJobLogDir: engineJobLogDir,
-            persistence: persistence
+            persistence: persistence,
+            notificationRouter: notificationRouter
         )
     }
 
@@ -264,6 +266,74 @@ extension AppModelTests {
 
         XCTAssertTrue(engine.restoreCalled)
         XCTAssertEqual(model.rowStore.rows.count, 1)
+    }
+
+    func test_showsTable_isFalseUntilFirstGrabOrNonEmptyQueue() {
+        let model = makeModel()
+
+        XCTAssertFalse(model.showsTable)
+
+        model.hasGrabbedOnce = true
+        XCTAssertTrue(model.showsTable)
+    }
+
+    func test_showsTable_isTrueWhenQueueNonEmptyEvenWithoutHasGrabbedOnce() {
+        let model = makeModel()
+        model.rowStore.resync(
+            QueueSnapshot(
+                jobs: [AppModelTestHelpers.jobSnapshot()],
+                revision: 1,
+                queueHalt: nil,
+                generatedAt: .init(),
+                hostRateSummary: [:],
+                isOnline: true
+            )
+        )
+
+        XCTAssertTrue(model.showsTable)
+    }
+
+    func test_restartYtDlp_onFailure_enqueuesErrorToast() async {
+        let updater = FakeYtDlpUpdater(result: .failure(reason: "network unreachable"))
+        let model = AppModelTestHelpers.makeModel(
+            defaults: defaults, logDirectory: logDirectory, ytDlpUpdater: updater
+        )
+
+        await model.restartYtDlp()
+
+        XCTAssertEqual(model.toastCenter.items.count, 1)
+        XCTAssertTrue(model.toastCenter.items.first?.text.contains("network unreachable") ?? false)
+    }
+
+    func test_restartYtDlp_onSuccess_doesNotToast() async {
+        let updater = FakeYtDlpUpdater(result: .success(newVersion: "2026.09.01"))
+        let model = AppModelTestHelpers.makeModel(
+            defaults: defaults, logDirectory: logDirectory, ytDlpUpdater: updater
+        )
+
+        await model.restartYtDlp()
+
+        XCTAssertEqual(model.toastCenter.items.count, 0)
+    }
+
+    func test_restartShield_onFailure_enqueuesErrorToast() async {
+        let engine = FakeEngine()
+        engine.setRestartShieldResult(false)
+        let model = makeModel(engine: engine)
+
+        await model.restartShield()
+
+        XCTAssertEqual(model.toastCenter.items.count, 1)
+    }
+
+    func test_restartShield_onSuccess_doesNotToast() async {
+        let engine = FakeEngine()
+        engine.setRestartShieldResult(true)
+        let model = makeModel(engine: engine)
+
+        await model.restartShield()
+
+        XCTAssertEqual(model.toastCenter.items.count, 0)
     }
 
     func test_resetAllSettings_restoresDefaults() {

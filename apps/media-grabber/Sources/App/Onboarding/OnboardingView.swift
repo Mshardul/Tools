@@ -38,10 +38,12 @@ struct OnboardingView: View {
             HStack(alignment: .top, spacing: Spacing.s3) {
                 icon(for: state, index: OnboardingStepID.allCases.firstIndex(of: step) ?? 0)
                     .frame(width: 20)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title(for: step))
                         .font(theme.bodyFont(14, .medium))
                         .foregroundStyle(theme.palette.text)
+                        .accessibilityLabel("\(title(for: step)), \(spokenState(state))")
                     Text(subtitle(for: step))
                         .font(theme.bodyFont(12, .regular))
                         .foregroundStyle(theme.palette.dim)
@@ -122,6 +124,21 @@ struct OnboardingView: View {
                 Button("Open in Terminal") { installer.openTerminalForHomebrew() }
                 Button("Re-check") { Task { await installer.recheck() } }
             }
+        }
+    }
+
+    private func spokenState(_ state: OnboardingStepState) -> String {
+        switch state {
+        case .done:
+            "done"
+        case .skipped:
+            "skipped"
+        case .running:
+            "in progress"
+        case .failed:
+            "failed"
+        case .pending:
+            "not started"
         }
     }
 

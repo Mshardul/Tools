@@ -14,7 +14,9 @@ enum AppModelTestHelpers {
         revealSink: FakeRevealSink = FakeRevealSink(),
         openURLSink: FakeOpenURLSink = FakeOpenURLSink(),
         engineJobLogDir: URL? = nil,
-        persistence: FakeQueuePersisting? = nil
+        persistence: FakeQueuePersisting? = nil,
+        notificationRouter: (any NotificationRouting)? = nil,
+        ytDlpUpdater: YtDlpUpdating? = nil
     ) -> AppModel {
         AppModel(
             engine: engine,
@@ -25,7 +27,10 @@ enum AppModelTestHelpers {
             prefs: Preferences(defaults: defaults),
             log: LogWriter(directory: logDirectory),
             envProbe: FakeEnvironmentProbe(ready: envReady),
+            ytDlpUpdater: ytDlpUpdater ?? FakeYtDlpUpdater(),
             debugFlags: debugFlags,
+            defaults: defaults,
+            notificationRouter: notificationRouter ?? FakeNotificationRouter(),
             revealSink: revealSink,
             openURLSink: openURLSink,
             engineJobLogDir: engineJobLogDir ?? logDirectory,
@@ -73,6 +78,15 @@ enum AppModelTestHelpers {
         guard FileManager.default.fileExists(atPath: logFile.path) else { return false }
         let text = try String(contentsOf: logFile, encoding: .utf8)
         return text.contains("\"event\":\"\(event)\"")
+    }
+}
+
+@MainActor
+final class FakeNotificationRouter: NotificationRouting {
+    private(set) var notifiedFailures: [(title: String, reason: String)] = []
+
+    func notifyJobFailed(title: String, reason: String) async {
+        notifiedFailures.append((title, reason))
     }
 }
 

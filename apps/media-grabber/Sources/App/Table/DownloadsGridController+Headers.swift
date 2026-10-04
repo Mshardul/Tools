@@ -78,6 +78,42 @@ extension DownloadsGridController {
             header.sortKind = .sortNeutral
         }
         header.filterActive = !(columnConfig.columnFilters[columnID]?.isEmpty ?? true)
+        header.setAccessibilityLabel(
+            GridHeaderAccessibility.label(
+                title: header.stringValue,
+                sort: headerSort(for: columnID, header: header),
+                showsFilter: header.showsFilter,
+                filterActive: header.filterActive
+            )
+        )
+        header.setAccessibilityCustomActions(headerActions(for: columnID, header: header))
+    }
+
+    func headerSort(for columnID: ColumnID, header: GridHeaderCell) -> GridHeaderAccessibility.Sort {
+        guard header.showsSort else { return .unavailable }
+        guard columnConfig.sortColumn == columnID else { return .available }
+        switch columnConfig.sortDirection {
+        case .ascending: return .ascending
+        case .descending: return .descending
+        case nil: return .available
+        }
+    }
+
+    func headerActions(for columnID: ColumnID, header: GridHeaderCell) -> [NSAccessibilityCustomAction]? {
+        var actions: [NSAccessibilityCustomAction] = []
+        if header.showsSort {
+            actions.append(NSAccessibilityCustomAction(name: "Sort") { [weak self] in
+                self?.onCycleSort?(columnID)
+                return true
+            })
+        }
+        if header.showsFilter {
+            actions.append(NSAccessibilityCustomAction(name: "Filter") { [weak self] in
+                self?.presentFilterMenu(for: columnID, event: nil)
+                return true
+            })
+        }
+        return actions.isEmpty ? nil : actions
     }
 
     func refreshSelectionHeaderTitle() {
@@ -87,6 +123,16 @@ extension DownloadsGridController {
         if let header = column.headerCell as? GridHeaderCell {
             header.stringValue = selectionHeaderTitle()
             header.tokens = tokens
+            let selectionLabel = GridHeaderAccessibility.selectionLabel(
+                allSelected: selectionHeaderTitle() == "☑"
+            )
+            header.setAccessibilityLabel(selectionLabel)
+            header.setAccessibilityCustomActions([
+                NSAccessibilityCustomAction(name: selectionLabel) { [weak self] in
+                    self?.toggleSelectAllFromHeader()
+                    return true
+                }
+            ])
         } else {
             column.title = selectionHeaderTitle()
         }
@@ -108,7 +154,7 @@ extension DownloadsGridController {
         }
     }
 
-    func presentFilterMenu(for column: ColumnID, event: NSEvent) {
+    func presentFilterMenu(for column: ColumnID, event: NSEvent?) {
         let values = filterValueProvider?(column) ?? []
         let menu = NSMenu()
         if values.isEmpty {
@@ -129,7 +175,17 @@ extension DownloadsGridController {
                 menu.addItem(item)
             }
         }
-        NSMenu.popUpContextMenu(menu, with: event, for: tableView.headerView ?? tableView)
+        if let event {
+            NSMenu.popUpContextMenu(menu, with: event, for: tableView.headerView ?? tableView)
+            return
+        }
+        guard let headerView = tableView.headerView,
+              let index = tableView.tableColumns.firstIndex(where: {
+                  DownloadsGridColumns.columnID(from: $0.identifier) == column
+              })
+        else { return }
+        let rect = headerView.headerRect(ofColumn: index)
+        menu.popUp(positioning: nil, at: NSPoint(x: rect.minX, y: rect.minY), in: headerView)
     }
 
     @objc

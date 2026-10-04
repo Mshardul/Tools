@@ -23,8 +23,10 @@ not this app-local one), Phase 11 — Diagnostics, About, updates + Home manager
 chrome (design lives in the parent spec §5/§12, no dedicated phase-spec doc;
 plan: repo-root `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`),
 Phase 12 — Downloads table chrome *(shipped)* — design + plan in
-`docs/superpowers/{specs,plans}/archived/2026-09-22-media-grabber-downloads-table-chrome*.md`.
-Next: Phase 13.
+`docs/superpowers/{specs,plans}/archived/2026-09-22-media-grabber-downloads-table-chrome*.md`,
+Phase 13 — Polish *(shipped)* — design + plan in
+`docs/superpowers/{specs,plans}/archived/2026-09-23-media-grabber-phase-13-polish*.md`.
+Next: Phase 14.
 
 ## Phase scoping — three rules
 
@@ -126,6 +128,18 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 - `.swiftformat` has `--disable docComments`; `.swiftlint.yml` has
   `disabled_rules: [todo]`. Both exclude `Derived/`.
 
+## Fonts
+
+- Sora / Inter / JetBrains Mono are vendored under `Resources/Fonts/<Family>/`
+  and registered via `ATSApplicationFontsPath` in `Project.swift`'s
+  `infoPlist`. Each family's OFL license is alongside its font file
+  (`<Family>/<Family>-OFL.txt`) — filenames are family-prefixed because Tuist
+  flattens `resources:` globs into one `Contents/Resources/` directory, so
+  three bare `OFL.txt` files would collide.
+- `ATSApplicationFontsPath` is `"."` (the bundle's `Resources/` root), not a
+  `Fonts` subdirectory — the same flattening means the font files land
+  directly in `Resources/`, not `Resources/Fonts/`.
+
 ## Code style
 
 - Comments: single-line only, only to explain *why*, only when the type/function
@@ -182,8 +196,6 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 ## Known Phase 1 gaps (parked in later phases — not bugs)
 
-- Aurora typefaces (Sora / Inter / JetBrains Mono) are not bundled — `Skin`'s
-  font accessors fall back to the system face. → **Phase 13**.
 - No queue / persistence / resume — a quit mid-download loses the job.
   *(closed by Phase 2.)*
 - Onboarding's `testRun` canary was auto-pass. *(closed by Phase 11 — real

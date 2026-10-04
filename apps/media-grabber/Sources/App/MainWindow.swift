@@ -7,7 +7,6 @@ struct MainWindow: View {
     @Environment(IncomingLinkController.self) private var incomingLinks
     @Environment(\.theme) private var theme
     @State private var bannerHeight: CGFloat = 0
-    @AppStorage("mg.hasGrabbedOnce") private var hasGrabbedOnce = false
 
     var body: some View {
         @Bindable var appModel = appModel
@@ -47,6 +46,10 @@ struct MainWindow: View {
 
             WarningBanner(content: appModel.bannerContent)
                 .onPreferenceChange(BannerHeightKey.self) { bannerHeight = $0 }
+
+            ToastHost(items: appModel.toastCenter.items) { id in
+                appModel.toastCenter.dismiss(id)
+            }
         }
         .overlay {
             if let request = appModel.pendingConfirmation {
@@ -127,6 +130,7 @@ struct MainWindow: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -145,7 +149,7 @@ struct MainWindow: View {
     private var rail: some View {
         switch appModel.page {
         case .home:
-            if showsHomeRail {
+            if appModel.showsTable {
                 HomeRail(store: appModel.rowStore)
             }
         case let .preferences(pane):
@@ -153,10 +157,6 @@ struct MainWindow: View {
         case let .about(tab):
             aboutRail(selected: tab)
         }
-    }
-
-    private var showsHomeRail: Bool {
-        hasGrabbedOnce || !appModel.rowStore.rows.isEmpty
     }
 
     private func preferencesRail(selected: PreferencesPane) -> some View {
@@ -210,5 +210,6 @@ struct MainWindow: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 }

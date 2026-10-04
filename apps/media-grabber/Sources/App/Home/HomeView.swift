@@ -5,8 +5,6 @@ struct HomeView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.theme) private var theme
 
-    @AppStorage("mg.hasGrabbedOnce") private var hasGrabbedOnce = false
-
     @State private var mediaType: MediaType = .video
     @State private var videoHeight = 1080
     @State private var audioFormat: AudioFormat = .m4a
@@ -16,14 +14,10 @@ struct HomeView: View {
     @State private var probeTask: Task<Void, Never>?
     @State private var playlistPickerModel: PlaylistPickerModel?
 
-    private var showsTable: Bool {
-        hasGrabbedOnce || !appModel.rowStore.rows.isEmpty
-    }
-
     var body: some View {
         @Bindable var appModel = appModel
         return Group {
-            if showsTable {
+            if appModel.showsTable {
                 tableLayout
             } else {
                 firstRunLayout
@@ -97,6 +91,7 @@ struct HomeView: View {
             ProgressView()
                 .controlSize(.small)
                 .tint(theme.palette.accent)
+                .accessibilityLabel("Checking link")
         } else if let resolved = appModel.resolved {
             Text("\u{2713} \(resolved.title)")
                 .font(theme.monoFont(12, .regular))
@@ -126,6 +121,7 @@ struct HomeView: View {
                     .textFieldStyle(.plain)
                     .font(theme.bodyFont(14, .regular))
                     .foregroundStyle(theme.palette.text)
+                    .accessibilityLabel("Paste a link")
                     .onSubmit { Task { await resolve() } }
                     .onChange(of: appModel.homeFieldText) { _, new in autoProbe(new) }
                     .overlay(alignment: .leading) {
@@ -230,7 +226,7 @@ struct HomeView: View {
                 rebuildPlaylistPickerModel()
                 return
             }
-            hasGrabbedOnce = true
+            appModel.hasGrabbedOnce = true
             appModel.homeFieldText = ""
             appModel.clearResolved()
         }
@@ -261,6 +257,12 @@ extension HomeView {
             pasteBlock(reserveRunwaySlot: true)
                 .padding(.horizontal, Spacing.s6)
                 .padding(.top, Spacing.s4)
+
+            if appModel.hasGrabbedOnce {
+                ShareExtensionTipView(openURLSink: appModel.openURLSink)
+                    .padding(.horizontal, Spacing.s6)
+                    .padding(.top, Spacing.s3)
+            }
 
             HStack(alignment: .top, spacing: 0) {
                 DownloadsTable(
@@ -297,7 +299,7 @@ extension HomeView {
     private func addPlaylistSelection() async {
         guard let playlistPickerModel, playlistPickerModel.selectedCount > 0 else { return }
         await appModel.addPlaylistSelection(model: playlistPickerModel, overrides: runwayOverrides)
-        hasGrabbedOnce = true
+        appModel.hasGrabbedOnce = true
         appModel.homeFieldText = ""
         appModel.clearResolved()
     }

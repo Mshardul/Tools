@@ -38,6 +38,7 @@ extension DownloadsGridController {
         view.identifier = NSUserInterfaceItemIdentifier("grid-row")
         view.tokens = tokens
         view.isGroupHeader = isHeaderRow(row)
+        view.isKeyboardFocused = row == keyboardFocusRow
         return view
     }
 
@@ -51,8 +52,11 @@ extension DownloadsGridController {
                 in: tableView
             )
             applyTextStyle(field, font: tokens.body12, color: tokens.dim)
-            field.stringValue = selectedJobIDs.contains(row.id) ? "☑" : "☐"
+            let selected = selectedJobIDs.contains(row.id)
+            field.stringValue = selected ? "☑" : "☐"
             field.alignment = .center
+            field.setAccessibilityLabel(selected ? "Selected" : "Not selected")
+            field.setAccessibilityRole(.checkBox)
             return field
         }
     }
@@ -61,11 +65,13 @@ extension DownloadsGridController {
         let button = tableView.makeView(
             withIdentifier: NSUserInterfaceItemIdentifier("disclosure"),
             owner: nil
-        ) as? NSButton ?? makeIconButton(identifier: "disclosure")
+        ) as? GridFocusButton ?? makeIconButton(identifier: "disclosure")
+        let disclosure = group.isCollapsed ? "Expand \(group.title)" : "Collapse \(group.title)"
         button.image = NSImage(
             systemSymbolName: group.isCollapsed ? "chevron.right" : "chevron.down",
-            accessibilityDescription: nil
+            accessibilityDescription: disclosure
         )
+        button.setAccessibilityLabel(disclosure)
         button.contentTintColor = tokens.dim
         button.target = self
         button.action = #selector(toggleGroupCollapsed(_:))
@@ -119,7 +125,7 @@ extension DownloadsGridController {
         cell.apply(
             text: TablePresentation.statusDisplay(for: row),
             state: row.snapshot.state,
-            remark: liveRemarkText(for: row),
+            remark: TablePresentation.remarkDisplay(for: row),
             tokens: tokens
         )
         return cell
@@ -210,12 +216,6 @@ extension DownloadsGridController {
         }
     }
 
-    private func liveRemarkText(for row: RowModel) -> String {
-        let text = TablePresentation.remarkDisplay(for: row)
-        guard !text.isEmpty else { return TablePresentation.statusDisplay(for: row) }
-        return text
-    }
-
     private func activeProgressFraction(for row: RowModel) -> CGFloat? {
         guard let fraction = row.snapshot.progress?.fraction else { return nil }
         switch row.snapshot.state {
@@ -251,12 +251,13 @@ extension DownloadsGridController {
         field.drawsBackground = false
     }
 
-    private func makeIconButton(identifier: String) -> NSButton {
-        let button = NSButton(frame: .zero)
+    private func makeIconButton(identifier: String) -> GridFocusButton {
+        let button = GridFocusButton(frame: .zero)
         button.identifier = NSUserInterfaceItemIdentifier(identifier)
         button.isBordered = false
         button.imagePosition = .imageOnly
         button.setButtonType(.momentaryChange)
+        button.focusRingType = .default
         return button
     }
 
@@ -270,6 +271,28 @@ extension DownloadsGridController {
 
 final class GridTableView: NSTableView {
     var onRowClick: ((Int, Int, NSEvent.ModifierFlags) -> Void)?
+    var onKeyboardCommand: ((GridKeyboard.Command) -> Void)?
+    var onBecameFirstResponder: (() -> Void)?
+
+    override func becomeFirstResponder() -> Bool {
+        let accepted = super.becomeFirstResponder()
+        if accepted {
+            onBecameFirstResponder?()
+        }
+        return accepted
+    }
+
+    override func keyDown(with event: NSEvent) {
+        let command = GridKeyboard.command(
+            keyCode: event.keyCode,
+            shift: event.modifierFlags.contains(.shift)
+        )
+        guard command != .ignored else {
+            super.keyDown(with: event)
+            return
+        }
+        onKeyboardCommand?(command)
+    }
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
@@ -286,6 +309,16 @@ final class GridTableView: NSTableView {
 final class GridRowView: NSTableRowView {
     var tokens = DownloadsGridTokens.aurora
     var isGroupHeader = false
+    var isKeyboardFocused = false
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard isKeyboardFocused else { return }
+        tokens.accent.setStroke()
+        let path = NSBezierPath(rect: bounds.insetBy(dx: 1, dy: 1))
+        path.lineWidth = 2
+        path.stroke()
+    }
 
     override func drawBackground(in dirtyRect: NSRect) {
         let fill = isGroupHeader

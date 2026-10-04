@@ -181,7 +181,7 @@ are in spec §12.2.
   same grid. Design + plan:
   `docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md`,
   `docs/superpowers/plans/archived/2026-09-22-media-grabber-downloads-table-chrome.md`.
-- **Phase 13 — Polish.** *(scope locked 2026-09-23)* Success + chip-refresh-failure
+- **Phase 13 — Polish.** *(shipped)* Success + chip-refresh-failure
   toasts; native notifications for backgrounded failures; finish first-run →
   table + emptied-table gaps (no full first-run copy redesign); live
   column-width readout while resizing; bundle Aurora typefaces (Sora / Inter /

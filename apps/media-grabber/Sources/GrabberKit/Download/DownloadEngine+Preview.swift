@@ -33,10 +33,14 @@ public extension DownloadEngine {
         emitSnapshot()
     }
 
-    func restartShield() async {
+    func restartShield() async -> Bool {
         await dependencies.potProvider.restart()
         shieldStatus = await dependencies.potProvider.status
         emitSnapshot()
+        if case .running = shieldStatus {
+            return true
+        }
+        return false
     }
 }
 

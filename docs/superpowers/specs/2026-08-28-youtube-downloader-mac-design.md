@@ -1019,7 +1019,7 @@ add cases and wiring, never relayout — §12.2.
   (hidden by default). Detail
   when reached; leaf backlog mirrors this stub.
 
-- **Phase 13 — Polish.** *(scope locked 2026-09-23 — pick = ship end-to-end)*
+- **Phase 13 — Polish.** *(shipped)*
   **In:** success + chip-refresh-failure toasts; native notifications for
   backgrounded failures; finish first-run → table + emptied-table state gaps
   (no full first-run copy redesign); live column-width readout while resizing;

@@ -55,5 +55,7 @@ struct HomeRail: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(showBadge ? "\(label), \(count)" : label)
+        .accessibilityAddTraits(active ? .isSelected : [])
     }
 }

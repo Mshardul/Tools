@@ -45,6 +45,7 @@ struct SkinnedSegment<Option: Hashable>: View {
             .onTapGesture { selection = option }
             .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
             .accessibilityLabel(label(option))
+            .accessibilityAction { selection = option }
     }
 
     private func move(_ direction: MoveCommandDirection) {

@@ -195,6 +195,7 @@ private struct PlaylistPickerRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
+        .accessibilityAddTraits(isChecked ? [.isButton, .isSelected] : .isButton)
     }
 
     @ViewBuilder

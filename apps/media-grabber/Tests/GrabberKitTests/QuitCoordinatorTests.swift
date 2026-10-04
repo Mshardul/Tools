@@ -165,7 +165,9 @@ private final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     }
 
     func ensureShield() async {}
-    func restartShield() async {}
+    func restartShield() async -> Bool {
+        true
+    }
 
     func shutdown() async {
         box.mutate { $0.shutdownCalled = true }

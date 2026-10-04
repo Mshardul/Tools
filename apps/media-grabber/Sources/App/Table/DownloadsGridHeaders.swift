@@ -112,6 +112,9 @@ final class DownloadsGridHeaderView: NSTableHeaderView {
     var onDoubleClickDivider: ((Int) -> Void)?
     var onHeaderAffordanceClick: ((Int, GridHeaderHit, NSEvent) -> Void)?
 
+    private var readoutView: ColumnWidthReadoutView?
+    private var resizingColumnIndex: Int?
+
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
         if event.clickCount == 2, let columnIndex = resizeHandleColumnIndex(at: point) {
@@ -129,7 +132,54 @@ final class DownloadsGridHeaderView: NSTableHeaderView {
             }
         }
 
+        if let resizingIndex = resizeHandleColumnIndex(at: point) {
+            beginWidthReadout(columnIndex: resizingIndex)
+            super.mouseDown(with: event)
+            endWidthReadout()
+            return
+        }
+
         super.mouseDown(with: event)
+    }
+
+    private func beginWidthReadout(columnIndex: Int) {
+        guard tableView != nil else { return }
+        let view = ColumnWidthReadoutView(frame: .zero)
+        addSubview(view)
+        readoutView = view
+        resizingColumnIndex = columnIndex
+        updateWidthReadout(columnIndex: columnIndex)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleLiveResize(_:)),
+            name: NSTableView.columnDidResizeNotification,
+            object: tableView
+        )
+    }
+
+    @objc
+    private func handleLiveResize(_: Notification) {
+        guard let index = resizingColumnIndex else { return }
+        updateWidthReadout(columnIndex: index)
+    }
+
+    private func updateWidthReadout(columnIndex: Int) {
+        guard let tableView, columnIndex < tableView.tableColumns.count else { return }
+        let column = tableView.tableColumns[columnIndex]
+        let columnHeaderRect = headerRect(ofColumn: columnIndex)
+        let point = NSPoint(x: columnHeaderRect.maxX, y: columnHeaderRect.midY)
+        readoutView?.update(width: column.width, near: point)
+    }
+
+    private func endWidthReadout() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSTableView.columnDidResizeNotification,
+            object: tableView
+        )
+        readoutView?.removeFromSuperview()
+        readoutView = nil
+        resizingColumnIndex = nil
     }
 
     private func headerCell(at columnIndex: Int) -> GridHeaderCell? {

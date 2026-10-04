@@ -1,6 +1,6 @@
 # Phase 13 — Polish
 
-**Status:** ready for plan.
+**Status:** shipped.
 
 **Owner phase:** Phase 13 (Polish).  
 **Parent:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md`
@@ -109,6 +109,15 @@ This phase **audits and closes gaps** (rail / Columns visibility, first Grab
 flipping `hasGrabbedOnce`, emptied vs filtered empty in the AppKit grid). No
 new copy, no layout redesign.
 
+**Dedupe `hasGrabbedOnce`.** `HomeView` and `MainWindow` currently each hold
+their own `@AppStorage("mg.hasGrabbedOnce")` and re-derive the identical
+`showsTable` / `showsHomeRail` boolean independently ([HomeView.swift:8](../../../apps/media-grabber/Sources/App/Home/HomeView.swift#L8),
+[MainWindow.swift:10](../../../apps/media-grabber/Sources/App/MainWindow.swift#L10)) —
+rail (chrome) and table (content) must never disagree, so this can't stay two
+copies. Move `hasGrabbedOnce` and a `showsTable` computed property onto
+`AppModel`; both views read `appModel.showsTable`. Do this as part of the
+gap-close, not a follow-up.
+
 ### Live column-width readout
 
 During AppKit header resize drag, show a small readout near the active divider
@@ -121,8 +130,12 @@ SwiftUI-only overlay that fights header hit-testing.
 
 - Vendor OFL-compatible Sora / Inter / JetBrains Mono files under app Resources
   (e.g. `Resources/Fonts/`).
-- Set `ATSApplicationFontsPath` in the app Info.plist so families resolve at
-  launch.
+- There is no hand-edited Info.plist — the app's plist is Tuist-generated from
+  `.extendingDefault(with: [...])` in [Project.swift](../../../apps/media-grabber/Project.swift#L30).
+  Add `ATSApplicationFontsPath` to that dictionary and add the font files to
+  the `resources:` array ([Project.swift:57](../../../apps/media-grabber/Project.swift#L57),
+  currently just `["PRIVACY.md"]`), then `tuist generate` so families resolve
+  at launch.
 - `Theme.resolvedFont` already looks up by family name; bundling should stop
   silent system fallback for Aurora faces.
 - AppKit grid cells that use custom/`NSFont` must resolve the same family names
@@ -133,16 +146,28 @@ SwiftUI-only overlay that fights header hit-testing.
 
 ### Debug menu
 
-Add an application **Debug** menu that toggles / applies the existing
-`DebugFlags` surface:
+`DebugFlags` ([DebugFlags.swift](../../../apps/media-grabber/Sources/App/DebugFlags.swift))
+is parsed once from argv and consumed only at cold-launch construction
+(`MediaGrabberApp.init` / `AppModel.init` — `resetState` wipes persistence
+before first read, `forceOnboarding` gates the first view choice,
+`columnConfig` resets at construction). A menu item on a running app cannot
+"toggle" that struct; each Debug menu action needs its own mechanism:
 
-- Force Onboarding (`-MGForceOnboarding`)
-- Reset State (`-MGResetState`)
-- Concurrency Cap (`-MGConcurrencyCap`)
+- **Force Onboarding** — relaunch: re-exec the app binary with
+  `-MGForceOnboarding` (`NSWorkspace` launch + terminate), not a live flag
+  flip.
+- **Reset State** — relaunch with `-MGResetState`, same mechanism. Confirm
+  first (destructive — wipes persistence).
+- **Concurrency Cap** — this one *can* be live: expose a setter on `AppModel`
+  that overrides the same value `debugFlags.concurrencyCapOverride ??
+  prefs.maxConcurrentDownloads` already resolves ([AppModel.swift:77](../../../apps/media-grabber/Sources/App/AppModel.swift#L77)),
+  no relaunch needed.
 
-CLI argv parsing remains. Menu is the discoverable path for local QA. Menu is
-**always present** in the shipped app (not `#if DEBUG`-only) — items are
-harmless for users who never open Debug.
+CLI argv parsing remains (still the path for scripted / CI launches). Menu is
+the discoverable path for local QA. Menu is **always present** in the shipped
+app (not `#if DEBUG`-only) — items are harmless for users who never open
+Debug; the two relaunch actions are confirm-gated so they can't fire by
+accident.
 
 ### Share Extension first-enable tip
 

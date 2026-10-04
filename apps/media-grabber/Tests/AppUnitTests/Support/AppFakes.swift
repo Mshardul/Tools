@@ -36,6 +36,7 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         var stubPlaylistSubmitIDs: [UUID]?
         var ensureCount = 0
         var restartCount = 0
+        var restartShieldResult = true
         var forceStartEvictsFor: Set<UUID> = []
     }
 
@@ -255,8 +256,13 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.mutate { $0.ensureCount += 1 }
     }
 
-    func restartShield() async {
+    func restartShield() async -> Bool {
         box.mutate { $0.restartCount += 1 }
+        return box.read { $0.restartShieldResult }
+    }
+
+    func setRestartShieldResult(_ result: Bool) {
+        box.mutate { $0.restartShieldResult = result }
     }
 
     func shutdown() async {

@@ -52,6 +52,7 @@ struct SkinnedPicker<Option: Hashable>: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(theme.palette.dim)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, Spacing.s2)
             .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
@@ -62,6 +63,7 @@ struct SkinnedPicker<Option: Hashable>: View {
         .buttonStyle(.plain)
         .fixedSize(horizontal: !fillsWidth, vertical: true)
         .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(caption)
         .accessibilityValue(currentLabel)
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             popoverBody
@@ -159,6 +161,7 @@ struct SkinnedPicker<Option: Hashable>: View {
         }
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
         .accessibilityLabel(row.title)
+        .accessibilityAction { select(row.id) }
     }
 
     private func select(_ option: Option) {

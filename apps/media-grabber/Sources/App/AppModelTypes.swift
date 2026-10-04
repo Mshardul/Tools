@@ -6,7 +6,7 @@ import GrabberKit
 #endif
 
 @MainActor
-protocol RevealSink {
+protocol RevealSink: Sendable {
     func reveal(_ files: [URL])
 }
 

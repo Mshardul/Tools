@@ -43,11 +43,13 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
     var onCycleSort: ((ColumnID) -> Void)?
     var onToggleFilter: ((ColumnID, String) -> Void)?
 
+    var keyboardFocusRow = -1
+
     var rootView: NSView {
         scrollView
     }
 
-    private var allVisibleChildrenSelected: Bool {
+    var allVisibleChildrenSelected: Bool {
         !visibleChildOrder.isEmpty && Set(visibleChildOrder) == selectedJobIDs
     }
 
@@ -77,8 +79,10 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
             refreshHeaderCells()
         }
         // RowModel mutates in place; reload each sync so progress/status stay fresh.
+        clampKeyboardFocus()
         tableView.reloadData()
         applySelectionHighlight()
+        refreshKeyboardChrome()
         if let scrollToRowID = state.scrollToRowID {
             scrollToJob(scrollToRowID)
             onClearScrollTarget?()
@@ -113,6 +117,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
         tableView.usesAlternatingRowBackgroundColors = false
         tableView.gridStyleMask = []
         tableView.focusRingType = .none
+        tableView.allowsTypeSelect = false
         tableView.selectionHighlightStyle = .regular
         tableView.backgroundColor = .clear
         tableView.dataSource = self
@@ -120,6 +125,12 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
         tableView.columnAutoresizingStyle = .sequentialColumnAutoresizingStyle
         tableView.onRowClick = { [weak self] row, column, flags in
             self?.handleRowClick(row: row, column: column, flags: flags)
+        }
+        tableView.onKeyboardCommand = { [weak self] command in
+            self?.handleKeyboard(command)
+        }
+        tableView.onBecameFirstResponder = { [weak self] in
+            self?.tableBecameFirstResponder()
         }
         NotificationCenter.default.addObserver(
             self,
@@ -222,7 +233,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
         onSetSelectedJobIDs?([id], id)
     }
 
-    private func childJobID(at row: Int) -> UUID? {
+    func childJobID(at row: Int) -> UUID? {
         guard row >= 0, row < items.count else { return nil }
         guard case let .child(model) = items[row] else { return nil }
         return model.id
@@ -234,7 +245,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
             == DownloadsGridColumns.selectionIdentifier
     }
 
-    private func anchorAfterToggle(_ id: UUID, in next: Set<UUID>) -> UUID? {
+    func anchorAfterToggle(_ id: UUID, in next: Set<UUID>) -> UUID? {
         if next.contains(id) {
             return id
         }
@@ -264,10 +275,6 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
 
     func tableView(_: NSTableView, mouseDownInHeaderOf tableColumn: NSTableColumn) {
         guard tableColumn.identifier == DownloadsGridColumns.selectionIdentifier else { return }
-        if allVisibleChildrenSelected || visibleChildOrder.isEmpty {
-            onClearSelection?()
-        } else {
-            onSelectAllVisible?()
-        }
+        toggleSelectAllFromHeader()
     }
 }

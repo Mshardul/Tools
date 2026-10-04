@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import GrabberKit
 import Observation
@@ -33,6 +34,7 @@ final class AppModel {
     var scrollToRowID: UUID?
     var bannerContent: BannerContent?
     let debugFlags: DebugFlags
+    let defaults: UserDefaults
 
     @ObservationIgnored weak var incomingLinkController: IncomingLinkController?
 
@@ -45,6 +47,9 @@ final class AppModel {
     }
 
     let rowStore = RowStore()
+    let toastCenter = ToastCenter()
+    let notificationRouter: any NotificationRouting
+    var isAppActive: @Sendable () -> Bool = { NSApp?.isActive ?? true }
     let installer: OnboardingInstaller
     let prefs: Preferences
     let quitCoordinator: QuitCoordinator
@@ -98,6 +103,8 @@ final class AppModel {
         envProbe: EnvironmentProbing = EnvironmentProbe(),
         ytDlpUpdater: YtDlpUpdating = YtDlpUpdater(),
         debugFlags: DebugFlags = DebugFlags(),
+        defaults: UserDefaults = .standard,
+        notificationRouter: any NotificationRouting = NotificationRouter(),
         revealSink: RevealSink = WorkspaceRevealSink(),
         openURLSink: OpenURLSink = WorkspaceOpenURLSink(),
         engineJobLogDir: URL = JobLog.defaultDir,
@@ -114,6 +121,8 @@ final class AppModel {
         self.envProbe = envProbe
         self.ytDlpUpdater = ytDlpUpdater
         self.debugFlags = debugFlags
+        self.defaults = defaults
+        self.notificationRouter = notificationRouter
         self.revealSink = revealSink
         self.openURLSink = openURLSink
         self.engineJobLogDir = engineJobLogDir
@@ -222,148 +231,38 @@ final class AppModel {
     func setPendingCookieRetry(_ id: UUID?) {
         pendingCookieRetryJobID = id
     }
-}
 
-extension AppModel {
-    func applyIncomingURL(_ url: URL) async {
-        homeFieldText = url.absoluteString
-        await resolvePasted(homeFieldText)
+    // Setter lives beside the private(set) property; AppModelQueueFlow.swift calls it from the grab/resolve flow.
+    func setLastSubmittedJobID(_ id: UUID?) {
+        lastSubmittedJobID = id
     }
 
-    func resolvePasted(_ url: String) async {
-        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        isProbing = true
-        probeError = nil
-
-        switch PlaylistLink.classify(trimmed) {
-        case .youtubeUnsupported:
-            await resolveUnsupportedPlaylistLink(trimmed)
-        case .youtubePlaylist:
-            await resolvePlaylist(trimmed)
-        case .singleVideo:
-            await resolveVideo(trimmed)
-        }
-    }
-
-    func clearResolved() {
-        resolved = nil
-        probeError = nil
-        isPlaylistPickerPresented = false
-    }
-
-    func grab(overrides: RunwayOverrides = RunwayOverrides()) async {
-        guard let resolved else { return }
-        guard case let .video(meta) = resolved else {
-            isPlaylistPickerPresented = true
-            return
-        }
-        let request = RequestBuilder.build(from: meta, prefs: prefs, overrides: overrides)
-        rememberLastSelection(request, overrides: overrides)
-        await submitGrab(request, metadata: meta)
-    }
-
-    func addPlaylistSelection(
-        model picker: PlaylistPickerModel,
-        overrides: RunwayOverrides
-    ) async {
-        let entries = picker.dump.entries.filter { picker.checked.contains($0.playlistIndex) }
-        guard !entries.isEmpty else { return }
-
-        let existingGroupID = existingPlaylistGroupID(for: picker.dump)
-        let isNewGroup = existingGroupID == nil
-        let groupID = existingGroupID ?? UUID()
-        let items = entries.map {
-            playlistSubmitItem(
-                entry: $0,
-                picker: picker,
-                overrides: overrides,
-                groupID: groupID
-            )
-        }
-        if let first = items.first {
-            rememberLastSelection(first.request, overrides: overrides)
-        }
-        let ids = await engine.submitPlaylistItems(items)
-        guard !ids.isEmpty else { return }
-        if isNewGroup {
-            registerPlaylistGroup(id: groupID, for: picker.dump)
-        }
-        if let firstID = ids.first {
-            lastSubmittedJobID = firstID
-            scrollToRowID = firstID
-        }
-    }
-
-    private func rememberLastSelection(
-        _ request: DownloadRequest,
-        overrides: RunwayOverrides
-    ) {
-        if let folder = overrides.destFolder {
-            prefs.lastUsedDownloadFolder = folder
-        }
-        if let kind = overrides.kind {
-            switch kind {
-            case let .video(maxHeight):
-                prefs.lastMediaType = .video
-                prefs.lastVideoHeight = maxHeight
-            case let .audio(format):
-                prefs.lastMediaType = .audio
-                prefs.lastAudioFormat = format
-            }
-        }
-        switch request.audioLanguage {
-        case .original:
-            prefs.lastAudioLanguage = .original
-        case let .code(code):
-            prefs.lastAudioLanguage = .code(code)
-        case .unspecified:
-            break
-        }
-    }
-
-    private func submitGrab(_ request: DownloadRequest, metadata: MediaMetadata) async {
-        let result = await engine.submit(request, force: false, prefetchedMetadata: metadata)
-        switch result {
-        case let .queued(id):
-            lastSubmittedJobID = id
-            scrollToRowID = id
-        case let .duplicateExists(existing, wasCompleted):
-            await log.log(.jobDuplicateSubmitPrompted(existing: existing))
-            let confirmed = await confirm(AppModelDialogs
-                .duplicateConfirmation(wasCompleted: wasCompleted))
-            if confirmed {
-                await log.log(.jobDuplicateSubmitConfirmed)
-                let forced = await engine.submit(request, force: true, prefetchedMetadata: metadata)
-                if case let .queued(id) = forced {
-                    lastSubmittedJobID = id
-                    scrollToRowID = id
-                }
-            } else {
-                await log.log(.jobDuplicateSubmitCancelled)
-                if wasCompleted {
-                    scrollToRowID = existing
-                }
-            }
-        }
-    }
-
-    private func startConsumerIfNeeded() {
+    func startConsumerIfNeeded() {
         guard consumerTask == nil else { return }
         consumerTask = Task { [weak self] in
             await self?.runConsumer()
         }
     }
 
+    #if DEBUG
+        func startConsumerForTesting() {
+            startConsumerIfNeeded()
+        }
+    #endif
+
     private func runConsumer() async {
         while !Task.isCancelled {
             for await event in engine.events {
+                let previousStates = Dictionary(
+                    uniqueKeysWithValues: rowStore.rows.map { ($0.id, $0.snapshot.state) }
+                )
                 rowStore.apply(
                     event,
                     maxAutoRetries: prefs.maxAutoRetries,
                     vpnActive: vpnDetector.isVPNActive
                 )
                 if case let .snapshot(snapshot) = event {
+                    handleJobTransitions(snapshot, previousStates: previousStates)
                     rowStore.applyGroups(playlistGroups)
                     hostRateSummary = snapshot.hostRateSummary
                     healthController.update(snapshot: snapshot, now: .now, environmentReport: latestEnvironmentReport)
@@ -383,7 +282,7 @@ extension AppModel {
         }
     }
 
-    private func applySnapshot(_ snapshot: QueueSnapshot) {
+    func applySnapshot(_ snapshot: QueueSnapshot) {
         if snapshot.queueHalt == .depMissing {
             needsOnboarding = true
         }

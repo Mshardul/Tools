@@ -20,7 +20,10 @@ final class GridStatusCellView: NSTableCellView {
         label.stringValue = text
         label.font = tokens.mono11Medium
         label.textColor = tokens.statusTextColor(for: state)
-        toolTip = remark
+        toolTip = remark.isEmpty ? nil : remark
+        let spoken = GridStatusAccessibility.label(status: text, remark: remark)
+        label.setAccessibilityLabel(spoken)
+        setAccessibilityLabel(spoken)
         capsule.layer?.backgroundColor = tokens.panel.cgColor
         capsule.layer?.cornerRadius = 10
         dot.layer?.backgroundColor = tokens.statusDotColor(for: state).cgColor
@@ -30,6 +33,8 @@ final class GridStatusCellView: NSTableCellView {
         wantsLayer = true
         capsule.wantsLayer = true
         dot.wantsLayer = true
+        dot.setAccessibilityElement(false)
+        capsule.setAccessibilityElement(false)
         dot.layer?.cornerRadius = 3
         label.drawsBackground = false
         label.isBordered = false
@@ -82,6 +87,13 @@ final class GridProgressCellView: NSTableCellView {
         fill.isHidden = fraction == nil
         self.fraction = max(0, min(1, fraction ?? 0))
         fill.layer?.backgroundColor = tokens.barFillStart.cgColor
+        setAccessibilityLabel("Progress")
+        if let fraction {
+            let percent = Int((fraction * 100).rounded())
+            setAccessibilityValue("\(percent) percent")
+        } else {
+            setAccessibilityValue("none")
+        }
         needsLayout = true
     }
 
@@ -95,6 +107,8 @@ final class GridProgressCellView: NSTableCellView {
         wantsLayer = true
         track.wantsLayer = true
         fill.wantsLayer = true
+        track.setAccessibilityElement(false)
+        fill.setAccessibilityElement(false)
         track.layer?.cornerRadius = 2
         fill.layer?.cornerRadius = 2
 
@@ -116,6 +130,22 @@ final class GridProgressCellView: NSTableCellView {
             fill.bottomAnchor.constraint(equalTo: track.bottomAnchor),
             width
         ])
+    }
+}
+
+final class GridFocusButton: NSButton {
+    var onTab: ((Bool) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        guard event.keyCode == GridKeyboard.tab else {
+            super.keyDown(with: event)
+            return
+        }
+        guard let onTab else {
+            super.keyDown(with: event)
+            return
+        }
+        onTab(event.modifierFlags.contains(.shift))
     }
 }
 
@@ -146,6 +176,7 @@ final class GridActionsCellView: NSTableCellView {
             button.isEnabled = enabled
             button.contentTintColor = enabled ? tokens.text : tokens.faint
             button.toolTip = action.accessibilityLabel
+            button.setAccessibilityLabel(action.accessibilityLabel)
             button.tag = index
         }
     }
@@ -164,8 +195,9 @@ final class GridActionsCellView: NSTableCellView {
         ])
 
         for action in RowAction.displayOrder {
-            let button = NSButton(frame: .zero)
+            let button = GridFocusButton(frame: .zero)
             button.isBordered = false
+            button.focusRingType = .default
             button.imagePosition = .imageOnly
             button.setButtonType(.momentaryChange)
             button.image = NSImage(
@@ -272,9 +304,9 @@ final class GridGroupTitleCellView: NSTableCellView {
 }
 
 final class GridGroupActionsCellView: NSTableCellView {
-    private let pauseButton = NSButton(title: "Pause all", target: nil, action: nil)
-    private let retryButton = NSButton(title: "Retry failed", target: nil, action: nil)
-    private let cancelButton = NSButton(title: "Cancel all", target: nil, action: nil)
+    private let pauseButton = GridFocusButton(title: "Pause all", target: nil, action: nil)
+    private let retryButton = GridFocusButton(title: "Retry failed", target: nil, action: nil)
+    private let cancelButton = GridFocusButton(title: "Cancel all", target: nil, action: nil)
     private var onAction: ((PlaylistGroupAction) -> Void)?
 
     override init(frame frameRect: NSRect) {
@@ -313,8 +345,9 @@ final class GridGroupActionsCellView: NSTableCellView {
         configure(cancelButton, action: #selector(cancelAll))
     }
 
-    private func configure(_ button: NSButton, action: Selector) {
+    private func configure(_ button: GridFocusButton, action: Selector) {
         button.isBordered = false
+        button.focusRingType = .default
         button.setButtonType(.momentaryChange)
         button.target = self
         button.action = action
