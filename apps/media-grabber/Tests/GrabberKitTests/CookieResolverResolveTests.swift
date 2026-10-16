@@ -75,10 +75,24 @@ final class CookieResolverResolveTests: XCTestCase {
         XCTAssertEqual(got.verdict, .ready(browserKey: "safari"))
     }
 
-    func test_chrome_ready() {
-        let got = resolver(FakeFileManaging()).resolve(source: .chrome, jobOverride: false)
+    func test_chrome_installed_ready() {
+        var fm = FakeFileManaging()
+        fm.files = [chromeDir]
+        let got = resolver(fm).resolve(source: .chrome, jobOverride: false)
         XCTAssertEqual(got.argument, "chrome")
         XCTAssertEqual(got.verdict, .ready(browserKey: "chrome"))
+    }
+
+    func test_chrome_notInstalled_noProfiles() {
+        let got = resolver(FakeFileManaging()).resolve(source: .chrome, jobOverride: false)
+        XCTAssertNil(got.argument)
+        XCTAssertEqual(got.verdict, .noProfiles)
+    }
+
+    func test_brave_notInstalled_noProfiles() {
+        let got = resolver(FakeFileManaging()).resolve(source: .brave, jobOverride: false)
+        XCTAssertNil(got.argument)
+        XCTAssertEqual(got.verdict, .noProfiles)
     }
 
     func test_firefox_namedProfilePresent() {

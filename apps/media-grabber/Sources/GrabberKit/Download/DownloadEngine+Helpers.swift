@@ -41,6 +41,8 @@ extension DownloadEngine {
             .unknown(raw: "\(error)")
         case .botCheck:
             .botCheck
+        case .cookieReadFailed:
+            .cookieReadFailed
         case .hostBlocked:
             .rateLimited()
         }

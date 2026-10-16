@@ -5,10 +5,10 @@ import SwiftUI
 enum ColumnMetrics {
     private static let widths: [ColumnID: CGFloat] = [
         .title: 200, .status: 150, .remark: 160, .progress: 100,
-        .speed: 72, .eta: 72, .type: 72, .quality: 72,
+        .speed: 72, .eta: 72, .type: 96, .quality: 112,
         .size: 80, .duration: 80, .site: 96,
         .addedAt: 120, .finishedAt: 120, .destination: 120,
-        .attempt: 64, .clientUsed: 64, .actions: 280
+        .attempt: 64, .clientUsed: 64, .actions: 196
     ]
 
     private static let titles: [ColumnID: String] = [
@@ -38,7 +38,9 @@ enum ColumnMetrics {
     static func minWidth(for column: ColumnID) -> CGFloat {
         switch column {
         case .title: 120
-        case .speed, .eta, .attempt, .type, .quality: 48
+        case .speed, .eta, .attempt: 48
+        case .type, .site: 96
+        case .quality: 112
         case .actions: width(for: .actions)
         default: 80
         }

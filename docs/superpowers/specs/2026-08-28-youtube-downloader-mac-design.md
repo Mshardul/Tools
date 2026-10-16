@@ -142,8 +142,8 @@ Downloads table, reached through the "Done" filter chip.
 
 **PotProvider/**
 
-- `PotProviderProcess.swift` — supervise the pipx-installed `bgutil-pot` server as a child process on `127.0.0.1:<free port>`; health check; restart on crash; stop on app quit
-- `PotPluginInstaller.swift` — ensure the yt-dlp POT plugin is present (installed with the pipx package, or into a private `--plugin-dirs`) and pointed at by the engine
+- `PotProviderProcess.swift` — supervise the bgutil POT server (`node build/main.js`, built by `ShieldInstaller`) as a child process on `127.0.0.1:<free port>`; health check; restart on crash; stop on app quit
+- `PotPluginInstaller.swift` — ensure the yt-dlp POT plugin is present (the release's plugin zip kept in Application Support and passed via `--plugin-dirs`) and pointed at by the engine
 
 **Download/**
 
@@ -354,7 +354,7 @@ present. The steps, each with a state icon:
 
 1. **Homebrew** — if missing, show the official install command with a Copy button and an "Open in Terminal" action; re-check on return.
 2. **Downloader + media tools** — `brew install yt-dlp ffmpeg`, run in-app with streamed progress. Required.
-3. **Bot-check shield** — `pipx install bgutil-ytdlp-pot-provider` (plus the yt-dlp POT plugin). Recommended, not blocking.
+3. **Bot-check shield** — set up by the app (download + build, no command shown). Recommended, not blocking; reachable later from the health-strip chip.
 4. **Test run** — a canary probe of a known-stable video; green-lights Home.
 
 The exact command is always shown even though the label uses plain language.
@@ -483,8 +483,14 @@ per-host and apply to every site; other sites simply hit fewer of them.
 
 ### 7.2 Client identity and PO tokens (per attempt)
 
-**POT provider (always on).** `bgutil-ytdlp-pot-provider` is installed via
-`pipx` during onboarding — a Python package, so nothing to sign or bundle. The
+**POT provider (always on).** `bgutil-ytdlp-pot-provider` is *not* installable with
+`pipx` (the PyPI package is only a yt-dlp plugin; `pipx install` fails with "No
+apps associated with package"). `ShieldInstaller` instead downloads the pinned
+release's plugin zip, builds its Node server from the release source
+(`npm ci` + `npx tsc`, Node >= 22, installing Node through Homebrew when needed)
+into `~/Library/Application Support/MediaGrabber`, and nothing is signed or
+bundled. It runs from onboarding, from the health-strip chip, and from the
+failure message. The
 engine owns `PotProviderProcess` on `127.0.0.1:<free port>` (`ensureShield` /
 `restartShield`, `GET /ping`, stop on quit) and points yt-dlp at its POT plugin
 via `--plugin-dirs`. yt-dlp then auto-negotiates per-video tokens. Paste and
@@ -682,7 +688,7 @@ which gets the environment ready:
 
 1. **Homebrew** — if `brew` is missing: show the official `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"` with a **Copy** button and an **Open in Terminal** action. Re-check on return.
 2. **yt-dlp + ffmpeg** — `brew install yt-dlp ffmpeg`, run from the app with a streamed progress view.
-3. **POT provider** — `pipx install bgutil-ytdlp-pot-provider` (or `uv tool install`). A pure Python package, so no Mach-O signing issue. Installs the yt-dlp POT plugin alongside.
+3. **POT provider** — `ShieldInstaller`: download the pinned release's plugin zip and source, build the Node server (`npm ci`, `npx tsc`). No Mach-O signing issue; the user sees plain progress, never the commands.
 4. **Ready check** — a canary probe of a known-stable video; green-lights the main UI.
 
 Ongoing: `EnvironmentProbe` re-runs on launch; a missing or broken dependency

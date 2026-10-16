@@ -61,6 +61,7 @@ public struct EngineTuning: Sendable, Equatable {
     public var concurrentFragmentsThrottled: Int
     public var potHealthTimeoutSeconds: Int
     public var potRestartBackoffSeconds: Int
+    public var potStartupWaitSeconds: Int
     public var metadataProbeLimit: Int
     public var metadataProbeWindowSeconds: Int
     public var minimumYtDlpVersion: String
@@ -78,6 +79,7 @@ public struct EngineTuning: Sendable, Equatable {
         concurrentFragmentsThrottled: Int = 1,
         potHealthTimeoutSeconds: Int = 2,
         potRestartBackoffSeconds: Int = 2,
+        potStartupWaitSeconds: Int = 15,
         metadataProbeLimit: Int = 3,
         metadataProbeWindowSeconds: Int = 60,
         minimumYtDlpVersion: String = "2026.01.01"
@@ -94,6 +96,7 @@ public struct EngineTuning: Sendable, Equatable {
         self.concurrentFragmentsThrottled = concurrentFragmentsThrottled
         self.potHealthTimeoutSeconds = potHealthTimeoutSeconds
         self.potRestartBackoffSeconds = potRestartBackoffSeconds
+        self.potStartupWaitSeconds = potStartupWaitSeconds
         self.metadataProbeLimit = metadataProbeLimit
         self.metadataProbeWindowSeconds = metadataProbeWindowSeconds
         self.minimumYtDlpVersion = minimumYtDlpVersion
@@ -112,6 +115,7 @@ public struct EngineTuning: Sendable, Equatable {
         concurrentFragmentsThrottled: 1,
         potHealthTimeoutSeconds: 2,
         potRestartBackoffSeconds: 2,
+        potStartupWaitSeconds: 15,
         metadataProbeLimit: 3,
         metadataProbeWindowSeconds: 60,
         minimumYtDlpVersion: "2026.01.01"

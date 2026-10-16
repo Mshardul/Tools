@@ -27,7 +27,7 @@ extension DownloadsGridController {
     }
 
     func tableView(_: NSTableView, heightOfRow row: Int) -> CGFloat {
-        isHeaderRow(row) ? 48 : 36
+        isHeaderRow(row) ? 48 : 41
     }
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
@@ -47,11 +47,9 @@ extension DownloadsGridController {
         case let .header(group):
             return disclosureCell(for: group, tableView: tableView)
         case let .child(row):
-            let field = reusedLabel(
-                identifier: NSUserInterfaceItemIdentifier("sel-cell"),
-                in: tableView
-            )
-            applyTextStyle(field, font: tokens.body12, color: tokens.dim)
+            let boxID = NSUserInterfaceItemIdentifier("sel-box")
+            let field = (tableView.makeView(withIdentifier: boxID, owner: nil) as? GridCheckboxField)
+                ?? makeCheckboxField(identifier: boxID)
             let selected = selectedJobIDs.contains(row.id)
             field.stringValue = selected ? "☑" : "☐"
             field.alignment = .center
@@ -110,7 +108,7 @@ extension DownloadsGridController {
             identifier: NSUserInterfaceItemIdentifier("text-\(column.rawValue)"),
             in: tableView
         )
-        applyTextStyle(field, font: tokens.body12, color: tokens.dim)
+        applyTextStyle(field, font: tokens.cell, color: tokens.dim)
         field.stringValue = TablePresentation.cellText(for: row, column: column)
         field.toolTip = column == .title ? (row.snapshot.title ?? "") : nil
         return field
@@ -234,8 +232,16 @@ extension DownloadsGridController {
             ?? makeLabel(identifier: identifier)
     }
 
+    private func makeCheckboxField(identifier: NSUserInterfaceItemIdentifier) -> GridCheckboxField {
+        let field = GridCheckboxField(labelWithString: "")
+        field.identifier = identifier
+        field.drawsBackground = false
+        field.isBordered = false
+        return field
+    }
+
     private func makeLabel(identifier: NSUserInterfaceItemIdentifier) -> NSTextField {
-        let field = NSTextField(labelWithString: "")
+        let field = GridLabelField(labelWithString: "")
         field.identifier = identifier
         field.lineBreakMode = .byTruncatingTail
         field.drawsBackground = false
@@ -313,6 +319,7 @@ final class GridRowView: NSTableRowView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
+        drawSeparator(in: dirtyRect)
         guard isKeyboardFocused else { return }
         tokens.accent.setStroke()
         let path = NSBezierPath(rect: bounds.insetBy(dx: 1, dy: 1))
@@ -343,5 +350,24 @@ final class GridRowView: NSTableRowView {
         path.line(to: NSPoint(x: bounds.maxX, y: lineY))
         path.lineWidth = tokens.hairlineWidth
         path.stroke()
+    }
+}
+
+final class VerticallyCenteredTextFieldCell: NSTextFieldCell {
+    override func drawingRect(forBounds rect: NSRect) -> NSRect {
+        var drawing = super.drawingRect(forBounds: rect)
+        let textHeight = cellSize(forBounds: rect).height
+        if textHeight < drawing.height {
+            drawing.origin.y += (drawing.height - textHeight) / 2
+            drawing.size.height = textHeight
+        }
+        return drawing
+    }
+}
+
+final class GridLabelField: NSTextField {
+    override static var cellClass: AnyClass? {
+        get { VerticallyCenteredTextFieldCell.self }
+        set {}
     }
 }

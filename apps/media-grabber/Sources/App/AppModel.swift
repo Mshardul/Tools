@@ -48,6 +48,7 @@ final class AppModel {
 
     let rowStore = RowStore()
     let toastCenter = ToastCenter()
+    let shieldSetup: ShieldSetupController
     let notificationRouter: any NotificationRouting
     var isAppActive: @Sendable () -> Bool = { NSApp?.isActive ?? true }
     let installer: OnboardingInstaller
@@ -74,14 +75,6 @@ final class AppModel {
         !homeFieldText.isEmpty || isProbing || isPlaylistPickerPresented
     }
 
-    var detectClipboardLinks: Bool {
-        prefs.detectClipboardLinks
-    }
-
-    var maxConcurrentDownloads: Int {
-        debugFlags.concurrencyCapOverride ?? prefs.maxConcurrentDownloads
-    }
-
     let engine: DownloadEngineProtocol
     let vpnDetector: any VPNDetecting
     let envProbe: EnvironmentProbing
@@ -90,6 +83,8 @@ final class AppModel {
     let persistence: (any QueuePersisting)?
     let revealSink: RevealSink
     let openURLSink: OpenURLSink
+    let appUpdateChecker: AppUpdateChecker
+    let appVersion: String
     let engineJobLogDir: URL
     private let suppression: SuppressionStore
     private var confirmationContinuation: CheckedContinuation<Bool, Never>?
@@ -107,6 +102,9 @@ final class AppModel {
         notificationRouter: any NotificationRouting = NotificationRouter(),
         revealSink: RevealSink = WorkspaceRevealSink(),
         openURLSink: OpenURLSink = WorkspaceOpenURLSink(),
+        appUpdateChecker: AppUpdateChecker = AppUpdateChecker(),
+        shieldInstaller: ShieldInstaller = ShieldInstaller(),
+        appVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0",
         engineJobLogDir: URL = JobLog.defaultDir,
         suppression: SuppressionStore = UserDefaultsSuppressionStore(),
         persistence: (any QueuePersisting)? = nil,
@@ -125,6 +123,13 @@ final class AppModel {
         self.notificationRouter = notificationRouter
         self.revealSink = revealSink
         self.openURLSink = openURLSink
+        self.appUpdateChecker = appUpdateChecker
+        shieldSetup = ShieldSetupController(
+            installer: shieldInstaller,
+            restart: { await engine.restartShield() },
+            openURL: openURLSink
+        )
+        self.appVersion = appVersion
         self.engineJobLogDir = engineJobLogDir
         self.suppression = suppression
         self.persistence = persistence
@@ -137,6 +142,7 @@ final class AppModel {
             confirmer: confirmer
         )
         confirmer.model = self
+        shieldSetup.onInstalled = { [weak self] in await self?.reprobeCurrentLink() }
     }
 
     func onAppear() async {
@@ -147,6 +153,7 @@ final class AppModel {
             await engine.ensureShield()
         }
         startConsumerIfNeeded()
+        Task { await checkForAppUpdateOnLaunch() }
     }
 
     func performLaunchSetup() async {
@@ -173,7 +180,7 @@ final class AppModel {
         }
         let report = await envProbe.probe()
         latestEnvironmentReport = report
-        needsOnboarding = !report.isReadyForDownloads
+        needsOnboarding = !report.isReadyForDownloads || !hasCompletedOnboarding
     }
 
     func onboardingFinished() async {
@@ -205,23 +212,6 @@ final class AppModel {
         let continuation = confirmationContinuation
         confirmationContinuation = nil
         continuation?.resume(returning: confirmed)
-    }
-
-    func cancelJob() async {
-        guard let id = lastSubmittedJobID else { return }
-        await engine.cancel(id)
-    }
-
-    func resetCircuit(host: RateHost) async {
-        await engine.resetCircuit(host)
-    }
-
-    func resetAllCircuits() async {
-        await engine.resetAllCircuits()
-    }
-
-    func resetAllSettings() {
-        prefs.resetToDefaults()
     }
 
     func resolveCookieRetry() async {

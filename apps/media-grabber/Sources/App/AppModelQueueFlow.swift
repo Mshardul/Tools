@@ -12,6 +12,7 @@ extension AppModel {
         guard !trimmed.isEmpty else { return }
         isProbing = true
         probeError = nil
+        shieldSetup.probePrompt = nil
 
         switch PlaylistLink.classify(trimmed) {
         case .youtubeUnsupported:
@@ -26,7 +27,14 @@ extension AppModel {
     func clearResolved() {
         resolved = nil
         probeError = nil
+        shieldSetup.probePrompt = nil
         isPlaylistPickerPresented = false
+    }
+
+    func reprobeCurrentLink() async {
+        let text = homeFieldText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
+        await resolvePasted(text)
     }
 
     func grab(overrides: RunwayOverrides = RunwayOverrides()) async {

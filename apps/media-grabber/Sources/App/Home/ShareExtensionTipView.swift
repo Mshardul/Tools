@@ -7,38 +7,42 @@ struct ShareExtensionTipView: View {
 
     var body: some View {
         if !dismissed {
-            HStack(alignment: .top, spacing: Spacing.s3) {
-                VStack(alignment: .leading, spacing: Spacing.s1) {
-                    Text("Enable the Share Extension")
-                        .font(theme.bodyFont(13, .semibold))
-                        .foregroundStyle(theme.palette.text)
-                    Text(
-                        "Turn on MediaGrabber under System Settings → Extensions to grab links from Safari."
-                    )
+            HStack(spacing: Spacing.s3) {
+                Image(systemName: "puzzlepiece.extension")
+                    .font(.system(size: 12))
+                    .foregroundStyle(theme.palette.faint)
+                    .accessibilityHidden(true)
+                Text("Grab links straight from Safari: turn on MediaGrabber in System Settings → Extensions.")
                     .font(theme.bodyFont(12, .regular))
                     .foregroundStyle(theme.palette.dim)
-                }
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Spacer(minLength: Spacing.s3)
-                VStack(spacing: Spacing.s2) {
-                    Button("Open System Settings") {
-                        openSettingsPane()
-                    }
+                Button("Open Settings") { openSettingsPane() }
                     .buttonStyle(.plain)
                     .font(theme.bodyFont(12, .semibold))
                     .foregroundStyle(theme.palette.accent)
-                    Button("Dismiss") {
-                        dismissed = true
-                    }
-                    .buttonStyle(.plain)
-                    .font(theme.bodyFont(12, .regular))
-                    .foregroundStyle(theme.palette.dim)
+                Button {
+                    dismissed = true
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(theme.palette.faint)
+                        .frame(width: 20, height: 20)
+                        .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
             }
-            .padding(Spacing.s4)
-            .background(theme.palette.panel, in: RoundedRectangle(cornerRadius: theme.cardRadius))
+            .padding(.horizontal, Spacing.s3)
+            .padding(.vertical, Spacing.s2)
+            .background(
+                theme.palette.panel.opacity(0.6),
+                in: RoundedRectangle(cornerRadius: theme.controlRadius)
+            )
             .overlay(
-                RoundedRectangle(cornerRadius: theme.cardRadius)
-                    .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
+                RoundedRectangle(cornerRadius: theme.controlRadius)
+                    .stroke(theme.palette.hair, lineWidth: theme.hairlineWidth)
             )
         }
     }

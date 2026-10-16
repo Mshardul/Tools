@@ -147,7 +147,7 @@ final class RowStore {
             groupBucketChange = groupBucketChange || progressBuckets[job.id] != Self.progressBucket(for: job)
             appendRow(
                 for: job,
-                summary: summary,
+                context: SnapshotContext(summary: summary, shieldStatus: snapshot.shieldStatus),
                 queuePosition: &queuePosition,
                 structuralChange: &structuralChange,
                 rows: &newRows
@@ -175,27 +175,33 @@ final class RowStore {
         }
     }
 
+    private struct SnapshotContext {
+        let summary: [RateHost: HostRateDisplayState]
+        let shieldStatus: ShieldStatus
+    }
+
     private func appendRow(
         for job: JobSnapshot,
-        summary: [RateHost: HostRateDisplayState],
+        context: SnapshotContext,
         queuePosition: inout Int,
         structuralChange: inout Bool,
         rows newRows: inout [RowModel]
     ) {
         let position = nextQueuePosition(for: job, queuePosition: &queuePosition)
-        let rate = summary[job.rateHost]
+        let rate = context.summary[job.rateHost]
         if let existing = modelsByID[job.id] {
             let changed = existing.patch(
                 job,
                 queuePosition: position,
                 maxAutoRetries: maxAutoRetries,
                 rate: rate,
-                vpnActive: vpnActive
+                vpnActive: vpnActive,
+                shieldStatus: context.shieldStatus
             )
             structuralChange = structuralChange || changed
             newRows.append(existing)
         } else {
-            appendNewRow(job, position: position, rate: rate, rows: &newRows)
+            appendNewRow(job, position: position, rate: rate, shieldStatus: context.shieldStatus, rows: &newRows)
             structuralChange = true
         }
     }
@@ -204,6 +210,7 @@ final class RowStore {
         _ job: JobSnapshot,
         position: Int?,
         rate: HostRateDisplayState?,
+        shieldStatus: ShieldStatus,
         rows newRows: inout [RowModel]
     ) {
         let model = RowModel(
@@ -211,7 +218,8 @@ final class RowStore {
             queuePosition: position,
             maxAutoRetries: maxAutoRetries,
             rate: rate,
-            vpnActive: vpnActive
+            vpnActive: vpnActive,
+            shieldStatus: shieldStatus
         )
         modelsByID[job.id] = model
         newRows.append(model)

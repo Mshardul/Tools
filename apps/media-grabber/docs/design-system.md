@@ -325,12 +325,12 @@ Opens automatically when a resolved link is a playlist, **before** any rows are 
 
 ### 4.5 Onboarding
 
-- Full-window takeover on first run, or whenever `EnvironmentProbe` finds a required dependency missing.
+- Full-window takeover on **every fresh install** (not only when something is missing), and again whenever a required dependency goes missing. Steps already satisfied show a ✓ and "Already installed"; a `Continue` button unlocks once yt-dlp + ffmpeg are present.
 - **Blocks Home** until `yt-dlp` + `ffmpeg` are present.
 - Steps as a vertical checklist, each with a state icon (`✓` done / number pending / spinner running):
   1. **Homebrew** — if missing: show the official install command with a `Copy` button and an `Open Terminal` action; re-check on return.
   2. **Downloader + media tools** — `brew install yt-dlp ffmpeg`, run in-app with streamed progress. Required.
-  3. **Bot-check shield** — `pipx install bgutil-ytdlp-pot-provider` (+ the yt-dlp POT plugin). Recommended, not blocking.
+  3. **Bot-check shield** — a single `Set up` button; the app downloads and builds the helper itself. Progress is plain language (never terminal output) and no command is shown. Recommended, not blocking; the health-strip chip offers the same setup later.
   4. **Test run** — canary probe of a known-stable video; green-lights Home.
 - Plain language: "downloader + media tools", "bot-check shield" — not "yt-dlp", "POT provider" (the exact names still appear in the command shown).
 

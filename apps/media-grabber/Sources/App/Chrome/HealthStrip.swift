@@ -14,6 +14,7 @@ enum PopoverKind: Equatable {
 enum ChipInteraction: Equatable {
     case none
     case refresh(isBusy: Bool)
+    case setUp
     case popover(PopoverKind)
 }
 
@@ -66,59 +67,87 @@ struct HealthStrip: View {
                 HostRatePopover()
             }
         case let .refresh(isBusy):
-            Button {
-                if !isBusy {
-                    onRefresh?(chip)
-                }
-            } label: {
-                HStack(spacing: Spacing.s1) {
-                    chipBody(chip)
-                    Text("↻")
-                        .font(theme.monoFont(11, .regular))
-                        .foregroundStyle(theme.palette.dim)
-                        .rotationEffect(isSpinning(isBusy, reduceMotion: reduceMotion) ? .degrees(360) : .degrees(0))
-                        .animation(
-                            isSpinning(isBusy, reduceMotion: reduceMotion)
-                                ? .linear(duration: 0.9).repeatForever(autoreverses: false)
-                                : .default,
-                            value: isSpinning(isBusy, reduceMotion: reduceMotion)
-                        )
-                }
-            }
-            .buttonStyle(.plain)
-            .disabled(isBusy)
-            .accessibilityLabel(HealthChipAccessibility.refreshLabel(id: chip.id))
+            refreshChip(chip, isBusy: isBusy)
+        case .setUp:
+            setUpChip(chip)
         case .none:
             chipBody(chip)
         }
     }
 
-    @ViewBuilder
+    private func refreshChip(_ chip: HealthChip, isBusy: Bool) -> some View {
+        Button {
+            if !isBusy {
+                onRefresh?(chip)
+            }
+        } label: {
+            chipBody(
+                chip,
+                trailing: Text("↻")
+                    .font(theme.monoFont(11, .regular))
+                    .foregroundStyle(theme.palette.dim)
+                    .rotationEffect(isSpinning(isBusy, reduceMotion: reduceMotion) ? .degrees(360) : .degrees(0))
+                    .animation(
+                        isSpinning(isBusy, reduceMotion: reduceMotion)
+                            ? .linear(duration: 0.9).repeatForever(autoreverses: false)
+                            : .default,
+                        value: isSpinning(isBusy, reduceMotion: reduceMotion)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isBusy)
+        .accessibilityLabel(HealthChipAccessibility.refreshLabel(id: chip.id))
+    }
+
+    private func setUpChip(_ chip: HealthChip) -> some View {
+        Button {
+            onRefresh?(chip)
+        } label: {
+            chipBody(
+                chip,
+                trailing: Text("set up")
+                    .font(theme.monoFont(11, .medium))
+                    .foregroundStyle(theme.palette.accent)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(chip.label), set up")
+    }
+
     private func chipBody(_ chip: HealthChip) -> some View {
+        chipBody(chip, trailing: EmptyView())
+    }
+
+    @ViewBuilder
+    private func chipBody(_ chip: HealthChip, trailing: some View) -> some View {
         if let until = chip.countdownUntil {
             TimelineView(.periodic(from: .now, by: 1)) { context in
-                chipLabel(chip, suffix: " — \(CountdownFormat.mmss(until: until, now: context.date))")
+                chipLabel(
+                    chip,
+                    suffix: " — \(CountdownFormat.mmss(until: until, now: context.date))",
+                    trailing: trailing
+                )
             }
         } else {
-            chipLabel(chip, suffix: "")
+            chipLabel(chip, suffix: "", trailing: trailing)
         }
     }
 
-    private func chipLabel(_ chip: HealthChip, suffix: String) -> some View {
-        HStack(spacing: Spacing.s1) {
+    private func chipLabel(_ chip: HealthChip, suffix: String, trailing: some View) -> some View {
+        HStack(spacing: Spacing.s2) {
             dotView(chip.dot)
                 .frame(width: 7, height: 7)
                 .accessibilityHidden(true)
             Text(chip.label + suffix)
                 .font(theme.monoFont(11, .regular))
                 .foregroundStyle(theme.palette.dim)
+            trailing
         }
-        .padding(.horizontal, Spacing.s2)
-        .padding(.vertical, Spacing.s1)
-        .background(
-            theme.palette.panel,
-            in: RoundedRectangle(cornerRadius: theme.chipRadius)
-        )
+        .padding(.horizontal, Spacing.s3)
+        .padding(.vertical, Spacing.s1 + 1)
+        .background(theme.palette.panel, in: Capsule())
+        .overlay(Capsule().stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth))
     }
 
     func isPulsing(_ dot: DotState, reduceMotion: Bool) -> Bool {

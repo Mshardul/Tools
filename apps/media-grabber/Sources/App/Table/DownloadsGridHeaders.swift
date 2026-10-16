@@ -7,8 +7,16 @@ enum GridHeaderHit {
     case title
 }
 
+// AppKit copies cells without retaining a Swift subclass's reference fields, so every stored property here
+// must be a trivial value; the (reference-holding) tokens live in one shared place instead.
 final class GridHeaderCell: NSTableHeaderCell {
-    var tokens = DownloadsGridTokens.aurora
+    nonisolated(unsafe) static var sharedTokens = DownloadsGridTokens.aurora
+
+    var tokens: DownloadsGridTokens {
+        get { Self.sharedTokens }
+        set { Self.sharedTokens = newValue }
+    }
+
     var showsSort = false
     var showsFilter = false
     var sortKind: IconKind = .sortNeutral
@@ -19,11 +27,13 @@ final class GridHeaderCell: NSTableHeaderCell {
         tokens.panelSolid.setFill()
         cellFrame.fill()
 
-        let title = stringValue as NSString
-        let titleAttrs: [NSAttributedString.Key: Any] = [
-            .font: tokens.mono10Semibold,
-            .foregroundColor: tokens.dim
-        ]
+        if isSelectionBox {
+            GridCheckboxDrawing.draw(in: cellFrame, on: stringValue == "\u{2611}", tokens: tokens)
+            drawBottomBorder(in: cellFrame)
+            return
+        }
+        let title = displayTitle as NSString
+        let titleAttrs = titleAttributes(color: tokens.dim)
         let titleSize = title.size(withAttributes: titleAttrs)
         let titleRect = NSRect(
             x: cellFrame.minX + 8,
@@ -50,7 +60,27 @@ final class GridHeaderCell: NSTableHeaderCell {
             )
         }
 
-        tokens.hair.setStroke()
+        drawBottomBorder(in: cellFrame)
+    }
+
+    private var isSelectionBox: Bool {
+        stringValue == "\u{2610}" || stringValue == "\u{2611}"
+    }
+
+    private var displayTitle: String {
+        stringValue.uppercased()
+    }
+
+    private func titleAttributes(color: NSColor? = nil) -> [NSAttributedString.Key: Any] {
+        var attrs: [NSAttributedString.Key: Any] = [.font: tokens.header, .kern: 0.8]
+        if let color {
+            attrs[.foregroundColor] = color
+        }
+        return attrs
+    }
+
+    private func drawBottomBorder(in cellFrame: NSRect) {
+        tokens.stroke.setStroke()
         let path = NSBezierPath()
         path.move(to: NSPoint(x: cellFrame.minX, y: cellFrame.minY + 0.5))
         path.line(to: NSPoint(x: cellFrame.maxX, y: cellFrame.minY + 0.5))
@@ -59,8 +89,7 @@ final class GridHeaderCell: NSTableHeaderCell {
     }
 
     func hitTest(_ point: NSPoint, in cellFrame: NSRect) -> GridHeaderHit {
-        let titleAttrs: [NSAttributedString.Key: Any] = [.font: tokens.mono10Semibold]
-        let titleWidth = (stringValue as NSString).size(withAttributes: titleAttrs).width
+        let titleWidth = (displayTitle as NSString).size(withAttributes: titleAttributes()).width
         var iconX = cellFrame.minX + 8 + min(titleWidth, cellFrame.width - 16 - iconReserve) + 4
 
         if showsSort {
@@ -198,5 +227,29 @@ final class DownloadsGridHeaderView: NSTableHeaderView {
             }
         }
         return nil
+    }
+}
+
+enum GridCheckboxDrawing {
+    static func draw(in rect: NSRect, on: Bool, tokens: DownloadsGridTokens) {
+        let box = NSRect(x: rect.midX - 8, y: rect.midY - 8, width: 16, height: 16)
+        let path = NSBezierPath(roundedRect: box.insetBy(dx: 0.5, dy: 0.5), xRadius: 4, yRadius: 4)
+        if on {
+            tokens.accent2.setFill()
+            path.fill()
+        }
+        (on ? tokens.accent2 : tokens.stroke).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+        guard on, let mark = NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil) else { return }
+        let config = NSImage.SymbolConfiguration(pointSize: 9, weight: .bold)
+        let sized = mark.withSymbolConfiguration(config) ?? mark
+        sized.tinted(with: tokens.ground).draw(in: NSRect(x: box.midX - 5, y: box.midY - 5, width: 10, height: 10))
+    }
+}
+
+final class GridCheckboxField: NSTextField {
+    override func draw(_: NSRect) {
+        GridCheckboxDrawing.draw(in: bounds, on: stringValue == "\u{2611}", tokens: GridHeaderCell.sharedTokens)
     }
 }

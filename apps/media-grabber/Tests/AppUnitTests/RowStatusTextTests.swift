@@ -145,18 +145,31 @@ final class RowStatusTextTests: XCTestCase {
         XCTAssertEqual(remark, "")
     }
 
-    func test_remark_botCheckWithoutVPN() {
-        let remark = RowRemarkText.text(for: snap(.failed(.botCheck)), queuePosition: nil, rate: nil)
-        XCTAssertEqual(remark, "Couldn't verify you. Try again, or add browser cookies in Preferences.")
+    func test_remark_botCheckOnYouTube_shieldRunning() {
+        let remark = RowRemarkText.text(
+            for: snap(.failed(.botCheck)), queuePosition: nil, rate: nil, shieldStatus: .running(port: 1234)
+        )
+        XCTAssertEqual(
+            remark,
+            "YouTube didn't accept this request. Try again, or sign in with your browser in Preferences."
+        )
     }
 
-    func test_remark_botCheckWithVPN() {
+    func test_remark_botCheckOnYouTube_shieldMissing_blamesShield() {
         let remark = RowRemarkText.text(
-            for: snap(.failed(.botCheck)),
+            for: snap(.failed(.botCheck)), queuePosition: nil, rate: nil, shieldStatus: .missing
+        )
+        XCTAssertTrue(remark.contains("isn't set up"))
+    }
+
+    func test_remark_botCheckOnOtherSite_neverBlamesShield() {
+        let remark = RowRemarkText.text(
+            for: snap(.failed(.botCheck), host: "https://vimeo.com/1"),
             queuePosition: nil,
             rate: nil,
-            vpnActive: true
+            shieldStatus: .missing
         )
-        XCTAssertEqual(remark, "Couldn't verify you. Turn off your VPN, or add browser cookies in Preferences.")
+        XCTAssertTrue(remark.hasPrefix("This site didn't accept"))
+        XCTAssertFalse(remark.contains("shield"))
     }
 }

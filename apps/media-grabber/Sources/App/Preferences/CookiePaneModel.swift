@@ -9,16 +9,28 @@ final class CookiePaneModel {
     private let resolver: CookieResolver
     private let settingsLink: SettingsLinkOpening
     private let openURL: OpenURLSink
+    private let signInProbe: (any MetadataProbing)?
 
+    enum SignInTest: Equatable {
+        case idle
+        case running
+        case passed(String)
+        case failed(String)
+    }
+
+    private(set) var signInTest: SignInTest = .idle
     private(set) var firefoxProfiles: [FirefoxProfile] = []
     private(set) var safariAccess: SafariCookieAccess = .noContainer
+    private(set) var chromiumBrowserFound = true
 
     init(
         prefs: Preferences,
         resolver: CookieResolver = CookieResolver(),
         settingsLink: SettingsLinkOpening = WorkspaceSettingsLink(),
-        openURL: OpenURLSink = WorkspaceOpenURLSink()
+        openURL: OpenURLSink = WorkspaceOpenURLSink(),
+        signInProbe: (any MetadataProbing)? = nil
     ) {
+        self.signInProbe = signInProbe
         self.prefs = prefs
         self.resolver = resolver
         self.settingsLink = settingsLink
@@ -29,6 +41,7 @@ final class CookiePaneModel {
         get { prefs.cookiesFromBrowser }
         set {
             prefs.cookiesFromBrowser = newValue
+            signInTest = .idle
             refresh()
         }
     }
@@ -53,6 +66,49 @@ final class CookiePaneModel {
 
     var showsFullDiskAccessRow: Bool {
         source == .safari && safariAccess != .noContainer
+    }
+
+    var showsChromiumNotFoundNote: Bool {
+        isChromium && !chromiumBrowserFound
+    }
+
+    var canTestSignIn: Bool {
+        !source.isNone && signInProbe != nil
+    }
+
+    func testSignIn() async {
+        guard let signInProbe, signInTest != .running else { return }
+        let name = SignInCookiesPane.displayName(for: source)
+        let resolution = resolver.resolve(source: source, jobOverride: false)
+        guard let argument = resolution.argument else {
+            signInTest = .failed(message(for: resolution.verdict, browser: name))
+            return
+        }
+        signInTest = .running
+        var context = ExtractorContext.none
+        context.cookieArgument = argument
+        switch await signInProbe.probe(CanaryProbe.url, context: context) {
+        case .success:
+            signInTest = .passed("MediaGrabber can read your \(name) sign-in.")
+        case .failure(.cookieReadFailed):
+            signInTest = .failed(
+                "MediaGrabber couldn't read your \(name) sign-in. Close \(name) and try again. "
+                    + "If your Mac asks for permission, choose Allow."
+            )
+        case .failure(.network):
+            signInTest = .failed("The test couldn't finish because there's no internet connection.")
+        case .failure:
+            signInTest = .failed("The test couldn't finish. Try again in a moment.")
+        }
+    }
+
+    private func message(for verdict: CookieVerdict, browser: String) -> String {
+        switch verdict {
+        case .needsFullDiskAccess where safariAccess == .denied:
+            "MediaGrabber needs permission to read \(browser) first. Use the Full Disk Access button above."
+        case .needsFullDiskAccess, .noProfiles, .unconfigured, .ready:
+            "\(browser) isn't installed on this Mac, or hasn't been opened yet."
+        }
     }
 
     var showsLearnMore: Bool {
@@ -87,9 +143,19 @@ final class CookiePaneModel {
         return false
     }
 
+    private var isChromium: Bool {
+        switch source {
+        case .chrome, .brave, .edge: true
+        default: false
+        }
+    }
+
     private func refresh() {
         firefoxProfiles = resolver.firefoxProfiles()
         safariAccess = resolver.safariAccess()
+        if isChromium {
+            chromiumBrowserFound = resolver.resolve(source: source, jobOverride: false).verdict != .noProfiles
+        }
         if hasStaleFirefoxProfile() {
             prefs.cookiesFromBrowser = .firefox(profile: nil)
         }

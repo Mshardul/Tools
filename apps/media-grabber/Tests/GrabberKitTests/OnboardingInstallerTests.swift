@@ -8,7 +8,15 @@ final class OnboardingInstallerTests: XCTestCase {
         probe: FakeEnvironmentProbe,
         runner: FakeProcessRunner
     ) -> OnboardingInstaller {
-        OnboardingInstaller(probe: probe, runner: runner)
+        OnboardingInstaller(
+            probe: probe,
+            runner: runner,
+            shieldInstaller: ShieldInstaller(
+                runner: runner, isExecutable: { _ in false }, fileExists: { _ in false },
+                prepareDirectory: { _ in }, removeItem: { _ in }
+            ),
+            isShieldInstalled: { false }
+        )
     }
 
     private func brewURL() -> URL {
@@ -147,5 +155,79 @@ final class OnboardingInstallerTests: XCTestCase {
         )
         await installer.start()
         XCTAssertEqual(fakeMetadataProbe.probedURLs.last, CanaryProbe.url)
+    }
+
+    // MARK: - check(): report what is already in place without installing anything
+
+    func test_check_everythingPresent_marksStepsAlreadyDone_andInstallsNothing() async {
+        let probe = FakeEnvironmentProbe(.with(brew: true, ytDlp: true, ffmpeg: true))
+        let runner = FakeProcessRunner()
+        let sut = OnboardingInstaller(
+            probe: probe, runner: runner, metadataProbe: AlwaysOKProbe(), isShieldInstalled: { true }
+        )
+        await sut.check()
+        XCTAssertEqual(sut.steps[.homebrew], .skipped)
+        XCTAssertEqual(sut.steps[.downloaderTools], .skipped)
+        XCTAssertEqual(sut.steps[.botCheckShield], .skipped)
+        XCTAssertEqual(sut.steps[.testRun], .done)
+        XCTAssertTrue(sut.canProceedToHome)
+        XCTAssertTrue(runner.launches.isEmpty)
+    }
+
+    func test_check_shieldMissing_isOfferedNotInstalled() async {
+        let probe = FakeEnvironmentProbe(.with(brew: true, ytDlp: true, ffmpeg: true))
+        let runner = FakeProcessRunner()
+        let sut = OnboardingInstaller(
+            probe: probe, runner: runner, metadataProbe: AlwaysOKProbe(), isShieldInstalled: { false }
+        )
+        await sut.check()
+        XCTAssertEqual(sut.steps[.botCheckShield], .pending)
+        XCTAssertTrue(sut.canProceedToHome)
+        XCTAssertTrue(runner.launches.isEmpty)
+    }
+
+    func test_check_toolsMissing_blocksContinue_andInstallsNothing() async {
+        let probe = FakeEnvironmentProbe(.with(brew: true))
+        let runner = FakeProcessRunner()
+        let sut = OnboardingInstaller(probe: probe, runner: runner, isShieldInstalled: { false })
+        await sut.check()
+        XCTAssertEqual(sut.steps[.downloaderTools], .pending)
+        XCTAssertEqual(sut.steps[.testRun], .pending)
+        XCTAssertFalse(sut.canProceedToHome)
+        XCTAssertTrue(runner.launches.isEmpty)
+    }
+
+    func test_check_homebrewMissing_showsTheInstallCommand() async {
+        let probe = FakeEnvironmentProbe(.with())
+        let sut = OnboardingInstaller(probe: probe, runner: FakeProcessRunner(), isShieldInstalled: { false })
+        await sut.check()
+        XCTAssertEqual(sut.steps[.homebrew], .failed(reason: HomebrewInstallInfo.command))
+    }
+
+    func test_installProgress_neverShowsRawToolOutput() async {
+        let probe = FakeEnvironmentProbe(.with(brew: true), .with(brew: true, ytDlp: true, ffmpeg: true))
+        let runner = FakeProcessRunner()
+        runner.script(.stdout("==> Pouring python@3.15--3.15.0.bottle.tar.gz"), forPathEndingIn: "brew")
+        let sut = installer(probe: probe, runner: runner)
+        await sut.start()
+        for case let .running(text) in sut.steps.values {
+            XCTAssertFalse(text.contains("Pouring"))
+        }
+    }
+}
+
+private struct AlwaysOKProbe: MetadataProbing {
+    typealias ProbeResult = Result<MediaMetadata, MetadataError>
+
+    func probe(
+        _: String,
+        context _: ExtractorContext,
+        onWait _: (@Sendable (Date?) -> Void)?
+    ) async -> ProbeResult {
+        .success(MediaMetadata(title: "t", durationSeconds: 1, isPlaylist: false, sourceURL: "u"))
+    }
+
+    func probePlaylist(_: String, context _: ExtractorContext) async -> Result<PlaylistDump, MetadataError> {
+        .failure(.malformedOutput)
     }
 }

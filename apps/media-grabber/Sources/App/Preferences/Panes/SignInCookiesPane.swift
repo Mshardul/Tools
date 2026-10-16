@@ -17,7 +17,7 @@ struct SignInCookiesPane: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             if model == nil {
-                model = CookiePaneModel(prefs: appModel.prefs)
+                model = CookiePaneModel(prefs: appModel.prefs, signInProbe: appModel.makeSignInTestProbe())
             }
             model?.onAppear()
         }
@@ -36,8 +36,14 @@ struct SignInCookiesPane: View {
         }
         browserRow(model)
         firefoxProfileRow(model)
+        if model.showsChromiumNotFoundNote {
+            chromiumNotFoundRow(model)
+        }
         if model.showsFullDiskAccessRow {
             fullDiskAccessRow(model)
+        }
+        if model.canTestSignIn {
+            testSignInRow(model)
         }
         if model.showsLearnMore {
             learnMoreRow(model)
@@ -88,6 +94,46 @@ struct SignInCookiesPane: View {
                     .font(theme.bodyFont(11.5, .regular))
                     .foregroundStyle(theme.palette.dim)
             }
+        }
+    }
+
+    private func chromiumNotFoundRow(_ model: CookiePaneModel) -> some View {
+        PrefRow(Self.displayName(for: model.source)) {
+            HStack(spacing: Spacing.s1) {
+                Icon(kind: .warning, size: 12).foregroundStyle(theme.palette.warn)
+                Text("\(Self.displayName(for: model.source)) isn't installed, so there's no sign-in to use.")
+                    .font(theme.bodyFont(11.5, .regular))
+                    .foregroundStyle(theme.palette.dim)
+            }
+        }
+    }
+
+    private func testSignInRow(_ model: CookiePaneModel) -> some View {
+        PrefRow("Test sign-in", helper: "Checks that MediaGrabber can read your browser's sign-in.") {
+            VStack(alignment: .trailing, spacing: Spacing.s1) {
+                Button(model.signInTest == .running ? "Testing…" : "Test sign-in") {
+                    Task { await model.testSignIn() }
+                }
+                .disabled(model.signInTest == .running)
+                testResultLine(model.signInTest)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func testResultLine(_ result: CookiePaneModel.SignInTest) -> some View {
+        switch result {
+        case let .passed(text):
+            Label(text, systemImage: "checkmark.circle.fill")
+                .font(theme.bodyFont(11.5, .regular))
+                .foregroundStyle(theme.palette.accent)
+        case let .failed(text):
+            Label(text, systemImage: "exclamationmark.triangle.fill")
+                .font(theme.bodyFont(11.5, .regular))
+                .foregroundStyle(theme.palette.warn)
+                .multilineTextAlignment(.trailing)
+        case .idle, .running:
+            EmptyView()
         }
     }
 

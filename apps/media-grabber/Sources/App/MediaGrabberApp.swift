@@ -79,12 +79,9 @@ struct MediaGrabberApp: App {
     @ViewBuilder
     private var content: some View {
         if appModel.needsOnboarding {
-            OnboardingView(installer: installer)
-                .onChange(of: installer.canProceedToHome) { _, canProceed in
-                    if canProceed {
-                        Task { await appModel.onboardingFinished() }
-                    }
-                }
+            OnboardingView(installer: installer) {
+                Task { await appModel.completeOnboarding() }
+            }
         } else {
             MainWindow()
         }

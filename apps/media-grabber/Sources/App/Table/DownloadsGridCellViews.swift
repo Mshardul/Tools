@@ -18,7 +18,7 @@ final class GridStatusCellView: NSTableCellView {
 
     func apply(text: String, state: JobState, remark: String, tokens: DownloadsGridTokens) {
         label.stringValue = text
-        label.font = tokens.mono11Medium
+        label.font = tokens.pill
         label.textColor = tokens.statusTextColor(for: state)
         toolTip = remark.isEmpty ? nil : remark
         let spoken = GridStatusAccessibility.label(status: text, remark: remark)
@@ -174,7 +174,8 @@ final class GridActionsCellView: NSTableCellView {
             let button = buttons[index]
             let enabled = TablePresentation.isActionEnabled(action, available: available)
             button.isEnabled = enabled
-            button.contentTintColor = enabled ? tokens.text : tokens.faint
+            button.isHidden = !enabled
+            button.contentTintColor = tokens.text
             button.toolTip = action.accessibilityLabel
             button.setAccessibilityLabel(action.accessibilityLabel)
             button.tag = index
@@ -200,13 +201,22 @@ final class GridActionsCellView: NSTableCellView {
             button.focusRingType = .default
             button.imagePosition = .imageOnly
             button.setButtonType(.momentaryChange)
-            button.image = NSImage(
+            let glyph = NSImage(
                 systemSymbolName: action.iconKind.systemSymbolName,
                 accessibilityDescription: action.accessibilityLabel
             )
+            button.image = glyph?.withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 11, weight: .regular))
             button.target = self
             button.action = #selector(handleAction(_:))
-            button.setFrameSize(NSSize(width: 24, height: 24))
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.widthAnchor.constraint(equalToConstant: 27).isActive = true
+            button.heightAnchor.constraint(equalToConstant: 27).isActive = true
+            button.wantsLayer = true
+            let look = GridHeaderCell.sharedTokens
+            button.layer?.cornerRadius = 7
+            button.layer?.borderWidth = 1
+            button.layer?.borderColor = look.stroke.cgColor
+            button.layer?.backgroundColor = look.panel.cgColor
             buttons.append(button)
             stack.addArrangedSubview(button)
         }

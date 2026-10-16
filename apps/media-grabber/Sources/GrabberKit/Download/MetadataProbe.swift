@@ -40,6 +40,7 @@ public enum MetadataError: Error, Sendable, Equatable {
     case launchFailed
     case malformedOutput
     case botCheck
+    case cookieReadFailed
     case hostBlocked
     case unknown(raw: String)
 }
@@ -246,6 +247,9 @@ public actor MetadataProbe: MetadataProbing {
         }
         if stderr.contains("Unsupported URL") {
             return .unsupported
+        }
+        if case .cookieReadFailed = ErrorSignatures.firstMatch(in: stderr) {
+            return .cookieReadFailed
         }
         if unavailableSignatures.contains(where: stderr.contains) {
             return .unavailable

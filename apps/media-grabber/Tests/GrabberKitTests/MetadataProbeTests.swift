@@ -124,6 +124,31 @@ final class MetadataProbeTests: XCTestCase {
         XCTAssertEqual(result, .failure(.botCheck))
     }
 
+    func test_cookieReadFailures_forEveryBrowser_mapToCookieReadFailed() async {
+        let home = "/Users/tester/Library"
+        let lines: [(browser: String, stderr: String)] = [
+            (
+                "safari",
+                "ERROR: [Errno 1] Operation not permitted: "
+                    + "'\(home)/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies'"
+            ),
+            (
+                "chrome",
+                "ERROR: could not find chrome cookies database in \"\(home)/Application Support/Google/Chrome\""
+            ),
+            ("brave", "ERROR: could not find brave cookies database in \"\(home)/Application Support/BraveSoftware\""),
+            ("edge", "ERROR: could not find edge cookies database in \"\(home)/Application Support/Microsoft Edge\""),
+            ("firefox", "ERROR: could not find firefox cookies database in \"\(home)/Application Support/Firefox\""),
+            ("chromium decrypt", "ERROR: Failed to decrypt with Keychain: bad password")
+        ]
+        for line in lines {
+            let runner = FakeProcessRunner()
+            runner.script(.stderr(line.stderr, exitCode: 1), forPathEndingIn: "yt-dlp")
+            let result = await probe(runner).probe("https://archive.org/details/x")
+            XCTAssertEqual(result, .failure(.cookieReadFailed), line.browser)
+        }
+    }
+
     func test_ytDlpMissing_mapsToYtDlpMissing() async {
         let runner = FakeProcessRunner()
         // No script for yt-dlp → fake returns exit 127.

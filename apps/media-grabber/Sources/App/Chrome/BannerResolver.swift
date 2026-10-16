@@ -41,7 +41,7 @@ func bannerCopy(
         )
     case .potProviderDown:
         return BannerContent(
-            text: "Bot-check protection is offline — some downloads may fail or be low-res.",
+            text: "The bot-check shield stopped working — some YouTube downloads may fail or be low-res.",
             buttonTitle: "Restart",
             action: onRetry
         )

@@ -2,6 +2,11 @@ import Foundation
 import GrabberKit
 
 extension AppModel {
+    func makeSignInTestProbe() -> (any MetadataProbing)? {
+        guard let path = latestEnvironmentReport?.ytDlp?.path else { return nil }
+        return CanaryProbe.makeProbe(ytDlpURL: path, runner: ProcessRunner())
+    }
+
     func restartShield() async {
         let succeeded = await engine.restartShield()
         if !succeeded {
@@ -28,5 +33,22 @@ extension AppModel {
                 action: nil
             ))
         }
+    }
+
+    func cancelJob() async {
+        guard let id = lastSubmittedJobID else { return }
+        await engine.cancel(id)
+    }
+
+    func resetCircuit(host: RateHost) async {
+        await engine.resetCircuit(host)
+    }
+
+    func resetAllCircuits() async {
+        await engine.resetAllCircuits()
+    }
+
+    func resetAllSettings() {
+        prefs.resetToDefaults()
     }
 }

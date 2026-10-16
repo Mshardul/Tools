@@ -31,8 +31,11 @@ struct WarningBanner: View {
                         Task { await action() }
                     }
                     .buttonStyle(.plain)
-                    .font(theme.bodyFont(13, .semibold))
+                    .font(theme.bodyFont(12, .semibold))
                     .foregroundStyle(theme.palette.onAccent)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.16), in: RoundedRectangle(cornerRadius: 8))
                 }
             }
             .padding(.horizontal, Spacing.s4)
@@ -45,6 +48,7 @@ struct WarningBanner: View {
                 ),
                 in: RoundedRectangle(cornerRadius: theme.cardRadius)
             )
+            .shadow(color: .black.opacity(0.45), radius: 17, y: 10)
             .background(GeometryReader { proxy in
                 Color.clear.preference(key: BannerHeightKey.self, value: proxy.size.height)
             })

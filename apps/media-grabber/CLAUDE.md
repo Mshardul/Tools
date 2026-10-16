@@ -59,6 +59,16 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 ## Design decisions
 
+- **User-facing copy is true, plain, and actionable.** Every error, warning,
+  and hint must be correct for the cause that actually fired it — never the
+  most common guess — and must not mislead even slightly. Users are not
+  technical: no commands, tool names, or jargon in the UI. Say what is wrong,
+  and where a fix exists give one clear action (button or link), reachable
+  later and not only in a one-time flow. Never surface raw tool/terminal output
+  (installer logs, stderr): map stages to plain messages and keep the raw text
+  behind a collapsed "Details" for support. A cause-specific message needs a
+  test pinning cause → copy.
+
 - **Every code change is made for the app's end state, not the current phase.**
   The target is the app as envisioned at its final phase (all features:
   multi-concurrent scheduler, per-host rate limiting, circuit breaker, adaptive
@@ -84,13 +94,16 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 ## Build & test
 
-- Run: `make` (rebuilds, kills any running instance, launches the new build).
+- **Use `make` only — never run `xcodebuild` directly.** A direct run writes a
+  second `MediaGrabber.app` into `~/Library/Developer/Xcode/DerivedData`, and
+  macOS then lists two apps. At most one copy may exist on the machine.
+  `make` (build + relaunch), `make test` (`ONLY=Target/Suite` to narrow),
+  `make lint`.
 - `mise exec -- tuist generate --no-open` after adding/removing files.
-- Test: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test`
-- Single suite: append `-only-testing:GrabberKitTests/<SuiteName>` (or `AppUnitTests/<SuiteName>`).
+- Test: `make test`. Single suite: `make test ONLY=GrabberKitTests/<SuiteName>` (or `AppUnitTests/<SuiteName>`).
 - Do NOT use `tuist test` when debugging — its output filtering hides compiler
   errors. `tuist test` is fine in CI where a pass/fail is all that matters.
-- Lint: `mise exec -- swiftformat --lint .` and `mise exec -- swiftlint lint --strict`.
+- Lint: `make lint` (swiftformat + swiftlint --strict).
 - The `MediaGrabber` scheme only exists because `AppUnitTests` depends on it;
   the workspace-wide scheme is `MediaGrabber-Workspace`.
 - `MediaGrabber-Workspace` is defined explicitly in `Project.swift` (not

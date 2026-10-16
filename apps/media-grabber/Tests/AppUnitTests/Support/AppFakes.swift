@@ -270,6 +270,39 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
     func resetCircuit(_: RateHost) async {}
     func resetAllCircuits() async {}
 
+    func preview(_ url: String) async -> Result<MediaMetadata, MetadataError> {
+        box.mutate { state in
+            state.previewed.append(url)
+            return state.previewResult
+        }
+    }
+
+    func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError> {
+        box.mutate { state in
+            state.previewedPlaylists.append(url)
+            return state.previewPlaylistResult
+        }
+    }
+
+    func ensureShield() async {
+        box.mutate { $0.ensureCount += 1 }
+    }
+
+    func restartShield() async -> Bool {
+        box.mutate { $0.restartCount += 1 }
+        return box.read { $0.restartShieldResult }
+    }
+
+    func setRestartShieldResult(_ result: Bool) {
+        box.mutate { $0.restartShieldResult = result }
+    }
+
+    func shutdown() async {
+        box.mutate { $0.shutdownCalled = true }
+    }
+}
+
+extension FakeEngine {
     func upsertPlaylistGroup(_ group: PersistedPlaylistGroup) async {
         let snapshot = box.mutate { state -> QueueSnapshot in
             if let index = state.playlistGroups.firstIndex(where: { $0.id == group.id }) {
@@ -326,37 +359,6 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
                 PlaylistGroupSnapshot.rollup(from: snapshot.jobs, registry: $0)
             }
         )
-    }
-
-    func preview(_ url: String) async -> Result<MediaMetadata, MetadataError> {
-        box.mutate { state in
-            state.previewed.append(url)
-            return state.previewResult
-        }
-    }
-
-    func previewPlaylist(_ url: String) async -> Result<PlaylistDump, MetadataError> {
-        box.mutate { state in
-            state.previewedPlaylists.append(url)
-            return state.previewPlaylistResult
-        }
-    }
-
-    func ensureShield() async {
-        box.mutate { $0.ensureCount += 1 }
-    }
-
-    func restartShield() async -> Bool {
-        box.mutate { $0.restartCount += 1 }
-        return box.read { $0.restartShieldResult }
-    }
-
-    func setRestartShieldResult(_ result: Bool) {
-        box.mutate { $0.restartShieldResult = result }
-    }
-
-    func shutdown() async {
-        box.mutate { $0.shutdownCalled = true }
     }
 }
 

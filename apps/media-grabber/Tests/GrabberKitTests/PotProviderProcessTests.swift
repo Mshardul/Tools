@@ -59,6 +59,12 @@ final class PotProviderProcessTests: XCTestCase {
         await provider.stop()
     }
 
+    private var noStartupWait: EngineTuning {
+        var tuning = EngineTuning.default
+        tuning.potStartupWaitSeconds = 0
+        return tuning
+    }
+
     func testEnsureDownWhenPingFails() async {
         let runner = FakeProcessRunner()
         runner.perRunDelay = .seconds(60)
@@ -66,7 +72,7 @@ final class PotProviderProcessTests: XCTestCase {
             installer: bgutilInstaller(),
             runner: runner,
             pinger: FakePinger(false),
-            tuning: .default,
+            tuning: noStartupWait,
             log: nil
         )
         await provider.ensure()
@@ -89,5 +95,40 @@ final class PotProviderProcessTests: XCTestCase {
         await provider.restart()
         XCTAssertEqual(runner.launches.count, 2)
         await provider.stop()
+    }
+
+    func testSlowStartingServer_isWaitedForAndEndsUpRunning() async {
+        let runner = FakeProcessRunner()
+        runner.perRunDelay = .seconds(60)
+        var tuning = EngineTuning.default
+        tuning.potStartupWaitSeconds = 10
+        let provider = PotProviderProcess(
+            installer: bgutilInstaller(),
+            runner: runner,
+            pinger: FlakyPinger(failuresBeforeSuccess: 2),
+            tuning: tuning,
+            log: nil
+        )
+        await provider.ensure()
+        let status = await provider.status
+        guard case .running = status else { return XCTFail("expected running, got \(status)") }
+        await provider.stop()
+    }
+}
+
+private final class FlakyPinger: ShieldPinging, @unchecked Sendable {
+    private let lock = NSLock()
+    private var remaining: Int
+
+    init(failuresBeforeSuccess: Int) {
+        remaining = failuresBeforeSuccess
+    }
+
+    func ping(_: URL, timeout _: TimeInterval) async -> Bool {
+        lock.withLock {
+            guard remaining > 0 else { return true }
+            remaining -= 1
+            return false
+        }
     }
 }

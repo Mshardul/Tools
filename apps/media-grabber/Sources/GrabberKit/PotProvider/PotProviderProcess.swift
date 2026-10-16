@@ -11,6 +11,7 @@ public actor PotProviderProcess: PotProviding {
     private var statusValue: ShieldStatus = .missing
     private var childTask: Task<Void, Never>?
     private var generation = 0
+    private var exitCount = 0
 
     public init(
         installer: PotPluginInstaller,
@@ -99,20 +100,29 @@ public actor PotProviderProcess: PotProviding {
             statusValue = .down
             return
         }
-        let ok = await pinger.ping(url, timeout: TimeInterval(tuning.potHealthTimeoutSeconds))
-        if ok {
-            statusValue = .running(port: port)
-            await logEvent(.shieldStarted(port: port))
-        } else {
-            abandonChild()
-            statusValue = .down
+        // The server needs a moment to start, so keep asking until it answers, exits, or the wait runs out.
+        let exitsBefore = exitCount
+        let deadline = Date().addingTimeInterval(TimeInterval(max(tuning.potStartupWaitSeconds, 0)))
+        while true {
+            if await pinger.ping(url, timeout: TimeInterval(tuning.potHealthTimeoutSeconds)) {
+                statusValue = .running(port: port)
+                await logEvent(.shieldStarted(port: port))
+                return
+            }
+            if exitCount != exitsBefore || Date() >= deadline {
+                break
+            }
+            try? await Task.sleep(for: .milliseconds(500))
         }
+        abandonChild()
+        statusValue = .down
     }
 
     private func childExited(_ result: ProcessResult, token: Int) async {
         guard token == generation, !result.wasCancelled else {
             return
         }
+        exitCount += 1
         await logEvent(.shieldExited(code: result.exitCode))
         statusValue = .down
         let delay = min(max(tuning.potRestartBackoffSeconds, 0), 30)

@@ -52,6 +52,7 @@ public enum ErrorSignatures {
     static let cookieReadFailedGroups: [[String]] = [
         ["could not find", "cookies database"],
         ["permission denied", "cookies"],
+        ["operation not permitted", "cookies"],
         ["failed to decrypt"],
         ["unable to open database file", "cookies"],
         ["could not copy", "cookie"],

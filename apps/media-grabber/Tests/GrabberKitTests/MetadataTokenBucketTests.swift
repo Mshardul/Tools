@@ -4,6 +4,12 @@ import Foundation
 import XCTest
 
 final class MetadataTokenBucketTests: XCTestCase {
+    private func eventually(_ condition: @Sendable () -> Bool) async {
+        for _ in 0 ..< 400 where !condition() {
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+    }
+
     func testThirdAcquireIsImmediateFourthWaitsUntilWindowRolls() async {
         let clock = FakeClock(now: Date(timeIntervalSince1970: 0))
         let bucket = MetadataTokenBucket(limit: 3, windowSeconds: 60, clock: clock)
@@ -25,7 +31,7 @@ final class MetadataTokenBucketTests: XCTestCase {
 
         clock.advance(by: .seconds(60))
         _ = await fourth.value
-        await Task.yield()
+        await eventually { finished.read { $0 } }
         XCTAssertTrue(finished.read { $0 })
     }
 
@@ -40,8 +46,9 @@ final class MetadataTokenBucketTests: XCTestCase {
                 reported.mutate { $0.append(until) }
             }
         }
-        await Task.yield()
-        await Task.yield()
+        for _ in 0 ..< 200 where !reported.read({ $0.contains { $0 != nil } }) {
+            try? await Task.sleep(for: .milliseconds(5))
+        }
 
         let mid = reported.read { $0 }
         XCTAssertTrue(mid.contains { $0 != nil })

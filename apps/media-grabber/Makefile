@@ -4,7 +4,7 @@ DERIVED := build
 APP := $(abspath $(DERIVED)/Build/Products/Debug/$(APP_NAME).app)
 
 .DEFAULT_GOAL := run
-.PHONY: generate build run release release-patch release-minor release-major
+.PHONY: generate build run test lint release release-patch release-minor release-major
 
 generate:
 	mise exec -- tuist generate --no-open
@@ -21,6 +21,18 @@ run: build
 	@killall -9 $(APP_NAME) >/dev/null 2>&1 || true
 	@while pgrep -x $(APP_NAME) >/dev/null 2>&1; do sleep 0.05; done
 	open "$(APP)"
+
+# make test [ONLY=AppUnitTests/SomeSuite]; builds into the same build/ dir as `make`, never DerivedData.
+test: generate
+	xcodebuild -workspace $(APP_NAME).xcworkspace -scheme $(APP_NAME)-Workspace \
+		-destination 'platform=macOS' \
+		-derivedDataPath $(DERIVED) \
+		$(if $(ONLY),-only-testing:$(ONLY)) \
+		test
+
+lint:
+	mise exec -- swiftformat --lint .
+	mise exec -- swiftlint lint --strict
 
 # --- Release ---
 

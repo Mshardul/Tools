@@ -36,14 +36,16 @@ final class HealthController {
     private func shieldChip(_ status: ShieldStatus) -> HealthChip {
         switch status {
         case .running:
-            HealthChip(id: "shield", label: "shield", dot: .ok, interaction: .none)
-        case .down, .missing:
+            HealthChip(id: "shield", label: "bot-check shield · on", dot: .ok, interaction: .none)
+        case .down:
             HealthChip(
                 id: "shield",
-                label: "shield · offline",
+                label: "bot-check shield · offline",
                 dot: .attention,
                 interaction: .refresh(isBusy: false)
             )
+        case .missing:
+            HealthChip(id: "shield", label: "bot-check shield · not set up", dot: .attention, interaction: .setUp)
         }
     }
 

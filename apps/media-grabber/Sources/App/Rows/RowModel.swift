@@ -7,6 +7,7 @@ private struct RowPatchExtras {
     var retriesChanged: Bool
     var rateChanged: Bool
     var vpnChanged: Bool
+    var shieldChanged: Bool
 }
 
 private struct RowFieldChanges {
@@ -23,6 +24,7 @@ private struct RowFieldChanges {
     var retries: Bool
     var rate: Bool
     var vpn: Bool
+    var shield: Bool
 
     init(from old: JobSnapshot, to next: JobSnapshot, extras: RowPatchExtras) {
         state = old.state != next.state
@@ -40,11 +42,12 @@ private struct RowFieldChanges {
         retries = extras.retriesChanged
         rate = extras.rateChanged
         vpn = extras.vpnChanged
+        shield = extras.shieldChanged
     }
 
     var needsRecompute: Bool {
         state || progress || size || title || extractor || duration || kind || quality
-            || badge || retries || rate || attempt || vpn
+            || badge || retries || rate || attempt || vpn || shield
     }
 
     var structural: Bool {
@@ -52,7 +55,7 @@ private struct RowFieldChanges {
     }
 
     var refreshStatus: Bool {
-        state || progress || retries || rate || attempt || vpn
+        state || progress || retries || rate || attempt || vpn || shield
     }
 }
 
@@ -82,6 +85,7 @@ final class RowModel: Identifiable {
     // Live Preferences.maxAutoRetries; AppModel threads it in on every apply.
     private var maxAutoRetries: Int
     private var vpnActive: Bool
+    private var shieldStatus: ShieldStatus
 
     var hostCooldownDeadline: Date? {
         if case let .cooldown(until, _) = rateDisplay?.state {
@@ -95,12 +99,14 @@ final class RowModel: Identifiable {
         queuePosition: Int?,
         maxAutoRetries: Int = 5,
         rate: HostRateDisplayState? = nil,
-        vpnActive: Bool = false
+        vpnActive: Bool = false,
+        shieldStatus: ShieldStatus = .missing
     ) {
         id = snapshot.id
         self.snapshot = snapshot
         self.maxAutoRetries = maxAutoRetries
         self.vpnActive = vpnActive
+        self.shieldStatus = shieldStatus
         rateDisplay = rate
         recomputeAll(queuePosition: queuePosition)
     }
@@ -112,7 +118,8 @@ final class RowModel: Identifiable {
         queuePosition: Int?,
         maxAutoRetries: Int = 5,
         rate: HostRateDisplayState? = nil,
-        vpnActive: Bool = false
+        vpnActive: Bool = false,
+        shieldStatus: ShieldStatus = .missing
     ) -> Bool {
         let old = snapshot
         snapshot = next
@@ -120,13 +127,16 @@ final class RowModel: Identifiable {
         self.maxAutoRetries = maxAutoRetries
         let vpnChanged = self.vpnActive != vpnActive
         self.vpnActive = vpnActive
+        let shieldChanged = self.shieldStatus != shieldStatus
+        self.shieldStatus = shieldStatus
         let rateChanged = rateDisplay != rate
         rateDisplay = rate
         let extras = RowPatchExtras(
             badgeChanged: queueBadge != Self.badge(for: next, position: queuePosition),
             retriesChanged: retriesChanged,
             rateChanged: rateChanged,
-            vpnChanged: vpnChanged
+            vpnChanged: vpnChanged,
+            shieldChanged: shieldChanged
         )
         let changes = RowFieldChanges(from: old, to: next, extras: extras)
         guard changes.needsRecompute else {
@@ -150,7 +160,8 @@ final class RowModel: Identifiable {
                 for: next,
                 queuePosition: queuePosition,
                 rate: rateDisplay,
-                vpnActive: vpnActive
+                vpnActive: vpnActive,
+                shieldStatus: shieldStatus
             )
         }
         if changes.state || changes.progress {
@@ -205,7 +216,8 @@ final class RowModel: Identifiable {
             for: snapshot,
             queuePosition: queuePosition,
             rate: rateDisplay,
-            vpnActive: vpnActive
+            vpnActive: vpnActive,
+            shieldStatus: shieldStatus
         )
         speedText = Self.speed(for: snapshot)
         etaText = Self.eta(for: snapshot)
@@ -230,13 +242,15 @@ extension RowModel {
         for snapshot: JobSnapshot,
         queuePosition: Int?,
         rate: HostRateDisplayState? = nil,
-        vpnActive: Bool = false
+        vpnActive: Bool = false,
+        shieldStatus: ShieldStatus = .missing
     ) -> String {
         RowRemarkText.text(
             for: snapshot,
             queuePosition: queuePosition,
             rate: rate,
-            vpnActive: vpnActive
+            vpnActive: vpnActive,
+            shieldStatus: shieldStatus
         )
     }
 

@@ -36,7 +36,9 @@ extension AppModel {
         switch shieldStatus {
         case .running:
             break
-        case .down, .missing:
+        case .missing:
+            break
+        case .down:
             reasons.insert(.potProviderDown)
         }
         return reasons

@@ -45,8 +45,28 @@ extension AppModel {
         case let .failure(error):
             resolved = nil
             isPlaylistPickerPresented = false
-            probeError = AppModelDialogs.probeErrorMessage(for: error)
+            await showProbeFailure(error, url: url)
             await log.log(.probeCompleted(url: url, title: nil, ok: false))
+        }
+    }
+
+    private func showProbeFailure(_ error: MetadataError, url: String) async {
+        let shieldStatus = await engine.currentSnapshot().shieldStatus
+        let isYouTube = RateHost(urlString: url).canonical == "youtube"
+        probeError = AppModelDialogs.probeErrorMessage(
+            for: error,
+            vpnActive: vpnDetector.isVPNActive,
+            shieldStatus: shieldStatus,
+            isYouTube: isYouTube
+        )
+        shieldSetup.probePrompt = error == .botCheck && isYouTube ? Self.shieldPrompt(for: shieldStatus) : nil
+    }
+
+    private static func shieldPrompt(for status: ShieldStatus) -> ShieldSetupController.ProbePrompt? {
+        switch status {
+        case .running: nil
+        case .down: .restart
+        case .missing: .setUp
         }
     }
 
@@ -60,9 +80,7 @@ extension AppModel {
             await log.log(.probeCompleted(url: url, title: meta.title, ok: true))
         case let .failure(error):
             resolved = nil
-            probeError = error == .botCheck
-                ? BotCheckCopy.sentence(vpnActive: vpnDetector.isVPNActive)
-                : AppModelDialogs.probeErrorMessage(for: error)
+            await showProbeFailure(error, url: url)
             await log.log(.probeCompleted(url: url, title: nil, ok: false))
         }
     }

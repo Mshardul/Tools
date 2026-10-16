@@ -203,6 +203,20 @@ are in spec §12.2.
 - **Phase 16 — Site / identity maturity.** POT/shield rotation; always-on-cookies;
   remote `player_client` order JSON; per-site helpers beyond YouTube; optional
   UX extras (evaluate at plan time).
+  **Ticket — user-facing copy truth audit.** Walk every advice / error /
+  warning / banner / toast / Remark / dialog string and check, per string:
+  (1) it is true for the *actual* cause that triggers it (not just the most
+  common one); (2) plain language — no commands, tool names, or jargon;
+  (3) it states what is wrong and, where a fix exists, offers one clear action
+  (button or link to where it is fixed); (4) the shown action is reachable
+  later, not only in a one-time flow. Seeded by: the bot-check message told
+  people to add cookies when the real cause was a missing shield, and blamed
+  the shield for non-YouTube sites. Output: a table of every string with
+  trigger, verdict, and fix, plus a test per string that pins cause → copy.
+  Include every installer / progress / failure surface (no raw tool output
+  anywhere in the UI). Also decide: should the shield stay optional, and does first-run need a
+  one-time nudge when onboarding is skipped because yt-dlp / ffmpeg already
+  exist (the shield step never runs in that case).
 - **Phase 17 — Branding & release gate.** Product name (§14) + find-and-replace
   + app icon; revisit repo-root `BACKLOG.md`. Sparkle / notarization / bundled
   deps only if Developer ID exists. Full stub in parent §12.1.

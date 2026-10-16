@@ -104,11 +104,18 @@ public struct CookieResolver: Sendable {
         case let .firefox(profile):
             firefoxResolution(requestedName: profile)
         case .chrome, .brave, .edge:
-            CookieResolution(
-                argument: source.ytDlpSpec,
-                verdict: .ready(browserKey: source.browserKey)
-            )
+            chromiumResolution(source)
         }
+    }
+
+    private func chromiumResolution(_ source: CookieSource) -> CookieResolution {
+        guard browserSupportDirectoryExists(for: source) else {
+            return CookieResolution(argument: nil, verdict: .noProfiles)
+        }
+        return CookieResolution(
+            argument: source.ytDlpSpec,
+            verdict: .ready(browserKey: source.browserKey)
+        )
     }
 
     private func noneResolution(jobOverride: Bool) -> CookieResolution {

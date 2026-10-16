@@ -4,6 +4,25 @@ import GrabberKit
 
 @MainActor
 extension DownloadsGridController {
+    // Spare width goes to Title so the table spans its container; scrolling appears only when columns truly don't fit.
+    func fillViewportWithTitle() {
+        let titleIdentifier = DownloadsGridColumns.identifier(for: .title)
+        guard let title = tableView.tableColumn(withIdentifier: titleIdentifier) else { return }
+        let base = DownloadsGridColumns.resolvedWidth(for: titleIdentifier, config: columnConfig)
+        let others = tableView.tableColumns.filter { $0 !== title }.reduce(CGFloat(0)) { $0 + $1.width }
+        let target = max(base, scrollView.contentSize.width - others)
+        guard abs(title.width - target) > 0.5 else { return }
+        let wasApplying = applyingColumnWidths
+        applyingColumnWidths = true
+        title.width = target
+        applyingColumnWidths = wasApplying
+    }
+
+    @objc
+    func viewportDidResize() {
+        fillViewportWithTitle()
+    }
+
     func tableViewColumnDidResize(_ notification: Notification) {
         guard !applyingColumnWidths else { return }
         guard let column = notification.userInfo?["NSTableColumn"] as? NSTableColumn else { return }

@@ -35,14 +35,22 @@ public final class OnboardingInstaller {
     private let probe: EnvironmentProbing
     private let runner: ProcessRunning
     private let injectedMetadataProbe: MetadataProbing?
+    private let shieldInstaller: ShieldInstaller
+    private let isShieldInstalled: @Sendable () -> Bool
 
     public init(
         probe: EnvironmentProbing = EnvironmentProbe(),
         runner: ProcessRunning = ProcessRunner(),
-        metadataProbe: MetadataProbing? = nil
+        metadataProbe: MetadataProbing? = nil,
+        shieldInstaller: ShieldInstaller? = nil,
+        isShieldInstalled: (@Sendable () -> Bool)? = nil
     ) {
         self.probe = probe
         self.runner = runner
+        self.isShieldInstalled = isShieldInstalled ?? {
+            PotPluginInstaller.live().resolveServerLaunch(port: 0) != nil
+        }
+        self.shieldInstaller = shieldInstaller ?? ShieldInstaller(runner: runner)
         injectedMetadataProbe = metadataProbe
         steps = Dictionary(
             uniqueKeysWithValues: OnboardingStepID.allCases.map { ($0, .pending) }
@@ -52,6 +60,29 @@ public final class OnboardingInstaller {
 
     public func start() async {
         await runFlow()
+    }
+
+    // Reports what is already in place without installing anything.
+    public func check() async {
+        let report = await probe.probe()
+        canProceedToHome = report.isReadyForDownloads
+        guard report.brew != nil else {
+            steps[.homebrew] = .failed(reason: HomebrewInstallInfo.command)
+            steps[.downloaderTools] = report.isReadyForDownloads ? .skipped : .pending
+            steps[.botCheckShield] = isShieldInstalled() ? .skipped : .pending
+            steps[.testRun] = .pending
+            return
+        }
+        steps[.homebrew] = .skipped
+        steps[.downloaderTools] = report.isReadyForDownloads ? .skipped : .pending
+        steps[.botCheckShield] = isShieldInstalled() ? .skipped : .pending
+        steps[.testRun] = report.isReadyForDownloads
+            ? await runCanaryProbe(ytDlpPath: report.ytDlp?.path)
+            : .pending
+    }
+
+    public func installShieldOnly() async {
+        steps[.botCheckShield] = await installShield()
     }
 
     public func recheck() async {
@@ -106,10 +137,7 @@ public final class OnboardingInstaller {
         }
         canProceedToHome = report.isReadyForDownloads
 
-        steps[.botCheckShield] = await runStreaming(
-            step: .botCheckShield,
-            launch: pipxLaunch(["install", "bgutil-ytdlp-pot-provider"])
-        )
+        steps[.botCheckShield] = await installShield()
 
         steps[.testRun] = await runCanaryProbe(ytDlpPath: report.ytDlp?.path)
     }
@@ -135,15 +163,14 @@ public final class OnboardingInstaller {
         step: OnboardingStepID,
         launch: ProcessLaunch
     ) async -> OnboardingStepState {
-        steps[step] = .running(text: "")
+        steps[step] = .running(text: "Installing \u{2014} this can take a few minutes.")
         let execution = runner.run(launch)
         var stderrTail: [String] = []
         for await line in execution.lines {
             switch line {
-            case let .stdout(text):
-                steps[step] = .running(text: text)
+            case .stdout:
+                break
             case let .stderr(text):
-                steps[step] = .running(text: text)
                 stderrTail.append(text)
                 if stderrTail.count > 5 {
                     stderrTail.removeFirst()
@@ -160,10 +187,18 @@ public final class OnboardingInstaller {
         return .failed(reason: reason)
     }
 
-    private func pipxLaunch(_ args: [String]) -> ProcessLaunch {
-        let path = ["/opt/homebrew/bin/pipx", "/usr/local/bin/pipx", "/usr/bin/pipx"]
-            .first { FileManager.default.isExecutableFile(atPath: $0) }
-            ?? "/opt/homebrew/bin/pipx"
-        return ProcessLaunch(executableURL: URL(fileURLWithPath: path), arguments: args)
+    private func installShield() async -> OnboardingStepState {
+        steps[.botCheckShield] = .running(text: "Starting\u{2026}")
+        let outcome = await shieldInstaller.install { [weak self] text in
+            Task { @MainActor in self?.steps[.botCheckShield] = .running(text: text) }
+        }
+        switch outcome {
+        case .installed:
+            return .done
+        case .needsHomebrew:
+            return .failed(reason: "Setting this up needs Homebrew first.")
+        case .failed:
+            return .failed(reason: "Setup didn't finish. You can try again later from the top of the window.")
+        }
     }
 }

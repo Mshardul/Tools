@@ -19,11 +19,11 @@ struct DownloadsGridTokens {
     let barFillEnd: NSColor
     let hairlineWidth: CGFloat
 
-    let body12: NSFont
+    let cell: NSFont
     let body13Semibold: NSFont
     let body12Medium: NSFont
-    let mono10Semibold: NSFont
-    let mono11Medium: NSFont
+    let header: NSFont
+    let pill: NSFont
     let mono11: NSFont
 
     // Matches PaletteTokens.auroraMintIris (AppKit-owned copies; no SwiftUI Color bridge).
@@ -44,12 +44,12 @@ struct DownloadsGridTokens {
         barFillStart: hex("#5EF2C8"),
         barFillEnd: hex("#8B7BFF"),
         hairlineWidth: 1,
-        body12: NSFont.systemFont(ofSize: 12, weight: .regular),
-        body13Semibold: NSFont.systemFont(ofSize: 13, weight: .semibold),
-        body12Medium: NSFont.systemFont(ofSize: 12, weight: .medium),
-        mono10Semibold: NSFont.monospacedSystemFont(ofSize: 10, weight: .semibold),
-        mono11Medium: NSFont.monospacedSystemFont(ofSize: 11, weight: .medium),
-        mono11: NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        cell: GridFont.inter(13),
+        body13Semibold: GridFont.inter(13, .semibold),
+        body12Medium: GridFont.inter(12, .medium),
+        header: GridFont.mono(10, .medium),
+        pill: GridFont.mono(10),
+        mono11: GridFont.mono(11)
     )
 
     static func make(theme: Theme) -> DownloadsGridTokens {
@@ -109,5 +109,24 @@ extension IconKind {
         case .columnsMenu: "tablecells"
         case .warning: "exclamationmark.triangle.fill"
         }
+    }
+}
+
+enum GridFont {
+    static func inter(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {
+        custom("Inter", size, weight) ?? .systemFont(ofSize: size, weight: weight)
+    }
+
+    static func mono(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {
+        custom("JetBrains Mono", size, weight) ?? .monospacedSystemFont(ofSize: size, weight: weight)
+    }
+
+    private static func custom(_ family: String, _ size: CGFloat, _ weight: NSFont.Weight) -> NSFont? {
+        guard NSFont(name: family, size: size) != nil else { return nil }
+        let descriptor = NSFontDescriptor(fontAttributes: [
+            .family: family,
+            .traits: [NSFontDescriptor.TraitKey.weight: weight.rawValue]
+        ])
+        return NSFont(descriptor: descriptor, size: size)
     }
 }

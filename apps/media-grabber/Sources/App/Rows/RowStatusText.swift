@@ -22,7 +22,8 @@ enum RowRemarkText {
         for snapshot: JobSnapshot,
         queuePosition: Int?,
         rate: HostRateDisplayState?,
-        vpnActive: Bool = false
+        vpnActive: Bool = false,
+        shieldStatus: ShieldStatus = .missing
     ) -> String {
         switch snapshot.state {
         case .queued:
@@ -32,7 +33,7 @@ enum RowRemarkText {
         case let .cooldown(until):
             "Try again in " + CountdownFormat.mmss(until: until, now: .now)
         case let .failed(errorClass):
-            sentence(for: errorClass, vpnActive: vpnActive)
+            sentence(for: errorClass, snapshot: snapshot, vpnActive: vpnActive, shieldStatus: shieldStatus)
         case .probing:
             if let until = snapshot.probeWaitUntil {
                 "Waiting for probe slot · " + CountdownFormat.mmss(until: until, now: .now)
@@ -60,9 +61,18 @@ enum RowRemarkText {
         return ""
     }
 
-    private static func sentence(for errorClass: ErrorClass, vpnActive: Bool) -> String {
+    private static func sentence(
+        for errorClass: ErrorClass,
+        snapshot: JobSnapshot,
+        vpnActive: Bool,
+        shieldStatus: ShieldStatus
+    ) -> String {
         if case .botCheck = errorClass {
-            return BotCheckCopy.sentence(vpnActive: vpnActive)
+            return BotCheckCopy.sentence(
+                vpnActive: vpnActive,
+                shieldStatus: shieldStatus,
+                isYouTube: snapshot.rateHost.canonical == "youtube"
+            )
         }
         return errorClass.presentation.sentence
     }

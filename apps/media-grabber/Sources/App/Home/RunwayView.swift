@@ -32,84 +32,50 @@ struct RunwayView: View {
     ]
 
     var body: some View {
-        HStack(alignment: .center, spacing: Spacing.s4) {
-            slot("Link", filled: appModel.resolved != nil) {
-                Text(appModel.resolved?.title ?? "—")
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .foregroundStyle(theme.palette.dim)
-                    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            slot("Type", filled: true) { typeControl }
-                .fixedSize(horizontal: true, vertical: false)
-            slot("Format", filled: true) { formatControl }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            slot("Language", filled: true) { languageControl }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            slot("Save to", filled: true) { saveControl }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Divider().frame(height: 28).overlay(theme.palette.hair)
-
-            Button(action: onGrab) {
-                Text("Grab")
-                    .font(theme.bodyFont(13, .semibold))
-                    .foregroundStyle(theme.palette.onAccent)
-                    .padding(.horizontal, Spacing.s5)
-                    .padding(.vertical, Spacing.s2)
-                    .background(
-                        LinearGradient(
-                            colors: [theme.palette.goFillStart, theme.palette.goFillEnd],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        in: RoundedRectangle(cornerRadius: theme.controlRadius)
-                    )
-            }
-            .buttonStyle(.plain)
-            .disabled(!canGrab)
-            .opacity(canGrab ? 1 : 0.3)
-            .grayscale(canGrab ? 0 : 1)
-            .accessibilityLabel("Grab")
+        HStack(spacing: Spacing.s2) {
+            typeControl
+            formatControl
+            languageControl
+            saveControl
+            grabButton
         }
-        .padding(Spacing.s4)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            theme.palette.panelHi,
-            in: RoundedRectangle(cornerRadius: theme.cardRadius)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: theme.cardRadius)
-                .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
-        )
+        .font(theme.bodyFont(12, .medium))
+        .fixedSize(horizontal: true, vertical: false)
     }
 
-    private func slot(
-        _ label: String,
-        filled: Bool,
-        @ViewBuilder content: () -> some View
-    ) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s1) {
-            HStack(spacing: Spacing.s1) {
-                Text(filled ? "\u{25CF}" : "\u{25CB}")
-                    .foregroundStyle(filled ? theme.palette.accent : theme.palette.faint)
-                Text(label)
-                    .font(theme.monoFont(10, .regular))
-                    .foregroundStyle(theme.palette.faint)
-            }
-            content()
-                .font(theme.bodyFont(12, .medium))
-                .frame(minHeight: 28, alignment: .leading)
+    private var grabButton: some View {
+        Button(action: onGrab) {
+            Text("Grab")
+                .font(theme.bodyFont(13, .semibold))
+                .foregroundStyle(theme.palette.onAccent)
+                .padding(.horizontal, Spacing.s5)
+                .padding(.vertical, Spacing.s2)
+                .background(
+                    LinearGradient(
+                        colors: [theme.palette.goFillStart, theme.palette.goFillEnd],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    in: RoundedRectangle(cornerRadius: theme.controlRadius)
+                )
         }
+        .buttonStyle(.plain)
+        .disabled(!canGrab)
+        .opacity(canGrab ? 1 : 0.3)
+        .grayscale(canGrab ? 0 : 1)
+        .accessibilityLabel("Grab")
     }
 
     private var typeControl: some View {
-        SkinnedSegment(
-            [MediaType.video, .audio],
-            selection: $mediaType
-        ) { $0 == .video ? "Video" : "Audio" }
+        SkinnedPicker(
+            caption: "Type",
+            rows: [
+                SkinnedPickerRow(id: MediaType.video, title: "Video", subtitle: nil),
+                SkinnedPickerRow(id: MediaType.audio, title: "Audio", subtitle: nil)
+            ],
+            selection: $mediaType,
+            triggerLabel: mediaType == .video ? "Video" : "Audio"
+        )
     }
 
     @ViewBuilder
@@ -120,14 +86,17 @@ struct RunwayView: View {
                 caption: "Resolution",
                 rows: qualityRows,
                 selection: $videoHeight,
-                triggerLabel: qualityLabel(videoHeight),
-                fillsWidth: true
+                triggerLabel: qualityLabel(videoHeight)
             )
         case .audio:
-            SkinnedSegment(
-                [AudioFormat.m4a, .mp3],
-                selection: $audioFormat
-            ) { $0.rawValue.uppercased() }
+            SkinnedPicker(
+                caption: "Format",
+                rows: [AudioFormat.m4a, .mp3].map {
+                    SkinnedPickerRow(id: $0, title: $0.rawValue.uppercased(), subtitle: nil)
+                },
+                selection: $audioFormat,
+                triggerLabel: audioFormat.rawValue.uppercased()
+            )
         }
     }
 
@@ -138,8 +107,7 @@ struct RunwayView: View {
                 SkinnedPickerRow(id: $0.id, title: $0.label, subtitle: nil)
             },
             selection: $selectedTrackID,
-            triggerLabel: languageLabel,
-            fillsWidth: true
+            triggerLabel: languageLabel
         )
     }
 
@@ -161,8 +129,7 @@ struct RunwayView: View {
                 get: { .folder(destFolder) },
                 set: { applySaveTarget($0) }
             ),
-            triggerLabel: destFolder.lastPathComponent,
-            fillsWidth: true
+            triggerLabel: destFolder.lastPathComponent
         )
     }
 

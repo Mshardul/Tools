@@ -92,54 +92,50 @@ struct HomeView: View {
                 .controlSize(.small)
                 .tint(theme.palette.accent)
                 .accessibilityLabel("Checking link")
-        } else if let resolved = appModel.resolved {
-            Text("\u{2713} \(resolved.title)")
-                .font(theme.monoFont(12, .regular))
-                .foregroundStyle(theme.palette.accent)
-                .lineLimit(1)
-                .truncationMode(.middle)
         }
     }
 
-    private func pasteBlock(reserveRunwaySlot: Bool = false) -> some View {
-        VStack(spacing: Spacing.s3) {
-            pasteField
-            if runwayAttached || reserveRunwaySlot {
-                attachedRunway
-                    .opacity(runwayAttached ? 1 : 0)
-                    .allowsHitTesting(runwayAttached)
-                    .accessibilityHidden(!runwayAttached)
-            }
-        }
+    private func pasteBlock() -> some View {
+        pasteField
     }
 
     private var pasteField: some View {
         @Bindable var appModel = appModel
         return VStack(spacing: Spacing.s2) {
-            HStack(spacing: Spacing.s2) {
-                TextField("", text: $appModel.homeFieldText)
-                    .textFieldStyle(.plain)
-                    .font(theme.bodyFont(14, .regular))
-                    .foregroundStyle(theme.palette.text)
-                    .accessibilityLabel("Paste a link")
-                    .onSubmit { Task { await resolve() } }
-                    .onChange(of: appModel.homeFieldText) { _, new in autoProbe(new) }
-                    .overlay(alignment: .leading) {
-                        if appModel.homeFieldText.isEmpty {
-                            Text("Paste a link")
-                                .font(theme.bodyFont(14, .regular))
-                                .foregroundStyle(theme.palette.faint)
-                                .allowsHitTesting(false)
+            HStack(spacing: Spacing.s3) {
+                if runwayAttached {
+                    ResolvedLinkTitle()
+                    attachedRunway
+                    ClearLinkButton()
+                } else {
+                    TextField("", text: $appModel.homeFieldText)
+                        .textFieldStyle(.plain)
+                        .font(theme.monoFont(13, .regular))
+                        .foregroundStyle(theme.palette.text)
+                        .accessibilityLabel("Paste a link")
+                        .onSubmit { Task { await resolve() } }
+                        .overlay(alignment: .leading) {
+                            if appModel.homeFieldText.isEmpty {
+                                Text("Paste a link")
+                                    .font(theme.monoFont(13, .regular))
+                                    .foregroundStyle(theme.palette.faint)
+                                    .allowsHitTesting(false)
+                            }
                         }
-                    }
-                probeStatus
+                    probeStatus
+                }
             }
+            .frame(minHeight: 34)
+            .onChange(of: appModel.homeFieldText) { _, new in autoProbe(new) }
 
             if let error = appModel.probeError {
                 Text(error)
                     .font(theme.bodyFont(12, .regular))
                     .foregroundStyle(theme.palette.danger)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                if let prompt = appModel.shieldSetup.probePrompt {
+                    ShieldPromptButton(prompt: prompt)
+                }
             }
         }
         .padding(Spacing.s4)
@@ -254,7 +250,7 @@ extension HomeView {
     private var tableLayout: some View {
         @Bindable var appModel = appModel
         return VStack(spacing: 0) {
-            pasteBlock(reserveRunwaySlot: true)
+            pasteBlock()
                 .padding(.horizontal, Spacing.s6)
                 .padding(.top, Spacing.s4)
 

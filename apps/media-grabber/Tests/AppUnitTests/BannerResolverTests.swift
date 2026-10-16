@@ -1,3 +1,4 @@
+@testable import GrabberKit
 @testable import MediaGrabber
 import XCTest
 
@@ -41,9 +42,30 @@ final class BannerResolverTests: XCTestCase {
         let content = bannerCopy(for: .potProviderDown, circuitHosts: []) {}
         XCTAssertEqual(
             content?.text,
-            "Bot-check protection is offline — some downloads may fail or be low-res."
+            "The bot-check shield stopped working — some YouTube downloads may fail or be low-res."
         )
         XCTAssertEqual(content?.buttonTitle, "Restart")
         XCTAssertNotNil(content?.action)
+    }
+
+    @MainActor
+    func testShieldNeverSetUp_showsNoBanner_butStoppedShieldDoes() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: UUID().uuidString))
+        let logDir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true)
+        let model = AppModelTestHelpers.makeModel(defaults: defaults, logDirectory: logDir)
+
+        func snapshot(_ shield: ShieldStatus) -> QueueSnapshot {
+            QueueSnapshot(
+                jobs: [], revision: 1, queueHalt: nil, generatedAt: .init(),
+                hostRateSummary: [:], isOnline: true, shieldStatus: shield
+            )
+        }
+        model.recomputeBanner(snapshot(.missing))
+        XCTAssertNil(model.bannerContent)
+        model.recomputeBanner(snapshot(.down))
+        XCTAssertEqual(model.bannerContent?.buttonTitle, "Restart")
+        model.recomputeBanner(snapshot(.running(port: 1)))
+        XCTAssertNil(model.bannerContent)
     }
 }

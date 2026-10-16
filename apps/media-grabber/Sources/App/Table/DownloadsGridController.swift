@@ -58,6 +58,13 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
         super.init()
         configureScrollView()
         configureTableView()
+        scrollView.contentView.postsFrameChangedNotifications = true
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(viewportDidResize),
+            name: NSView.frameDidChangeNotification,
+            object: scrollView.contentView
+        )
     }
 
     func sync(_ state: DownloadsGridSyncState) {
@@ -100,7 +107,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
     }
 
     private func configureTableView() {
-        let header = DownloadsGridHeaderView(frame: .zero)
+        let header = DownloadsGridHeaderView(frame: NSRect(x: 0, y: 0, width: 0, height: 30))
         header.onDoubleClickDivider = { [weak self] columnIndex in
             self?.autoFitColumn(at: columnIndex)
         }
@@ -109,7 +116,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
         }
         tableView.headerView = header
         tableView.style = .plain
-        tableView.rowHeight = 36
+        tableView.rowHeight = 41
         tableView.intercellSpacing = NSSize(width: 0, height: 0)
         tableView.allowsColumnReordering = true
         tableView.allowsColumnResizing = true
@@ -172,6 +179,7 @@ final class DownloadsGridController: NSObject, NSTableViewDataSource, NSTableVie
                 column.maxWidth = width
             }
         }
+        fillViewportWithTitle()
     }
 
     private func shouldLockMaxWidth(for column: NSTableColumn) -> Bool {

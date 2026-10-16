@@ -20,13 +20,13 @@ final class HealthControllerTests: XCTestCase {
         )
     }
 
-    func testShieldMissingIsFirstChipOfflineRefresh() {
+    func testShieldMissingIsFirstChipOfferingSetUp() {
         let controller = HealthController()
         controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: nil)
         XCTAssertEqual(controller.chips[0].id, "shield")
-        XCTAssertEqual(controller.chips[0].label, "shield · offline")
+        XCTAssertEqual(controller.chips[0].label, "bot-check shield · not set up")
+        XCTAssertEqual(controller.chips[0].interaction, .setUp)
         XCTAssertEqual(controller.chips[0].dot, .attention)
-        XCTAssertEqual(controller.chips[0].interaction, .refresh(isBusy: false))
         XCTAssertEqual(controller.chips[1].label, "online")
     }
 
@@ -37,7 +37,7 @@ final class HealthControllerTests: XCTestCase {
             now: .now,
             environmentReport: nil
         )
-        XCTAssertEqual(controller.chips[0].label, "shield")
+        XCTAssertEqual(controller.chips[0].label, "bot-check shield · on")
         XCTAssertEqual(controller.chips[0].dot, .ok)
         XCTAssertEqual(controller.chips[0].interaction, .none)
         XCTAssertEqual(controller.chips[1].label, "online")
@@ -197,5 +197,16 @@ final class HealthControllerTests: XCTestCase {
         controller.update(snapshot: snapshot(online: true, summary: [:]), now: .now, environmentReport: report)
         let chip = controller.chips.first { $0.id == "engine" }
         XCTAssertEqual(chip?.dot, .ok)
+    }
+}
+
+extension HealthControllerTests {
+    func testShieldDownOffersRestartNotSetUp() {
+        let controller = HealthController()
+        controller.update(
+            snapshot: snapshot(online: true, summary: [:], shield: .down), now: .now, environmentReport: nil
+        )
+        XCTAssertEqual(controller.chips[0].label, "bot-check shield · offline")
+        XCTAssertEqual(controller.chips[0].interaction, .refresh(isBusy: false))
     }
 }

@@ -102,6 +102,17 @@ enum AppModelDialogs {
         )
     }
 
+    static func updateAvailable(version: String, current: String) -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "MediaGrabber \(version) is available",
+            message: "You have \(current). Download the new version? Quit and replace the app to update.",
+            confirmTitle: "Download",
+            cancelTitle: "Later",
+            isDestructive: false,
+            suppressionKey: nil
+        )
+    }
+
     static func batchCancelConfirmation() -> ConfirmationRequest {
         ConfirmationRequest(
             title: "Cancel selected downloads?",
@@ -113,7 +124,12 @@ enum AppModelDialogs {
         )
     }
 
-    static func probeErrorMessage(for error: MetadataError, vpnActive: Bool = false) -> String {
+    static func probeErrorMessage(
+        for error: MetadataError,
+        vpnActive: Bool = false,
+        shieldStatus: ShieldStatus = .missing,
+        isYouTube: Bool = false
+    ) -> String {
         switch error {
         case .badURL: "That doesn't look like a valid link."
         case .unsupported: "That site isn't supported."
@@ -122,7 +138,9 @@ enum AppModelDialogs {
         case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
         case .malformedOutput: "Couldn't read the video details."
         case .botCheck:
-            BotCheckCopy.sentence(vpnActive: vpnActive)
+            BotCheckCopy.sentence(vpnActive: vpnActive, shieldStatus: shieldStatus, isYouTube: isYouTube)
+        case .cookieReadFailed:
+            "Couldn't read your browser's sign-in. Close the browser and try again, or pick another in Preferences."
         case .hostBlocked:
             "This site is cooling down. Try again in a moment."
         case .unknown: "Couldn't read the video details."

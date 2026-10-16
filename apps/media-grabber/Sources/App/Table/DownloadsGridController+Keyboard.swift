@@ -19,8 +19,9 @@ extension DownloadsGridController {
         }
     }
 
+    // The focus box shows only when focus arrives by keyboard, not when the window picks the table at launch.
     func tableBecameFirstResponder() {
-        if keyboardFocusRow < 0, !items.isEmpty {
+        if keyboardFocusRow < 0, !items.isEmpty, NSApp.currentEvent?.type == .keyDown {
             keyboardFocusRow = 0
         }
         refreshKeyboardChrome()

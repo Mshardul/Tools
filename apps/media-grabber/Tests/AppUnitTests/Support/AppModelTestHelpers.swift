@@ -16,8 +16,12 @@ enum AppModelTestHelpers {
         engineJobLogDir: URL? = nil,
         persistence: FakeQueuePersisting? = nil,
         notificationRouter: (any NotificationRouting)? = nil,
-        ytDlpUpdater: YtDlpUpdating? = nil
+        ytDlpUpdater: YtDlpUpdating? = nil,
+        appUpdateChecker: AppUpdateChecker? = nil,
+        appVersion: String = "0.0.0",
+        onboardingCompleted: Bool = true
     ) -> AppModel {
+        defaults.set(onboardingCompleted, forKey: "mg.hasCompletedOnboarding")
         if let persistence {
             engine.attachPersistence(persistence)
         }
@@ -36,6 +40,8 @@ enum AppModelTestHelpers {
             notificationRouter: notificationRouter ?? FakeNotificationRouter(),
             revealSink: revealSink,
             openURLSink: openURLSink,
+            appUpdateChecker: appUpdateChecker ?? AppUpdateChecker(),
+            appVersion: appVersion,
             engineJobLogDir: engineJobLogDir ?? logDirectory,
             persistence: persistence
         )

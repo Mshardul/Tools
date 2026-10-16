@@ -15,7 +15,9 @@ struct MainWindow: View {
                 brandRow
                 Divider().overlay(theme.palette.hair)
                 HealthStrip(chips: appModel.healthChips) { chip in
-                    if chip.id == "shield" {
+                    if chip.id == "shield", chip.interaction == .setUp {
+                        appModel.shieldSetup.present()
+                    } else if chip.id == "shield" {
                         Task {
                             appModel.healthController.markBusy(chipID: "shield")
                             await appModel.restartShield()
@@ -28,7 +30,7 @@ struct MainWindow: View {
                 Divider().overlay(theme.palette.hair)
                 HStack(alignment: .top, spacing: 0) {
                     rail
-                        .frame(width: 200)
+                        .frame(width: 160)
                     Divider().overlay(theme.palette.hair)
                     page
                 }
@@ -50,6 +52,12 @@ struct MainWindow: View {
             ToastHost(items: appModel.toastCenter.items) { id in
                 appModel.toastCenter.dismiss(id)
             }
+        }
+        .sheet(isPresented: Binding(
+            get: { appModel.shieldSetup.isPresented },
+            set: { appModel.shieldSetup.isPresented = $0 }
+        )) {
+            ShieldSetupSheet(controller: appModel.shieldSetup)
         }
         .overlay {
             if let request = appModel.pendingConfirmation {
