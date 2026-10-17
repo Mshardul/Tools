@@ -21,14 +21,14 @@
 2. **Many controls are stock macOS widgets** (toggle/checkbox, stepper, buttons, two table menus, sheets, popover frame) inside an otherwise skinned UI.
 3. **Table presentation lags the design** (no group spine, status pills uncoloured, header affordances missing, row actions off-screen at the default window size, toasts see-through and overlapping the banner).
 
-**Findings: 89** (Broken 7 · Ugly 12 · Inconsistent 39 · Nit 31). Verified by render: 64; from code + CSS only: 25. The text audit (Section 8) lists 156 further string-level verdicts.
+**Findings: 101** (Broken 8 · Ugly 13 · Inconsistent 40 · Nit 40). Verified by render: 64; from code + CSS only: 37. The text audit (Section 8) lists 156 further string-level verdicts.
 
 | Severity | Meaning | Count |
 |---|---|---|
-| Broken | Wrong, missing or unusable for a user, or a control that does nothing visible | 7 |
-| Ugly | Works, but visibly off-design in a way a user would notice | 12 |
-| Inconsistent | Differs from the mockup/design tokens or from sibling screens | 39 |
-| Nit | Small deviation, or a note that could not be fully verified | 31 |
+| Broken | Wrong, missing or unusable for a user, or a control that does nothing visible | 8 |
+| Ugly | Works, but visibly off-design in a way a user would notice | 13 |
+| Inconsistent | Differs from the mockup/design tokens or from sibling screens | 40 |
+| Nit | Small deviation, or a note that could not be fully verified | 40 |
 
 
 ### Top 10 issues
@@ -54,7 +54,7 @@
 
 **Measurements.** Values come from the CSS (`screens.css`, inline styles), the design-system tables, the Swift style code (fonts, sizes, colours, paddings, radii, symbol names) and the renders (relative positions, measured from the 2× PNGs, ≈±1 pt). Contrast ratios are computed with the WCAG 2.x formula (Appendix B). Font resolution was measured in-process with `NSFont(name:)`.
 
-**What could not be verified** (details in Appendix C): native menus and context menus (Columns, column filter, Debug menu bar), `NSAlert`, system sheet frames and window title bar/traffic lights, tooltips, live animation (orb spin, chip spin/pulse, dialog and toast transitions), hover/pressed/focus states, drag and drop states, the column-resize readout and drag ghost, scrollbars, and the host-rate popover (popover capture hit the wrong control). Picker popovers were captured but show a saturated halo that is probably a capture artefact of the popover window; their card content is trusted, their frame is not. Several onboarding/shield states that need real subprocess output were produced with fakes and show fixture data (for example "not found" tool versions in Diagnostics because no environment probe had run). The quit-dialog render used placeholder wording; the real quit copy is taken from code.
+**What could not be verified** (details in Appendix C): native menus and context menus (Columns, column filter, Debug menu bar), `NSAlert`, system sheet frames and window title bar/traffic lights, tooltips, live animation (orb spin, chip spin/pulse, dialog and toast transitions), hover/pressed/focus states, drag and drop states, the column-resize readout and drag ghost, scrollbars, and the host-rate popover (popover capture hit the wrong control). Picker popovers were captured but show a saturated halo that is probably a capture artefact of the popover window; their card content is trusted, their frame is not. Several onboarding/shield states that need real subprocess output were produced with fakes and show fixture data (for example "not found" tool versions in Diagnostics, which is also what the real pane shows before its first check, see S-100). The quit-dialog render used placeholder wording; the real quit copy is taken from code.
 
 **Self-disclosure.** One read-only `git status` was run once by mistake in a compound command while exploring; no other git command was used and nothing in the repository was changed by it.
 
@@ -287,7 +287,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Global / theme = Tape Deck
 - **Severity:** Broken  ·  **Verified:** rendered
 - **Mockup:** Tape Deck is light: ground #F3E9D8, surface #FBF4E6, 2px ink borders (`--border-w:2px`, L87), hard offset shadow `8px 8px 0 rgba(0,0,0,.35)` (L87), brand-coloured header with surface-coloured wordmark (L135, L142), uppercase mono nav (L145), reel motif (L138-140), Bricolage Grotesque / DM Sans / DM Mono (L86), radii 14/12/8/20/6 (L85).
-- **App:** `Theme` only changes five radii (Tape Deck 10/8/6/14/5; Theme.swift windowRadius/cardRadius/controlRadius/pillRadius/chipRadius) and `motif` (never used to pick a different drawing). Colours, fonts, borders (1pt hairline), shadow and header are the Aurora ones. `MotifView` always draws the conic orb.
+- **App:** `Theme` only changes five radii (Tape Deck 10/8/6/14/5; Theme.swift windowRadius/cardRadius/controlRadius/pillRadius/chipRadius) and `motif` (never used to pick a different drawing). Colours, fonts, borders (1pt hairline) and header are the Aurora ones. The only Tape Deck elevation is the `SkinnedPicker` popover shadow (black 0.35, offset 3×3, blur 0; mockup 8×8). `MotifView` never reads `motif` and always draws the conic orb.
 - **Gap:** Choosing "Tape Deck" yields a dark Aurora look in a window forced to the light colour scheme (see S-004). The theme named in the Appearance pane does not exist visually.
 - **Evidence:** Render `theme-tape-a-home` beside mockup `home-s1-2-tapedeck-teal`: mockup is cream with a teal header bar and ink outlines; app is the dark mint UI. `tape-firstrun` is dark.
 - **Direction:** Implement the Tape Deck token set, border widths, header ground, hard shadow and reel.
@@ -369,7 +369,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Global typography
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** Controls (nav, rail, segment, picker trigger, buttons, group actions, card titles) use the display family (Sora) at 12–13px: `.nav a`, `.mg-rail a`, `.seg button`, `.pick`, `.btn`, `.btn-txt`, `.gh`, `.step h3` (L144, L526, L204, L210, L355, L414, L300, L381).
-- **App:** Nav, rail, `SkinnedSegment`, `SkinnedPicker`, runway Grab, selection bar and group actions use Inter (`theme.bodyFont`); About, Developer and Diagnostics buttons use Sora (`displayFont`, 12 semibold); dialog, Homebrew-recovery, shield-sheet and Preferences buttons fall back to SF Pro (see S-011).
+- **App:** Nav, rail, `SkinnedSegment`, `SkinnedPicker`, runway Grab, selection bar and group actions use Inter (`theme.bodyFont`); About, Developer and Diagnostics buttons use Sora (`displayFont`, 12 semibold); dialog, Homebrew-recovery, shield-sheet and several Preferences buttons (Advanced, Logs & privacy, Sign-in) fall back to SF Pro (see S-011).
 - **Gap:** Button labels use three different faces in one window (Sora, Inter, SF Pro), and none of them is the display face the mockup uses for controls.
 - **Evidence:** Pairs `about1`, `pref-advanced`: "Open Diagnostics" (Sora) vs "Show in Finder" (SF) sit in rows that look identical in the mockup.
 - **Direction:** One face per control role.
@@ -379,7 +379,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Confirmation dialog, onboarding Homebrew actions, shield sheet, Preferences buttons, banner-adjacent buttons
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** All buttons are `font-family:var(--font-display)` 11–14px (L198, L355, L368, L414, L450).
-- **App:** `Button("…")` calls with `.buttonStyle(.plain)` or default style and no `.font`: ConfirmationDialog Cancel/Confirm, Onboarding Copy command/Open Terminal/Check again/Copy, ShieldSetupSheet buttons, Logs & privacy "Show in Finder"/"Open", Advanced "Show in Finder"/"Reset"/"Reset…", Sign-in "Test sign-in"/"Open System Settings", HostRatePopover "Retry now"/"Retry all". These render in SF Pro 13.
+- **App:** `Button("…")` calls with `.buttonStyle(.plain)` or default style and no `.font`: ConfirmationDialog Cancel/Confirm, Onboarding Copy command/Open Terminal/Check again/Copy, ShieldSetupSheet buttons, Logs & privacy "Show in Finder"/"Open", Advanced "Show in Finder"/"Reset"/"Reset…", Sign-in "Test sign-in"/"Open System Settings", HostRatePopover "Retry now"/"Retry all". These render in SF Pro 13, except the command-box Copy, which is `.controlSize(.small)`.
 - **Gap:** Typography breaks exactly where the user acts. Dialog buttons "Cancel" and "Reset" do not match the dialog title in Sora.
 - **Evidence:** Renders `dlg1`, `dlg5`, `pref-advanced`, `shield4`.
 - **Direction:** Give every button the themed font.
@@ -473,8 +473,8 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Runway pickers, segments, Grab, chips
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** `.rstep>.rv,.seg,.pick{height:34px}` (L192, L203, L210); `.go{min-height:44px}` (L198); chip padding 4px 10px (L151); nav padding 7px 12px (L144).
-- **App:** SkinnedPicker height 28 (fixed `.frame(height: 28)`); SkinnedSegment ≈26 (2 + 4 padding + 12pt label); Grab ≈32 (13pt label + 8+8); chips 5+5 padding; nav 4+4.
-- **Gap:** Everything is ~15–25% smaller than the mockup, so the first-run hero is less prominent and click targets are small (Grab 32pt, segment 26pt).
+- **App:** SkinnedPicker height 28 (fixed `.frame(height: 28)`); SkinnedSegment ≈26 (2 + 4 padding + 12pt label); Grab ≈32 (13pt label + 8+8); chips 5 vertical padding (mockup 4, so chips are slightly taller than designed); nav 4+4.
+- **Gap:** Pickers, segments, Grab and nav are ~15–25% smaller than the mockup, so the first-run hero is less prominent and click targets are small (Grab 32pt, segment 26pt).
 - **Evidence:** Pair `home-s1-4`: mockup Grab is visibly taller; app pickers are shorter.
 - **Direction:** 34pt controls, 44pt primary.
 
@@ -503,7 +503,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Left rail, all pages
 - **Severity:** Nit  ·  **Verified:** rendered
 - **Mockup:** Home `.mg-rail` 160px (L525); Preferences `.prefs .side` 200px (L391); About rail 200px in about.html. design-system.md §4.1 says rail position, width and styling are identical on every page.
-- **App:** 160pt everywhere (`MainWindow` `frame(width: 160)`); padding 8 (items) / 22 top.
+- **App:** 160pt everywhere (`MainWindow` `frame(width: 160)`); the Home rail pads 8 on all sides, the Preferences and About rails pad 22 top and bottom.
 - **Gap:** App follows the design-system, not the mockup; Preferences group captions and "Sign-in & cookies" are tighter than drawn. Conflict between the two sources is logged in Section 9.
 - **Evidence:** Pair `pref-downloads`: mockup rail is wider (200).
 - **Direction:** Decide which source rules.
@@ -523,10 +523,10 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Global
 - **Severity:** Inconsistent  ·  **Verified:** code+CSS only
 - **Mockup:** Aurora window 18 / card 14 / control 9 / pill 20 / chip 7; Tape Deck 14 / 12 / 8 / 20 / 6 (L77, L85). Banner radius is a literal 11px (L316) and progress/bar pill 20.
-- **App:** Aurora radii match. Tape Deck is 10 / 8 / 6 / 14 / 5. Banner uses `cardRadius` (14, mockup 11). Progress bars use radius 2 (mockup `--r-pill` 20 on a 6px bar = fully round); action buttons 7 (mockup `--r-chip` 7 ✓); status pill 10 (mockup 20; the 22pt-high pill is fully round in the mockup).
-- **Gap:** Tape Deck corners are tighter than designed at every level; Aurora status pills and progress bars are less round than designed.
+- **App:** Aurora radii match. Tape Deck is 10 / 8 / 6 / 14 / 5. Banner uses `cardRadius` (14, mockup 11). Progress bars use radius 2 on a 4pt track (already fully round, like the mockup's `--r-pill` 20 on a 6px bar); action buttons 7 (mockup `--r-chip` 7 ✓); status pill 10 (mockup 20; the 22pt-high pill is fully round in the mockup).
+- **Gap:** Tape Deck corners are tighter than designed at every level; Aurora status pills are less round than designed.
 - **Evidence:** Pair `home-s5-3` (pills).
-- **Direction:** Tape Deck 14/12/8/20/6; pills and bars fully round.
+- **Direction:** Tape Deck 14/12/8/20/6; status pills fully round.
 
 ### 6.5 Elevation
 
@@ -547,7 +547,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Global iconography
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** Icons are bundled SVGs, Phosphor Bold on Tape Deck, Lucide on Aurora (design-system.md §3.4), about 26 glyphs; nominal 16px, 15px nav, 20–22px banner/onboarding. Mockup draws inline 2px-stroke SVGs through `.ico{width:1em;height:1em}` (L519).
-- **App:** `Icon` maps 16 kinds to SF Symbols (`pause.fill`, `play.fill`, `xmark`, `arrow.up.to.line`, `arrow.clockwise`, `key.fill`, `folder`, `globe`, `trash`, `doc.text`, `arrow.up.arrow.down`, `chevron.up/down`, `line.3.horizontal.decrease.circle`, `tablecells`, `exclamationmark.triangle.fill`) at weight .medium; other glyphs are SF Symbols set inline (checkmark, chevron.down, xmark, puzzlepiece.extension, checkmark.square.fill) or text characters (`↻`, `↗`, `✓`, "GH"). No theme switch.
+- **App:** `Icon` maps 16 kinds to SF Symbols (`pause.fill`, `play.fill`, `xmark`, `arrow.up.to.line`, `arrow.clockwise`, `key.fill`, `folder`, `globe`, `trash`, `doc.text`, `arrow.up.arrow.down`, `chevron.up/down`, `line.3.horizontal.decrease.circle`, `tablecells`, `exclamationmark.triangle.fill`) at weight .medium; other glyphs are SF Symbols set inline (checkmark, chevron.down, xmark, puzzlepiece.extension, checkmark.square.fill) or text characters (`↻`, `↗`, "GH"). No theme switch.
 - **Gap:** The icon style is the system's (filled pause/play, circled filter) rather than the stroke weight that matches the hairline borders; both themes get the same set. Disclosure carets, copy, terminal, shield, nav icons from the DS list do not exist.
 - **Evidence:** Render `home-table-all-states-full` action column: filled play/pause beside outline trash/globe; mockup buttons use uniform 2px outline glyphs.
 - **Direction:** Bundle the glyph set per theme.
@@ -567,8 +567,8 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Health chips, Learn more, Developer links
 - **Severity:** Nit  ·  **Verified:** rendered
 - **Mockup:** Mockup chip refresh uses an inline SVG `refresh-cw`; icon links use text "GH/in/X" plus a globe SVG.
-- **App:** Chip refresh is the text glyph "↻" (mono 11); "Learn more ↗" is a text arrow; "set up" chip suffix is text; GH badge is letters (recorded decision in DS §4.8).
-- **Gap:** Glyph metrics depend on the font's coverage of ↻/↗ (JetBrains Mono); looks slightly off-baseline in chips.
+- **App:** Chip refresh is the text glyph "↻" (mono 11); "Learn more ↗" is a text arrow (Inter 12 medium); "set up" chip suffix is text; GH badge is letters (recorded decision in DS §4.8).
+- **Gap:** Glyph metrics depend on the font's coverage of ↻ (JetBrains Mono 11 in the chip) and ↗ (Inter 12 in the button); ↻ looks slightly off-baseline in chips.
 - **Evidence:** Render `chrome-two-hosts-busy` chip glyphs.
 - **Direction:** Use icons from the set.
 
@@ -609,7 +609,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Global interaction styling
 - **Severity:** Inconsistent  ·  **Verified:** code+CSS only
 - **Mockup:** Hover rules: `tbody tr:hover td{background:var(--panel)}` (L273), `.pop .prow:hover` accent 12% (L220), `.mrow:hover` (L342), `.fmenu/.colmenu label:hover` (L258, L267), `.thc .sortbtn:hover` border + text (L252), `.colrsz:hover::after` accent-2 (L547), `.iconlink:hover` (L473), ctxmenu rows (L554).
-- **App:** Only SkinnedPicker rows react to hover (`onHover` accent 12%). Rail items, nav, table rows, header icons, resize handles, Grab, segments, toolbar buttons have no hover; `.buttonStyle(.plain)` removes pressed feedback (only the picker footer style dims on press).
+- **App:** Only SkinnedPicker rows react to hover (`onHover` accent 12%). Rail items, nav, table rows, header icons, resize handles, Grab, segments, toolbar buttons have no hover; `.buttonStyle(.plain)` removes pressed feedback (only `PlaylistPickerButtonStyle` dims on press, at 0.75 opacity; the playlist picker's footer and tool buttons use it).
 - **Gap:** The UI feels inert; there is no signal which header icon is clickable.
 - **Evidence:** Code (hover cannot be rendered offscreen).
 - **Direction:** Add hover/pressed per the mockup rules.
@@ -705,7 +705,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Home table at 980×720 and 820×560
 - **Severity:** Broken  ·  **Verified:** rendered
 - **Mockup:** Table rows end with the Actions column inside the pane (home.html 1.2/5.3: pause/cancel/… buttons visible).
-- **App:** Default visible columns Title 200 + Progress 100 + Speed 72 + ETA 72 + Type 96 + Quality 112 + Size 80 + Added at 120 + Actions 196 (+select 32 + 16 padding each) exceed the ≈820pt table viewport; `fillViewportWithTitle` only grows Title. At 980 wide the visible area ends mid "ADDED AT" and Actions is behind a horizontal scroll (autohiding scroller). At 1440 wide everything fits.
+- **App:** Default visible columns Title 200 + Progress 100 + Speed 72 + ETA 72 + Type 96 + Quality 112 + Size 80 + Added at 120 + Actions 196 = 1048pt, plus the 32pt select column = 1080pt (the grid has no inter-column spacing), against an ≈820pt table viewport; `fillViewportWithTitle` only grows Title. At 980 wide the visible area ends mid "ADDED AT" and Actions is behind a horizontal scroll (autohiding scroller). At 1440 wide everything fits.
 - **Gap:** At the default window every row's buttons (pause, cancel, reveal, remove) are hidden until the user scrolls sideways; users won't discover them.
 - **Evidence:** Renders `home-table-all-states` (980) vs `home-table-all-states-full` (1440, Actions visible); `home-table-all-states-min` ends at QUALITY.
 - **Direction:** Fit the default columns to the default window or collapse columns responsively.
@@ -715,7 +715,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Home table / default columns
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** Mockup tables show a Status pill column (1.2, 5.2, 5.3) next to Remark; design-system.md §4.2.3 hides Status by default and relies on the rail.
-- **App:** Default columns are Title, Progress, Speed, ETA, Type, Quality, Size, Added at, Actions (ColumnConfig.defaultVisible). With Status and Remark hidden, "Failed", "Saved", "Cancelled", "Queued" rows are visually identical except for the action icons that sit off-screen (S-042).
+- **App:** Default columns are Title, Progress, Speed, ETA, Type, Quality, Size, Added at (`ColumnID.defaultVisible`) plus Actions (appended by `ColumnConfig.init`). With Status and Remark hidden, "Failed", "Saved", "Cancelled", "Queued" rows are visually identical except for the action icons that sit off-screen (S-042).
 - **Gap:** In the All view a failed download cannot be told from a finished one. (Conflict between mockup and design-system; see Section 9.)
 - **Evidence:** Render `home-table-all-states` rows 1–7.
 - **Direction:** Decide whether a status cue (dot/pill) is visible by default.
@@ -782,8 +782,8 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Onboarding / install running
 - **Severity:** Ugly  ·  **Verified:** rendered
 - **Mockup:** Running/now step: accent-bordered 28px ring with step number (`.step.now .ic`, L380); design-system.md §4.5 says "spinner running".
-- **App:** `ProgressView().controlSize(.small).tint(accent)` inside the 28pt slot (system spinner ≈16pt, low contrast on #0C1013) with summary "Installing — this can take a few minutes."
-- **Gap:** The only sign of work is a faint spinner; there is no determinate or stage text beyond the static sentence.
+- **App:** `ProgressView().controlSize(.small).tint(accent)` inside the 28pt slot (system spinner ≈16pt) with the static summary "Installing — this can take a few minutes."; only the shield step swaps in stage text.
+- **Gap:** The only sign of work is a small spinner; the Homebrew and downloader steps show no stage text beyond the static sentence.
 - **Evidence:** Render `onb2-running` (spinner barely visible next to the step title).
 - **Direction:** Use the themed running ring/spinner.
 
@@ -793,7 +793,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Severity:** Nit  ·  **Verified:** rendered
 - **Mockup:** `.onb` max-width 620, padding 44px 30px; h1 26px; lead 13px/1.6; step title Sora 14; summary 12px (L374-382).
 - **App:** Column 560 wide, vertical padding 44; h1 Sora 30; lead Inter 14; step title Inter 15 semibold; summary Inter 13.
-- **Gap:** Text is 1–4pt larger; the narrower column wraps the lead to two lines.
+- **Gap:** Text is 1–4pt larger. The column is the same width as the mockup's (620 max-width less 30px side padding on each side = 560), so the larger type and longer lead copy are what wrap the lead to two lines.
 - **Evidence:** Pair `onb1`.
 - **Direction:** Match the mockup sizes.
 
@@ -939,7 +939,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** `.bar` 110×6, radius pill (fully round), track `rgba(150,150,150,.18)`, fill `--bar-fill` gradient (mint→iris) with `0 0 10px glow-a` in Aurora; Tape Deck 7px with 1.5px ink border (L288-291).
 - **App:** `GridProgressCellView`: track 4pt high, radius 2, `panelHi` (8% white), inset 8 each side of the column (≈84pt at the 100pt column), fill is solid `barFillStart` (mint; the gradient end colour is never used), no glow.
-- **Gap:** A thinner, flatter, squarer bar; loses the Aurora gradient signature. (`home-table-all-states` shows solid mint bars.)
+- **Gap:** A thinner, flatter bar (radius 2 on a 4pt track is already fully round); loses the Aurora gradient signature. (`home-table-all-states` shows solid mint bars.)
 - **Evidence:** Renders `home-table-all-states`, mockup `home-s5-3` (gradient bars).
 - **Direction:** 6pt pill bar with gradient and glow.
 
@@ -958,7 +958,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Screen / component / state:** Home table / empty
 - **Severity:** Ugly  ·  **Verified:** rendered
 - **Mockup:** `.empty-table` centred 13px `--faint` text; header row stays the normal skinned header (L244; home.html 1.8).
-- **App:** `emptyTableBody`: a separate pseudo-header row (`emptyHeaderRow`, mono 10 **semibold, sentence-case** "Title", "Progress", no sort/filter icons, no select box) ≈110pt below the Columns row, then the centred message "No downloads match this filter." / "No downloads — paste a link above." (Inter 13 faint, 4:1 contrast).
+- **App:** `emptyTableBody`: a separate pseudo-header row (`emptyHeaderRow`, mono 10 **semibold, sentence-case** "Title", "Progress", no sort/filter icons, no select box) that rendered ≈110pt below the Columns row, then the centred message "No downloads match this filter." / "No downloads — paste a link above." (Inter 13 faint, 4:1 contrast). The code has no spacer (8pt sits under Columns); the row's `Color.clear` select placeholder has a fixed width and no height limit, which is the likely cause of the band.
 - **Gap:** The header style changes between empty and populated states (case, weight, icons); there is a large blank band between the Columns row and the header.
 - **Evidence:** Render `home-table-filtered-empty`, `home-table-empty`, crop shows header floating mid-pane.
 - **Direction:** Reuse the real header; remove the gap.
@@ -999,8 +999,8 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 
 - **Screen / component / state:** Health strip (all chip states)
 - **Severity:** Inconsistent  ·  **Verified:** rendered
-- **Mockup:** `.chip` mono 10, padding 4×10, radius pill, gap 6, dot 6px with glow, border 1px stroke (1.5 Tape Deck); busy: opacity .85, grey pulsing dot, spinning `↻` 900ms (L151-156, L452-459).
-- **App:** Mono 11 dim, padding 12×5, capsule, gap 8, dot 7px flat; refresh/busy: text "↻" mono 11 dim with 0.9s linear rotation; busy dot `faint` pulsing 1.2s; set-up chip suffix "set up" accent mono 11 medium; popover chips are buttons with no marker that they open a popover.
+- **Mockup:** `.chip` mono 10, padding 4 vertical / 10 horizontal, radius pill, gap 6, dot 6px with glow, border 1px stroke (1.5 Tape Deck); busy: opacity .85, grey pulsing dot, spinning `↻` 900ms (L151-156, L452-459).
+- **App:** Mono 11 dim, padding 5 vertical / 12 horizontal, capsule, gap 8, dot 7px flat; refresh/busy: text "↻" mono 11 dim with 0.9s linear rotation; busy dot `faint` pulsing 1.2s; set-up chip suffix "set up" accent mono 11 medium; popover chips are buttons with no marker that they open a popover.
 - **Gap:** Chips are larger and noisier; attention state only on the dot (S-018). The label for the not-set-up shield renders "bot-check shield · not set up  set up" (duplicated phrase, Section 8). Rendered chips show stray vertical ticks at the left/right ends in the capture (likely a snapshot artefact of the stroked capsule; not verified live).
 - **Evidence:** Renders `chrome-shield-down-cooldown`, `chrome-two-hosts-busy`, `home-firstrun-full` (chip "not set up  set up").
 - **Direction:** Resize to 10pt; theme-coloured attention state.
@@ -1085,7 +1085,7 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 - **Severity:** Inconsistent  ·  **Verified:** rendered
 - **Mockup:** `h2` (20px, Aurora 700) with 4px gap then `p.psub` 12px dim then `.rule` (stroke, `--border-w`) with 12px gaps; pane padding 30; rail 200 wide (L395-400).
 - **App:** `PrefPaneHeader` places the **subtitle above the title** (Inter 11.5 dim, 4pt gap) then Sora 20 heavy then a `hair` divider; Diagnostics is the exception (title first, Run check at right, then sub).
-- **Gap:** Reading order is inverted and cramped (no gap between sub and title); Diagnostics breaks the pattern. Rule uses `hair` (faint) not `stroke`.
+- **Gap:** Reading order is inverted and cramped (4pt between sub and title, matching the mockup's 4px, but only 4pt between title and rule where the mockup has 12px); Diagnostics breaks the pattern. Rule uses `hair` (faint) not `stroke`.
 - **Evidence:** Pairs `pref-downloads`, `pref-appearance`, `pref-diag`.
 - **Direction:** Title → sub → rule.
 
@@ -1133,10 +1133,10 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 
 - **Screen / component / state:** Preferences / Diagnostics
 - **Severity:** Inconsistent  ·  **Verified:** rendered
-- **Mockup:** Title left, **Run check** gradient Sora 700 14 (padding 12×22, radius control) at right; sub below; "Last run" mono 11 faint; report card rows 13/mono 12 with verdict colours; `.inline-fix` pill; Copy chips (L439-450).
-- **App:** Run check = **solid accent** (no gradient), Sora 13 bold, padding 16×8; rows mono 12 with `verdict.color`; Update pill (SF `arrow.clockwise` label, warn stroke); Copy/Share chips Sora 12 semibold, chip radius; report has 3 rows (canary, yt-dlp, ffmpeg) vs the mockup's 8.
+- **Mockup:** Title left, **Run check** gradient Sora 700 14 (padding 12 vertical / 22 horizontal, radius control) at right; sub below; "Last run" mono 11 faint; report card rows 13/mono 12 with verdict colours; `.inline-fix` pill; Copy chips (L439-450).
+- **App:** Run check = **solid accent** (no gradient), Sora 13 bold, padding 8 vertical / 16 horizontal; rows mono 12 with `verdict.color`; Update pill (SF `arrow.clockwise` label, warn stroke); Copy/Share chips Sora 12 semibold, chip radius; report has 3 rows (canary, yt-dlp, ffmpeg) vs the mockup's 8.
 - **Gap:** The hero action loses the gradient; row padding 8 (mockup 14). The missing report rows are a content gap, noted in Section 9.
-- **Evidence:** Pair `pref-diag` (note: yt-dlp/ffmpeg read "not found" because the harness has no probed environment).
+- **Evidence:** Pair `pref-diag` (note: yt-dlp/ffmpeg read "not found" because no check had run; the real pane does the same before the first check, see S-100).
 - **Direction:** Gradient primary; row padding 14.
 
 #### S-084 — Concurrency note
@@ -1197,11 +1197,133 @@ Finding format: Mockup = what the mockup specifies (file + selector/line + value
 
 - **Screen / component / state:** Home table
 - **Severity:** Nit  ·  **Verified:** code+CSS only
-- **Mockup:** `.ctxmenu` skinned menu defined (L550-559) as optional batch actions (design note "may still mirror").
+- **Mockup:** `.ctxmenu` skinned menu defined (L550-559) as optional batch actions (design note "may still mirror") and drawn in home.html over a multi-selection.
 - **App:** No `contextMenu`/`menu(for:)` in the app.
 - **Gap:** Gap rather than a defect; logged in Section 9.
 - **Evidence:** Code search.
 - **Direction:** None.
+
+### 7.10 Further findings
+
+#### S-090 — Picker row hover wash stays after the pointer leaves
+
+- **Screen / component / state:** Runway pickers / popover rows
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** `.pop .prow:hover` washes the row with accent 12% only while hovered (L220).
+- **App:** `SkinnedPicker.rowView` `onHover` sets `highlighted` when `hovering` is true and never clears it; the same state drives the arrow-key highlight, so the wash stays on the last row the pointer touched.
+- **Gap:** A row looks selected or focused after the pointer has moved to the caption or out of the popover.
+- **Evidence:** Code.
+- **Direction:** Clear the hover wash when the pointer leaves; keep the keyboard highlight separate.
+
+#### S-091 — First-run Home keeps an empty rail slot
+
+- **Screen / component / state:** Home first-run / rail slot
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** The rail exists only on Home frames with a table (`.body-home2` with `.mg-rail`); first-run frames 1.1, 1.4 and 1.5 have none.
+- **App:** `MainWindow` always frames the rail at 160pt and draws the hair divider after it; `rail` returns nothing for Home when `showsTable` is false, so the hero sits beside an empty slot and a vertical rule. Slot width not measured.
+- **Gap:** The first-run block is pushed right of centre and bounded by a rule that separates nothing (see S-044 for the centring).
+- **Evidence:** Code.
+- **Direction:** Draw the rail slot and divider only when the rail has content.
+
+#### S-092 — A busy health chip takes the system disabled fade
+
+- **Screen / component / state:** Health strip / refresh chip while busy
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** `.chip.busy{opacity:.85}` with a spinning `↻` and a pulsing grey dot (L457-458).
+- **App:** `HealthStrip.refreshChip` sets `.disabled(isBusy)` on a `.plain` button, so SwiftUI's disabled dimming applies while the glyph rotates. Not rendered.
+- **Gap:** The busy chip fades by whatever the system applies instead of the designed 0.85.
+- **Evidence:** Code.
+- **Direction:** Block the second click without the system dimming; set the busy opacity explicitly.
+
+#### S-093 — Resolved link title typography
+
+- **Screen / component / state:** Paste field / resolved
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** `.field .rtitle` Sora 13 (display face), `--text`, 7px gap to the accent check icon (L564-565).
+- **App:** `ResolvedLinkTitle` is Inter 14 medium with an SF `checkmark` (12 semibold) and an 8pt gap.
+- **Gap:** The resolved title is a point larger and in the body face; the idle field is mono 13 (S-053), so the field changes face when a link resolves.
+- **Evidence:** Code.
+- **Direction:** Sora 13.
+
+#### S-094 — Double-click autofit measures the wrong font
+
+- **Screen / component / state:** Home table / column divider double-click
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** Table cells are the 13pt body face (design-system.md §3.2).
+- **App:** `ColumnMetrics.autoFitWidth` measures with `NSFont.systemFont(ofSize: 12)`; the cells are Inter 13 (`tokens.cell`).
+- **Gap:** An autofitted column can come out narrower than its widest cell, so text still truncates right after the fit.
+- **Evidence:** Code.
+- **Direction:** Measure with the cell font.
+
+#### S-095 — Empty-state header cells are wider than the live columns
+
+- **Screen / component / state:** Home table / empty and filtered-empty header row
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** The header row stays the normal header (L244), so its columns match the populated table.
+- **App:** `DownloadsTable.emptyHeaderRow` sets each label to the column's resolved width and then applies `.padding(.horizontal, Spacing.s2)` outside that frame, so every header cell is 16pt wider than the matching `NSTableColumn`.
+- **Gap:** Labels drift further right with every column, so the empty header does not line up with the headers that appear once rows exist. Adds to S-066.
+- **Evidence:** Code.
+- **Direction:** Reuse the real header (S-066).
+
+#### S-096 — Group action labels do not fit the Actions column
+
+- **Screen / component / state:** Home table / playlist group header / Actions column
+- **Severity:** Inconsistent  ·  **Verified:** code+CSS only
+- **Mockup:** Group actions are 10px display-face text (L306).
+- **App:** `GridGroupActionsCellView` stacks "Pause all", "Retry failed" and "Cancel all" in Inter 12 medium with 8pt gaps and a 4pt leading inset, with no trailing constraint. The labels measure 172pt in the bundled Inter and the borderless buttons add roughly 5pt each, so the stack needs about 205pt in a 196pt non-resizable column.
+- **Gap:** The last label runs past the column edge and is cut off at the table's right edge when the Actions column is scrolled into view. S-065 describes the buttons as borderless text; it does not cover this overflow.
+- **Evidence:** Label widths measured with the bundled Inter font; button insets estimated.
+- **Direction:** Size the labels to fit the column or let the column grow.
+
+#### S-097 — A failed Homebrew step still offers "Install now"
+
+- **Screen / component / state:** Onboarding / Homebrew missing
+- **Severity:** Ugly  ·  **Verified:** code+CSS only
+- **Mockup:** Frame 2.2 shows the Downloader step as plain text while Homebrew is missing: no command box and no button.
+- **App:** When Homebrew is missing the installer sets Homebrew to failed and the downloader to pending, and `OnboardingView.actions` handles `(.downloaderTools, .pending)` on its own. The downloader row therefore shows the command box and the gradient "Install now" button beside the grey Homebrew buttons (S-048).
+- **Gap:** Two competing next steps; the more prominent one cannot work until Homebrew is installed.
+- **Evidence:** Code.
+- **Direction:** Show the downloader action only once Homebrew is present.
+
+#### S-098 — Other failed onboarding steps use a text link to retry
+
+- **Screen / component / state:** Onboarding / failed downloader, shield and test-run steps
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** Only the Homebrew failed state is drawn (Section 9.3).
+- **App:** For any failure other than Homebrew, `OnboardingView.actions` shows "Try again" as Inter 12 semibold accent with `.buttonStyle(.plain)` and no fill, while the Homebrew row uses three buttons and the pending steps use gradient buttons.
+- **Gap:** The retry control is the weakest-looking element on a failed step.
+- **Evidence:** Code.
+- **Direction:** Give the retry the same button treatment as the other step actions.
+
+#### S-099 — The download-folder path does not truncate
+
+- **Screen / component / state:** Preferences → Downloads / folder button
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** The folder control is a button chip (L401-414); the frames show a short path.
+- **App:** `DownloadsPane.folderButton` applies `.fixedSize()` to a one-line `Text`, so a long path keeps its full width. S-080 only describes the short `~/Downloads` pill.
+- **Gap:** A deep folder path pushes the pill past the pane edge instead of shortening with an ellipsis.
+- **Evidence:** Code.
+- **Direction:** Truncate the middle of the path and show the full path as a tooltip.
+
+#### S-100 — Diagnostics shows "not found" before any check has run
+
+- **Screen / component / state:** Preferences → Diagnostics / report rows
+- **Severity:** Broken  ·  **Verified:** code+CSS only
+- **Mockup:** Report card rows carry real verdicts (L445); "Last run" is faint until a run exists.
+- **App:** `DiagnosticsPaneModel.latestReport` starts as nil and is not seeded from the app's environment report. `reportRows` renders "not found" in `danger` for yt-dlp and ffmpeg whenever it is nil, which is the state on every first visit while "Last run: not yet run this session" is showing.
+- **Gap:** A Mac with both tools installed reads as missing both until the user presses Run check. S-083 attributes this text to the render harness; the real pane does the same.
+- **Evidence:** Code; the same strings appear in the `pref-diag` render.
+- **Direction:** Show a neutral placeholder (or the app's last known report) until a check has run.
+
+#### S-101 — Copy and Share are offered before a report exists
+
+- **Screen / component / state:** Preferences → Diagnostics / action buttons
+- **Severity:** Nit  ·  **Verified:** code+CSS only
+- **Mockup:** Copy chips sit under a populated report card (L445-450).
+- **App:** `DiagnosticsPane` renders "Copy report" and "Share diagnostic bundle" as soon as the pane model exists, including while the last-run line reads "not yet run this session"; `reportText` is empty at that point.
+- **Gap:** The buttons look usable but Copy puts nothing on the pasteboard and the shared bundle carries a blank report (the log files are still included).
+- **Evidence:** Code.
+- **Direction:** Show them once a report exists.
 
 
 ---
@@ -1309,7 +1431,7 @@ Naming consistency issues that cut across rows: *shield / protection / helper* f
 | T-081 | Shield prompt | Set up the shield · Restart the shield | ⚠ | Called "the shield" here, "bot-check shield" in chips/sheet. | Inter 12/600 accent |
 | T-082 | Runway captions | Type · Resolution · Format · Language · Save to | ⚠ | The design slot is "Format"; video popover caption says "Resolution". | mono 10 uppercase faint |
 | T-083 | Runway rows | Video · Audio · 2160p · 1440p · 1080p · 720p · 480p · Best available · M4A · MP3 · Default · `<track label>` · `<folder>` + path · Choose… | ✔ | "Default" language is an unexplained label when tracks are unknown. | Inter 12 |
-| T-084 | Runway | Grab | ✔ | Mockup also "Grab all N" / "Add N" (not built: picker uses "Add N"). | Inter 13/600 (mockup Sora 14/700) |
+| T-084 | Runway | Grab | ✔ | design-system.md §4.2.2 also lists "Grab all N" for a playlist (not in the mockup, not built); the mockup's playlist picker footer "Add 12" is built as "Add N". | Inter 13/600 (mockup Sora 14/700) |
 | T-085 | Runway a11y | Clear link | ✔ | — | n/a |
 | T-086 | Share tip | Grab links straight from Safari: turn on MediaGrabber in System Settings → Extensions. | ✔ | Truthful; action "Open Settings" opens the Extensions pane. | Inter 12 dim |
 | T-087 | Share tip | Open Settings · Dismiss | ✔ | — | Inter 12/600 accent |
@@ -1355,7 +1477,7 @@ Naming consistency issues that cut across rows: *shield / protection / helper* f
 | T-112 | Onboarding | Let's get you set up. | ✔ | — | Sora 30/600 (mockup 26/700) |
 | T-113 | Onboarding | MediaGrabber uses a few free tools to do the actual downloading. Anything already on your Mac is checked off below. | ✔ | — | Inter 14 dim (mockup 13) |
 | T-114 | Onboarding step | Homebrew — A free tool installer for Mac. The other tools install through it. / Already installed. | ✔ | — | Inter 15/600 + 13 dim |
-| T-115 | Onboarding step | Downloader + media tools — Does the actual downloading. Required. | ⚠ | Duplicates the intro sentence; does not say what is installed. | same |
+| T-115 | Onboarding step | Downloader + media tools — Does the actual downloading. Required. | ⚠ | Duplicates the intro sentence; does not say what is installed. The mockup says "Installs yt-dlp and ffmpeg. Required.", which names tools the copy rule disallows. | same |
 | T-116 | Onboarding step | `brew install yt-dlp ffmpeg` + Copy | ✖ | Shows a command and tool names in a flow for non-technical users (CLAUDE.md rule) — but design-system.md §4.5 and the mockup require it: recorded conflict. | mono 12 on panel |
 | T-117 | Onboarding step | Install now · Set up · Continue · Try again · Copy command · Open Terminal · Check again | ⚠ | "Open Terminal" asks a non-technical user to use a terminal. | Inter 13/600 / system |
 | T-118 | Onboarding step | Installing — this can take a few minutes. | ✔ | — | Inter 13 dim |
@@ -1374,7 +1496,7 @@ Naming consistency issues that cut across rows: *shield / protection / helper* f
 | T-126 | Picker | `<playlist> · <host> · by <uploader> · N items` | ✔ | — | Inter 12 dim |
 | T-127 | Picker | This playlist is already in your queue. | ✔ | — | Inter 12/600 warn |
 | T-128 | Picker | Select all · Select none · filter… | ⚠ | Placeholder is lowercase with an ellipsis (mockup "Filter"). | Inter 12/600; field Inter 12 |
-| T-129 | Picker row | In queue · Already saved | ✔ | — | mono 10/500 warn |
+| T-129 | Picker row | In queue · Already saved | ✔ | The mockup draws only the "Already saved" row badge. | mono 10/500 warn |
 | T-130 | Picker footer | `M of N selected · K already in queue · ≈ H:MM:SS` · Cancel · Add M | ✔ | Matches design. | Inter 12 dim |
 
 ### Preferences
@@ -1431,22 +1553,26 @@ Naming consistency issues that cut across rows: *shield / protection / helper* f
 
 | # | Topic | Mockup | Design system / status doc | App today | Note |
 |---|---|---|---|---|---|
-| C-01 | Resolved-link structure | Field **morphs in place**: `✓ title` + four `.pick` triggers + Grab on one row (`.field.resolved`, L563-569; home.html 1.2). The older `.runway` / `.rstep` rules (L187-197) with labels and dots are still in the CSS but unused. | §4.2.2: runway is a **separate full-width `--panel-hi` card** below the field with labelled slots and hollow/filled dots; Type is a `SkinnedSegment`. | Morph, Type as a picker, no dots/labels, plus a ✕. | Three different structures. |
+| C-01 | Resolved-link structure | Field **morphs in place**: `✓ title` + four `.pick` triggers + Grab on one row (`.field.resolved`, L563-569; home.html 1.2). The older `.runway` / `.rstep` rules (L187-197) with labels and dots are still in the CSS and are still drawn by two frames in dialog.html. | §4.2.2: runway is a **separate full-width `--panel-hi` card** below the field with labelled slots and hollow/filled dots; Type is a `SkinnedSegment`. | Morph, Type as a picker, no dots/labels, plus a ✕. | Three different structures. |
 | C-02 | Status column default | Tables show a Status pill column and Remark column, captioned "(hidden by default)" on the header (L277). | §4.2.3: Status and Remark are **hidden by default**; rail is the everyday filter. | Hidden by default. | See S-043. |
 | C-03 | Format / Site columns | Combined **Format** column ("Video · 1080p") and **Site** column visible. | Separate **Type** and **Quality** columns; Site hidden by default. | Type + Quality, Site hidden. | |
 | C-04 | Columns button | 27×27 icon-only button hosted in the header row (`th.th-tools`). | §4.2.3 "⊞ Columns button — opens a dropdown of checkboxes". | Text + icon button in its own row. | |
 | C-05 | Rail width | Home `.mg-rail` 160px; Preferences and About rails 200px. | §4.1: rail "position, width, and row styling stay identical everywhere". | 160 everywhere. | |
 | C-06 | Warn colour, Plum / Navy | `--warn` #8C5A0C (Plum), #805C14 (Navy). | §5.2 says #9A6410 (Plum), #8E6318 (Navy). Teal agrees (#9C5A00). | n/a (palettes not implemented). | Contrast on `--panel-solid`: DS 4.63 / 4.90; mockup 5.44 / 5.60. |
-| C-07 | Pane title weight | Aurora `h2` 700; Tape Deck 800 (L397-398). | §3.2: "20 / 1.3 display face"; §4.6 "heavy". §2.2 lists Sora 600/700 only. | Sora 800 (heavy) in Aurora. | |
+| C-07 | Pane title weight | Aurora `h2` 700; Tape Deck 800 (L397-398). | §3.2: section heading "18 / 1.3", display face; §4.6: "Pane title 20 / heavy". §2.2 lists Sora 600/700 only. | Sora 800 (heavy) in Aurora. | |
 | C-08 | Attention chip | `.chip.warn` recolours text and border (L156). | §4.1: "Green dot = ok, amber dot = attention" only. | Dot only. | |
-| C-09 | Dialog icon types | `info`, `warning`, `error` inline 19×19 (L360-364). Captions of 4.2 and 4.3 say "no glyph", but the markup of every one of the eight dialogs draws an icon (`.ctrow info/error`). | §4.9: every dialog carries one of three icon types, never omitted. | Destructive only, stacked above the title. | The mockup contradicts its own captions; the DS agrees with the markup. |
+| C-09 | Dialog icon types | `info`, `warning`, `error` inline 19×19 (L360-364). The 4.2 caption says "no glyph", but the markup of every one of the eight dialogs draws an icon (`.ctrow info/error`). | §4.9: every dialog carries one of three icon types, never omitted. | Destructive only, stacked above the title. | The mockup contradicts its own 4.2 caption; the DS agrees with the markup. |
 | C-10 | Count badge colour | White on danger (2.55:1). | Not specified. | `onAccent` on danger (7.87:1). | The mockup value fails AA. |
 | C-11 | Icon set | One inline Lucide-style SVG family (`.ico`, 2px stroke) in both themes; no per-theme switch in CSS. | §3.4: Phosphor Bold (Tape Deck) and Lucide (Aurora), bundled assets, ≈26 glyphs. | SF Symbols. | |
 | C-12 | Tape Deck `--faint` | Equals `--dim` (#8A7A60 etc.); dim on `--panel-solid` is 3.5–3.8:1. | §5.2 omits `--faint`, `--headline`, `--panel-hi` for Tape Deck; `--brand` is used but absent from §5.1. | n/a | Token list incomplete; Tape Deck dim fails AA for 12px text. |
-| C-13 | Tape Deck banner text | Surface colour on `--accent`: 3.53 (Teal), 2.27 (Plum), 2.75 (Navy). | §4.1: "`--accent` on `--ink` border". | n/a | Fails AA in the mockup itself. |
+| C-13 | Tape Deck banner text | Surface colour on `--accent`: 3.53 (Teal), 2.27 (Plum), 2.75 (Navy). | §4.1: "`--accent` on `--ink` border". | n/a | The DS names the fill and border only; the text colour comes from the mockup CSS (L317). Fails AA in the mockup itself. |
 | C-14 | Section numbering | — | Table of contents lists §4.8 Confirmation / §4.9 SkinnedSegment / §4.10 SkinnedPicker, headings use 4.9/4.10/4.11; §4.1 refers to "About (§4.8)". | — | Documentation only. |
 | C-15 | Spacing token naming | `--sp-8` = 44 (no `--sp-7`). | §3.1 `--sp-1 … --sp-8`. | `Spacing.s7` = 44. | Naming nit. |
 | C-16 | Stale mockup file | `docs/mockups/screens.html` + `screens.css` (older copy) still present. | — | — | Two CSS files differ. |
+| C-17 | Shield step command | onboarding.html step 3 shows `pipx install bgutil-ytdlp-pot-provider` with Copy. | §4.5: the shield step is a single `Set up` button and "no command is shown". | Set up button, no command. | See D-01 for the downloader step. |
+| C-18 | Speed and ETA columns | home.html headers read one combined "Speed / ETA" column. | §4.2.3: Speed and ETA are separate columns. | Separate columns. | |
+| C-19 | Playlist runway label | No "Grab all N" in any frame; the playlist picker footer reads "Add 12". | §4.2.2: label is `Grab` / `Grab all N` / `Add N`. | Runway always reads `Grab`; picker footer reads `Add N`. | |
+| C-20 | Shield chip name | One home.html frame reads `shield · offline`. | The DS and the other frames read `bot-check shield`. | `bot-check shield`. | |
 
 ### 9.2 Conflicts with recorded decisions (left open)
 
@@ -1469,11 +1595,12 @@ Naming consistency issues that cut across rows: *shield / protection / helper* f
 | Probing spinner | Paste field | See S-055. |
 | Resolved-field clear (✕) | Runway | Mentioned in S-056. |
 | Onboarding running/failed states for downloader and shield | Onboarding | See S-049; mockup only draws Homebrew failed. |
-| Playlist-picker "In queue"/"Already saved" is drawn; row tooltips, drag-reorder gap | Table | Code only; native feedback. |
+| Playlist picker row badge "In queue" | Playlist picker | The mockup draws the "Already saved" row badge and the footer count "already in queue", not a row badge "In queue"; audited against the "Already saved" badge style (S-076). |
+| Row tooltips, drag-reorder | Table | Code only; native feedback. |
 | Toast failure variant (no action) | Toast | Same box style; no mockup. |
 | Diagnostics "Update" pill + Copy/Share | Diagnostics | Mockup 6.3 draws the pill. |
 | Drop-target overlay | Window | None drawn in mockup or app (S-087). |
-| Context menu | Table | `.ctxmenu` CSS exists; no frame, no app (S-089). |
+| Context menu | Table | home.html draws a `.ctxmenu` (Pause, Resume, Cancel, Remove) over a multi-selection; the app has none (S-089). |
 | Hover / pressed / disabled / focus states | Everywhere | Mockup hover rules exist (listed in S-033); no pressed or focus-visible states except the dialog ring. |
 | Debug menu and NSAlert | Menu bar | See S-039. |
 | Header filter popover content ("Clear/Apply") | Header | Mockup 1.3 draws it; app has a plain menu (S-035). |
@@ -1671,3 +1798,15 @@ Computed from token values; alpha surfaces composited over the stated base.
 | S-087 | No drag-and-drop target styling | Inconsistent | code+CSS only |
 | S-088 | Column resize/reorder visuals | Inconsistent | code+CSS only |
 | S-089 | No context menu | Nit | code+CSS only |
+| S-090 | Picker row hover wash stays after the pointer leaves | Nit | code+CSS only |
+| S-091 | First-run Home keeps an empty rail slot | Nit | code+CSS only |
+| S-092 | A busy health chip takes the system disabled fade | Nit | code+CSS only |
+| S-093 | Resolved link title typography | Nit | code+CSS only |
+| S-094 | Double-click autofit measures the wrong font | Nit | code+CSS only |
+| S-095 | Empty-state header cells are wider than the live columns | Nit | code+CSS only |
+| S-096 | Group action labels do not fit the Actions column | Inconsistent | code+CSS only |
+| S-097 | A failed Homebrew step still offers "Install now" | Ugly | code+CSS only |
+| S-098 | Other failed onboarding steps use a text link to retry | Nit | code+CSS only |
+| S-099 | The download-folder path does not truncate | Nit | code+CSS only |
+| S-100 | Diagnostics shows "not found" before any check has run | Broken | code+CSS only |
+| S-101 | Copy and Share are offered before a report exists | Nit | code+CSS only |
