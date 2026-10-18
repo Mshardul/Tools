@@ -91,13 +91,13 @@ footer, Aurora body-face, first-run Home redesign); site/identity maturity
 shipped (per-host adaptive concurrency, probe-wait visibility, engine playlist
 groups, `.userReset`). Phases 12–13 (Downloads grid + polish) are shipped —
 Progress / Speed / ETA stay separate columns. See
-[ticket-backlog.md](ticket-backlog.md).
+[roadmap.md](roadmap.md).
 
 ## Known gaps
 
 - **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the
   UI falls back to system faces. Parks in **Phase 13** — see
-  [ticket-backlog.md](ticket-backlog.md).
+  [roadmap.md](roadmap.md).
 
 ## License
 

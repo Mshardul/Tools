@@ -87,7 +87,7 @@ renamed to the final product name when §14 resolves.
 ```
 apps/media-grabber/
   README.md                          # catalog leaf readme
-  ticket-backlog.md
+  roadmap.md
   PRIVACY.md                         # what the logs contain, all local
   Project.swift                      # Tuist project spec (committed)
   Tuist/                             # Tuist config (committed)

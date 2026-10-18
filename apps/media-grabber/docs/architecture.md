@@ -373,5 +373,5 @@ where that distinction matters.
 - [`docs/state-flow.md`](state-flow.md) — job lifecycle, per-host rate
   limiting, shield status: every state, every transition, every trigger.
 - `docs/mockups/screens.html` — the visual reference these components render.
-- `ticket-backlog.md` §Documentation — the two docs' scope was decided
+- `roadmap.md` §Documentation — the two docs' scope was decided
   together; keep them beside each other.

@@ -605,7 +605,7 @@ Do not change probe, runway arming, playlist picker, or `tableLayout` empty-body
 
 **Files:**
 - Modify: `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §12.1 Phase 15 → `*(shipped)*`
-- Modify: `apps/media-grabber/ticket-backlog.md` Phase 15
+- Modify: `apps/media-grabber/roadmap.md` Phase 15
 - Modify: `apps/media-grabber/CLAUDE.md` Next → Phase 16
 - Modify: `apps/media-grabber/docs/state-flow.md` §4 — mark row-drag + body/first-run rows shipped / remove from parked
 - Modify: `docs/superpowers/specs/2026-10-04-media-grabber-phase-15-table-home-finish-design.md` status → shipped

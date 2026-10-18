@@ -1,4 +1,4 @@
-# MediaGrabber — leaf backlog
+# MediaGrabber — roadmap
 
 Work not in Phase 1. The repo-root `BACKLOG.md` is **not** touched by this app
 until it reaches v1 (spec §14).

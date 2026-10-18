@@ -5,7 +5,7 @@
 **Owner phase:** Phase 15 (Table & Home finish).  
 **Parent:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md`
 §5.3–5.4, §12.1 Phase 15; `apps/media-grabber/docs/state-flow.md` §4.  
-**Leaf backlog:** `apps/media-grabber/ticket-backlog.md` Phase 15.  
+**Leaf backlog:** `apps/media-grabber/roadmap.md` Phase 15.  
 **Scope locked:** 2026-10-04 (view-order drag + deferred visual picks; banner→footer closed as already shipped).
 
 ---

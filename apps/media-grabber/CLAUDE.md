@@ -7,6 +7,11 @@ and `MediaGrabber` (thin SwiftUI app over it). Tuist-generated project.
 every transition with a trigger + `file:line`. Read it before touching the
 engine's scheduler, `recordExit`, `RatePolicy`, or the deferral seams.
 
+`tickets.md` — the work board; its rules (ids, columns, status moves, the
+predefined type / component / epic lists) are in `ticket-setup.md`, beside it.
+`roadmap.md` — each phase's intent. `audit/report/` — pending audit reports;
+finished ones move to `audit/report/archived/`.
+
 Specs: `docs/superpowers/specs/` — parent design `2026-08-28-youtube-downloader-mac-design.md`
 (living), current phase spec alongside it. Built phases' specs + plans move to
 `specs/archived/` and `plans/archived/`. Shipped: Phase 1
