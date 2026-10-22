@@ -39,4 +39,4 @@ jobs:
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
             BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)"
           fi
-          pre-commit run --from-ref "$BASE_SHA" --to-ref "$HEAD_SHA" --show-diff-on-failure --color=always
+          pre-commit run prettier-markdown --from-ref "$BASE_SHA" --to-ref "$HEAD_SHA" --show-diff-on-failure --color=always
