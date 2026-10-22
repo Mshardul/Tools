@@ -1,0 +1,42 @@
+name: docs-format
+
+on:
+  push:
+    paths:
+      - '**/*.md'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/docs-format.yml'
+  pull_request:
+    paths:
+      - '**/*.md'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/docs-format.yml'
+
+concurrency:
+  group: docs-format-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prettier-markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pre-commit
+      - name: Check changed markdown files
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse HEAD^ 2>/dev/null || git hash-object -t tree /dev/null)"
+          fi
+          pre-commit run --from-ref "$BASE_SHA" --to-ref "$HEAD_SHA" --show-diff-on-failure --color=always

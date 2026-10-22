@@ -18,3 +18,12 @@ repos:
       # - id: end-of-file-fixer     # step 2
       # - id: check-merge-conflict  # step 2
       # - id: mixed-line-ending     # step 3
+
+  - repo: local
+    hooks:
+      - id: prettier-markdown
+        name: prettier (markdown)
+        language: node
+        additional_dependencies: ["prettier@3.9.10"]
+        entry: prettier --write --ignore-unknown
+        types: [markdown]

@@ -1,223 +1,42 @@
 # MediaGrabber — roadmap
 
-Work not in Phase 1. The repo-root `BACKLOG.md` is **not** touched by this app
-until it reaches v1 (spec §14).
+Work not in Phase 1. The repo-root `BACKLOG.md` is **not** touched by this app until it reaches v1 (spec §14).
 
-**No orphan deferrals.** Every item lives in a numbered phase below. Never a
-floating "Phase N follow-ups / deferrals" bucket.
+**No orphan deferrals.** Every item lives in a numbered phase below. Never a floating "Phase N follow-ups / deferrals" bucket. The one exception is distant ideas with no phase yet, which live in `future-ideas.md`.
 
 ## Documentation
 
-- **Job / rate-limit state-flow diagram.** *(done — `docs/state-flow.md`)*
-  Three mermaid state diagrams (job lifecycle, per-host `RateState`,
-  `ShieldStatus`) with a full transition table + trigger + `file:line` for
-  each, the auto-retry budget, the `availableActions`-vs-`cancel` mismatch on
-  `.cooldown` / `.waitingForNetwork`,   and a §4 "parked capabilities" table (each row names its owning phase).
-  Revisit whenever a phase adds a state.
+- **Job / rate-limit state-flow diagram.** _(done — `docs/state-flow.md`)_ Three mermaid state diagrams (job lifecycle, per-host `RateState`, `ShieldStatus`) with a full transition table + trigger + `file:line` for each, the auto-retry budget, the `availableActions`-vs-`cancel` mismatch on `.cooldown` / `.waitingForNetwork`, and a §4 "parked capabilities" table (each row names its owning phase). Revisit whenever a phase adds a state.
 
-- **HLD / LLD architecture doc.** *(done — `docs/architecture.md`)* Both HLD
-  and LLD, current (shipped-through-Phase-9) scope only — no future-phase
-  sketching. Component map + request path + snapshot/event path + persistence
-  path + config path (HLD); ownership graph + actor boundary + async seams +
-  event-stream mechanics + key value types + process rules (LLD). 5 mermaid
-  diagrams (flowchart, 2× sequence, flowchart, classDiagram), all verified to
-  render via `mermaid-cli`. Cross-references `docs/state-flow.md` rather than
-  repeating the state machines.
+- **HLD / LLD architecture doc.** _(done — `docs/architecture.md`)_ Both HLD and LLD, current (shipped-through-Phase-9) scope only — no future-phase sketching. Component map + request path + snapshot/event path + persistence path + config path (HLD); ownership graph + actor boundary + async seams + event-stream mechanics + key value types + process rules (LLD). 5 mermaid diagrams (flowchart, 2× sequence, flowchart, classDiagram), all verified to render via `mermaid-cli`. Cross-references `docs/state-flow.md` rather than repeating the state machines.
 
 ## Phases 2–14 (intent — detailed when reached, from spec §12.1)
 
-Boundaries are dependency cuts: a phase is picked when its inputs exist, and its
-scope is drawn so nothing inside waits on a later phase. Shell-and-fill splits
-are in spec §12.2.
+Boundaries are dependency cuts: a phase is picked when its inputs exist, and its scope is drawn so nothing inside waits on a later phase. Shell-and-fill splits are in spec §12.2.
 
-- **Phase 2 — Queue foundation and window chrome.** *(shipped)* Engine owns the
-  queue; Downloads table with columns, sort, filter chips, and row actions;
-  `Persistence` for queue/history/columns; graceful quit; `MainWindow` chrome
-  shells. Column header drag-reorder UI, multi-select, and resizable widths
-  park in **Phase 12**. Progress / Speed / ETA stay separate columns (no merge).
-- **Phase 3 — Preferences screen.** 7-pane `PreferencesView` over the existing
-  `Preferences` model. Downloads / Appearance / Logs & privacy panes filled;
-  Network / Sign-in & cookies / Updates / Advanced are headers later phases add
-  rows to. **Appearance pane:** replace native SwiftUI `Menu` dropdowns on the
-  Home runway (and prefs controls) with skinned popover pickers that match the
-  active palette.
-- **Phase 4 — Retry and error classification.** Generic `ErrorClass` cases
-  (`rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`,
-  `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`) + failure-reason
-  sentences + row actions; retry / force-start buttons wired live; per-job
-  auto-retry budget (`Preferences.maxAutoAttempts`, control → Phase 3 Downloads
-  pane); `Backoff` (exp + full jitter, cap, `Retry-After`); `IntegrityCheck`
-  (ffprobe duration vs metadata → `incomplete`); always-on flags (spec §7.5);
-  `EnvironmentProbe` re-probe on launch → onboarding. `rateLimited` just backs
-  off — no per-host state yet.
-- **Phase 5 — Cookies.** `--cookies-from-browser`; Full Disk Access detection +
-  System Settings deep link (Safari) + a Full-Disk-Access `OnboardingStepID`
-  case; Firefox multi-profile enumeration + picker (Sign-in & cookies pane);
-  Chrome app-bound-encryption fallback; `cookieReadFailed` (non-fatal); the
-  "retry with cookies" (`🔑`) row action. Needs Phase 4's `ErrorClass` set +
-  live action bar; not rate limiting.
-- **Phase 6 — Rate limiting and circuit breaker.** *(shipped)* Per-host
-  `RateState` (`normal | cooldown | circuitOpen`); cooldown row state;
-  `WarningBanner` `circuitOpen` / `networkDown` cases; circuit breaker;
-  adaptive concurrency; `NetworkMonitor` → `waitingForNetwork`; `HealthStrip`
-  online / cooldown chips. Smoke: force a 429. Per-host adaptive concurrency
-  parks in **Phase 14**.
-- **Phase 7 — YouTube hardening.** *(shipped)* Engine-owned shield process +
-  plugin dirs; `player_client` rotation; `engine.preview` shares YouTube identity
-  with Grab; probe format lists; runway Language slot + quality rungs this probe
-  offers; Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy;
-  VPN hint; shield chip + `↻`; `potProviderDown` banner. Spec:
-  `docs/superpowers/specs/archived/2026-09-07-media-grabber-phase-7.md`.
-  Refresh engine `shieldStatus` after shield crash auto-recovery parks in
-  **Phase 11** (engine-freshness / HealthStrip chip work).
-- **Phase 8 — Playlist.** *(shipped)* YouTube watch = one video; `PL` playlist
-  page = one `--flat-playlist` dump, picker (checklist, filter, duration footer,
-  duplicate warnings), then N jobs sharing `playlistGroupID`. Group header +
-  spine + group actions; `MetadataTokenBucket`; per-request probe cancel. Spec:
-  `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md`.
-- **Phase 9 — Add flows.** *(shipped)* Clipboard (activation + frontmost poll,
-  prefs-gated, self-write ignore, dedupe); drag window/Dock; Services;
-  `mediagrabber://open?url=` scheme → `IncomingLinkController` + Home. Idle
-  silent / busy confirm; scheme-failure notice. `LinkExtractor` pure first-http(s).
-  Spec + plan: `docs/superpowers/specs/archived/2026-09-10-media-grabber-phase-9.md`,
-  `docs/superpowers/plans/archived/2026-09-10-media-grabber-phase-9.md`. Share
-  Extension is a sibling stub, not this phase.
-- **Phase 10 — Share Extension.** *(shipped)* New `ShareExtension` appex
-  target, scheme-only handoff (no App Group), one share action reusing the
-  Phase 9 `mediagrabber://open` path. Spec + plan:
-  `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`,
-  `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`.
-  Share Extension first-enable nudge parks in **Phase 13**; app icon parks in
-  **Phase 17**.
-- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** *(shipped)* Diagnostics
-  moves into Preferences (System group) rather than top-level nav; report card,
-  Copy report, and Share diagnostic bundle (system share sheet, not a plain
-  clipboard copy) built here, plus the **real canary probe** shared with
-  Onboarding's `testRun` (closes the Phase 1 auto-pass gap — one canary
-  concept, not two). yt-dlp version pinning: a declared minimum-known-good
-  version, checked on every launch (local compare, no network), with a `↻`
-  action (uniform busy state across every actionable chip) that reinstalls to
-  the declared minimum — never an unconditional upgrade. About replaces
-  Diagnostics as the third top-level nav item (About + Developer tabs); every
-  version and action button (MediaGrabber, yt-dlp, ffmpeg) lives there, with a
-  button verb tracking certainty (nothing shown / "Check for updates" /
-  "Update"); the MediaGrabber GitHub-release self-update check (spec §10.2)
-  is built here rather than Phase 13, since About's rows need real backing
-  logic in the phase that builds them. Preferences → Updates is filled with
-  settings only (two auto-check toggles), no version numbers or actions.
-  Report card reflects Phase 4 / 6 / 7 state. Also: refresh engine
-  `shieldStatus` after shield crash auto-recovery so chip/banner track live
-  provider status.
+- **Phase 2 — Queue foundation and window chrome.** _(shipped)_ Engine owns the queue; Downloads table with columns, sort, filter chips, and row actions; `Persistence` for queue/history/columns; graceful quit; `MainWindow` chrome shells. Column header drag-reorder UI, multi-select, and resizable widths park in **Phase 12**. Progress / Speed / ETA stay separate columns (no merge).
+- **Phase 3 — Preferences screen.** 7-pane `PreferencesView` over the existing `Preferences` model. Downloads / Appearance / Logs & privacy panes filled; Network / Sign-in & cookies / Updates / Advanced are headers later phases add rows to. **Appearance pane:** replace native SwiftUI `Menu` dropdowns on the Home runway (and prefs controls) with skinned popover pickers that match the active palette.
+- **Phase 4 — Retry and error classification.** Generic `ErrorClass` cases (`rateLimited`, `geoBlocked`, `private`, `unavailable`, `ageRestricted`, `cookieReadFailed`, `networkDown`, `depMissing`, `unknown`) + failure-reason sentences + row actions; retry / force-start buttons wired live; per-job auto-retry budget (`Preferences.maxAutoAttempts`, control → Phase 3 Downloads pane); `Backoff` (exp + full jitter, cap, `Retry-After`); `IntegrityCheck` (ffprobe duration vs metadata → `incomplete`); always-on flags (spec §7.5); `EnvironmentProbe` re-probe on launch → onboarding. `rateLimited` just backs off — no per-host state yet.
+- **Phase 5 — Cookies.** _(shipped)_ Opt-in `--cookies-from-browser`; Full Disk Access probe-read + System Settings deep link (Safari, just-in-time from the Sign-in & cookies pane, no onboarding step); Firefox multi-profile enumeration
+  - picker; Chrome app-bound-encryption detection (`Extracted 0 cookies`); `cookieReadFailed` on a user-requested read; the "retry with cookies" (`🔑`) row action. Always-on cookies with a silent fallback belong to Phase 16.
+- **Phase 6 — Rate limiting and circuit breaker.** _(shipped)_ Per-host `RateState` (`normal | cooldown | circuitOpen`); cooldown row state; `WarningBanner` `circuitOpen` / `networkDown` cases; circuit breaker; adaptive concurrency; `NetworkMonitor` → `waitingForNetwork`; `HealthStrip` online / cooldown chips. Smoke: force a 429. Per-host adaptive concurrency shipped in **Phase 14**.
+- **Phase 7 — YouTube hardening.** _(shipped)_ Engine-owned shield process + plugin dirs; `player_client` rotation; `engine.preview` shares YouTube identity with Grab; probe format lists; runway Language slot + quality rungs this probe offers; Downloads **Audio language** policy; YouTube `ErrorClass` emit + copy; VPN hint; shield chip + `↻`; `potProviderDown` banner. Spec: `docs/superpowers/specs/archived/2026-09-07-media-grabber-phase-7.md`. Refresh engine `shieldStatus` after shield crash auto-recovery parks in **Phase 11** (engine-freshness / HealthStrip chip work).
+- **Phase 8 — Playlist.** _(shipped)_ YouTube watch = one video; `PL` playlist page = one `--flat-playlist` dump, picker (checklist, filter, duration footer, duplicate warnings), then N jobs sharing `playlistGroupID`. Group header + spine + group actions; `MetadataTokenBucket`; per-request probe cancel. Spec: `docs/superpowers/specs/archived/2026-09-08-media-grabber-phase-8.md`.
+- **Phase 9 — Add flows.** _(shipped)_ Clipboard (activation + frontmost poll, prefs-gated, self-write ignore, dedupe); drag window/Dock; Services; `mediagrabber://open?url=` scheme → `IncomingLinkController` + Home. Idle silent / busy confirm; scheme-failure notice. `LinkExtractor` pure first-http(s). Spec + plan: `docs/superpowers/specs/archived/2026-09-10-media-grabber-phase-9.md`, `docs/superpowers/plans/archived/2026-09-10-media-grabber-phase-9.md`. Share Extension is a sibling stub, not this phase.
+- **Phase 10 — Share Extension.** _(shipped)_ New `ShareExtension` appex target, scheme-only handoff (no App Group), one share action reusing the Phase 9 `mediagrabber://open` path. Spec + plan: `docs/superpowers/specs/archived/2026-09-11-media-grabber-phase-10-share-extension.md`, `docs/superpowers/plans/archived/2026-09-11-media-grabber-phase-10-share-extension.md`. Share Extension first-enable nudge parks in **Phase 13**; app icon parks in **Phase 17**.
+- **Phase 11 — Diagnostics, About, updates + Home manager chrome.** _(shipped)_ Diagnostics moves into Preferences (System group) rather than top-level nav; report card, Copy report, and Share diagnostic bundle (system share sheet, not a plain clipboard copy) built here, plus the **real canary probe** shared with Onboarding's `testRun` (closes the Phase 1 auto-pass gap — one canary concept, not two). yt-dlp version pinning: a declared minimum-known-good version, checked on every launch (local compare, no network), with a `↻` action (uniform busy state across every actionable chip) that reinstalls to the declared minimum — never an unconditional upgrade. About replaces Diagnostics as the third top-level nav item (About + Developer tabs); every version and action button (MediaGrabber, yt-dlp, ffmpeg) lives there, with a button verb tracking certainty (nothing shown / "Check for updates" / "Update"); the MediaGrabber GitHub-release self-update check (spec §10.2) is built here rather than Phase 13, since About's rows need real backing logic in the phase that builds them. Preferences → Updates is filled with settings only (two auto-check toggles), no version numbers or actions. Report card reflects Phase 4 / 6 / 7 state. Also: refresh engine `shieldStatus` after shield crash auto-recovery so chip/banner track live provider status.
 
-  **Home manager chrome (locked 2026-09-12, absorbed here — Option A):** status
-  left rail (`All` / `Downloading` / `Done` / `Inactive` with badge on Inactive) — replaces top filter chips (do not keep both). **Status**
-  column stays in Columns but **hidden by default** (rail is everyday filter).
-  Status labels are 1:1 with the 9 `JobState`s (plain-language only; no
-  invented display statuses such as `retrying` or host-`cooling down` on a
-  `.queued` job). Backoff / host rate / attempt / failure reason → **Remark**
-  (hover + keyboard focus; optional Columns-menu column; a11y not hover-only).
-  Playlist groups: show the group if any child matches the selected rail
-  status. **Onboarding Install primacy** — primary CTA is Install now;
-  brew/pipx command + Copy / Open in Terminal are secondary. Phase 11 plan
-  rewrites parent §5.3 / §5.4 + design-system + Home/onboarding mockups to
-  match before implement. Site friendly host names if not already shipped.
-  *(First-run empty Home copy/layout redesign and Aurora body face stay
-  Phase 15.)*
+  **Home manager chrome (locked 2026-09-12, absorbed here — Option A):** status left rail (`All` / `Downloading` / `Done` / `Inactive` with badge on Inactive) — replaces top filter chips (do not keep both). **Status** column stays in Columns but **hidden by default** (rail is everyday filter). Status labels are 1:1 with the 9 `JobState`s (plain-language only; no invented display statuses such as `retrying` or host-`cooling down` on a `.queued` job). Backoff / host rate / attempt / failure reason → **Remark** (hover + keyboard focus; optional Columns-menu column; a11y not hover-only). Playlist groups: show the group if any child matches the selected rail status. **Onboarding Install primacy** — primary CTA is Install now; brew/pipx command + Copy / Open in Terminal are secondary. Phase 11 plan rewrites parent §5.3 / §5.4 + design-system + Home/onboarding mockups to match before implement. Site friendly host names if not already shipped. _(First-run empty Home copy/layout redesign and Aurora body face stay Phase 15.)_
 
-  **Status model (locked 2026-09-12):** Keep the nine `JobState` cases. Row
-  status = those nine, 1:1 (aliases OK: `running`→Downloading, `completed`→Saved).
-  Rail = filters only (many-to-one), not a second status vocabulary. Detail
-  that is not the job’s own state lives in Remark / HealthStrip — never as a
-  rewritten Status string.
+  **Status model (locked 2026-09-12):** Keep the nine `JobState` cases. Row status = those nine, 1:1 (aliases OK: `running`→Downloading, `completed`→Saved). Rail = filters only (many-to-one), not a second status vocabulary. Detail that is not the job’s own state lives in Remark / HealthStrip — never as a rewritten Status string.
 
-  **Rail mapping (locked 2026-09-12):** Downloading = probing, running, queued,
-  paused, waitingForNetwork, cooldown. Done = completed only. **Inactive**
-  (rail label only; row status stays Failed vs Cancelled) = failed, cancelled.
-  All = everything. From failed/cancelled: Restart (not Resume); cookie-restart
-  only when the failure class offers it. **Actions (locked 2026-09-12):**
-  Remove = delete persistence entry (+ parts + job log); Cancel = keep as
-  `cancelled` (on cooldown: clear job deferral only, host rate unchanged);
-  Restart always `attempt = 0`; no Restart on Saved; Log on cooldown +
-  waitingForNetwork; Force start on queued only when not immediately
-  schedulable; UI strings Force start / Restart / Restart with sign-in;
-  depMissing = queueHalt + blocking dialog (not mass Pause); playlist group:
-  Pause all (running), Restart failed (failed+cancelled), Cancel all (includes
-  cooldown + waitingForNetwork), keep expand/collapse. Contract:
-  `docs/job-status-and-actions.md`. Plan:
-  `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`.
-- **Phase 12 — Downloads table chrome.** *(shipped)* Column header drag-reorder UI (wire
-  existing `ColumnConfig.moveColumn` + persistence); resizable column widths
-  (drag handles + persist in `ColumnConfig`); multi-select row actions (plan
-  **reverses** parent §5.4 “no row selection” and ships selection + batch
-  actions in this phase). **Queue-row drag-reorder parks in Phase 15**
-  (locked 2026-09-22; owner renumbered 2026-10-04 — column chrome + multi-select is enough this phase;
-  row reorder needs engine order semantics and fights active sort).
-  **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no
-  merged transfer column). Builds on Phase 11’s manager Home (rail; Status
-  hidden by default) — do not reintroduce filter chips. Multi-select batch
-  verbs match row / playlist group eligibility
-  (`job-status-and-actions.md` §8); Force start only when exactly one eligible
-  row is selected. **Batch chrome (locked 2026-09-22):** when selection is
-  non-empty, a bar above the table (`N selected` + eligible batch verbs)
-  appears; empty selection hides it. Not a floating footer. **Per-row Actions
-  stay visible while a selection is active** (locked 2026-09-22) — batch bar
-  is additive; a row action still targets only that row. **Header select-all
-  (locked 2026-09-22):** selects every currently visible row (after rail +
-  column filters); does not select collapsed-away playlist children.
-  **Selection vs rail/filters (locked 2026-09-22):** on rail or column-filter
-  change, keep selected job IDs that remain visible; drop the rest (no
-  “remember off-screen” batch). Empty residual → hide batch bar.
-  **Resize (locked 2026-09-22):** every data column except Actions + the
-  checkbox column; min-width clamp; double-click divider auto-fits that
-  column to widest visible cell (one-shot). Widths persist in `ColumnConfig`.
-  **Multi-select input (locked 2026-09-22):** checkboxes + ⌘-click row toggle
-  + Shift-click range (visible-row order).
-  **Table substrate (locked 2026-09-22):** AppKit owns the **entire** Downloads
-  table surface (headers, rows, selection, column resize/reorder, scroll);
-  SwiftUI owns Home chrome outside that rect (rail, batch bar, Columns menu,
-  dialogs, rest of app). Cells/headers are **AppKit-drawn** with shared design
-  tokens — not default `NSHostingView` per cell. Not a pure SwiftUI `Table`;
-  not forever-extending today’s LazyVStack. Phase 15 row-reorder uses this
-  same grid. Design + plan:
-  `docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md`,
-  `docs/superpowers/plans/archived/2026-09-22-media-grabber-downloads-table-chrome.md`.
-- **Phase 13 — Polish.** *(shipped)* Success + chip-refresh-failure
-  toasts; native notifications for backgrounded failures; finish first-run →
-  table + emptied-table gaps (no full first-run copy redesign); live
-  column-width readout while resizing; bundle Aurora typefaces (Sora / Inter /
-  JetBrains Mono + `ATSApplicationFontsPath` — no body-face swap); Debug menu
-  decide-and-close; Share Extension first-enable hint decide-and-close; **full
-  a11y sweep last** (keyboard / VoiceOver / reduced-motion on every screen).
-  **Out → Phase 14:** per-host adaptive concurrency. **Out → Phase 15:**
-  Aurora body-face swap; first-run Home redesign; Home banner → footer.
-  **Out → Phase 17:** product name (§14) + app icon.
-- **Phase 14 — Engine maturity.** *(shipped)* Playlist-group aggregate state in
-  GrabberKit (`QueueSnapshot.playlistGroups`); metadata-probe wait visibility
-  (`probeWaitUntil`); per-host adaptive concurrency; `.userReset` through
-  `RatePolicy`; `.shieldDown` halt dropped. Spec + plan archived under
-  `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*`.
-- **Phase 15 — Table & Home finish.** *(scope locked 2026-10-04)* View-only
-  queue-row drag-reorder (session); Aurora body-face swap; first-run Home
-  redesign. Banner → footer already shipped. Spec:
-  `docs/superpowers/specs/2026-10-04-media-grabber-phase-15-table-home-finish-design.md`.
-- **Phase 16 — Site / identity maturity.** POT/shield rotation; always-on-cookies;
-  remote `player_client` order JSON; per-site helpers beyond YouTube; optional
-  UX extras (evaluate at plan time).
-  **Ticket — user-facing copy truth audit.** Walk every advice / error /
-  warning / banner / toast / Remark / dialog string and check, per string:
-  (1) it is true for the *actual* cause that triggers it (not just the most
-  common one); (2) plain language — no commands, tool names, or jargon;
-  (3) it states what is wrong and, where a fix exists, offers one clear action
-  (button or link to where it is fixed); (4) the shown action is reachable
-  later, not only in a one-time flow. Seeded by: the bot-check message told
-  people to add cookies when the real cause was a missing shield, and blamed
-  the shield for non-YouTube sites. Output: a table of every string with
-  trigger, verdict, and fix, plus a test per string that pins cause → copy.
-  Include every installer / progress / failure surface (no raw tool output
-  anywhere in the UI). Also decide: should the shield stay optional, and does first-run need a
-  one-time nudge when onboarding is skipped because yt-dlp / ffmpeg already
-  exist (the shield step never runs in that case).
+  **Rail mapping (locked 2026-09-12):** Downloading = probing, running, queued, paused, waitingForNetwork, cooldown. Done = completed only. **Inactive** (rail label only; row status stays Failed vs Cancelled) = failed, cancelled. All = everything. From failed/cancelled: Restart (not Resume); cookie-restart only when the failure class offers it. **Actions (locked 2026-09-12):** Remove = delete persistence entry (+ parts + job log); Cancel = keep as `cancelled` (on cooldown: clear job deferral only, host rate unchanged); Restart always `attempt = 0`; no Restart on Saved; Log on cooldown + waitingForNetwork; Force start on queued only when not immediately schedulable; UI strings Force start / Restart / Restart with sign-in; depMissing = queueHalt + blocking dialog (not mass Pause); playlist group: Pause all (running), Restart failed (failed+cancelled), Cancel all (includes cooldown + waitingForNetwork), keep expand/collapse. Contract: `docs/job-status-and-actions.md`. Plan: `docs/superpowers/plans/2026-09-12-media-grabber-phase-11.md`.
+
+- **Phase 12 — Downloads table chrome.** _(shipped)_ Column header drag-reorder UI (wire existing `ColumnConfig.moveColumn` + persistence); resizable column widths (drag handles + persist in `ColumnConfig`); multi-select row actions (plan **reverses** parent §5.4 “no row selection” and ships selection + batch actions in this phase). **Queue-row drag-reorder parks in Phase 15** (locked 2026-09-22; owner renumbered 2026-10-04 — column chrome + multi-select is enough this phase; row reorder needs engine order semantics and fights active sort). **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no merged transfer column). Builds on Phase 11’s manager Home (rail; Status hidden by default) — do not reintroduce filter chips. Multi-select batch verbs match row / playlist group eligibility (`job-status-and-actions.md` §8); Force start only when exactly one eligible row is selected. **Batch chrome (locked 2026-09-22):** when selection is non-empty, a bar above the table (`N selected` + eligible batch verbs) appears; empty selection hides it. Not a floating footer. **Per-row Actions stay visible while a selection is active** (locked 2026-09-22) — batch bar is additive; a row action still targets only that row. **Header select-all (locked 2026-09-22):** selects every currently visible row (after rail + column filters); does not select collapsed-away playlist children. **Selection vs rail/filters (locked 2026-09-22):** on rail or column-filter change, keep selected job IDs that remain visible; drop the rest (no “remember off-screen” batch). Empty residual → hide batch bar. **Resize (locked 2026-09-22):** every data column except Actions + the checkbox column; min-width clamp; double-click divider auto-fits that column to widest visible cell (one-shot). Widths persist in `ColumnConfig`. **Multi-select input (locked 2026-09-22):** checkboxes + ⌘-click row toggle
+  - Shift-click range (visible-row order). **Table substrate (locked 2026-09-22):** AppKit owns the **entire** Downloads table surface (headers, rows, selection, column resize/reorder, scroll); SwiftUI owns Home chrome outside that rect (rail, batch bar, Columns menu, dialogs, rest of app). Cells/headers are **AppKit-drawn** with shared design tokens — not default `NSHostingView` per cell. Not a pure SwiftUI `Table`; not forever-extending today’s LazyVStack. Phase 15 row-reorder uses this same grid. Design + plan: `docs/superpowers/specs/archived/2026-09-22-media-grabber-downloads-table-chrome-design.md`, `docs/superpowers/plans/archived/2026-09-22-media-grabber-downloads-table-chrome.md`.
+- **Phase 13 — Polish.** _(shipped)_ Success + chip-refresh-failure toasts; native notifications for backgrounded failures; finish first-run → table + emptied-table gaps (no full first-run copy redesign); live column-width readout while resizing; bundle Aurora typefaces (Sora / Inter / JetBrains Mono + `ATSApplicationFontsPath` — no body-face swap); Debug menu decide-and-close; Share Extension first-enable hint decide-and-close; **full a11y sweep last** (keyboard / VoiceOver / reduced-motion on every screen). **Out → Phase 14:** per-host adaptive concurrency. **Out → Phase 15:** Aurora body-face swap; first-run Home redesign; Home banner → footer. **Out → Phase 17:** product name (§14) + app icon.
+- **Phase 14 — Engine maturity.** _(shipped)_ Playlist-group aggregate state in GrabberKit (`QueueSnapshot.playlistGroups`); metadata-probe wait visibility (`probeWaitUntil`); per-host adaptive concurrency; `.userReset` through `RatePolicy`; `.shieldDown` halt dropped. Spec + plan archived under `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*`.
+- **Phase 15 — Table & Home finish.** _(scope locked 2026-10-04)_ View-only queue-row drag-reorder (session); Aurora body-face swap; first-run Home redesign. Banner → footer already shipped. Spec: `docs/superpowers/specs/2026-10-04-media-grabber-phase-15-table-home-finish-design.md`.
+- **Phase 16 — Site / identity maturity.** POT/shield rotation; always-on-cookies; remote `player_client` order JSON; per-site helpers beyond YouTube; optional UX extras (evaluate at plan time). **Ticket — user-facing copy truth audit.** Walk every advice / error / warning / banner / toast / Remark / dialog string and check, per string: (1) it is true for the _actual_ cause that triggers it (not just the most common one); (2) plain language — no commands, tool names, or jargon; (3) it states what is wrong and, where a fix exists, offers one clear action (button or link to where it is fixed); (4) the shown action is reachable later, not only in a one-time flow. Seeded by: the bot-check message told people to add cookies when the real cause was a missing shield, and blamed the shield for non-YouTube sites. Output: a table of every string with trigger, verdict, and fix, plus a test per string that pins cause → copy. Include every installer / progress / failure surface (no raw tool output anywhere in the UI). Also decide: should the shield stay optional, and does first-run need a one-time nudge when onboarding is skipped because yt-dlp / ffmpeg already exist (the shield step never runs in that case).
 - **Phase 17 — Branding & release gate.** Product name (§14) + find-and-replace
-  + app icon; revisit repo-root `BACKLOG.md`. Sparkle / notarization / bundled
-  deps only if Developer ID exists. Full stub in parent §12.1.
-
+  - app icon; revisit repo-root `BACKLOG.md`. Sparkle / notarization / bundled deps only if Developer ID exists. Full stub in parent §12.1.

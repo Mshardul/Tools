@@ -12,21 +12,21 @@ The number is zero-padded to three digits and counts by one from `001`. After `9
 
 One row per ticket, in this order:
 
-| Column | Format |
-|---|---|
-| ID | `mg-NNN` |
-| Title | Up to 10 words. |
-| Type | One value from the Types list. |
-| Component | One value from the Components list. |
-| Epic | One value from the Epics list. |
-| Priority | `p0` to `p4`. |
-| Points | `1`, `2`, `3`, `5`, or `8`. |
-| Status | One value from Status. |
-| Depends on | Comma-separated ids, or empty. |
-| Description | Up to 30 words. |
-| Remarks | Free text, or empty. |
-| Created | `dd-mm-yyyy`. |
-| Updated | `dd-mm-yyyy`. |
+| Column      | Format                              |
+| ----------- | ----------------------------------- |
+| ID          | `mg-NNN`                            |
+| Title       | Up to 10 words.                     |
+| Type        | One value from the Types list.      |
+| Component   | One value from the Components list. |
+| Epic        | One value from the Epics list.      |
+| Priority    | `p0` to `p4`.                       |
+| Points      | `1`, `2`, `3`, `5`, or `8`.         |
+| Status      | One value from Status.              |
+| Depends on  | Comma-separated ids, or empty.      |
+| Description | Up to 30 words.                     |
+| Remarks     | Free text, or empty.                |
+| Created     | `dd-mm-yyyy`.                       |
+| Updated     | `dd-mm-yyyy`.                       |
 
 Remarks stay empty unless the row cannot be understood without them, or a status move needs a reason.
 
@@ -36,19 +36,19 @@ A value in use is never renamed or removed, because finished rows cannot change.
 
 ### Types
 
-| Type | Meaning | State |
-|---|---|---|
-| `bug` | Something is wrong, missing, or unusable. | active |
-| `improvement` | Something works and is made better. | active |
-| `feature` | Something new a user can do. | active |
-| `chore` | Maintenance with no user-visible change. | active |
+| Type          | Meaning                                   | State  |
+| ------------- | ----------------------------------------- | ------ |
+| `bug`         | Something is wrong, missing, or unusable. | active |
+| `improvement` | Something works and is made better.       | active |
+| `feature`     | Something new a user can do.              | active |
+| `chore`       | Maintenance with no user-visible change.  | active |
 
 ### Components
 
 A ticket has the one component that holds most of its change.
 
 | Component | Covers | State |
-|---|---|---|
+| --- | --- | --- |
 | `theme` | Palettes, colour and type tokens, fonts, icons, motion, elevation. `Sources/App/Theme`. | active |
 | `controls` | Shared skinned controls: buttons, toggles, steppers, pickers, segments. `Sources/App/Controls`. | active |
 | `chrome` | Window shell, brand row, health strip, banner, toasts, dialogs, sheets, menu bar. `MainWindow`, `Chrome`, `Toasts`, `Shield`, `Debug`. | active |
@@ -63,8 +63,9 @@ A ticket has the one component that holds most of its change.
 ### Epics
 
 | Epic | Meaning | State |
-|---|---|---|
+| --- | --- | --- |
 | `visual-fidelity` | The app looks and reads as the design system and mockups specify. | active |
+| `code-health` | Code, logs and docs say and do what they claim. | active |
 
 ## Priority
 
@@ -89,7 +90,7 @@ A new row is `backlog`. `todo` means the user has picked the row for the next ro
 ### Moves
 
 | From | To | When |
-|---|---|---|
+| --- | --- | --- |
 | `backlog` | `todo` | The user picks the row. Every ticket in Depends on is `completed`, `todo`, or `in progress`, or moves to `todo` in the same step. |
 | `todo` | `backlog` | The user un-picks the row. A row that another `todo`, `in progress`, or `blocked` row depends on moves back only in the same step as that row. |
 | `todo` | `in progress` | A group containing the row is picked for implementation. |

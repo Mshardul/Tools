@@ -1,0 +1,8 @@
+.claude/
+.superpowers/
+apps/claude-usage/projects/
+node_modules/
+.venv/
+build/
+Derived/
+.build/

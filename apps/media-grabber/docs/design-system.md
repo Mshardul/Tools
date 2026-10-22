@@ -1,11 +1,8 @@
 # MediaGrabber — Design System
 
-**Status:** draft, tracks §5 of the design spec
-**Date:** 2026-08-28
-**Working name:** MediaGrabber (final name — Phase 13 / spec §14)
+**Status:** draft, tracks §5 of the design spec **Date:** 2026-08-28 **Working name:** MediaGrabber (final name — Phase 13 / spec §14)
 
-This is the source of truth for visual design. Mockups in `mockups/` mirror
-these values; if they disagree, this file wins.
+This is the source of truth for visual design. Mockups in `mockups/` mirror these values; if they disagree, this file wins.
 
 ---
 
@@ -30,29 +27,28 @@ these values; if they disagree, this file wins.
   - [4.5 Onboarding](#45-onboarding)
   - [4.6 Preferences](#46-preferences)
   - [4.7 Diagnostics](#47-diagnostics)
-  - [4.8 Confirmation dialog](#48-confirmation-dialog)
-  - [4.9 SkinnedSegment](#49-skinnedsegment)
-  - [4.10 SkinnedPicker](#410-skinnedpicker)
+  - [4.8 About](#48-about)
+  - [4.9 Confirmation dialog](#49-confirmation-dialog)
+  - [4.10 SkinnedSegment](#410-skinnedsegment)
+  - [4.11 SkinnedPicker](#411-skinnedpicker)
 - [5. Palette token sets](#5-palette-token-sets)
   - [5.1 Token list](#51-token-list)
   - [5.2 Tape Deck palettes (light)](#52-tape-deck-palettes-light)
   - [5.3 Aurora palettes (dark)](#53-aurora-palettes-dark)
 - [6. Implementation notes](#6-implementation-notes)
 
-
 ---
 
 ## 1. Concepts
 
 | Term | Meaning |
-|---|---|
+| --- | --- |
 | **Theme** | Visual identity: **Tape Deck** or **Aurora**. Sets type, shape language, elevation style, and the signature motif. |
-| **Palette** | A colour variant *within* a theme. Three per theme. Swaps colour tokens only — type, radii, spacing, motif are unchanged by palette. |
+| **Palette** | A colour variant _within_ a theme. Three per theme. Swaps colour tokens only — type, radii, spacing, motif are unchanged by palette. |
 
 User picks a theme, then a palette. Default: **Aurora / Mint & Iris**.
 
-Light/dark orientation is fixed per theme: **Tape Deck is light**, **Aurora is dark**.
-Every palette declares a complete token set on `:root[data-theme=…][data-palette=…]`.
+Light/dark orientation is fixed per theme: **Tape Deck is light**, **Aurora is dark**. Every palette declares a complete token set on `:root[data-theme=…][data-palette=…]`.
 
 ---
 
@@ -63,7 +59,7 @@ Every palette declares a complete token set on `:root[data-theme=…][data-palet
 Warm, tactile, nostalgic hi-fi. Light-first.
 
 | Axis | Value |
-|---|---|
+| --- | --- |
 | Display face | **Bricolage Grotesque** 700 / 800 — headlines, wordmark, Go button, banner heading |
 | Body face | **DM Sans** 400 / 500 / 700 — UI text, table cells, field labels |
 | Utility face | **DM Mono** 400 / 500 — chips, status pills, table headers, data, kicker |
@@ -78,7 +74,7 @@ Warm, tactile, nostalgic hi-fi. Light-first.
 Luminous, calm, premium. Dark-first.
 
 | Axis | Value |
-|---|---|
+| --- | --- |
 | Display face | **Sora** 600 / 700 — headlines, wordmark, Go button, section headings |
 | Body face | **Inter** 400 / 500 / 600 — UI text, table cells |
 | Utility face | **JetBrains Mono** 400 / 500 — chips, status pills, table headers, data, kicker |
@@ -92,8 +88,7 @@ Luminous, calm, premium. Dark-first.
 
 ## 3. Shared structure (theme-independent)
 
-Layout, spacing, iconography, copy voice, and component anatomy do **not**
-change between themes — only their surface styling does.
+Layout, spacing, iconography, copy voice, and component anatomy do **not** change between themes — only their surface styling does.
 
 ### 3.1 Spacing scale (4pt)
 
@@ -102,7 +97,7 @@ change between themes — only their surface styling does.
 ### 3.2 Type scale
 
 | Role | Size / line-height | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Hero headline | 32 / 1.04, letter-spacing −.03em | display face, max ~18ch |
 | Section heading (Preferences, Diagnostics) | 18 / 1.3 | display face |
 | Onboarding headline | 26 / 1.05 | display face |
@@ -114,65 +109,53 @@ change between themes — only their surface styling does.
 
 ### 3.3 Motion
 
-`--ease: cubic-bezier(.2,.7,.2,1)` · `--dur: 160ms` for state transitions.
-Spin animations are linear. **All animation is disabled under
-`prefers-reduced-motion: reduce`.**
+`--ease: cubic-bezier(.2,.7,.2,1)` · `--dur: 160ms` for state transitions. Spin animations are linear. **All animation is disabled under `prefers-reduced-motion: reduce`.**
 
 ### 3.4 Iconography
 
-Icons are **bundled SVGs, one library per theme** — the only axis where the two
-themes draw from different sources:
+Icons are **bundled SVGs, one library per theme** — the only axis where the two themes draw from different sources:
 
 - **Tape Deck → Phosphor Bold** (`@phosphor-icons/core`, MIT). Heavy filled-outline weight; matches the 2px borders.
 - **Aurora → Lucide** (`lucide`, ISC). Clean 2px stroke; matches the hairline borders.
 
-Within a theme every glyph comes from that one library — never mixed. Only the
-~26 glyphs actually used are bundled (≈ 48 SVGs total across both themes), as an
-asset catalog. A `NOTICE` file credits both libraries.
+Within a theme every glyph comes from that one library — never mixed. Only the ~26 glyphs actually used are bundled (≈ 48 SVGs total across both themes), as an asset catalog. A `NOTICE` file credits both libraries.
 
-**Rendering.** Each glyph is a template image tinted with the current context
-colour (`--text`, `--dim`, `--accent`, `--danger`, …). An `Icon` SwiftUI view
-takes a semantic case (`Icon(.pause)`), reads the active theme from
-`ThemeEnvironment`, and resolves the right asset. Nominal size 16px in dense
-spots (row actions, table headers, chips), 15px in nav, up to 20–22px in the
-banner and onboarding.
+**Rendering.** Each glyph is a template image tinted with the current context colour (`--text`, `--dim`, `--accent`, `--danger`, …). An `Icon` SwiftUI view takes a semantic case (`Icon(.pause)`), reads the active theme from `ThemeEnvironment`, and resolves the right asset. Nominal size 16px in dense spots (row actions, table headers, chips), 15px in nav, up to 20–22px in the banner and onboarding.
 
 **Glyph set** (semantic name → Phosphor Bold / Lucide):
 
-| Semantic | Phosphor Bold | Lucide |
-|---|---|---|
-| pause | `pause` | `pause` |
-| resume | `play` | `play` |
-| cancel | `x` | `x` |
-| force-start | `arrow-line-up` | `arrow-up-to-line` |
-| retry | `arrow-clockwise` | `rotate-cw` |
-| retry-with-cookies | `key` | `key-round` |
-| reveal-in-Finder | `folder-open` | `folder-open` |
-| open-in-browser | `globe` | `globe` |
-| remove | `trash` | `trash-2` |
-| show-log | `file-text` | `file-text` |
-| sort-neutral | `caret-up-down` | `chevrons-up-down` |
-| sort-asc | `caret-up` | `chevron-up` |
-| sort-desc | `caret-down` | `chevron-down` |
-| filter | `funnel` | `funnel` |
-| chip-refresh | `arrows-clockwise` | `refresh-cw` |
-| columns-menu | `columns-plus-right` | `columns-3` |
-| disclosure-collapsed | `caret-right` | `chevron-right` |
-| disclosure-expanded | `caret-down` | `chevron-down` |
-| copy | `copy` | `copy` |
-| open-terminal | `terminal-window` | `square-terminal` |
-| step-done | `check` | `check` |
-| shield | `shield-check` | `shield-check` |
-| warning | `warning` | `triangle-alert` |
-| nav-home | `house` | `house` |
-| nav-preferences | `gear` | `settings` |
-| nav-diagnostics | `stethoscope` | `stethoscope` |
+| Semantic             | Phosphor Bold        | Lucide             |
+| -------------------- | -------------------- | ------------------ |
+| pause                | `pause`              | `pause`            |
+| resume               | `play`               | `play`             |
+| cancel               | `x`                  | `x`                |
+| force-start          | `arrow-line-up`      | `arrow-up-to-line` |
+| retry                | `arrow-clockwise`    | `rotate-cw`        |
+| retry-with-cookies   | `key`                | `key-round`        |
+| reveal-in-Finder     | `folder-open`        | `folder-open`      |
+| open-in-browser      | `globe`              | `globe`            |
+| remove               | `trash`              | `trash-2`          |
+| show-log             | `file-text`          | `file-text`        |
+| sort-neutral         | `caret-up-down`      | `chevrons-up-down` |
+| sort-asc             | `caret-up`           | `chevron-up`       |
+| sort-desc            | `caret-down`         | `chevron-down`     |
+| filter               | `funnel`             | `funnel`           |
+| chip-refresh         | `arrows-clockwise`   | `refresh-cw`       |
+| columns-menu         | `columns-plus-right` | `columns-3`        |
+| disclosure-collapsed | `caret-right`        | `chevron-right`    |
+| disclosure-expanded  | `caret-down`         | `chevron-down`     |
+| copy                 | `copy`               | `copy`             |
+| open-terminal        | `terminal-window`    | `square-terminal`  |
+| step-done            | `check`              | `check`            |
+| shield               | `shield-check`       | `shield-check`     |
+| warning              | `warning`            | `triangle-alert`   |
+| nav-home             | `house`              | `house`            |
+| nav-preferences      | `gear`               | `settings`         |
+| nav-diagnostics      | `stethoscope`        | `stethoscope`      |
 
-The signature motif (reel / orb) is **not** in this set — it is `MotifView`, a
-drawn SwiftUI shape, not a bundled icon.
+The signature motif (reel / orb) is **not** in this set — it is `MotifView`, a drawn SwiftUI shape, not a bundled icon.
 
-The `warning` glyph is reused for the Preferences concurrency note (§4.6) — no
-new glyph is introduced for it.
+The `warning` glyph is reused for the Preferences concurrency note (§4.6) — no new glyph is introduced for it.
 
 ---
 
@@ -181,67 +164,47 @@ new glyph is introduced for it.
 ### 4.1 App chrome
 
 - **Brand row** — wordmark (motif + name) left; nav right (`Home · Preferences · About`) as in-app page links. Active page gets a filled `--panel` background. Diagnostics is not a nav item — it is a Preferences pane (§4.6); About (§4.8) is the third top-level destination, replacing Diagnostics there. The brand row is the only chrome that stays fixed regardless of page.
-- **Left rail** — one persistent rail, same visual shell, sits below the health strip on every page; its *content* changes with the active page while the rail's position, width, and row styling stay identical everywhere:
+- **Left rail** — one persistent rail, same visual shell, sits below the health strip on every page; its _content_ changes with the active page while the rail's position, width, and row styling stay identical everywhere:
   - **Home** — the status filter rail (§4.2.3: All · Downloading · Done · Inactive), hidden until the first Grab (no rail in the first-run empty state).
   - **Preferences** — the pane rail (§4.6: General / YouTube / System groups).
-  - **About** — the tab rail (§4.8: About / Developer).
-  Selecting a rail row updates the app's current page state directly (e.g. `.preferences(.diagnostics)`), so the rail's own selection and the page's content can never drift apart.
+  - **About** — the tab rail (§4.8: About / Developer). Selecting a rail row updates the app's current page state directly (e.g. `.preferences(.diagnostics)`), so the rail's own selection and the page's content can never drift apart.
 - **Health strip** — below the brand row. Small utility-face chips carrying ambient state: `bot-check shield`, `engine` (yt-dlp version drift against the app's declared minimum), `online`, and a `<host> · cooldown m:ss` chip that appears only during a cooldown. Green dot = ok, amber dot = attention.
   - **When a chip is in a bad state, a `↻` icon appears at its right edge.** Clicking it runs that chip's fix routine in the background and puts the chip in a **busy state** for the duration — the `↻` glyph spins, the dot dims to a pulsing neutral state, and the icon is disabled so a second click can't overlap the action (disabled under `prefers-reduced-motion`; the glyph and dot simply hold still). This busy treatment is uniform across every chip that can act:
     | chip bad state | `↻` runs |
-    |---|---|
+    | --- | --- |
     | `shield · offline` | restart the POT provider process, re-run its health check |
     | `engine · update available` | re-run a version-pinned `brew reinstall yt-dlp` (or `upgrade`) to the app's declared minimum, re-read the version — never an unconditional upgrade to latest |
     | `offline` | re-poll `NWPathMonitor` |
-    | `engine · missing` (dependency gone) | *not a refresh* — routes back to Onboarding; hard block |
+    | `engine · missing` (dependency gone) | _not a refresh_ — routes back to Onboarding; hard block |
   - On success the chip flips green and the icon disappears. On failure an **error toast** shows the reason and the chip stays in its bad state (icon remains, no longer busy).
   - The `cooldown m:ss` chip is not an error — no refresh icon. Clicking it opens a small popover: why the cooldown happened, when it clears, and a **Retry now** button.
 - **Warning banner** — docked to the **bottom** of the window, floating over the table, `left/right: 16`, `bottom: 16`. The table gets bottom padding (≈ 78–82px) so its last row never sits under the banner. Reserved for **engine / host-level** conditions only: cooldown explainer, circuit-breaker open, dependency missing, POT provider down. One sentence + one action button. The theme styles it as a solid warm fill (Tape Deck: `--accent` on `--ink` border; Aurora: `--banner-fill` gradient).
 
 ### 4.2 Home
 
-Behavioural contract in spec §5.3. Home is one screen with three states and
-four parts (hero field + runway, the Downloads table, the playlist group, the
-first-run cards).
+Behavioural contract in spec §5.3. Home is one screen with three states and four parts (hero field + runway, the Downloads table, the playlist group, the first-run cards).
 
 #### 4.2.1 States
 
-- **First run, no download ever made:** header + paste field + the **three step
-  cards** ("Paste a link · Pick a format · Press Grab") fill the body. **No
-  Downloads table is rendered** — no headers, status rail, or Columns button.
-  The runway is not shown either (no link yet).
-- **After the first Grab:** the step cards are gone permanently. The Downloads
-  table (with its toolbar) is rendered from now on. The field sits above it; the
-  runway appears when a pasted link resolves and is hidden otherwise.
-- **Table emptied later** (user removed every row): the table stays, showing a
-  single centered line "No downloads — paste a link above." The step cards do
-  **not** return; they are first-run-only.
+- **First run, no download ever made:** header + paste field + the **three step cards** ("Paste a link · Pick a format · Press Grab") fill the body. **No Downloads table is rendered** — no headers, status rail, or Columns button. The runway is not shown either (no link yet).
+- **After the first Grab:** the step cards are gone permanently. The Downloads table (with its toolbar) is rendered from now on. The field sits above it; the runway appears when a pasted link resolves and is hidden otherwise.
+- **Table emptied later** (user removed every row): the table stays, showing a single centered line "No downloads — paste a link above." The step cards do **not** return; they are first-run-only.
 
-#### 4.2.2 Paste field + runway  *(the hero)*
+#### 4.2.2 Paste field + runway _(the hero)_
 
 The "resolve link & arm Grab" pattern.
 
-- **Field** — full-width card (`--panel`). Rounded on all corners. Holds the
-  pasted URL. After a successful probe, an inline status appears at the right
-  end: `✓ <title>` (or `✓ "<playlist>" · N items`). On probe failure:
-  `--danger` text with the reason, inside the same card below the input.
-- **Runway** — **hidden until a pasted link resolves.** When shown, it is a
-  **separate full-width card** (`--panel-hi`) below the field, with
-  `--sp-3` gap between the two — not a shared border. Rounded on all corners.
-  A row of labelled slots:
+- **Field** — full-width card (`--panel`). Rounded on all corners. Holds the pasted URL. After a successful probe, an inline status appears at the right end: `✓ <title>` (or `✓ "<playlist>" · N items`). On probe failure: `--danger` text with the reason, inside the same card below the input.
+- **Runway** — **hidden until a pasted link resolves.** When shown, it is a **separate full-width card** (`--panel-hi`) below the field, with `--sp-3` gap between the two — not a shared border. Rounded on all corners. A row of labelled slots:
   - `Link` — filled when the probe resolves to a downloadable item
   - `Type` — `SkinnedSegment` (§4.10) — Video / Audio; seeded from last-used or Preferences
-  - `Format` — contextual: `SkinnedPicker` (§4.11) quality rungs this probe actually offers (video), or
-    `SkinnedSegment` `M4A` / `MP3` (audio); seeded from last-used or Preferences
-  - `Language` — `SkinnedPicker` of this probe's audio tracks; always filled
-    (last pick if offered, else Preferences YouTube-default / Original policy,
-    else YouTube's default track). Shown for Video and Audio.
-  - `Save to` — `SkinnedPicker`: default folder, last-used (if distinct),
-    "Choose…" for a new folder. Always seeded — never renders unfilled.
-  - *(playlist only)* no extra slot — item selection happens in the picker modal (§4.3)
+  - `Format` — contextual: `SkinnedPicker` (§4.11) quality rungs this probe actually offers (video), or `SkinnedSegment` `M4A` / `MP3` (audio); seeded from last-used or Preferences
+  - `Language` — `SkinnedPicker` of this probe's audio tracks; always filled (last pick if offered, else Preferences YouTube-default / Original policy, else YouTube's default track). Shown for Video and Audio.
+  - `Save to` — `SkinnedPicker`: default folder, last-used (if distinct), "Choose…" for a new folder. Always seeded — never renders unfilled.
+  - _(playlist only)_ no extra slot — item selection happens in the picker modal (§4.3)
   - Each slot: hollow dot `○` (`--faint`) when unset, filled dot `●` (`--accent`) when set.
   - The slots use `SkinnedSegment` / `SkinnedPicker`, not the native `Menu`.
-- **Grab button** — at the end of the runway, past a divider. **Disabled** (opacity .3, grayscale) until the link is resolved *and* downloadable. Type, Format, Language, and Save-to are always pre-filled; the user may change any of them before Grab. Label: `Grab` (single item) / `Grab all N` / `Add N` (after picker). Theme fill: Tape Deck `--go` solid; Aurora `--go-fill` gradient.
+- **Grab button** — at the end of the runway, past a divider. **Disabled** (opacity .3, grayscale) until the link is resolved _and_ downloadable. Type, Format, Language, and Save-to are always pre-filled; the user may change any of them before Grab. Label: `Grab` (single item) / `Grab all N` / `Add N` (after picker). Theme fill: Tape Deck `--go` solid; Aurora `--go-fill` gradient.
 
 #### 4.2.3 Downloads table
 
@@ -255,7 +218,7 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 **Columns:** one active sort at a time (`↕` cycles asc → desc → off). **Status** kept but **hidden by default** (rail is the everyday filter); labels are the nine `JobState`s 1:1 (plain aliases). Detail → Remark.
 
 | Column | Default | Hideable | Reorderable | Sort | Filter |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | Title | ✓ visible | no | yes | yes | yes (text) |
 | Status | hidden | yes | yes | yes | yes (checklist) |
 | Progress | ✓ visible | yes | yes | yes | — |
@@ -285,21 +248,22 @@ One table, newest at top. One **row per video** (a playlist contributes N rows, 
 - **Grid substrate:** AppKit draws headers and body cells with shared palette / type / spacing tokens (`DownloadsGridTokens`). SwiftUI owns shell outside the grid (rail, batch bar, Columns menu). Do not default to `NSHostingView` per cell.
 
 **Cell treatments:**
-- *Title* — motif spinner prefix on an actively-downloading row; playlist children indented with the spine connector (§4.2.4); full title as hover tooltip when truncated.
-- *Remark* (optional column / hover+focus) — queue `#N`, backoff / host rate, failure reason sentence — never invents a second status vocabulary.
-- *Status* (optional column) — plain 1:1 label only; never free text.
-- *Progress* — thin bar (`--bar-fill`), only on active rows; blank otherwise.
-- *Speed*, *ETA* — utility face, `--dim`; blank on non-running rows.
-- *Type* — `Audio` / `Video`. *Quality* — the selector (`1080p` … or `m4a` / `mp3`). Both `--dim`.
-- *Size* — known total; `--dim`; em-dash until known.
-- *Site* — utility face, `--dim`.
-- *Actions* — contextual icon buttons (glyphs per §3.4) per `job-status-and-actions.md`: pause/resume, cancel, force-start (conditional), restart / restart-with-sign-in, reveal-in-Finder, open-in-browser, remove (deletes entry), show-log. Offer only enabled actions for the state (~5 max).
+
+- _Title_ — motif spinner prefix on an actively-downloading row; playlist children indented with the spine connector (§4.2.4); full title as hover tooltip when truncated.
+- _Remark_ (optional column / hover+focus) — queue `#N`, backoff / host rate, failure reason sentence — never invents a second status vocabulary.
+- _Status_ (optional column) — plain 1:1 label only; never free text.
+- _Progress_ — thin bar (`--bar-fill`), only on active rows; blank otherwise.
+- _Speed_, _ETA_ — utility face, `--dim`; blank on non-running rows.
+- _Type_ — `Audio` / `Video`. _Quality_ — the selector (`1080p` … or `m4a` / `mp3`). Both `--dim`.
+- _Size_ — known total; `--dim`; em-dash until known.
+- _Site_ — utility face, `--dim`.
+- _Actions_ — contextual icon buttons (glyphs per §3.4) per `job-status-and-actions.md`: pause/resume, cancel, force-start (conditional), restart / restart-with-sign-in, reveal-in-Finder, open-in-browser, remove (deletes entry), show-log. Offer only enabled actions for the state (~5 max).
 
 #### 4.2.4 Playlist group in the table
 
 - **Group header row** — spans the table above the playlist's videos. Contains: a disclosure caret (collapses/expands the whole group), the playlist name, a rollup (`N items · M done` + a mini progress bar), and group actions (Pause all · Restart failed · Cancel all — see `job-status-and-actions.md` §3b). Background `--accent-2` at low alpha. Show the group when any child matches the selected rail.
 - **Child rows** — the playlist's videos, indented. A single **continuous vertical spine** runs down the left at the indent position. Each child has a short horizontal connector from the spine to its content.
-- **Row divider lines between children start *after* the spine** (indented to align with content) — they never cross it, so the spine reads as one unbroken line.
+- **Row divider lines between children start _after_ the spine** (indented to align with content) — they never cross it, so the spine reads as one unbroken line.
 - **Collapsed** — children hidden; the header row remains, showing the rollup only.
 - This is a grouping row, not a detail view. Nothing expands per video.
 
@@ -337,32 +301,21 @@ Opens automatically when a resolved link is a playlist, **before** any rows are 
 ### 4.6 Preferences
 
 - In-app page (nav item). Not a separate macOS Settings window.
-- **Fixed window height.** The left rail (the app chrome's shared rail, §4.1)
-  never scrolls (the window is tall enough for every rail item). The right
-  pane scrolls independently — the pane's title, sub, and rule stay fixed
-  above that scroll region; only the rows below them scroll, with their own
-  bottom padding so the last row never sits flush against the window edge.
+- **Fixed window height.** The left rail (the app chrome's shared rail, §4.1) never scrolls (the window is tall enough for every rail item). The right pane scrolls independently — the pane's title, sub, and rule stay fixed above that scroll region; only the rows below them scroll, with their own bottom padding so the last row never sits flush against the window edge.
 - **Left rail content** — three group captions, each item highlighted when selected:
   - **General:** Downloads · Appearance · Network
   - **YouTube:** Sign-in & cookies
   - **System:** Updates · Logs & privacy · Advanced · Diagnostics
-- **Right pane** — the selected pane. Two-column rows: `label` (13, `--text`,
-  semibold) + optional `helper` (11.5, `--dim`) stacked on the left; control
-  right-aligned; a `--hair` divider between rows. A row with no helper renders
-  label-only. Pane title 20 / heavy in `--headline` with a rule under it, a
-  one-line `--dim` sub above the rule.
-- **Stepless panes** (Sign-in & cookies) render title + sub + one
-  plain-language "coming in a later update" line — no rows, no controls.
-- Diagnostics is a rail item here, not a top-level nav destination (§4.1) — it
-  is a status/support tool a small share of users open, not a page most users
-  need regularly.
+- **Right pane** — the selected pane. Two-column rows: `label` (13, `--text`, semibold) + optional `helper` (11.5, `--dim`) stacked on the left; control right-aligned; a `--hair` divider between rows. A row with no helper renders label-only. Pane title 20 / heavy in `--headline` with a rule under it, a one-line `--dim` sub above the rule.
+- **Stepless panes** (Sign-in & cookies) render title + sub + one plain-language "coming in a later update" line — no rows, no controls.
+- Diagnostics is a rail item here, not a top-level nav destination (§4.1) — it is a status/support tool a small share of users open, not a page most users need regularly.
 
 Rows per pane (control → backing field on `Preferences`, unless noted):
 
-**Downloads** — sub *"Defaults for new downloads. Change any of these per
-download on the Home screen."*
+**Downloads** — sub _"Defaults for new downloads. Change any of these per download on the Home screen."_
+
 | Label | Helper | Control | Backs |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Downloads folder | — | folder button `~/Downloads`, no chevron → `NSOpenPanel` | `defaultDownloadFolder` |
 | Simultaneous downloads | Automatically reduced if a site rate-limits you. | stepper 1–6 | `maxConcurrentDownloads` |
 | Automatic retries | Attempts before the app asks you what to do. | stepper 1–5 | `maxAutoRetries` |
@@ -373,147 +326,95 @@ download on the Home screen."*
 | Filename format | — | `SkinnedPicker` — Title / Title – channel / Date – title / Custom… | `filenameTemplate` |
 | Clipboard detection | Offer to grab links you copy. | toggle | `detectClipboardLinks` |
 
-The **concurrency note** renders in the "Simultaneous downloads" row's right
-column, under the stepper, when the new value is below the live running count:
-the warn glyph (§3.4) tinted `--warn` + a `--dim` line
-`"<count> still running — the new limit applies as they finish."` It clears when
-the running count drops to `≤` the new value, or on relaunch.
+The **concurrency note** renders in the "Simultaneous downloads" row's right column, under the stepper, when the new value is below the live running count: the warn glyph (§3.4) tinted `--warn` + a `--dim` line `"<count> still running — the new limit applies as they finish."` It clears when the running count drops to `≤` the new value, or on relaunch.
 
-**Appearance** — sub *"Pick a look. Theme sets the personality; palette sets the
-colours."*
+**Appearance** — sub _"Pick a look. Theme sets the personality; palette sets the colours."_
+
 | Label | Helper | Control | Backs |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Theme | Aurora is dark and luminous. Tape Deck is warm and light. | `SkinnedSegment` — Aurora / Tape Deck | `theme` |
 | Palette | — | 3 split-fill swatches (~38pt, name below; selected has a 2pt `--accent` outline at 2pt offset) for the selected theme | `palette` |
 
-Changing Theme resets `palette` to that theme's default. Both controls apply
-live.
+Changing Theme resets `palette` to that theme's default. Both controls apply live.
 
-**Network** — sub *"Applied to new downloads."*
+**Network** — sub _"Applied to new downloads."_
+
 | Label | Helper | Control | Backs |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Proxy server | `http://host:port` — blank for none. | text field | `proxyURL` |
 | Force IPv4 | Can help when connections stall. | toggle | `forceIPv4` |
 | Speed limit | Applies to each download separately. | stepper KB/s, "Off" at 0 | `speedLimitKBps` |
 
-**Sign-in & cookies** — stepless. Sub *"Sign in to reach private or
-age-restricted videos."* Body: *"Cookie sign-in is coming in a later update."*
+**Sign-in & cookies** — stepless. Sub _"Sign in to reach private or age-restricted videos."_ Body: _"Cookie sign-in is coming in a later update."_
 
-**Updates** — sub *"Check for new versions of the app and the downloader."*
-Settings only — no version number, no action button anywhere in this pane.
-Every version and every action (`Check for updates`, `Update`, `↻ Update`)
-lives on About (§4.8), never duplicated here.
+**Updates** — sub _"Check for new versions of the app and the downloader."_ Settings only — no version number, no action button anywhere in this pane. Every version and every action (`Check for updates`, `Update`, `↻ Update`) lives on About (§4.8), never duplicated here.
+
 | Label | Helper | Control | Backs |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Check for app updates automatically | Looks for a newer MediaGrabber release once a day. | toggle | `autoCheckAppUpdates` |
 | Notify when the downloader is outdated | Warn if yt-dlp falls behind the version this app expects. | toggle | `autoCheckYtDlpUpdates` |
 
-New `Preferences` fields this pane introduces: `autoCheckAppUpdates: Bool`
-(default true), `autoCheckYtDlpUpdates: Bool` (default true).
+New `Preferences` fields this pane introduces: `autoCheckAppUpdates: Bool` (default true), `autoCheckYtDlpUpdates: Bool` (default true).
 
-**Logs & privacy** — sub *"What the app records, and where to find it."*
+**Logs & privacy** — sub _"What the app records, and where to find it."_
+
 | Label | Helper | Control | Action |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Log files | — | button "Show in Finder" | reveal `~/Library/Logs/MediaGrabber` |
 | Verbose logging | More detail for troubleshooting. | toggle | `verboseLogging` |
 | Privacy details | — | button "Open" | open the bundled `PRIVACY.md` externally |
 
-**Advanced** — sub *"Reset options. These don't touch your downloaded files."*
+**Advanced** — sub _"Reset options. These don't touch your downloaded files."_
+
 | Label | Helper | Control | Action |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | App data | — | button "Show in Finder" | reveal `~/Library/Application Support/MediaGrabber` |
 | Reset columns | Table layout back to default. | button "Reset" | `columnConfig = .default` |
 | Reset settings | All preferences back to default. Downloads are untouched. | button "Reset…" (`--danger`), confirmation dialog | `Preferences.resetToDefaults()` |
 
-New `Preferences` fields this section introduces: `detectClipboardLinks: Bool`
-(default true), `proxyURL: String?`, `forceIPv4: Bool` (default false),
-`speedLimitKBps: Int` (default 0, clamped 0…100000), `lastVideoHeight: Int?`,
-`lastMediaType: MediaType?`, `lastAudioFormat: AudioFormat?`.
+New `Preferences` fields this section introduces: `detectClipboardLinks: Bool` (default true), `proxyURL: String?`, `forceIPv4: Bool` (default false), `speedLimitKBps: Int` (default 0, clamped 0…100000), `lastVideoHeight: Int?`, `lastMediaType: MediaType?`, `lastAudioFormat: AudioFormat?`.
 
 ### 4.7 Diagnostics
 
 - A Preferences pane (§4.6, System group), not a top-level page.
-- Opens pre-populated from state the engine/session already have — the
-  shield, cooldown, and network chips are live in `HealthController`
-  regardless of this pane, so the report card shows their current values on
-  open; the canary row and the version rescans read "not yet run this
-  session" until **Run check** — laid out beside the pane's title, not below
-  it — refreshes everything.
-- The **report card** — rows of `key : value`, values coloured by verdict
-  (`--accent` ok, `--warn` attention, `--danger` bad): canary result + time,
-  yt-dlp version + drift against the app's declared minimum, ffmpeg version,
-  bot-check shield health + port, cookie source + readability, detected
-  client, **player_client rotation order** (read-only), active cooldown,
-  network + VPN status. A yt-dlp row behind the declared minimum shows an
-  inline **↻ Update** button that re-runs the pinned reinstall — the same
-  action as the HealthStrip `engine` chip (§4.1) and About's yt-dlp row
-  (§4.8).
-- **Copy report** — puts a redacted plain-text block on the clipboard
-  (redaction per spec §8.5).
-- **Share diagnostic bundle** — hands the `DiagnosticBundle` zip (app-log
-  tail + the most-recent job's log + this report) to the system share sheet
-  (`NSSharingServicePicker`) — Mail, AirDrop, Save to Files, and so on. This
-  is the only place either action lives (not in Preferences → Updates or
-  About). The two buttons carry equal visual weight — one produces clipboard
-  text, the other hands off a file; neither is more primary than the other.
+- Opens pre-populated from state the engine/session already have — the shield, cooldown, and network chips are live in `HealthController` regardless of this pane, so the report card shows their current values on open; the canary row and the version rescans read "not yet run this session" until **Run check** — laid out beside the pane's title, not below it — refreshes everything.
+- The **report card** — rows of `key : value`, values coloured by verdict (`--accent` ok, `--warn` attention, `--danger` bad): canary result + time, yt-dlp version + drift against the app's declared minimum, ffmpeg version, bot-check shield health + port, cookie source + readability, detected client, **player_client rotation order** (read-only), active cooldown, network + VPN status. A yt-dlp row behind the declared minimum shows an inline **↻ Update** button that re-runs the pinned reinstall — the same action as the HealthStrip `engine` chip (§4.1) and About's yt-dlp row (§4.8).
+- **Copy report** — puts a redacted plain-text block on the clipboard (redaction per spec §8.5).
+- **Share diagnostic bundle** — hands the `DiagnosticBundle` zip (app-log tail + the most-recent job's log + this report) to the system share sheet (`NSSharingServicePicker`) — Mail, AirDrop, Save to Files, and so on. This is the only place either action lives (not in Preferences → Updates or About). The two buttons carry equal visual weight — one produces clipboard text, the other hands off a file; neither is more primary than the other.
 
 ---
 
 ### 4.8 About
 
-The third top-level nav destination (§4.1), replacing Diagnostics there. A
-two-tab page (About, Developer), selected via the app chrome's shared left
-rail (§4.1) over a scrolling pane — same shell as Preferences (§4.6). The
-health strip stays global chrome — present here exactly as on Home and
-Preferences.
+The third top-level nav destination (§4.1), replacing Diagnostics there. A two-tab page (About, Developer), selected via the app chrome's shared left rail (§4.1) over a scrolling pane — same shell as Preferences (§4.6). The health strip stays global chrome — present here exactly as on Home and Preferences.
 
-**About** opens with a centred identity block — app mark, name, version — then
-every version this app tracks and every action that can change one, so nothing
-here is duplicated in Preferences → Updates (§4.6), which holds only the
-settings that govern *whether* a check happens.
+**About** opens with a centred identity block — app mark, name, version — then every version this app tracks and every action that can change one, so nothing here is duplicated in Preferences → Updates (§4.6), which holds only the settings that govern _whether_ a check happens.
 
 | Label | Control | Notes |
-|---|---|---|
+| --- | --- | --- |
 | MediaGrabber | nothing shown / button "Check for updates" / button "Update" | see button-verb rule below |
 | Downloader (yt-dlp) | version text / version text + button "↻ Update" | never "Check for updates" — see below |
 | ffmpeg | version text | read-only, no update path |
 | Diagnostics | button "Open Diagnostics" | links to the Preferences pane (§4.7) |
 
-**Button-verb rule** — each version row's action tracks how certain the app is
-that an update exists:
-- **Nothing shown** — current; nothing to do. The same "no lingering button"
-  pattern already used for the Full Disk Access row once granted (§4.6,
-  Sign-in & cookies).
-- **"Check for updates"** — MediaGrabber only, before its GitHub-release check
-  has resolved this session; a real network call is genuinely unresolved
-  until it returns (spec §10.2).
-- **"Update" / "↻ Update"** — once an update is confirmed available. "Update"
-  (MediaGrabber) opens the release page; "↻ Update" (yt-dlp) re-runs the
-  pinned reinstall (spec §10.1a) inline — the same action as the HealthStrip
-  `engine` chip (§4.1) and the Diagnostics report row (§4.7).
+**Button-verb rule** — each version row's action tracks how certain the app is that an update exists:
 
-yt-dlp's row never shows "Check for updates" — its drift check is a local
-version compare against the app's declared minimum, always immediately
-certain, never a pending network call.
+- **Nothing shown** — current; nothing to do. The same "no lingering button" pattern already used for the Full Disk Access row once granted (§4.6, Sign-in & cookies).
+- **"Check for updates"** — MediaGrabber only, before its GitHub-release check has resolved this session; a real network call is genuinely unresolved until it returns (spec §10.2).
+- **"Update" / "↻ Update"** — once an update is confirmed available. "Update" (MediaGrabber) opens the release page; "↻ Update" (yt-dlp) re-runs the pinned reinstall (spec §10.1a) inline — the same action as the HealthStrip `engine` chip (§4.1) and the Diagnostics report row (§4.7).
 
-**Developer** opens with the same identity-block treatment — an avatar, a
-name, a one-line headline — then:
-| Label | Control |
-|---|---|
+yt-dlp's row never shows "Check for updates" — its drift check is a local version compare against the app's declared minimum, always immediately certain, never a pending network call.
+
+**Developer** opens with the same identity-block treatment — an avatar, a name, a one-line headline — then:
+
+| Label           | Control                                     |
+| --------------- | ------------------------------------------- |
 | Connect with me | a row of platform icon-links, right-aligned |
-| Source code | button "GitHub" |
-| Report an issue | button "GitHub Issues" |
-| License | button "Open" |
+| Source code     | button "GitHub"                             |
+| Report an issue | button "GitHub Issues"                      |
+| License         | button "Open"                               |
 
-Shipped with GitHub only (real profile URL). LinkedIn, personal site, and X
-were designed but are commented out pending real URLs for those accounts —
-add them to `DeveloperLinks` in `DeveloperView.swift` and uncomment their
-`iconLink` rows when available. The mockup's own brand-mark treatment
-(`docs/mockups/screens/about.html` §7.2) uses plain text-glyph badges ("GH",
-"in") rather than real bundled images — the shipped app matches that, since
-no image-asset catalog exists elsewhere in the app and a two-letter glyph
-reads fine at this size; a personal site or X row would use a generic `globe`
-SF Symbol / text glyph the same way when added.
+Shipped with GitHub only (real profile URL). LinkedIn, personal site, and X were designed but are commented out pending real URLs for those accounts — add them to `DeveloperLinks` in `DeveloperView.swift` and uncomment their `iconLink` rows when available. The mockup's own brand-mark treatment (`docs/mockups/screens/about.html` §7.2) uses plain text-glyph badges ("GH", "in") rather than real bundled images — the shipped app matches that, since no image-asset catalog exists elsewhere in the app and a two-letter glyph reads fine at this size; a personal site or X row would use a generic `globe` SF Symbol / text glyph the same way when added.
 
 ---
 
@@ -534,11 +435,7 @@ A reusable modal the app raises a handful of times across its life (duplicate su
 - **Keyboard** — Return confirms; Esc cancels (or dismisses a notice). Initial focus is on **Cancel** for a destructive action, **Confirm** otherwise.
 - **VoiceOver** — the card is a modal alert (`.isModal`), focus is trapped inside it, and the icon type + title + message are all read on present (the icon type is announced, not just shown visually — e.g. "Error: Reset settings?").
 - **Type by dialog** — of the eight dialogs in the app today: Reset settings and Quit-while-downloading are **error** (destructive); the remaining six (file moved, log unavailable, download-again, already-in-queue, grab-this-link, link-couldn't-open) are **info** — plain notices or reversible choices, none of them a warning of harm. **Warning** exists in the type system for a future dialog (e.g. a low-disk-space caution) — no current dialog uses it.
-- **Per-dialog override** — the "already in queue" duplicate-submit dialog
-  (a re-add of a still-queued URL) inverts the button rule above:
-  **Cancel** is filled/primary and **Download Again** is plain/secondary,
-  since leaving the item queued once is the expected outcome of an
-  almost-always-accidental duplicate paste, not "Download Again."
+- **Per-dialog override** — the "already in queue" duplicate-submit dialog (a re-add of a still-queued URL) inverts the button rule above: **Cancel** is filled/primary and **Download Again** is plain/secondary, since leaving the item queued once is the expected outcome of an almost-always-accidental duplicate paste, not "Download Again."
 
 ---
 
@@ -552,24 +449,15 @@ struct SkinnedSegment<Option: Hashable>: View {
 }
 ```
 
-- 2–3 options, all rendered as segments in a `--panel` track with a `--stroke`
-  border; the selected segment gets a `--panel-solid` fill. Radius is the
-  theme's `chipRadius`.
-- **Equal-width segments** within one control (each sized to the widest label).
-  The control as a whole **hugs its content** and sits flush to the row's right
-  edge. Different controls in one pane may have different total widths; all are
-  right-aligned.
-- One tap selects. No popover. Left / Right arrow moves selection when focused;
-  VoiceOver exposes it as a segmented control with the option labels, the
-  selected segment carrying `.isSelected`.
+- 2–3 options, all rendered as segments in a `--panel` track with a `--stroke` border; the selected segment gets a `--panel-solid` fill. Radius is the theme's `chipRadius`.
+- **Equal-width segments** within one control (each sized to the widest label). The control as a whole **hugs its content** and sits flush to the row's right edge. Different controls in one pane may have different total widths; all are right-aligned.
+- One tap selects. No popover. Left / Right arrow moves selection when focused; VoiceOver exposes it as a segmented control with the option labels, the selected segment carrying `.isSelected`.
 
-**Used by:** Theme (Appearance), Media type (Downloads + runway), Audio format
-(Downloads + runway).
+**Used by:** Theme (Appearance), Media type (Downloads + runway), Audio format (Downloads + runway).
 
 ### 4.11 SkinnedPicker
 
-A skinned dropdown. **It is a popover, not a modal** — picking one value from a
-short list is a lightweight, anchored interaction.
+A skinned dropdown. **It is a popover, not a modal** — picking one value from a short list is a lightweight, anchored interaction.
 
 ```swift
 struct SkinnedPickerRow<Option: Hashable>: Identifiable {
@@ -586,33 +474,20 @@ struct SkinnedPicker<Option: Hashable>: View {
 }
 ```
 
-- **Trigger** — a button showing the current selection's label + a chevron,
-  `--panel` fill, `--stroke` border, theme `controlRadius`. Only as wide as its
-  own label.
-- **Popover** — opens below the trigger (flips above if no room). `--panel-solid`
-  fill, theme border + `cardRadius` + elevation matching the confirmation-dialog
-  card (glow on Aurora, hard offset shadow on Tape Deck).
-  - **Width** — sized to the picker's widest row (caption / label / subtitle),
-    clamped `[trigger width … 340pt]`. No single global width.
-  - **Caption header** — a `--faint` uppercase label naming what is being
-    chosen, with a hairline `--hair` rule under it.
-  - **Rows** — label; optional second-line **subtitle** in `--dim` (`nil` →
-    single-line row); a checkmark (`--accent`) on the selected row; hover /
-    arrow-key highlight uses a translucent accent wash. **No row icons.**
-- Keyboard: Return / Space opens; Up / Down move the highlight; Return selects;
-  Esc closes without changing. VoiceOver: a pop-up button; the selected row is
-  announced.
+- **Trigger** — a button showing the current selection's label + a chevron, `--panel` fill, `--stroke` border, theme `controlRadius`. Only as wide as its own label.
+- **Popover** — opens below the trigger (flips above if no room). `--panel-solid` fill, theme border + `cardRadius` + elevation matching the confirmation-dialog card (glow on Aurora, hard offset shadow on Tape Deck).
+  - **Width** — sized to the picker's widest row (caption / label / subtitle), clamped `[trigger width … 340pt]`. No single global width.
+  - **Caption header** — a `--faint` uppercase label naming what is being chosen, with a hairline `--hair` rule under it.
+  - **Rows** — label; optional second-line **subtitle** in `--dim` (`nil` → single-line row); a checkmark (`--accent`) on the selected row; hover / arrow-key highlight uses a translucent accent wash. **No row icons.**
+- Keyboard: Return / Space opens; Up / Down move the highlight; Return selects; Esc closes without changing. VoiceOver: a pop-up button; the selected row is announced.
 
-**Used by:** Video quality (Downloads + runway), Filename format (Downloads),
-Save to (runway).
+**Used by:** Video quality (Downloads + runway), Filename format (Downloads), Save to (runway).
 
 ---
 
 ## 5. Palette token sets
 
-Every palette defines the full set. Names are stable across palettes; only
-values change. `--on-accent` is the text colour that sits on a solid `--accent`
-or `--go` fill.
+Every palette defines the full set. Names are stable across palettes; only values change. `--on-accent` is the text colour that sits on a solid `--accent` or `--go` fill.
 
 ### 5.1 Token list
 
@@ -643,19 +518,14 @@ or `--go` fill.
 
 ### 5.2 Tape Deck palettes (light)
 
-Shared: `--ground` is a warm off-white a shade darker than `--surface`
-(`--panel-solid`). `--on-accent` = `--ink`. Elevation = hard shadow, no glow
-tokens used.
+Shared: `--ground` is a warm off-white a shade darker than `--surface` (`--panel-solid`). `--on-accent` = `--ink`. Elevation = hard shadow, no glow tokens used.
 
-`--warn` is a dark amber (`#9C5A00` / `#9A6410` / `#8E6318`) chosen to hit WCAG
-AA for normal text on each palette's `--panel-solid` — it is used as text and as
-the glyph tint (concurrency note §4.6, cooldown copy). `--go` keeps its lighter
-amber (it is only ever a fill behind `--on-accent`). Aurora `--warn` is
-unchanged.
+`--warn` is a dark amber (`#9C5A00` / `#9A6410` / `#8E6318`) chosen to hit WCAG AA for normal text on each palette's `--panel-solid` — it is used as text and as the glyph tint (concurrency note §4.6, cooldown copy). `--go` keeps its lighter amber (it is only ever a fill behind `--on-accent`). Aurora `--warn` is unchanged.
 
-**Tape Deck / Teal & Rust**  *(default for this theme)*
+**Tape Deck / Teal & Rust** _(default for this theme)_
+
 | token | value |
-|---|---|
+| --- | --- |
 | --ground | `#F3E9D8` |
 | --panel-solid (surface) | `#FBF4E6` |
 | --panel | `#F3E9D8` |
@@ -674,8 +544,9 @@ unchanged.
 | status: downloading / saved / fail / cooldown / queued | `#CFE3E1` / `#D9E8C8` / `#F3D2C3` / `#F6E2B8` / `#FBF4E6` |
 
 **Tape Deck / Plum & Blush**
+
 | token | value |
-|---|---|
+| --- | --- |
 | --ground | `#EFE9E9` |
 | --panel-solid (surface) | `#FBF5F5` |
 | --panel | `#EFE9E9` |
@@ -693,11 +564,12 @@ unchanged.
 | --banner-fill | `#E98C89` |
 | status: downloading / saved / fail / cooldown / queued | `#E1DCEC` / `#D8E6D0` / `#F4D6D6` / `#F3E3C0` / `#FBF5F5` |
 
-*Note: with Blush as `--accent`, warning/cooldown reads softer. Confirmed acceptable in review.*
+_Note: with Blush as `--accent`, warning/cooldown reads softer. Confirmed acceptable in review._
 
 **Tape Deck / Navy & Aqua**
+
 | token | value |
-|---|---|
+| --- | --- |
 | --ground | `#E7E9E7` |
 | --panel-solid (surface) | `#F5F6F3` |
 | --panel | `#E7E9E7` |
@@ -717,13 +589,12 @@ unchanged.
 
 ### 5.3 Aurora palettes (dark)
 
-Shared: `--panel` = `rgba(255,255,255,.05)`, `--panel-hi` =
-`rgba(255,255,255,.08)`, `--hair` = `rgba(255,255,255,.06)`, `--on-accent` =
-`#07080B`. Elevation = glow.
+Shared: `--panel` = `rgba(255,255,255,.05)`, `--panel-hi` = `rgba(255,255,255,.08)`, `--hair` = `rgba(255,255,255,.06)`, `--on-accent` = `#07080B`. Elevation = glow.
 
-**Aurora / Mint & Iris**  *(app default)*
+**Aurora / Mint & Iris** _(app default)_
+
 | token | value |
-|---|---|
+| --- | --- |
 | --ground | `#0C1013` |
 | --panel-solid | `#0E1117` |
 | --stroke | `rgba(255,255,255,.12)` |
@@ -742,8 +613,9 @@ Shared: `--panel` = `rgba(255,255,255,.05)`, `--panel-hi` =
 | --glow-a / --glow-b | `rgba(94,242,200,.14)` / `rgba(139,123,255,.16)` |
 
 **Aurora / Lime & Forest**
+
 | token | value |
-|---|---|
+| --- | --- |
 | --ground | `#0A0F0C` |
 | --panel-solid | `#0C1210` |
 | --stroke | `rgba(190,255,210,.13)` |
@@ -762,8 +634,9 @@ Shared: `--panel` = `rgba(255,255,255,.05)`, `--panel-hi` =
 | --glow-a / --glow-b | `rgba(182,240,74,.16)` / `rgba(78,214,160,.14)` |
 
 **Aurora / Magenta & Violet**
+
 | token | value |
-|---|---|
+| --- | --- |
 | --ground | `#100C14` |
 | --panel-solid | `#120E16` |
 | --stroke | `rgba(230,190,255,.14)` |
@@ -785,16 +658,7 @@ Shared: `--panel` = `rgba(255,255,255,.05)`, `--panel-hi` =
 
 ## 6. Implementation notes
 
-- SwiftUI: express palettes as a `Palette` struct of `Color`s selected by
-  `@AppStorage` theme + palette keys; themes differ in more than colour
-  (fonts, corner radii, elevation modifier) so model a `Theme` protocol/enum
-  with those as properties, not just a colour set.
-- The signature motif (reel / orb) is one small reusable view driven by an
-  `isActive` flag; honour `accessibilityReduceMotion`.
-- Quality floor: full keyboard navigation, visible focus rings, VoiceOver
-  labels on every icon button, `prefers-reduced-motion` respected, window
-  usable down to a narrow width (table scrolls horizontally inside its own
-  container; the page never scrolls sideways).
-- Column state (order, visibility, sort, filters) persists as `ColumnConfig`
-  in `columns.json` via `Persistence` (the same mechanism as queue/history),
-  keyed independently of both `Preferences` and window state.
+- SwiftUI: express palettes as a `Palette` struct of `Color`s selected by `@AppStorage` theme + palette keys; themes differ in more than colour (fonts, corner radii, elevation modifier) so model a `Theme` protocol/enum with those as properties, not just a colour set.
+- The signature motif (reel / orb) is one small reusable view driven by an `isActive` flag; honour `accessibilityReduceMotion`.
+- Quality floor: full keyboard navigation, visible focus rings, VoiceOver labels on every icon button, `prefers-reduced-motion` respected, window usable down to a narrow width (table scrolls horizontally inside its own container; the page never scrolls sideways).
+- Column state (order, visibility, sort, filters) persists as `ColumnConfig` in `columns.json` via `Persistence` (the same mechanism as queue/history), keyed independently of both `Preferences` and window state.
