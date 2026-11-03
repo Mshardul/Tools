@@ -100,7 +100,7 @@ A new row is `backlog`. `todo` means the user has picked the row for the next ro
 | `blocked` | `todo` | The cause is cleared. |
 | `backlog`, `todo`, `in progress`, `blocked` | `dropped` | The user decides. The reason goes in Remarks in the same edit. |
 
-`completed` and `dropped` do not change, Remarks included. A row is never deleted.
+`completed` and `dropped` do not change, Remarks included. A `backlog` row may be removed while every row is still `backlog` or `dropped`; the ids that follow are renumbered. After a row has left `backlog`, a row is not deleted.
 
 ### Offered for implementation
 

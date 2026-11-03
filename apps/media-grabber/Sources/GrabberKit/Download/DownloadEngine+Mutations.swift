@@ -124,18 +124,32 @@ extension DownloadEngine {
     }
 
     private func completeIfClean(_ job: DownloadJob, integrity: IntegrityResult?) -> Bool {
-        job.actualQuality = integrity?.actualQuality
+        if let quality = integrity?.actualQuality {
+            job.actualQuality = quality
+        }
         job.integrityVerdict = integrity?.verdict
         if case .failed = integrity?.verdict {
             return false
         }
         job.outputFiles = finalizedOutputFiles(for: job)
+        sealCompletedDownload(job)
         job.state = .completed
         job.finishedAt = .now
         dropPasscode(for: job)
         recordCleanSuccessFor(job)
         finishTerminal()
         return true
+    }
+
+    private func sealCompletedDownload(_ job: DownloadJob) {
+        if let bytes = Self.measuredBytes(job.outputFiles) {
+            job.sizeBytes = bytes
+        }
+        job.progress = Progress(
+            fraction: 1,
+            downloadedBytes: job.sizeBytes ?? job.progress?.downloadedBytes ?? 0,
+            totalBytes: job.sizeBytes ?? job.progress?.totalBytes
+        )
     }
 
     private func routeFailure(_ job: DownloadJob, id: UUID, errorClass: ErrorClass) {

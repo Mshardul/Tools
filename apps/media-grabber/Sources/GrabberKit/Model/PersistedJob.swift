@@ -13,6 +13,13 @@ public struct PersistedJob: Codable, Sendable, Equatable {
     public var playlistIndex: Int?
     public var addedAt: Date
     public var finishedAt: Date?
+    public var sizeBytes: Int64?
+    public var actualQuality: String?
+    public var progressFraction: Double?
+    public var downloadedBytes: Int64?
+    public var totalBytes: Int64?
+    public var outputFiles: [URL]
+    public var playerClientUsed: String?
 
     public init(
         id: UUID,
@@ -25,7 +32,14 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         playlistGroupID: UUID? = nil,
         playlistIndex: Int? = nil,
         addedAt: Date,
-        finishedAt: Date? = nil
+        finishedAt: Date? = nil,
+        sizeBytes: Int64? = nil,
+        actualQuality: String? = nil,
+        progressFraction: Double? = nil,
+        downloadedBytes: Int64? = nil,
+        totalBytes: Int64? = nil,
+        outputFiles: [URL] = [],
+        playerClientUsed: String? = nil
     ) {
         self.id = id
         self.request = request
@@ -38,6 +52,13 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         self.playlistIndex = playlistIndex
         self.addedAt = addedAt
         self.finishedAt = finishedAt
+        self.sizeBytes = sizeBytes
+        self.actualQuality = actualQuality
+        self.progressFraction = progressFraction
+        self.downloadedBytes = downloadedBytes
+        self.totalBytes = totalBytes
+        self.outputFiles = outputFiles
+        self.playerClientUsed = playerClientUsed
     }
 
     public init(from decoder: Decoder) throws {
@@ -53,6 +74,13 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         playlistIndex = try container.decodeIfPresent(Int.self, forKey: .playlistIndex)
         addedAt = try container.decode(Date.self, forKey: .addedAt)
         finishedAt = try container.decodeIfPresent(Date.self, forKey: .finishedAt)
+        sizeBytes = try container.decodeIfPresent(Int64.self, forKey: .sizeBytes)
+        actualQuality = try container.decodeIfPresent(String.self, forKey: .actualQuality)
+        progressFraction = try container.decodeIfPresent(Double.self, forKey: .progressFraction)
+        downloadedBytes = try container.decodeIfPresent(Int64.self, forKey: .downloadedBytes)
+        totalBytes = try container.decodeIfPresent(Int64.self, forKey: .totalBytes)
+        outputFiles = try container.decodeIfPresent([URL].self, forKey: .outputFiles) ?? []
+        playerClientUsed = try container.decodeIfPresent(String.self, forKey: .playerClientUsed)
     }
 }
 

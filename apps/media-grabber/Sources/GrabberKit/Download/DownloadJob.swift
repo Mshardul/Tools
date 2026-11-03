@@ -15,7 +15,7 @@ final class DownloadJob: @unchecked Sendable {
     var sizeBytes: Int64?
     var attempt: Int
     var outputFiles: [URL]
-    // Runtime-only (not persisted) — set on completion / a failed integrity check.
+    // Not persisted: a relaunch does not re-judge a finished file.
     var integrityVerdict: IntegrityVerdict?
     var actualQuality: String?
     var capturedOutputPaths: [URL] = []

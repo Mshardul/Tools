@@ -1,6 +1,6 @@
 # Phase 15 — Table & Home finish
 
-**Status:** ready for plan.
+**Status:** shipped.
 
 **Owner phase:** Phase 15 (Table & Home finish).  
 **Parent:** `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3–5.4, §12.1 Phase 15; `apps/media-grabber/docs/state-flow.md` §4.  
@@ -44,8 +44,8 @@ Working name stays `MediaGrabber`. Branding remains Phase 18.
 | Manual order lifetime | **Session only** — cleared on quit; cleared when user sets a new column sort (after confirm path or normal sort UI) |
 | Playlist groups | Group **headers** not draggable; children may move in the visible list; no engine group-order API |
 | Banner → footer | **Closed** — already bottom-docked; remove from Phase 15 IN in parent / backlog / state-flow |
-| Body face | **TBD visually** after reorder ships — 2–3 candidates vs current Inter; Sora display + JetBrains Mono stay |
-| First-run Home | **TBD visually** after reorder — same §5.3 gates (no table/runway until first Grab; step cards first-run-only; emptied-table does not resurrect steps); composition/copy variants only |
+| Body face | **IBM Plex Sans** (B1). Sora display and JetBrains Mono stay. Tape Deck body stays Inter. |
+| First-run Home | **H1** — paste field stays the only card; steps are a horizontal numbered strip. Same §5.3 gates (no table/runway until first Grab; step UI first-run-only; emptied-table does not resurrect steps). |
 | Branding | Still Phase 18 |
 
 ---
@@ -155,12 +155,10 @@ Exact types and method names land in the implementation plan.
 
 ---
 
-## Open picks (blocked only on visual tasks, not on writing the plan)
+## Picks
 
-1. Aurora body face family (after candidate review).
-2. First-run Home composition variant (after mockup review).
-
-The implementation plan may sequence: Tasks 1…N reorder → Task “visual gate” (no code until picks) → font + Home tasks. Plan must not leave either pick as an unowned TBD past ship.
+1. Aurora body face: IBM Plex Sans.
+2. First-run Home: horizontal numbered strip (paste field remains the only card).
 
 ---
 

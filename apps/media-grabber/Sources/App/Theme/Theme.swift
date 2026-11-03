@@ -20,8 +20,15 @@ struct Theme {
         palette = MediaGrabber.palette(for: paletteKind)
     }
 
+    static let auroraBodyFamily = "IBM Plex Sans"
+    static let tapeDeckBodyFamily = "Inter"
+
     private var isAurora: Bool {
         kind == .aurora
+    }
+
+    var bodyFamily: String {
+        isAurora ? Self.auroraBodyFamily : Self.tapeDeckBodyFamily
     }
 
     var displayFont: (CGFloat, Font.Weight) -> Font {
@@ -29,7 +36,7 @@ struct Theme {
     }
 
     var bodyFont: (CGFloat, Font.Weight) -> Font {
-        { size, weight in Self.resolvedFont("Inter", size: size, weight: weight) }
+        { size, weight in Self.resolvedFont(bodyFamily, size: size, weight: weight) }
     }
 
     var monoFont: (CGFloat, Font.Weight) -> Font {

@@ -13,6 +13,10 @@ final class FontBundlingTests: XCTestCase {
         XCTAssertNotNil(NSFont(name: "Inter", size: 14))
     }
 
+    func test_ibmPlexSansFamily_resolvesAfterBundling() {
+        XCTAssertNotNil(NSFont(name: "IBM Plex Sans", size: 14))
+    }
+
     func test_jetBrainsMonoFamily_resolvesAfterBundling() {
         XCTAssertNotNil(NSFont(name: "JetBrains Mono", size: 14))
     }

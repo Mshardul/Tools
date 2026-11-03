@@ -60,11 +60,7 @@ For how it fits together: [`docs/architecture.md`](docs/architecture.md) (compon
 
 Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
 
-Not yet built: Phase 15 table & Home finish (queue-row drag-reorder, banner → footer, Aurora body-face, first-run Home redesign); cookie independence (Phase 16); site/identity maturity (Phase 17); product name + app icon (Phase 18). Phase 14 engine maturity shipped (per-host adaptive concurrency, probe-wait visibility, engine playlist groups, `.userReset`). Phases 12–13 (Downloads grid + polish) are shipped — Progress / Speed / ETA stay separate columns. See [roadmap.md](roadmap.md).
-
-## Known gaps
-
-- **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the UI falls back to system faces. Parks in **Phase 13** — see [roadmap.md](roadmap.md).
+Not yet built: site/identity maturity (Phase 17); product name, app icon, and install-without-Homebrew release (Phase 18). Phases 12–16 are shipped, including session row reorder, IBM Plex Sans as the Aurora body face, and cookie-less downloads. See [roadmap.md](roadmap.md).
 
 ## License
 

@@ -131,12 +131,7 @@ public actor DownloadEngine: DownloadEngineProtocol {
 
     public func restore(active: [PersistedJob], history: [PersistedJob]) async {
         jobs = (active + history).map(Self.downloadJob(from:))
-        producedJobsOnRestore = !jobs.isEmpty
-        if producedJobsOnRestore {
-            bump()
-            emitSnapshot()
-        }
-        evaluateSchedule()
+        producedJobsOnRestore = publishRestoredJobs()
     }
 
     public func revalidate() async {

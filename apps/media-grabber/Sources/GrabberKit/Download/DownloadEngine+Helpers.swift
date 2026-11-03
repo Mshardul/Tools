@@ -167,6 +167,111 @@ extension DownloadEngine {
             .contentModificationDate ?? .distantPast
     }
 
+    func publishRestoredJobs() -> Bool {
+        recoverDisplayFacts()
+        let hasJobs = !jobs.isEmpty
+        if hasJobs {
+            bump()
+            emitSnapshot()
+        }
+        evaluateSchedule()
+        scheduleQualityProbe()
+        return hasJobs
+    }
+
+    // Resolution for saves that predate actualQuality, after the table already has size and progress.
+    func scheduleQualityProbe() {
+        guard dependencies.ffprobeURL != nil, jobs.contains(where: Self.needsQualityProbe) else { return }
+        Task { await probeMissingQuality() }
+    }
+
+    // Saves from before size and resolution were stored: recover them from the finished file.
+    func recoverDisplayFacts() {
+        for job in jobs where job.state == .completed {
+            fillMissingOutput(job)
+            fillMissingSize(job)
+            job.progress = Self.completedProgress(for: job)
+        }
+    }
+
+    func probeMissingQuality() async {
+        let pending = jobs.filter(Self.needsQualityProbe)
+        guard !pending.isEmpty else { return }
+        var changed = false
+        for job in pending {
+            guard let quality = await probedQuality(for: job) else { continue }
+            guard jobs.contains(where: { $0.id == job.id }), job.actualQuality == nil else { continue }
+            job.actualQuality = quality
+            changed = true
+        }
+        guard changed else { return }
+        bump()
+        emitSnapshot()
+    }
+
+    static func needsQualityProbe(_ job: DownloadJob) -> Bool {
+        guard job.actualQuality == nil, job.state == .completed else { return false }
+        if case .video = job.request.kind {
+            return true
+        }
+        return false
+    }
+
+    private func fillMissingOutput(_ job: DownloadJob) {
+        guard job.outputFiles.isEmpty, let file = recoveredMediaFile(for: job) else { return }
+        job.outputFiles = [file]
+    }
+
+    private func fillMissingSize(_ job: DownloadJob) {
+        guard job.sizeBytes == nil, let bytes = Self.measuredBytes(job.outputFiles) else { return }
+        job.sizeBytes = bytes
+    }
+
+    private static func completedProgress(for job: DownloadJob) -> Progress {
+        Progress(
+            fraction: 1,
+            downloadedBytes: job.sizeBytes ?? job.progress?.downloadedBytes ?? 0,
+            totalBytes: job.sizeBytes ?? job.progress?.totalBytes
+        )
+    }
+
+    private func probedQuality(for job: DownloadJob) async -> String? {
+        guard let file = recoveredMediaFile(for: job) else { return nil }
+        let result = await IntegrityCheck(
+            runner: dependencies.runner,
+            ffprobeURL: dependencies.ffprobeURL,
+            isExecutable: dependencies.ffprobeIsExecutable
+        ).verify(file: file, expectedDurationSeconds: job.durationSeconds)
+        return result.actualQuality
+    }
+
+    func recoveredMediaFile(for job: DownloadJob) -> URL? {
+        let seeded = job.outputFiles.filter(Self.isMediaFile)
+        let pool = seeded.isEmpty
+            ? resolveOutputFiles(for: job).filter(Self.isMediaFile)
+            : seeded
+        return pool.max { Self.fileByteCount($0) < Self.fileByteCount($1) }
+    }
+
+    static func measuredBytes(_ urls: [URL]) -> Int64? {
+        let total = urls.reduce(Int64(0)) { $0 + fileByteCount($1) }
+        return total > 0 ? total : nil
+    }
+
+    private static let mediaExtensions: Set<String> = [
+        "mp4", "m4v", "mkv", "webm", "mov", "m4a", "mp3", "opus", "ogg", "flac", "wav", "aac"
+    ]
+
+    private static func isMediaFile(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        guard mediaExtensions.contains(ext) else { return false }
+        return (try? url.resourceValues(forKeys: [.isRegularFileKey]))?.isRegularFile == true
+    }
+
+    private static func fileByteCount(_ url: URL) -> Int64 {
+        Int64((try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+    }
+
     // yt-dlp's %(title)s sanitiser strips path separators and control characters.
     static func titleStem(_ title: String) -> String {
         String(title.unicodeScalars.filter { scalar in

@@ -107,7 +107,14 @@ extension DownloadEngine {
             playlistGroupID: job.playlistGroupID,
             playlistIndex: job.playlistIndex,
             addedAt: job.addedAt,
-            finishedAt: job.finishedAt
+            finishedAt: job.finishedAt,
+            sizeBytes: job.sizeBytes,
+            actualQuality: job.actualQuality,
+            progressFraction: persistedFraction(for: job),
+            downloadedBytes: persistedProgress(for: job)?.downloadedBytes,
+            totalBytes: persistedProgress(for: job)?.totalBytes ?? job.sizeBytes,
+            outputFiles: job.outputFiles,
+            playerClientUsed: job.playerClientUsed
         )
     }
 
@@ -125,7 +132,46 @@ extension DownloadEngine {
         job.finishedAt = persisted.finishedAt
         job.playlistGroupID = persisted.playlistGroupID
         job.playlistIndex = persisted.playlistIndex
+        job.sizeBytes = persisted.sizeBytes
+        job.actualQuality = persisted.actualQuality
+        job.outputFiles = persisted.outputFiles
+        job.playerClientUsed = persisted.playerClientUsed
+        job.progress = restoredProgress(persisted)
         return job
+    }
+
+    // A quit clamps .running to .queued, so a live fraction would come back as a stale queued bar.
+    private static func persistedProgress(for job: DownloadJob) -> Progress? {
+        switch job.state {
+        case .paused, .completed, .failed, .cancelled:
+            job.progress
+        default:
+            nil
+        }
+    }
+
+    private static func persistedFraction(for job: DownloadJob) -> Double? {
+        persistedProgress(for: job)?.fraction
+    }
+
+    private static func restoredProgress(_ persisted: PersistedJob) -> Progress? {
+        switch persisted.state {
+        case .completed:
+            return Progress(
+                fraction: 1,
+                downloadedBytes: persisted.sizeBytes ?? persisted.downloadedBytes ?? 0,
+                totalBytes: persisted.sizeBytes ?? persisted.totalBytes
+            )
+        case .paused, .failed, .cancelled:
+            guard let fraction = persisted.progressFraction else { return nil }
+            return Progress(
+                fraction: fraction,
+                downloadedBytes: persisted.downloadedBytes ?? 0,
+                totalBytes: persisted.totalBytes
+            )
+        case .queued:
+            return nil
+        }
     }
 
     func logEvent(_ event: LogEvent) {

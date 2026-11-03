@@ -43,6 +43,18 @@ final class DownloadsTableTests: XCTestCase {
         )
     }
 
+    func test_completedRowShowsFullProgressWithoutAStoredFraction() {
+        let row = RowModel(snap(1, state: .completed), queuePosition: nil)
+        XCTAssertEqual(TablePresentation.progressFraction(for: row.snapshot), 1)
+        XCTAssertEqual(TablePresentation.progressLabel(for: row), "100%")
+    }
+
+    func test_queuedRowHidesProgress() {
+        let row = RowModel(snap(1, state: .queued), queuePosition: nil)
+        XCTAssertNil(TablePresentation.progressFraction(for: row.snapshot))
+        XCTAssertEqual(TablePresentation.progressLabel(for: row), "")
+    }
+
     func test_nilFieldRendersEmDash_columnStillSorts() {
         let store = RowStore()
         store.apply(.snapshot(queueSnapshot([

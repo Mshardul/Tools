@@ -266,7 +266,5 @@ Architectural headroom that must not float without an owner. Each row names the 
 | capability | current state | phase |
 | --- | --- | --- |
 | **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 17** |
-| **Queue-row drag-reorder (view order)** | AppKit grid ships; rows not yet draggable. Slot: session `RowStore` manual order + sort-overwrite confirm; engine schedule unchanged. | **Phase 15** |
-| **Aurora body-face / first-run Home redesign** | Inter still Aurora body; first-run structure live but creative pass pending. | **Phase 15** |
 
-Phase 14 shipped (and removed from this table): per-host adaptive concurrency, engine-owned `QueueSnapshot.playlistGroups`, `.userReset` through `RatePolicy`, metadata-probe wait visibility (`JobSnapshot.probeWaitUntil`). Halt-on-dead-shield (`.shieldDown`) was rejected — chip/banner only. Warning banner is already bottom-docked (former “banner → footer” park — closed, not Phase 15).
+Phase 14 shipped (and removed from this table): per-host adaptive concurrency, engine-owned `QueueSnapshot.playlistGroups`, `.userReset` through `RatePolicy`, metadata-probe wait visibility (`JobSnapshot.probeWaitUntil`). Halt-on-dead-shield (`.shieldDown`) was rejected — chip/banner only. Warning banner is already bottom-docked (former “banner → footer” park — closed, not Phase 15). Phase 15 shipped (and removed from this table): session view-order row drag, Aurora body face IBM Plex Sans, first-run numbered strip.

@@ -524,9 +524,11 @@ Present each as body text in a small SwiftUI preview sheet or static PNG/mock be
 
 Behavioral gates unchanged for all variants: no table until first Grab / non-empty queue; step UI first-run-only; emptied table does not resurrect steps; runway still gated on resolve.
 
-- [ ] **Step 1: Present B0–B2 and H0–H2 to the user; stop**
+**Picks:** Body face pick: B1 IBM Plex Sans. First-run pick: H1 numbered strip.
 
-- [ ] **Step 2: Record picks in this plan file** (e.g. `Body face pick: B2 Source Sans 3` / `First-run pick: H1`) before starting Tasks 6–7
+- [x] **Step 1: Present B0–B2 and H0–H2 to the user; stop**
+
+- [x] **Step 2: Record picks in this plan file** (e.g. `Body face pick: B2 Source Sans 3` / `First-run pick: H1`) before starting Tasks 6–7
 
 ---
 

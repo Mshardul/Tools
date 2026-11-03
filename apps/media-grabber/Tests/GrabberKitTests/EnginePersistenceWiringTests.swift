@@ -9,7 +9,8 @@ final class EnginePersistenceWiringTests: XCTestCase {
         runner: FakeProcessRunner,
         probe: FakeMetadataProbe,
         persistence: FakeQueuePersisting,
-        cap: Int = 2
+        cap: Int = 2,
+        ffprobeURL: URL? = nil
     ) -> DownloadEngine {
         DownloadEngine(
             dependencies: EngineDependencies(
@@ -19,6 +20,8 @@ final class EnginePersistenceWiringTests: XCTestCase {
                 ytDlpURL: Fix.ytDlp,
                 jobLogDir: Fix.scratchLogDir(),
                 debugFlags: EngineDebugFlags(concurrencyCapOverride: cap),
+                ffprobeURL: ffprobeURL,
+                ffprobeIsExecutable: { _ in ffprobeURL != nil },
                 persistence: persistence
             ),
             preferences: Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
@@ -88,6 +91,89 @@ final class EnginePersistenceWiringTests: XCTestCase {
 
         XCTAssertEqual(snapshot.jobs.map(\.id), [active[0].id, active[1].id, history[0].id])
         XCTAssertEqual(snapshot.jobs.last?.state, .completed)
+        XCTAssertEqual(snapshot.jobs.last?.progress?.fraction, 1)
+    }
+
+    func test_restoreCompleted_recoversSizeFromTheFinishedFile() async throws {
+        let dest = Fix.scratchDestFolder()
+        let file = dest.appendingPathComponent("Clip.mp4")
+        try Data(repeating: 7, count: 2048).write(to: file)
+        let finished = try PersistedJob(
+            id: XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-00000000000a")),
+            request: Fix.request(url: "https://archive.org/details/old", destFolder: dest),
+            title: "Clip",
+            extractor: "youtube",
+            durationSeconds: 10,
+            state: .completed,
+            addedAt: Date(timeIntervalSince1970: 1),
+            finishedAt: Date(timeIntervalSince1970: 2)
+        )
+        let engine = engine(
+            runner: FakeProcessRunner(),
+            probe: FakeMetadataProbe(),
+            persistence: FakeQueuePersisting()
+        )
+
+        await engine.restore(active: [], history: [finished])
+        let snapshot = await engine.currentSnapshot()
+
+        XCTAssertEqual(snapshot.jobs.first?.sizeBytes, 2048)
+        XCTAssertEqual(snapshot.jobs.first?.progress?.fraction, 1)
+        XCTAssertEqual(
+            snapshot.jobs.first?.outputFiles.map(\.standardizedFileURL.path),
+            [file.standardizedFileURL.path]
+        )
+    }
+
+    func test_restoreCompletedBest_probesResolutionWhenItWasNotSaved() async throws {
+        let dest = Fix.scratchDestFolder()
+        let file = dest.appendingPathComponent("Clip.mp4")
+        try Data(repeating: 7, count: 32).write(to: file)
+        let runner = FakeProcessRunner()
+        runner.script(
+            .stdout(
+                "{\"format\":{\"duration\":\"10\"},\"streams\":[{\"codec_type\":\"video\",\"height\":720}]}"
+            ),
+            forPathEndingIn: "ffprobe"
+        )
+        let finished = try PersistedJob(
+            id: XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-00000000000b")),
+            request: DownloadRequest(
+                url: "https://archive.org/details/best",
+                destFolder: dest,
+                kind: .video(maxHeight: Int.max),
+                container: "mp4"
+            ),
+            title: "Clip",
+            extractor: "youtube",
+            durationSeconds: 10,
+            state: .completed,
+            addedAt: Date(timeIntervalSince1970: 1),
+            finishedAt: Date(timeIntervalSince1970: 2)
+        )
+        let persistence = FakeQueuePersisting()
+        let engine = engine(
+            runner: runner,
+            probe: FakeMetadataProbe(),
+            persistence: persistence,
+            ffprobeURL: URL(fileURLWithPath: "/opt/homebrew/bin/ffprobe")
+        )
+
+        await engine.restore(active: [], history: [finished])
+        let quality = await waitForQuality(engine)
+
+        XCTAssertEqual(quality, "720p")
+        XCTAssertEqual(persistence.lastHistorySave?.first?.actualQuality, "720p")
+    }
+
+    private func waitForQuality(_ engine: DownloadEngine) async -> String? {
+        for _ in 0 ..< 50 {
+            if let quality = await engine.currentSnapshot().jobs.first?.actualQuality {
+                return quality
+            }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return await engine.currentSnapshot().jobs.first?.actualQuality
     }
 
     func test_fullMetadataRestoredJob_noProbeSpawned_straightToDownload() async {

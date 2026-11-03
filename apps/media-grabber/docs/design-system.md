@@ -76,7 +76,7 @@ Luminous, calm, premium. Dark-first.
 | Axis | Value |
 | --- | --- |
 | Display face | **Sora** 600 / 700 — headlines, wordmark, Go button, section headings |
-| Body face | **Inter** 400 / 500 / 600 — UI text, table cells |
+| Body face | **IBM Plex Sans** 400 / 500 / 600 — UI text, table cells |
 | Utility face | **JetBrains Mono** 400 / 500 — chips, status pills, table headers, data, kicker |
 | Border | hairline — `1px solid --stroke` (a low-alpha white) on structural edges; `--hair` for table row rules |
 | Radius | window 18 · card 14 · control 9 · pill 20 · chip 7 (px) |
@@ -182,13 +182,13 @@ The `warning` glyph is reused for the Preferences concurrency note (§4.6) — n
 
 ### 4.2 Home
 
-Behavioural contract in spec §5.3. Home is one screen with three states and four parts (hero field + runway, the Downloads table, the playlist group, the first-run cards).
+Behavioural contract in spec §5.3. Home is one screen with three states and four parts (hero field + runway, the Downloads table, the playlist group, the first-run strip).
 
 #### 4.2.1 States
 
-- **First run, no download ever made:** header + paste field + the **three step cards** ("Paste a link · Pick a format · Press Grab") fill the body. **No Downloads table is rendered** — no headers, status rail, or Columns button. The runway is not shown either (no link yet).
-- **After the first Grab:** the step cards are gone permanently. The Downloads table (with its toolbar) is rendered from now on. The field sits above it; the runway appears when a pasted link resolves and is hidden otherwise.
-- **Table emptied later** (user removed every row): the table stays, showing a single centered line "No downloads — paste a link above." The step cards do **not** return; they are first-run-only.
+- **First run, no download ever made:** header + paste field + a **horizontal numbered strip** ("Paste a link · Pick a format · Press Grab") fill the body. The paste field is the only card. **No Downloads table is rendered** — no headers, status rail, or Columns button. The runway is not shown either (no link yet).
+- **After the first Grab:** the strip is gone permanently. The Downloads table (with its toolbar) is rendered from now on. The field sits above it; the runway appears when a pasted link resolves and is hidden otherwise.
+- **Table emptied later** (user removed every row): the table stays, showing a single centered line "No downloads — paste a link above." The strip does **not** return; it is first-run-only.
 
 #### 4.2.2 Paste field + runway _(the hero)_
 

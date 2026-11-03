@@ -72,9 +72,20 @@ enum TablePresentation {
         row.remarkText
     }
 
+    static func progressFraction(for snapshot: JobSnapshot) -> Double? {
+        switch snapshot.state {
+        case .completed:
+            1
+        case .running, .probing, .paused, .waitingForNetwork, .cooldown, .failed, .cancelled:
+            snapshot.progress?.fraction
+        case .queued:
+            nil
+        }
+    }
+
     static func progressLabel(for row: RowModel) -> String {
-        guard let fraction = row.snapshot.progress?.fraction else { return "" }
-        return "\(Int(fraction * 100))%"
+        guard let fraction = progressFraction(for: row.snapshot) else { return "" }
+        return "\(Int((fraction * 100).rounded()))%"
     }
 
     static func isActionEnabled(_ action: RowAction, available: Set<RowAction>) -> Bool {

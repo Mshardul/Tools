@@ -92,6 +92,8 @@ extension DownloadsGridController {
             statusCell(for: row, tableView: tableView)
         case .progress:
             progressCell(for: row, tableView: tableView)
+        case .quality:
+            qualityCell(for: row, tableView: tableView)
         case .actions:
             actionsCell(for: row, tableView: tableView)
         default:
@@ -135,7 +137,24 @@ extension DownloadsGridController {
             owner: nil
         ) as? GridProgressCellView ?? GridProgressCellView()
         cell.identifier = NSUserInterfaceItemIdentifier("progress-cell")
-        cell.apply(fraction: activeProgressFraction(for: row), tokens: tokens)
+        cell.apply(
+            fraction: TablePresentation.progressFraction(for: row.snapshot).map { CGFloat($0) },
+            tokens: tokens
+        )
+        return cell
+    }
+
+    private func qualityCell(for row: RowModel, tableView: NSTableView) -> NSView {
+        let cell = tableView.makeView(
+            withIdentifier: NSUserInterfaceItemIdentifier("quality-cell"),
+            owner: nil
+        ) as? GridQualityCellView ?? GridQualityCellView()
+        cell.identifier = NSUserInterfaceItemIdentifier("quality-cell")
+        cell.apply(
+            text: row.qualityLabel,
+            pickedAsBest: row.qualityPickedAsBest,
+            tokens: tokens
+        )
         return cell
     }
 
@@ -211,16 +230,6 @@ extension DownloadsGridController {
                 return "…"
             }
             return TablePresentation.cellText(for: row, column: column)
-        }
-    }
-
-    private func activeProgressFraction(for row: RowModel) -> CGFloat? {
-        guard let fraction = row.snapshot.progress?.fraction else { return nil }
-        switch row.snapshot.state {
-        case .running, .probing, .paused, .waitingForNetwork, .cooldown:
-            return CGFloat(fraction)
-        default:
-            return nil
         }
     }
 

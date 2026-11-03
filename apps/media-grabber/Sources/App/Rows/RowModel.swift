@@ -51,7 +51,7 @@ private struct RowFieldChanges {
     }
 
     var structural: Bool {
-        state || title || extractor || duration || kind
+        state || title || extractor || duration || kind || quality || size
     }
 
     var refreshStatus: Bool {
@@ -76,6 +76,7 @@ final class RowModel: Identifiable {
     private(set) var siteLabel = "—"
     private(set) var typeLabel = ""
     private(set) var qualityLabel = ""
+    private(set) var qualityPickedAsBest = false
     private(set) var queueBadge: String?
     private(set) var rateDisplay: HostRateDisplayState?
 
@@ -182,6 +183,7 @@ final class RowModel: Identifiable {
         }
         if changes.kind || changes.quality {
             qualityLabel = Self.quality(for: next)
+            qualityPickedAsBest = Self.qualityPickedAsBest(for: next)
         }
         if changes.badge {
             queueBadge = Self.badge(for: next, position: queuePosition)
@@ -226,6 +228,7 @@ final class RowModel: Identifiable {
         siteLabel = Self.site(for: snapshot)
         typeLabel = Self.type(for: snapshot)
         qualityLabel = Self.quality(for: snapshot)
+        qualityPickedAsBest = Self.qualityPickedAsBest(for: snapshot)
         queueBadge = Self.badge(for: snapshot, position: queuePosition)
         recomputeCount += 1
     }
@@ -291,11 +294,27 @@ extension RowModel {
     }
 
     static func quality(for snapshot: JobSnapshot) -> String {
-        let request: String = switch snapshot.kind {
-        case let .video(maxHeight): maxHeight == Int.max ? "Best" : "\(maxHeight)p"
-        case let .audio(format): format.rawValue
+        switch snapshot.kind {
+        case let .audio(format):
+            format.rawValue
+        case let .video(maxHeight):
+            videoQualityLabel(maxHeight: maxHeight, actual: snapshot.actualQuality)
         }
-        guard let actual = snapshot.actualQuality, actual != request else { return request }
+    }
+
+    static func qualityPickedAsBest(for snapshot: JobSnapshot) -> Bool {
+        if case let .video(maxHeight) = snapshot.kind {
+            return maxHeight == Int.max
+        }
+        return false
+    }
+
+    private static func videoQualityLabel(maxHeight: Int, actual: String?) -> String {
+        if maxHeight == Int.max {
+            return actual ?? "—"
+        }
+        let request = "\(maxHeight)p"
+        guard let actual, actual != request else { return request }
         return "\(request) → \(actual)"
     }
 

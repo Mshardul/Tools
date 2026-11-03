@@ -41,6 +41,13 @@ final class ThemeTests: XCTestCase {
     }
 
     @MainActor
+    func test_auroraBodyFont_chosenFamilyResolves() {
+        XCTAssertEqual(Theme.auroraBodyFamily, "IBM Plex Sans")
+        XCTAssertEqual(Theme(.aurora).bodyFamily, "IBM Plex Sans")
+        XCTAssertEqual(Theme(.tapeDeck).bodyFamily, "Inter")
+    }
+
+    @MainActor
     func test_motifView_staticUnderReduceMotion() {
         let view = MotifView(isActive: true, size: 20)
         XCTAssertFalse(view.isSpinning(reduceMotion: true))

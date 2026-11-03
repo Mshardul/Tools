@@ -1,6 +1,23 @@
 import GrabberKit
 import SwiftUI
 
+enum FirstRunPresentation: Equatable {
+    case numberedStrip
+}
+
+struct FirstRunStep: Equatable {
+    let index: Int
+    let title: String
+    let subtitle: String
+
+    static let presentation = FirstRunPresentation.numberedStrip
+    static let strip: [FirstRunStep] = [
+        FirstRunStep(index: 1, title: "Paste a link", subtitle: "Any video page URL."),
+        FirstRunStep(index: 2, title: "Pick a format", subtitle: "Video quality or audio only."),
+        FirstRunStep(index: 3, title: "Press Grab", subtitle: "It saves to your folder.")
+    ]
+}
+
 struct HomeView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.theme) private var theme
@@ -55,7 +72,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: Spacing.s5) {
                 hero
                 pasteBlock()
-                stepCards
+                stepStrip
             }
             .padding(Spacing.s6)
             .frame(maxWidth: 760, alignment: .leading)
@@ -170,32 +187,30 @@ struct HomeView: View {
         appModel.resolved != nil
     }
 
-    private var stepCards: some View {
-        HStack(spacing: Spacing.s3) {
-            stepCard(1, "Paste a link", "Any video page URL.")
-            stepCard(2, "Pick a format", "Video quality or audio only.")
-            stepCard(3, "Press Grab", "It saves to your folder.")
+    @ViewBuilder
+    private var stepStrip: some View {
+        switch FirstRunStep.presentation {
+        case .numberedStrip:
+            HStack(alignment: .top, spacing: Spacing.s4) {
+                ForEach(FirstRunStep.strip, id: \.index) { step in
+                    HStack(alignment: .firstTextBaseline, spacing: Spacing.s2) {
+                        Text("\(step.index)")
+                            .font(theme.monoFont(12, .medium))
+                            .foregroundStyle(theme.palette.faint)
+                        VStack(alignment: .leading, spacing: Spacing.s1) {
+                            Text(step.title)
+                                .font(theme.bodyFont(13, .semibold))
+                                .foregroundStyle(theme.palette.text)
+                            Text(step.subtitle)
+                                .font(theme.bodyFont(12, .regular))
+                                .foregroundStyle(theme.palette.dim)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
         }
-    }
-
-    private func stepCard(_ index: Int, _ title: String, _ subtitle: String) -> some View {
-        VStack(alignment: .leading, spacing: Spacing.s2) {
-            Text("\(index)")
-                .font(theme.monoFont(12, .medium))
-                .foregroundStyle(theme.palette.faint)
-            Text(title)
-                .font(theme.bodyFont(13, .semibold))
-                .foregroundStyle(theme.palette.text)
-            Text(subtitle)
-                .font(theme.bodyFont(12, .regular))
-                .foregroundStyle(theme.palette.dim)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Spacing.s3)
-        .background(
-            theme.palette.panel,
-            in: RoundedRectangle(cornerRadius: theme.cardRadius)
-        )
     }
 
     private func resolve() async {

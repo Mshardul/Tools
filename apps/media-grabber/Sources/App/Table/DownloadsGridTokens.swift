@@ -44,9 +44,9 @@ struct DownloadsGridTokens {
         barFillStart: hex("#5EF2C8"),
         barFillEnd: hex("#8B7BFF"),
         hairlineWidth: 1,
-        cell: GridFont.inter(13),
-        body13Semibold: GridFont.inter(13, .semibold),
-        body12Medium: GridFont.inter(12, .medium),
+        cell: GridFont.body(13),
+        body13Semibold: GridFont.body(13, .semibold),
+        body12Medium: GridFont.body(12, .medium),
         header: GridFont.mono(10, .medium),
         pill: GridFont.mono(10),
         mono11: GridFont.mono(11)
@@ -114,8 +114,8 @@ extension IconKind {
 }
 
 enum GridFont {
-    static func inter(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {
-        custom("Inter", size, weight) ?? .systemFont(ofSize: size, weight: weight)
+    static func body(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {
+        custom(Theme.auroraBodyFamily, size, weight) ?? .systemFont(ofSize: size, weight: weight)
     }
 
     static func mono(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {

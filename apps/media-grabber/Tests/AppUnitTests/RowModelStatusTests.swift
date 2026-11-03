@@ -91,11 +91,23 @@ final class RowModelStatusTests: XCTestCase {
         XCTAssertEqual(RowModel.quality(for: snap), "1080p")
     }
 
-    func test_quality_bestAvailableShowsBestNotTheSentinelHeight() {
-        let snap = snapshot(kind: .video(maxHeight: Int.max), actualQuality: nil)
-        XCTAssertEqual(RowModel.quality(for: snap), "Best")
+    func test_quality_bestAvailableShowsResolvedHeightAndASeparateMark() {
+        let pending = snapshot(kind: .video(maxHeight: Int.max), actualQuality: nil)
+        XCTAssertEqual(RowModel.quality(for: pending), "—")
+        XCTAssertTrue(RowModel.qualityPickedAsBest(for: pending))
+
         let finished = snapshot(kind: .video(maxHeight: Int.max), actualQuality: "900p")
-        XCTAssertEqual(RowModel.quality(for: finished), "Best → 900p")
+        XCTAssertEqual(RowModel.quality(for: finished), "900p")
+        XCTAssertTrue(RowModel.qualityPickedAsBest(for: finished))
+        let row = RowModel(finished, queuePosition: nil)
+        XCTAssertEqual(TablePresentation.cellText(for: row, column: .quality), "900p")
+        XCTAssertFalse(TablePresentation.cellText(for: row, column: .quality).contains("Best"))
+    }
+
+    func test_quality_explicitHeightHasNoBestMark() {
+        let snap = snapshot(kind: .video(maxHeight: 1080), actualQuality: "720p")
+        XCTAssertEqual(RowModel.quality(for: snap), "1080p → 720p")
+        XCTAssertFalse(RowModel.qualityPickedAsBest(for: snap))
     }
 
     func test_badge_hiddenWhileRetrying() {
