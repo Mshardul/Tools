@@ -23,7 +23,7 @@ extension AppModel {
             for id in ids {
                 await handleRowAction(id, action: action)
             }
-        case .reveal, .openInBrowser, .showLog, .retryWithCookies:
+        case .reveal, .openInBrowser, .showLog, .retryWithCookies, .enterPasscode:
             break
         }
     }

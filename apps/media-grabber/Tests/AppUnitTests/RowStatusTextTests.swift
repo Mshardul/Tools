@@ -8,7 +8,8 @@ final class RowStatusTextTests: XCTestCase {
         host: String = "https://youtube.com/x",
         cooldownUntil: Date? = nil,
         attempt: Int = 0,
-        probeWaitUntil: Date? = nil
+        probeWaitUntil: Date? = nil,
+        advice: SignInAdvice = .none
     ) -> JobSnapshot {
         JobSnapshot(
             id: UUID(),
@@ -32,7 +33,8 @@ final class RowStatusTextTests: XCTestCase {
             playlistGroupID: nil,
             integrityVerdict: nil,
             availableActions: [],
-            probeWaitUntil: probeWaitUntil
+            probeWaitUntil: probeWaitUntil,
+            signInAdvice: advice
         )
     }
 
@@ -147,7 +149,8 @@ final class RowStatusTextTests: XCTestCase {
 
     func test_remark_botCheckOnYouTube_shieldRunning() {
         let remark = RowRemarkText.text(
-            for: snap(.failed(.botCheck)), queuePosition: nil, rate: nil, shieldStatus: .running(port: 1234)
+            for: snap(.failed(.botCheck), advice: .suggest),
+            queuePosition: nil, rate: nil, shieldStatus: .running(port: 1234)
         )
         XCTAssertEqual(
             remark,
@@ -157,7 +160,7 @@ final class RowStatusTextTests: XCTestCase {
 
     func test_remark_botCheckOnYouTube_shieldMissing_blamesShield() {
         let remark = RowRemarkText.text(
-            for: snap(.failed(.botCheck)), queuePosition: nil, rate: nil, shieldStatus: .missing
+            for: snap(.failed(.botCheck), advice: .suggest), queuePosition: nil, rate: nil, shieldStatus: .missing
         )
         XCTAssertTrue(remark.contains("isn't set up"))
     }
@@ -171,5 +174,56 @@ final class RowStatusTextTests: XCTestCase {
         )
         XCTAssertTrue(remark.hasPrefix("This site didn't accept"))
         XCTAssertFalse(remark.contains("shield"))
+    }
+
+    // MARK: - Failure remarks
+
+    private func failedRemark(
+        _ errorClass: ErrorClass,
+        host: String = "https://youtube.com/x",
+        advice: SignInAdvice
+    ) -> String {
+        RowRemarkText.text(for: snap(.failed(errorClass), host: host, advice: advice), queuePosition: nil, rate: nil)
+    }
+
+    func test_remark_ageRestricted_unconfigured_suggestsSignIn() {
+        XCTAssertEqual(
+            failedRemark(.ageRestricted, advice: .suggest),
+            "This video is age-restricted. Signing in with your browser may let you download it."
+        )
+    }
+
+    func test_remark_ageRestricted_configured_asksToCheckBrowser() {
+        XCTAssertEqual(
+            failedRemark(.ageRestricted, advice: .checkBrowser),
+            "This video is age-restricted. Make sure your browser is signed in to an account that can watch it."
+        )
+    }
+
+    func test_remark_private_unconfigured_suggestsSignIn() {
+        XCTAssertEqual(
+            failedRemark(.private, host: "https://vimeo.com/1", advice: .suggest),
+            "This video is private. If you have access, signing in with your browser may let you download it."
+        )
+    }
+
+    func test_remark_private_configured_asksToCheckBrowser() {
+        XCTAssertEqual(
+            failedRemark(.private, advice: .checkBrowser),
+            "This video is private. Make sure your browser is signed in to an account that has access."
+        )
+    }
+
+    func test_remark_formatsMissingAndRateLimited_neverMentionSignIn() {
+        for errorClass in [ErrorClass.formatsMissing, .rateLimited()] {
+            let remark = failedRemark(errorClass, advice: .none).lowercased()
+            XCTAssertFalse(remark.contains("sign"))
+            XCTAssertFalse(remark.contains("cookie"))
+        }
+    }
+
+    func test_remark_nonYouTubeBotCheck_neverMentionsSignIn() {
+        let remark = failedRemark(.botCheck, host: "https://vimeo.com/1", advice: .none)
+        XCTAssertEqual(remark, "This site didn't accept this request. Try again later, or turn off your VPN.")
     }
 }

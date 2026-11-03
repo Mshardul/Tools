@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Working name stays `MediaGrabber`. No product-name / icon / Sparkle — Phase 17.
+- Working name stays `MediaGrabber`. No product-name / icon / Sparkle — Phase 18.
 - Row drag = **view order only**. Do **not** add an engine `reorder` intent or mutate `QueueSnapshot.jobs` order for priority.
 - Manual order is **session only** — not `columns.json`, not `queue.json`, not AppStorage.
 - Banner → footer is **already shipped** — do not touch `WarningBanner` / MainWindow dock as Phase 15 work.
@@ -22,7 +22,7 @@
 - Default `ColumnConfig` still has `sortColumn: .addedAt` — first drag with default prefs **must** hit the sort-overwrite confirm path.
 - Visual picks (body face, first-run) are **blocking**: Task 5 records the picks; Tasks 6–7 must not invent a face/layout without that record.
 - No git commands in this plan or its execution — the user commits later.
-- Comments: single-line only, only for non-obvious *why*. No `///` doc comments, no stacked `//` blocks.
+- Comments: single-line only, only for non-obvious _why_. No `///` doc comments, no stacked `//` blocks.
 - Every source file path below is relative to `apps/media-grabber/` unless stated otherwise.
 - Lint after every task: from `apps/media-grabber/`, `mise exec -- swiftformat --lint .` and `mise exec -- swiftlint lint --strict`.
 - Test after every task: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:<Suite>` (never bare `tuist test` while debugging).
@@ -31,7 +31,7 @@
 ## File structure
 
 | File | Responsibility |
-|---|---|
+| --- | --- |
 | `Sources/App/Rows/RowStore.swift` | Own `manualOrder`; clear on sort; append new IDs; expose move API |
 | `Sources/App/Rows/RowStore+Groups.swift` | Apply manual order when sorting blocks / group children with sort nil |
 | `Sources/App/AppModelDialogs.swift` | `sortOverwriteConfirmation()` copy |
@@ -58,11 +58,13 @@
 ### Task 1: `RowStore` session `manualOrder`
 
 **Files:**
+
 - Modify: `Sources/App/Rows/RowStore.swift`
 - Modify: `Sources/App/Rows/RowStore+Groups.swift`
 - Create: `Tests/AppUnitTests/RowStoreManualOrderTests.swift`
 
 **Interfaces:**
+
 - Consumes: existing `recomputeVisible()`, `VisibleItem`, `columnConfig.sortColumn`, snapshot apply path that rebuilds `rows`.
 - Produces:
   - `private(set) var manualOrder: [UUID]?` on `RowStore`
@@ -269,12 +271,14 @@ Expected: PASS.
 ### Task 2: Sort-overwrite confirm + AppModel reorder handler
 
 **Files:**
+
 - Modify: `Sources/App/AppModelDialogs.swift`
 - Modify: `Sources/App/AppModelRowActions.swift` (or create `Sources/App/AppModelRowReorder.swift` if preferred for file size)
 - Create: `Tests/AppUnitTests/AppModelRowReorderTests.swift`
 - Modify: `Tests/AppUnitTests/Support/AppFakes.swift` only if confirmer wiring needs a hook (prefer existing `FakeConfirmer` / model helpers)
 
 **Interfaces:**
+
 - Consumes: `AppModel.confirm(_:)`, `columnConfig`, `rowStore.moveVisibleItem`, `ConfirmationRequest`
 - Produces:
   - `AppModelDialogs.sortOverwriteConfirmation() -> ConfirmationRequest`
@@ -362,11 +366,13 @@ Expected: PASS.
 ### Task 3: AppKit row drag on Downloads grid
 
 **Files:**
+
 - Modify: `Sources/App/Table/DownloadsGridController.swift`
 - Create: `Sources/App/Table/DownloadsGridController+RowDrag.swift` (preferred if controller is already large)
 - Modify: `Sources/App/Table/DownloadsGridCells.swift` (`GridTableView` only if needed for drag start)
 
 **Interfaces:**
+
 - Consumes: `items: [VisibleItem]`
 - Produces: `var onRowReorder: ((Int, Int) -> Void)?` called with visible-item indices after a successful drop validation; controller does **not** mutate `RowStore` itself
 
@@ -443,11 +449,13 @@ Cannot unit-test NSTableView drag easily — Task 4 wires; smoke then.
 ### Task 4: Wire drag → AppModel + clear sort on header cycle
 
 **Files:**
+
 - Modify: `Sources/App/Table/DownloadsGridView.swift`
 - Modify: `Sources/App/Table/DownloadsTable.swift`
 - Modify: `Sources/App/Home/HomeView.swift` (tableLayout `DownloadsTable` call site)
 
 **Interfaces:**
+
 - Consumes: `onRowReorder` from controller; `AppModel.handleRowReorder`
 - Produces: end-to-end drag path
 
@@ -491,24 +499,25 @@ Existing `onCycleSort` already assigns `columnConfig` → `setColumnConfig`. Cov
 ### Task 5: Visual gate — body face + first-run variants
 
 **Files:**
+
 - None until picks are recorded. After picks, append a short “Picks” subsection to this plan (or a one-line note at the top of Tasks 6–7) with the chosen names — **do not leave TBD past ship**.
 
 **Candidates to present (lock these; do not silently substitute):**
 
 **Aurora body face**
 
-| ID | Face | Notes |
-|---|---|---|
-| B0 | Inter | Control (current) |
-| B1 | IBM Plex Sans | OFL; clear UI body |
-| B2 | Source Sans 3 | OFL; Adobe; neutral |
+| ID  | Face          | Notes               |
+| --- | ------------- | ------------------- |
+| B0  | Inter         | Control (current)   |
+| B1  | IBM Plex Sans | OFL; clear UI body  |
+| B2  | Source Sans 3 | OFL; Adobe; neutral |
 
 Present each as body text in a small SwiftUI preview sheet or static PNG/mock beside Sora display + JetBrains mono samples (display/mono stay). Prefer a temporary debug-only preview view **or** side-by-side screenshots in chat — no need to ship the picker.
 
 **First-run Home**
 
 | ID | Variant |
-|---|---|
+| --- | --- |
 | H0 | Current — hero + paste + three step cards |
 | H1 | Hero + paste dominant; steps as a single horizontal numbered strip (no cards) |
 | H2 | Centered stack: larger display line, paste, quiet vertical numbered list (no card chrome) |
@@ -524,6 +533,7 @@ Behavioral gates unchanged for all variants: no table until first Grab / non-emp
 ### Task 6: Wire chosen Aurora body face
 
 **Files:**
+
 - Add: `Resources/Fonts/<Family>/<files>` + OFL text
 - Remove: `Resources/Fonts/Inter/**` if nothing else references Inter after the swap
 - Modify: `Sources/App/Theme/Theme.swift` (`bodyFont` family string)
@@ -532,6 +542,7 @@ Behavioral gates unchanged for all variants: no table until first Grab / non-emp
 - `Project.swift` already globs `Resources/Fonts/**` — regenerate if needed
 
 **Interfaces:**
+
 - Consumes: Task 5 body pick (PostScript / family name that `NSFont(name:size:)` resolves after bundling)
 - Produces: Aurora `bodyFont` uses chosen family; Tape Deck theme path unchanged; Sora + JetBrains still resolve
 
@@ -569,10 +580,12 @@ Delete Inter resources only after confirming no remaining references (`rg Inter`
 ### Task 7: Implement chosen first-run Home
 
 **Files:**
+
 - Modify: `Sources/App/Home/HomeView.swift` (`firstRunLayout`, `hero`, `stepCards` / replacement)
 - Modify tests only if existing Home/empty-state tests assert copy or structure (`AppModelTests` showsTable gates must stay green)
 
 **Interfaces:**
+
 - Consumes: Task 5 first-run pick; existing `appModel.showsTable` / `hasGrabbedOnce` / paste / grab flow
 - Produces: first-run chrome matching the pick; table layout path untouched
 
@@ -604,6 +617,7 @@ Do not change probe, runway arming, playlist picker, or `tableLayout` empty-body
 ### Task 8: Docs, archive, full suite
 
 **Files:**
+
 - Modify: `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §12.1 Phase 15 → `*(shipped)*`
 - Modify: `apps/media-grabber/roadmap.md` Phase 15
 - Modify: `apps/media-grabber/CLAUDE.md` Next → Phase 16
@@ -620,7 +634,7 @@ Expected: PASS (GrabberKitTests + AppUnitTests).
 
 - [ ] **Step 3: Update tracking docs + archive**
 
-Same style as Phase 14 ship. Sibling Phase 16/17 stubs unchanged in ownership.
+Same style as Phase 14 ship. Sibling Phase 17/18 stubs unchanged in ownership.
 
 ---
 

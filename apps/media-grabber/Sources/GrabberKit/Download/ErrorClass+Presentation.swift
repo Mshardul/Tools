@@ -19,6 +19,8 @@ public extension ErrorClass {
         case .incomplete: "incomplete"
         case .depMissing: "dep_missing"
         case .potProviderDown: "pot_provider_down"
+        case .passcodeRequired: "passcode_required"
+        case .passcodeRejected: "passcode_rejected"
         case .unknown: "unknown"
         }
     }

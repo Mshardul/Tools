@@ -71,9 +71,11 @@ enum RowRemarkText {
             return BotCheckCopy.sentence(
                 vpnActive: vpnActive,
                 shieldStatus: shieldStatus,
-                isYouTube: snapshot.rateHost.canonical == "youtube"
+                isYouTube: snapshot.rateHost.canonical == "youtube",
+                advice: snapshot.signInAdvice
             )
         }
-        return errorClass.presentation.sentence
+        return SignInCopy.sentence(for: errorClass, advice: snapshot.signInAdvice)
+            ?? errorClass.presentation.sentence
     }
 }

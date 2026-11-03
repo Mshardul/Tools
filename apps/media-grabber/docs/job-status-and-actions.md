@@ -12,24 +12,24 @@ This document describes the final look of the app for job status, Home rail filt
 
 Row UI shows these **1:1** (plain-language aliases only). No invented display statuses (`retrying`, host-`cooling down` on a `.queued` job, etc.). Extra detail → **Remark**.
 
-| Engine | Row label |
-|---|---|
-| `queued` | Queued |
-| `probing` | Probing |
-| `running` | Downloading |
-| `paused` | Paused |
+| Engine              | Row label           |
+| ------------------- | ------------------- |
+| `queued`            | Queued              |
+| `probing`           | Probing             |
+| `running`           | Downloading         |
+| `paused`            | Paused              |
 | `waitingForNetwork` | Waiting for network |
-| `cooldown` | Cooling down |
-| `completed` | Saved |
-| `cancelled` | Cancelled |
-| `failed` | Failed |
+| `cooldown`          | Cooling down        |
+| `completed`         | Saved               |
+| `cancelled`         | Cancelled           |
+| `failed`            | Failed              |
 
 **Status column:** kept in Columns menu; **hidden by default** (rail is the everyday filter; column is optional). Labels stay 1:1 with the table above — never free text.
 
 ## 2. Rail (filters only — not statuses)
 
 | Rail | Includes |
-|---|---|
+| --- | --- |
 | **Downloading** | probing, running, queued, paused, waitingForNetwork, cooldown |
 | **Done** | completed |
 | **Inactive** | failed, cancelled |
@@ -86,7 +86,7 @@ stateDiagram-v2
 - **Cancel** = abandon → `cancelled` (terminal). Same meaning from every non-terminal state that offers it. Wire Cancel on `cooldown` and `waitingForNetwork` (today: advertised, no-op).
 - **Cancel on cooldown (Option A):** job → `cancelled`; clear that job’s deferral only. **Host `RateState` unchanged** — siblings stay gated until the host clock expires.
 - **Remove** = delete the job entry from persistence (queue/history projection) plus part files and job log — not “cancel then keep in history.”
-- **Restart** from `failed` / `cancelled` → `queued` with **`attempt = 0`**. Cookie / sign-in variant only when the failure class offers it. **Not Resume.** No Restart on Saved.
+- **Restart** from `failed` / `cancelled` → `queued` with **`attempt = 0`**. The sign-in variant is offered only when no browser is chosen and a sign-in can fix the failure (age-restricted, private, YouTube bot-check). **Not Resume.** No Restart on Saved.
 - **Resume** only from `paused`.
 - **Force start** from `queued` when not immediately schedulable, or from `cooldown` (not from `waitingForNetwork`). Eviction → oldest running job back to `queued`; **no Remark** on victim or forced job for that event. Confirm when eviction will happen (§6).
 - Auto-retry landing in `queued` (deferred) vs `cooldown` is an engine detail; row status stays honest. Backoff / host clock → Remark.
@@ -119,7 +119,7 @@ stateDiagram-v2
 ```
 
 | Group action | Applies to children in | Effect |
-|---|---|---|
+| --- | --- | --- |
 | **Pause all** | `running` only | each → `paused` |
 | **Restart failed** | `failed` + `cancelled` | each → `queued`, `attempt = 0` |
 | **Cancel all** | queued, paused, probing, running, cooldown, waitingForNetwork | each → `cancelled` (confirm first) |
@@ -130,7 +130,7 @@ stateDiagram-v2
 Only list actions that are **enabled** (offered). Others are absent — not disabled placeholders — unless Phase 11 plan decides otherwise.
 
 | State | Pause | Resume | Cancel | Force start | Restart | Restart with sign-in | Reveal | Remove | Open | Log |
-|---|---|---|---|---|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `queued` | — | — | ✓ | when blocked | — | — | — | ✓ | ✓ | — |
 | `probing` | — | — | ✓ | — | — | — | — | ✓ | ✓ | — |
 | `running` | ✓ | — | ✓ | — | — | — | — | ✓ | ✓ | ✓ |
@@ -144,7 +144,7 @@ Only list actions that are **enabled** (offered). Others are absent — not disa
 ### Locked semantics
 
 | Decision | Rule |
-|---|---|
+| --- | --- |
 | **Remove** | Deletes the entry from the engine’s job list and persistence (`queue.json` / `history.json` projections), part files, and the job log. |
 | **Cancel** | Keeps an entry in history as `cancelled`. Distinct from Remove. On cooldown: Option A (host rate unchanged). |
 | **Restart** | Always fresh (`attempt = 0`). From `failed` and `cancelled` only. **No Restart on Saved.** |
@@ -155,7 +155,7 @@ Only list actions that are **enabled** (offered). Others are absent — not disa
 ### Deliberate changes vs today
 
 | Change | Why |
-|---|---|
+| --- | --- |
 | Drop **Pause** on `queued` | Today it’s a no-op; don’t advertise it |
 | **Cancel** works on `cooldown` / `waitingForNetwork` | Abandon; stop lying |
 | **Restart** on `cancelled` | Same Inactive bucket as failed |
@@ -170,7 +170,7 @@ Only list actions that are **enabled** (offered). Others are absent — not disa
 Status = plain label only. Remark = short detail; **empty** when nothing useful. Never invents a second status.
 
 | State | Remark |
-|---|---|
+| --- | --- |
 | `queued` (normal) | `#N` if behind others; else empty |
 | `queued` (deferred / host-blocked) | Short wait reason, e.g. `Host cooling down` / `Try again in 1:00` / `Rate-limited` |
 | `probing` | empty |
@@ -189,12 +189,12 @@ Remark surfaces via hover + keyboard focus; optional Columns-menu column; a11y n
 ## 6. Confirmations
 
 | Action | Confirm? |
-|---|---|
+| --- | --- |
 | **Cancel all** (playlist / batch) | Yes |
 | **Cancel** (single) | No |
 | **Remove** | Yes when non-terminal, or when Saved with file present (optional suppress) |
 | **Force start** (no eviction) | No |
-| **Force start** (will evict) | Yes — *Start this now? The oldest download in progress will go back to the queue.* Confirm **Start now** |
+| **Force start** (will evict) | Yes — _Start this now? The oldest download in progress will go back to the queue._ Confirm **Start now** |
 | **Restart** / **Restart with sign-in** | No |
 | **Quit** | Yes when `hasActiveJobs` or `queueHalt` (existing) |
 | **depMissing** | Blocking install/fix dialog (not a Cancel-style confirm) |
@@ -210,25 +210,16 @@ Used for quit prompt and in-flight motif — **not** the same set as the Downloa
 
 Batch actions use the **same** verbs and eligibility as single-row / playlist group. Apply only to selected rows that offer that action.
 
-**Chrome (locked 2026-09-22):** when ≥1 row is selected, a bar above the
-Downloads table shows `N selected` plus the eligible batch verbs; the bar
-hides when selection is empty. Not a floating footer. Per-row Actions stay
-visible; the batch bar is additive — a row action still targets only that row.
-Header select-all covers **currently visible rows only** (after rail + column
-filters); collapsed-away playlist children are not selected (locked 2026-09-22).
-On rail or column-filter change: **keep selected IDs that remain visible,
-drop the rest** — batch never applies to off-screen selection (locked
-2026-09-22). Input: checkboxes + ⌘-click toggle + Shift-click range over
-visible-row order (locked 2026-09-22).
+**Chrome (locked 2026-09-22):** when ≥1 row is selected, a bar above the Downloads table shows `N selected` plus the eligible batch verbs; the bar hides when selection is empty. Not a floating footer. Per-row Actions stay visible; the batch bar is additive — a row action still targets only that row. Header select-all covers **currently visible rows only** (after rail + column filters); collapsed-away playlist children are not selected (locked 2026-09-22). On rail or column-filter change: **keep selected IDs that remain visible, drop the rest** — batch never applies to off-screen selection (locked 2026-09-22). Input: checkboxes + ⌘-click toggle + Shift-click range over visible-row order (locked 2026-09-22).
 
-| Batch | Eligibility |
-|---|---|
-| Pause | `running` |
-| Resume | `paused` |
-| Cancel | cancellable states (incl. cooldown, waitingForNetwork) |
-| Restart | `failed` + `cancelled` |
-| Remove | selected (same Remove confirm policy) |
-| Force start | **only when exactly one selected row is eligible** |
+| Batch       | Eligibility                                            |
+| ----------- | ------------------------------------------------------ |
+| Pause       | `running`                                              |
+| Resume      | `paused`                                               |
+| Cancel      | cancellable states (incl. cooldown, waitingForNetwork) |
+| Restart     | `failed` + `cancelled`                                 |
+| Remove      | selected (same Remove confirm policy)                  |
+| Force start | **only when exactly one selected row is eligible**     |
 
 ## 9. Rail × state (quick check)
 

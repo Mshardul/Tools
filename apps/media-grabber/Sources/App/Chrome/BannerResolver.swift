@@ -35,7 +35,7 @@ func bannerCopy(
             : "\(circuitHosts.count) sites"
         return BannerContent(
             text: "\(subject) keep getting rate-limited. "
-                + "Wait a while, add browser cookies in Preferences, or turn off a VPN.",
+                + "Wait a while, or turn off a VPN.",
             buttonTitle: "Retry now",
             action: onRetry
         )

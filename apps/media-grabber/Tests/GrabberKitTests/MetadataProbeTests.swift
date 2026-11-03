@@ -49,6 +49,31 @@ final class MetadataProbeTests: XCTestCase {
         XCTAssertEqual(result, .failure(.badURL))
     }
 
+    func test_zoomPasscodeAndUnavailableTranscripts_mapToTheirOwnErrors() async throws {
+        let required = "ERROR: [zoom] abc: This video is protected by a passcode, use the --video-password option"
+        let rejected = try fixture("zoom-stderr-passcode-rejected", "txt")
+        let unavailable = try fixture("zoom-stderr-unavailable", "txt")
+        let expected: [(String, MetadataError)] = [
+            (required, .passcodeRequired), (rejected, .passcodeRejected), (unavailable, .unavailable)
+        ]
+        for (stderr, error) in expected {
+            let runner = FakeProcessRunner()
+            runner.script(.stderr(stderr, exitCode: 1), forPathEndingIn: "yt-dlp")
+            let result = await probe(runner).probe("https://x.zoom.us/rec/share/y")
+            XCTAssertEqual(result, .failure(error), stderr)
+        }
+    }
+
+    func test_passcodeWordInANonErrorLine_isNotAPasscodeFailure() async {
+        let runner = FakeProcessRunner()
+        runner.script(
+            .stderr("[zoom] abc: Validating passcode\nERROR: [zoom] abc: boom", exitCode: 1),
+            forPathEndingIn: "yt-dlp"
+        )
+        let result = await probe(runner).probe("https://x.zoom.us/rec/share/y")
+        XCTAssertEqual(result, .failure(.unknown(raw: "ERROR: [zoom] abc: boom")))
+    }
+
     func test_unsupported_mapsToUnsupported() async {
         let runner = FakeProcessRunner()
         runner.script(
@@ -79,6 +104,39 @@ final class MetadataProbeTests: XCTestCase {
         let runner = FakeProcessRunner()
         runner.script(.stderr("ERROR: Video unavailable", exitCode: 1), forPathEndingIn: "yt-dlp")
         let result = await probe(runner).probe("https://example.com")
+        XCTAssertEqual(result, .failure(.unavailable))
+    }
+
+    func test_ageRestricted_mapsToAgeRestricted() async {
+        let runner = FakeProcessRunner()
+        runner.script(
+            .stderr("ERROR: [youtube] x: Sign in to confirm your age", exitCode: 1),
+            forPathEndingIn: "yt-dlp"
+        )
+        let result = await probe(runner).probe("https://www.youtube.com/watch?v=x")
+        XCTAssertEqual(result, .failure(.ageRestricted))
+    }
+
+    func test_privateVideo_mapsToPrivate() async {
+        let runner = FakeProcessRunner()
+        runner.script(
+            .stderr(
+                "ERROR: [youtube] x: Private video. Sign in if you've been granted access to this video",
+                exitCode: 1
+            ),
+            forPathEndingIn: "yt-dlp"
+        )
+        let result = await probe(runner).probe("https://www.youtube.com/watch?v=x")
+        XCTAssertEqual(result, .failure(.private))
+    }
+
+    func test_geoBlocked_staysUnavailable() async {
+        let runner = FakeProcessRunner()
+        runner.script(
+            .stderr("ERROR: This video is not available in your country", exitCode: 1),
+            forPathEndingIn: "yt-dlp"
+        )
+        let result = await probe(runner).probe("https://www.youtube.com/watch?v=x")
         XCTAssertEqual(result, .failure(.unavailable))
     }
 

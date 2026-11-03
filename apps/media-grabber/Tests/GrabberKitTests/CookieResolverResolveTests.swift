@@ -29,31 +29,18 @@ final class CookieResolverResolveTests: XCTestCase {
         return fm
     }
 
-    func test_none_noOverride_unconfigured() {
-        let got = resolver(FakeFileManaging()).resolve(source: .none, jobOverride: false)
+    func test_none_unconfigured() {
+        let got = resolver(FakeFileManaging()).resolve(source: .none)
         XCTAssertNil(got.argument)
         XCTAssertEqual(got.verdict, .unconfigured)
     }
 
-    func test_none_override_picksSafariWhenReadable() {
+    func test_none_neverPicksAnInstalledBrowser() {
         var fm = FakeFileManaging()
         fm.files = [safariCookiePath]
         fm.readable = [safariCookiePath]
-        let got = resolver(fm).resolve(source: .none, jobOverride: true)
-        XCTAssertEqual(got.argument, "safari")
-        XCTAssertEqual(got.verdict, .ready(browserKey: "safari"))
-    }
-
-    func test_none_override_fallsToFirstExistingBrowserDir() {
-        var fm = FakeFileManaging()
         fm.dirs = [chromeDir: [home.appendingPathComponent("x")]]
-        let got = resolver(fm).resolve(source: .none, jobOverride: true)
-        XCTAssertEqual(got.argument, "chrome")
-        XCTAssertEqual(got.verdict, .ready(browserKey: "chrome"))
-    }
-
-    func test_none_override_noBrowsers_unconfigured() {
-        let got = resolver(FakeFileManaging()).resolve(source: .none, jobOverride: true)
+        let got = resolver(fm).resolve(source: .none)
         XCTAssertNil(got.argument)
         XCTAssertEqual(got.verdict, .unconfigured)
     }
@@ -61,7 +48,7 @@ final class CookieResolverResolveTests: XCTestCase {
     func test_safari_denied_needsFullDiskAccess() {
         var fm = FakeFileManaging()
         fm.files = [safariCookiePath]
-        let got = resolver(fm).resolve(source: .safari, jobOverride: false)
+        let got = resolver(fm).resolve(source: .safari)
         XCTAssertNil(got.argument)
         XCTAssertEqual(got.verdict, .needsFullDiskAccess)
     }
@@ -70,7 +57,7 @@ final class CookieResolverResolveTests: XCTestCase {
         var fm = FakeFileManaging()
         fm.files = [safariCookiePath]
         fm.readable = [safariCookiePath]
-        let got = resolver(fm).resolve(source: .safari, jobOverride: false)
+        let got = resolver(fm).resolve(source: .safari)
         XCTAssertEqual(got.argument, "safari")
         XCTAssertEqual(got.verdict, .ready(browserKey: "safari"))
     }
@@ -78,19 +65,19 @@ final class CookieResolverResolveTests: XCTestCase {
     func test_chrome_installed_ready() {
         var fm = FakeFileManaging()
         fm.files = [chromeDir]
-        let got = resolver(fm).resolve(source: .chrome, jobOverride: false)
+        let got = resolver(fm).resolve(source: .chrome)
         XCTAssertEqual(got.argument, "chrome")
         XCTAssertEqual(got.verdict, .ready(browserKey: "chrome"))
     }
 
     func test_chrome_notInstalled_noProfiles() {
-        let got = resolver(FakeFileManaging()).resolve(source: .chrome, jobOverride: false)
+        let got = resolver(FakeFileManaging()).resolve(source: .chrome)
         XCTAssertNil(got.argument)
         XCTAssertEqual(got.verdict, .noProfiles)
     }
 
     func test_brave_notInstalled_noProfiles() {
-        let got = resolver(FakeFileManaging()).resolve(source: .brave, jobOverride: false)
+        let got = resolver(FakeFileManaging()).resolve(source: .brave)
         XCTAssertNil(got.argument)
         XCTAssertEqual(got.verdict, .noProfiles)
     }
@@ -101,7 +88,7 @@ final class CookieResolverResolveTests: XCTestCase {
         Name=work
         Path=Profiles/work
         """)
-        let got = resolver(fm).resolve(source: .firefox(profile: "work"), jobOverride: false)
+        let got = resolver(fm).resolve(source: .firefox(profile: "work"))
         XCTAssertEqual(got.argument, "firefox:work")
         XCTAssertEqual(got.verdict, .ready(browserKey: "firefox"))
     }
@@ -113,13 +100,13 @@ final class CookieResolverResolveTests: XCTestCase {
         Path=Profiles/main
         Default=1
         """)
-        let got = resolver(fm).resolve(source: .firefox(profile: "gone"), jobOverride: false)
+        let got = resolver(fm).resolve(source: .firefox(profile: "gone"))
         XCTAssertEqual(got.argument, "firefox:main")
     }
 
     func test_firefox_noProfiles_noProfilesVerdict() {
         let fm = firefoxFM(ini: "[General]\nStartWithLastProfile=1")
-        let got = resolver(fm).resolve(source: .firefox(profile: nil), jobOverride: false)
+        let got = resolver(fm).resolve(source: .firefox(profile: nil))
         XCTAssertNil(got.argument)
         XCTAssertEqual(got.verdict, .noProfiles)
     }

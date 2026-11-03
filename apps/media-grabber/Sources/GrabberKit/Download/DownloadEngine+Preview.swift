@@ -10,7 +10,7 @@ public extension DownloadEngine {
         if rateLimiter.blocked(host: host, now: dependencies.clock.now) {
             return .failure(.hostBlocked)
         }
-        let context = await makeContext(url: url, attempt: 0, forceCookies: false)
+        let context = await makeContext(url: url, attempt: 0)
         return await dependencies.probe.probe(url, context: context)
     }
 
@@ -23,7 +23,7 @@ public extension DownloadEngine {
         if rateLimiter.blocked(host: host, now: dependencies.clock.now) {
             return .failure(.hostBlocked)
         }
-        let context = await makeContext(url: url, attempt: 0, forceCookies: false)
+        let context = await makeContext(url: url, attempt: 0)
         return await dependencies.probe.probePlaylist(url, context: context)
     }
 
@@ -45,7 +45,7 @@ public extension DownloadEngine {
 }
 
 extension DownloadEngine {
-    func makeContext(url: String, attempt: Int, forceCookies: Bool) async -> ExtractorContext {
+    func makeContext(url: String, attempt: Int, passcode: String? = nil) async -> ExtractorContext {
         let status = await dependencies.potProvider.status
         let dirs = await dependencies.potProvider.pluginDirs
         let base = await dependencies.potProvider.baseURL
@@ -58,13 +58,14 @@ extension DownloadEngine {
         let home = dependencies.cookieResolverHome
             ?? FileManager.default.homeDirectoryForCurrentUser
         let cookie = CookieResolver(fileManager: dependencies.fileManager, home: home)
-            .resolve(source: preferences.cookiesFromBrowser, jobOverride: forceCookies)
+            .resolve(source: preferences.cookiesFromBrowser)
             .argument
         return ExtractorContext(
-            pluginDirs: dirs,
+            pluginDirs: dirs + BundledYtDlpPlugins.directories,
             potBaseURL: (isYouTube && shieldUp) ? base : nil,
             playerClient: isYouTube ? PlayerClientRotation.client(forAttempt: attempt) : nil,
-            cookieArgument: cookie
+            cookieArgument: cookie,
+            videoPassword: passcode ?? passcodes[url]
         )
     }
 }

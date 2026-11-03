@@ -85,6 +85,8 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         box.read { $0.retriedWithCookies }
     }
 
+    let passcodeCalls = PasscodeCallLog()
+
     var restoreCalled: Bool {
         box.read { $0.restoreCalled }
     }
@@ -224,6 +226,14 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     func retryWithCookies(_ jobID: UUID) async {
         box.mutate { $0.retriedWithCookies.append(jobID) }
+    }
+
+    func setPasscode(_ passcode: String, for url: String) async {
+        passcodeCalls.recordSet(passcode, for: url)
+    }
+
+    func retryWithPasscode(_ jobID: UUID, passcode: String) async {
+        passcodeCalls.recordRetry(jobID, passcode: passcode)
     }
 
     func cancel(_ jobID: UUID) async {

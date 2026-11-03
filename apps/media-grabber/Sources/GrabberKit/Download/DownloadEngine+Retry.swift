@@ -7,16 +7,20 @@ public extension DownloadEngine {
             return
         }
 
+        restartFromScratch(job)
+    }
+
+    private func restartFromScratch(_ job: DownloadJob) {
+        job.attempt = 0
         job.state = .queued
         job.finishedAt = nil
         job.progress = nil
         job.sizeBytes = nil
         job.integrityVerdict = nil
         job.actualQuality = nil
-        job.attempt = 0
         deletePartFiles(for: job)
         move(job, toTail: true)
-        logEvent(.jobRetried(id: id))
+        logEvent(.jobRetried(id: job.id))
 
         bump()
         emitSnapshot()
@@ -34,29 +38,38 @@ public extension DownloadEngine {
         }
     }
 
-    // Forces browser cookies onto a from-scratch retry; forceCookies sticks for the job's life so a re-fail keeps them.
+    // Restarts a sign-in-fixable failure from scratch once the user has chosen a browser.
     func retryWithCookies(_ id: UUID) async {
         guard let job = jobs.first(where: { $0.id == id }),
               case let .failed(errorClass) = job.state,
-              errorClass.presentation.offeredActions.contains(.retryWithCookies)
+              SignInPolicy.fixableBySignIn(errorClass, host: RateHost(urlString: job.request.url))
         else {
             return
         }
 
-        job.forceCookies = true
-        job.attempt = 0
-        job.state = .queued
-        job.finishedAt = nil
-        job.progress = nil
-        job.sizeBytes = nil
-        job.integrityVerdict = nil
-        job.actualQuality = nil
-        deletePartFiles(for: job)
-        move(job, toTail: true)
-        logEvent(.jobRetried(id: id))
+        restartFromScratch(job)
+    }
 
-        bump()
-        emitSnapshot()
-        evaluateSchedule()
+    func setPasscode(_ passcode: String, for url: String) async {
+        passcodes[url] = passcode
+    }
+
+    // Restarts a passcode failure from scratch with the passcode the user just typed; any other job is left alone.
+    func retryWithPasscode(_ id: UUID, passcode: String) async {
+        guard let job = jobs.first(where: { $0.id == id }),
+              case let .failed(errorClass) = job.state,
+              errorClass == .passcodeRequired || errorClass == .passcodeRejected
+        else {
+            return
+        }
+
+        job.videoPassword = passcode
+        restartFromScratch(job)
+    }
+}
+
+extension DownloadEngine {
+    func dropPasscode(for job: DownloadJob) {
+        job.videoPassword = nil
     }
 }

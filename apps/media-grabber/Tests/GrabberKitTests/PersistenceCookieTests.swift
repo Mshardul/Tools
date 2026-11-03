@@ -12,40 +12,20 @@ final class PersistenceCookieTests: XCTestCase {
         )
     }
 
-    func test_forceCookiesTrue_roundTrips() throws {
-        let job = PersistedJob(
-            id: UUID(),
-            request: request(),
-            state: .failed(reason: "cookie_read_failed"),
-            forceCookies: true,
-            addedAt: .init()
-        )
-        let data = try JSONEncoder().encode(job)
-        XCTAssertEqual(try JSONDecoder().decode(PersistedJob.self, from: data).forceCookies, true)
+    func test_encodedJob_carriesNoCookieKey() throws {
+        let job = PersistedJob(id: UUID(), request: request(), state: .queued, addedAt: .init())
+        let json = try XCTUnwrap(String(data: JSONEncoder().encode(job), encoding: .utf8))
+        XCTAssertFalse(json.lowercased().contains("cookie"))
     }
 
-    func test_oldQueueJSON_withoutForceCookies_decodesToFalse() throws {
+    func test_oldQueueJSON_withForceCookiesKey_stillDecodes() throws {
         let sample = PersistedJob(id: UUID(), request: request(), state: .queued, addedAt: .init())
         let encoded = try JSONEncoder().encode(sample)
         guard var dict = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
             return XCTFail("expected a JSON object")
         }
-        dict.removeValue(forKey: "forceCookies")
-        let stripped = try JSONSerialization.data(withJSONObject: dict)
-        XCTAssertEqual(
-            try JSONDecoder().decode(PersistedJob.self, from: stripped).forceCookies,
-            false
-        )
-    }
-
-    func test_downloadJob_restoresForceCookies() {
-        let persisted = PersistedJob(
-            id: UUID(),
-            request: request(),
-            state: .queued,
-            forceCookies: true,
-            addedAt: .init()
-        )
-        XCTAssertTrue(DownloadEngine.downloadJob(from: persisted).forceCookies)
+        dict["forceCookies"] = true
+        let legacy = try JSONSerialization.data(withJSONObject: dict)
+        XCTAssertEqual(try JSONDecoder().decode(PersistedJob.self, from: legacy), sample)
     }
 }

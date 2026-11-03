@@ -37,6 +37,23 @@ final class YtDlpArgumentsContextTests: XCTestCase {
         XCTAssertTrue(argv.contains("youtube:player_client=tv"))
     }
 
+    func testEveryPluginDirGetsItsOwnFlag() {
+        let ctx = ExtractorContext(
+            pluginDirs: [URL(fileURLWithPath: "/tmp/shield"), URL(fileURLWithPath: "/tmp/zoom")],
+            potBaseURL: nil,
+            playerClient: nil,
+            cookieArgument: nil
+        )
+        let argv = YtDlpArguments.build(
+            for: request(kind: .video(maxHeight: 1080)),
+            context: ctx,
+            concurrentFragments: 4
+        )
+        let pairs = argv.indices.dropLast().filter { argv[$0] == "--plugin-dirs" }.map { argv[$0 + 1] }
+        XCTAssertEqual(pairs, ["/tmp/shield", "/tmp/zoom"])
+        XCTAssertFalse(argv.contains { $0.contains(":/tmp/") })
+    }
+
     func testNoneContextDoesNotEmitExtractorArgs() {
         let argv = YtDlpArguments.build(
             for: request(kind: .video(maxHeight: 1080)),

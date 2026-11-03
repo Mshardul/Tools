@@ -9,6 +9,11 @@ final class SiteDisplayNameTests: XCTestCase {
         XCTAssertEqual(SiteNames.display("m.youtube.com"), "YouTube")
     }
 
+    func test_displaysZoom() {
+        XCTAssertEqual(SiteNames.display("zoom"), "Zoom")
+        XCTAssertEqual(SiteNames.display("zoom:clips"), "Zoom")
+    }
+
     func test_displaysVimeo() {
         XCTAssertEqual(SiteNames.display("vimeo"), "Vimeo")
         XCTAssertEqual(SiteNames.display("vimeo.com"), "Vimeo")

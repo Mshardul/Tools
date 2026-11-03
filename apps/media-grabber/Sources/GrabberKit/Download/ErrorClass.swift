@@ -14,5 +14,7 @@ public enum ErrorClass: Sendable, Equatable {
     case incomplete
     case depMissing
     case potProviderDown
+    case passcodeRequired
+    case passcodeRejected
     case unknown(raw: String)
 }

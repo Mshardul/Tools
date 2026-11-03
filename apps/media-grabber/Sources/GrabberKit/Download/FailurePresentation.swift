@@ -37,26 +37,25 @@ public struct FailurePresentation: Sendable, Equatable {
         "permission_denied": "The download folder isn't writable.",
         "incomplete": "The download kept ending early.",
         "dep_missing": "The downloader needs reinstalling.",
-        "bot_check": "Couldn't verify you. Try again, or add browser cookies in Preferences.",
+        "bot_check": "Couldn't verify this request. Try again in a moment.",
         "sabr_gated": "YouTube isn't offering a downloadable video for this link.",
         "formats_missing": "The quality you picked isn't available for this video.",
-        "pot_provider_down": "Bot-check protection is offline."
+        "pot_provider_down": "Bot-check protection is offline.",
+        "passcode_required": "This recording needs a passcode.",
+        "passcode_rejected": "That passcode didn't work."
     ]
 
     private static let noRetryKeys: Set<String> = [
-        "geo_blocked", "private", "unavailable", "age_restricted", "dep_missing", "sabr_gated"
+        "geo_blocked", "private", "unavailable", "age_restricted", "dep_missing", "sabr_gated",
+        "passcode_required", "passcode_rejected"
     ]
 
-    // A browser sign-in is what unblocks these — the row offers Retry-with-cookies.
-    private static let cookieRetryKeys: Set<String> = [
-        "cookie_read_failed", "age_restricted", "private", "bot_check", "formats_missing"
-    ]
+    private static let passcodeKeys: Set<String> = ["passcode_required", "passcode_rejected"]
 
     private static func actions(for errorClass: ErrorClass) -> Set<RowAction> {
-        var actions: Set<RowAction> = noRetryKeys.contains(errorClass.key) ? [] : [.retry]
-        if cookieRetryKeys.contains(errorClass.key) {
-            actions.insert(.retryWithCookies)
+        if passcodeKeys.contains(errorClass.key) {
+            return [.enterPasscode]
         }
-        return actions
+        return noRetryKeys.contains(errorClass.key) ? [] : [.retry]
     }
 }

@@ -1,14 +1,8 @@
 # State flow — job lifecycle and per-host rate limiting
 
-Two state machines drive the download queue, plus a small third for the
-bot-check shield. This doc enumerates every state, every transition, and the
-trigger for each, and marks parked capabilities with their owning phase (§4).
+Two state machines drive the download queue, plus a small third for the bot-check shield. This doc enumerates every state, every transition, and the trigger for each, and marks parked capabilities with their owning phase (§4).
 
-Paths are relative to `apps/media-grabber/`. Engine files live under
-`Sources/GrabberKit/Download/`, rate files under
-`Sources/GrabberKit/RateLimiting/`. Revisit this doc whenever a phase adds a
-state. Phase 11 **product** contract for row labels, rail filters, and actions
-(final look — not this as-shipped doc): `job-status-and-actions.md`.
+Paths are relative to `apps/media-grabber/`. Engine files live under `Sources/GrabberKit/Download/`, rate files under `Sources/GrabberKit/RateLimiting/`. Revisit this doc whenever a phase adds a state. Phase 11 **product** contract for row labels, rail filters, and actions (final look — not this as-shipped doc): `job-status-and-actions.md`.
 
 ---
 
@@ -16,13 +10,9 @@ state. Phase 11 **product** contract for row labels, rail filters, and actions
 
 `JobState` — `Sources/GrabberKit/Download/JobSnapshot.swift`:
 
-`.queued` · `.probing` · `.running` · `.paused` · `.waitingForNetwork` ·
-`.cooldown(until:)` · `.completed` · `.cancelled` · `.failed(ErrorClass)`
+`.queued` · `.probing` · `.running` · `.paused` · `.waitingForNetwork` · `.cooldown(until:)` · `.completed` · `.cancelled` · `.failed(ErrorClass)`
 
-The engine's mutable model is `DownloadJob`; snapshots expose `JobState` to the
-app. Every job is born `.queued` (`DownloadJob.init`) — `submit` returns
-`.queued(id)` and then calls `evaluateSchedule()`, which may move the job on in
-the same tick.
+The engine's mutable model is `DownloadJob`; snapshots expose `JobState` to the app. Every job is born `.queued` (`DownloadJob.init`) — `submit` returns `.queued(id)` and then calls `evaluateSchedule()`, which may move the job on in the same tick.
 
 ```mermaid
 stateDiagram-v2
@@ -59,7 +49,7 @@ stateDiagram-v2
     cooldown --> queued : cooldown deadline elapsed
     cooldown --> running : Force Start
 
-    failed --> queued : Retry / Retry with cookies (when the error class offers it)
+    failed --> queued : Restart / Restart with sign-in (when the failure offers it)
 
     completed --> [*] : remove
     cancelled --> [*] : remove
@@ -69,7 +59,7 @@ stateDiagram-v2
 ### Transition detail
 
 | from → to | trigger | where | notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | _(none)_ → `.queued` | any `submit` / playlist enqueue | `DownloadEngine.submit`, `makeJob` | `DownloadJob.init` hard-codes `.queued`. No synchronous follow-on; `evaluateSchedule()` runs next. |
 | `.queued` → `.probing` | scheduler picks a job whose title/extractor/duration is missing and the single probe slot is free | `evaluateSchedule` → `Scheduler.nextProbe` → `markProbing` | One probe at a time (`probeInFlight`). Host must not be in `blockedProbeHostIDs`. |
 | `.queued` → `.running` | scheduler has a free slot (`effectiveCap − running`) and the job has full metadata | `Scheduler.nextDownloads` → `markRunning` | `effectiveCap` is the prefs concurrency ceiling. Excluded if deferred, rate-blocked, or the host is already at its per-host adaptive cap. `markRunning` clears progress/size, sets `startedAt`, launches. |
@@ -98,48 +88,31 @@ stateDiagram-v2
 | `.cooldown(until:)` → `.running` | user Force Start | `forceStart` | `.cooldown → .queued` inline first (clears `cooldownUntil`, `cancelDeferral`), then the normal eviction + launch path. |
 | `.failed(ErrorClass)` → `.queued` | user Restart | `retry` | Offered only when `errorClass.presentation.offeredActions` contains `.retry`. Clears `finishedAt`/`progress`/`sizeBytes`/`integrityVerdict`/`actualQuality`, moves to the tail. **Always** `attempt = 0` and deletes part files — no smart-resume exception, even for a transient error with a live `.part` on disk (deliberate: Restart always starts fresh). |
 | `.cancelled` → `.queued` | user Restart | `retry` | Same `retry` path as failed — always `attempt = 0`, deletes part files, moves to the tail. |
-| `.failed(ErrorClass)` → `.queued` | user Retry with cookies | `retryWithCookies` | Offered when `offeredActions` contains `.retryWithCookies`. Sets `forceCookies = true` (sticks for the job's life), `attempt = 0` always, deletes part files. |
+| `.failed(ErrorClass)` → `.queued` | user Restart with sign-in | `retryWithCookies` | Offered only when the job's `signInAdvice` is `.suggest` (no browser chosen). The row action opens the Preferences browser picker and holds the job; choosing a browser calls `retryWithCookies`, which requires `SignInPolicy.fixableBySignIn`, sets `attempt = 0`, and deletes part files. The cookie argument comes from the chosen browser at spawn time; the job carries no cookie state. |
 | any terminal → _(evicted)_ | terminal-job count exceeds 200 | `enforceTerminalCap` | Oldest-`finishedAt` terminal jobs beyond 200 are dropped from memory and their job log deleted. |
 
-**Retry gates** — `Sources/GrabberKit/Download/FailurePresentation.swift`. `.retry`
-is offered for every error class **except** `geoBlocked, private, unavailable,
-ageRestricted, depMissing, sabrGated`. `.retryWithCookies` is additionally
-offered for `cookieReadFailed, ageRestricted, private, botCheck, formatsMissing`.
-So `.failed(.geoBlocked)` is fully terminal; `.failed(.private)` offers only
-Retry with cookies.
+**Retry gates** — `Sources/GrabberKit/Download/FailurePresentation.swift`. `.retry` is offered for every error class **except** `geoBlocked, private, unavailable, ageRestricted, depMissing, sabrGated`. `.retryWithCookies` is never offered by the class alone: `DownloadEngine.availableActions` adds it when `SignInPolicy` returns `.suggest` — `ageRestricted` or `private` on any host, `botCheck` on YouTube, and no browser chosen. With a browser chosen the advice is `.checkBrowser` and no restart action is added. So `.failed(.geoBlocked)` is fully terminal; `.failed(.private)` offers only Restart with sign-in, and only without a chosen browser.
 
 ### Terminal states
 
-`.completed`, `.cancelled`, `.failed` — persisted to `history`, not `queue`.
-`.completed` and `.cancelled` leave only by `remove`. `.failed` also leaves by
-Retry / Retry with cookies when the error class offers one; otherwise it is
-fully terminal.
+`.completed`, `.cancelled`, `.failed` — persisted to `history`, not `queue`. `.completed` and `.cancelled` leave only by `remove`. `.failed` also leaves by Restart / Restart with sign-in when the failure offers one; otherwise it is fully terminal.
 
 ### "Active" vs schedulable
 
-`isActive` counts **`.probing`, `.running`, `.waitingForNetwork`,
-`.cooldown`** — this is what keeps the quit prompt alive and the activity motif
-spinning. Note the divergence from "schedulable": `.queued` is **not** active
-but **is** schedulable; `.cooldown` and `.waitingForNetwork` **are** active but
-**not** schedulable (parked work).
+`isActive` counts **`.probing`, `.running`, `.waitingForNetwork`, `.cooldown`** — this is what keeps the quit prompt alive and the activity motif spinning. Note the divergence from "schedulable": `.queued` is **not** active but **is** schedulable; `.cooldown` and `.waitingForNetwork` **are** active but **not** schedulable (parked work).
 
 ### `.queued` has two flavours
 
-A `.queued` job is either schedulable now, or **deferred** — it carries a future
-`cooldownUntil` and sits in `deferrals`, held out of `Scheduler.nextDownloads`
-by `deferredIDs` (backoff re-queue) or by `blockedHostIDs` (host-rate re-queue).
-The diagram draws one `.queued` node; the scheduler distinguishes the two.
+A `.queued` job is either schedulable now, or **deferred** — it carries a future `cooldownUntil` and sits in `deferrals`, held out of `Scheduler.nextDownloads` by `deferredIDs` (backoff re-queue) or by `blockedHostIDs` (host-rate re-queue). The diagram draws one `.queued` node; the scheduler distinguishes the two.
 
 ### `availableActions` per state
 
-`DownloadEngine.availableActions(for:)` —
-`Sources/GrabberKit/Download/DownloadEngine+Helpers.swift`.
+`DownloadEngine.availableActions(for:)` — `Sources/GrabberKit/Download/DownloadEngine+Helpers.swift`.
 
-**As shipped** (table below), matching the locked product contract:
-`job-status-and-actions.md` §4 / §3b.
+**As shipped** (table below), matching the locked product contract: `job-status-and-actions.md` §4 / §3b.
 
 | state | actions (as shipped) |
-|---|---|
+| --- | --- |
 | `.queued` | cancel, **forceStart** (only when not immediately schedulable), remove, openInBrowser — **no pause** |
 | `.probing` | cancel, remove, openInBrowser |
 | `.running` | pause, cancel, remove, openInBrowser, showLog |
@@ -150,48 +123,25 @@ The diagram draws one `.queued` node; the scheduler distinguishes the two.
 | `.cancelled` | **retry** (Restart), remove, openInBrowser, showLog |
 | `.failed(errorClass)` | the error class's offered retry action(s) + remove, openInBrowser, showLog |
 
-The deliberate asymmetry: **`.cooldown` offers Force Start** (override the host
-cooldown), **`.waitingForNetwork` does not** (nothing to force with no network).
+The deliberate asymmetry: **`.cooldown` offers Force Start** (override the host cooldown), **`.waitingForNetwork` does not** (nothing to force with no network).
 
-`cancel(_:)` handles all six non-terminal states, including `.cooldown` and
-`.waitingForNetwork` — it calls `cancelDeferral` first (clearing the job's own
-deferral without touching host `RateState`), then marks the job cancelled. The
-`.queued` Force Start conditional reads
-`DownloadEngine.isImmediatelySchedulable(_:)` (mirrors the scheduler's own
-eviction-decision logic) so the button is offered only when starting the job
-now would actually evict something.
+`cancel(_:)` handles all six non-terminal states, including `.cooldown` and `.waitingForNetwork` — it calls `cancelDeferral` first (clearing the job's own deferral without touching host `RateState`), then marks the job cancelled. The `.queued` Force Start conditional reads `DownloadEngine.isImmediatelySchedulable(_:)` (mirrors the scheduler's own eviction-decision logic) so the button is offered only when starting the job now would actually evict something.
 
 ### Auto-retry budget
 
 - `Preferences.maxAutoRetries` — default **5**, clamped `1...5`.
-- `DownloadJob.attempt` starts at 0. `attempt += 1` happens **inside** the
-  re-queue helpers, i.e. after the `attempt < maxAutoRetries` check passes.
-- With the default: tries run at `attempt` 0,1,2,3,4 (five tries); the sixth
-  failure has `attempt == 5`, fails the check, and the job goes `.failed`.
-- `retry` resets `attempt = 0` (unless resuming a transient failure from a part
-  file). `retryWithCookies` always resets to 0.
-- `attempt` also selects the YouTube player client
-  (`PlayerClientRotation.client(forAttempt:)`) and the `Backoff.delay(attempt:)`.
+- `DownloadJob.attempt` starts at 0. `attempt += 1` happens **inside** the re-queue helpers, i.e. after the `attempt < maxAutoRetries` check passes.
+- With the default: tries run at `attempt` 0,1,2,3,4 (five tries); the sixth failure has `attempt == 5`, fails the check, and the job goes `.failed`.
+- `retry` resets `attempt = 0` (unless resuming a transient failure from a part file). `retryWithCookies` always resets to 0.
+- `attempt` also selects the YouTube player client (`PlayerClientRotation.client(forAttempt:)`) and the `Backoff.delay(attempt:)`.
 
 ### Add-flow entry points
 
-Clipboard, drag, Services, and `mediagrabber://open?url=` all land in the Home
-field via `IncomingLinkController`, then flow through the normal
-`resolvePasted` → probe → Grab path. They create no job of their own — a job
-appears only when the user presses Grab (or picks playlist items). So every
-add flow enters this machine at the same `[*] --> queued` edge as a manual
-paste.
+Clipboard, drag, Services, and `mediagrabber://open?url=` all land in the Home field via `IncomingLinkController`, then flow through the normal `resolvePasted` → probe → Grab path. They create no job of their own — a job appears only when the user presses Grab (or picks playlist items). So every add flow enters this machine at the same `[*] --> queued` edge as a manual paste.
 
 ### Ingress into the queue-halt state
 
-`QueueHaltReason` (`JobSnapshot.swift`) has three cases —
-`.depMissing`, `.networkDown`, `.circuitOpen` — checked in that priority order
-by `effectiveQueueHalt()`. `.depMissing` and `.networkDown` are raw
-(`queueHalt` is set directly); `.circuitOpen` is **derived** only when a
-circuit is open **and** nothing is `.running`/`.probing` **and** no `.queued`
-job is startable. `evaluateSchedule` early-returns on the raw `queueHalt`, not
-the derived `.circuitOpen`, so a Force Started job can still run through an open
-circuit.
+`QueueHaltReason` (`JobSnapshot.swift`) has three cases — `.depMissing`, `.networkDown`, `.circuitOpen` — checked in that priority order by `effectiveQueueHalt()`. `.depMissing` and `.networkDown` are raw (`queueHalt` is set directly); `.circuitOpen` is **derived** only when a circuit is open **and** nothing is `.running`/`.probing` **and** no `.queued` job is startable. `evaluateSchedule` early-returns on the raw `queueHalt`, not the derived `.circuitOpen`, so a Force Started job can still run through an open circuit.
 
 ---
 
@@ -201,9 +151,7 @@ circuit.
 
 `.normal` · `.cooldown(until:, strikes:)` · `.circuitOpen(since:, strikes:)`
 
-Transition logic is the pure function `RatePolicy.next(state:event:now:tuning:)`
-— `Sources/GrabberKit/RateLimiting/RatePolicy.swift`. Events
-(`RatePolicyEvent`): `.strike(retryAfter:)`, `.cleanSuccess`, `.userReset`.
+Transition logic is the pure function `RatePolicy.next(state:event:now:tuning:)` — `Sources/GrabberKit/RateLimiting/RatePolicy.swift`. Events (`RatePolicyEvent`): `.strike(retryAfter:)`, `.cleanSuccess`, `.userReset`.
 
 State is per canonical host (`RateHost`), held in `RateLimiter.states`.
 
@@ -226,7 +174,7 @@ stateDiagram-v2
 ### Transition detail
 
 | from → to | event | condition | notes |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | any → `.normal` | `.cleanSuccess` or `.userReset` | unconditional | Both events just return `.normal`. On the next `.cleanSuccess` the host's dict entry is dropped entirely. |
 | `.cooldown(until, s)` → `.cooldown(until, s)` | `.strike` | `until > now` (still cooling) | **"Already cooling → stay."** Strike count does not increment, deadline not extended. |
 | `.normal` → `.cooldown(now + delay, 1)` | `.strike` | `s+1 = 1 < circuitStrikeThreshold` | `delay = Backoff.delay(attempt: 1, retryAfter:, tuning:)` — an integer `Retry-After > 0` wins (capped at `backoffCap`), else full-jitter over `backoffLadder[0]`. |
@@ -234,65 +182,42 @@ stateDiagram-v2
 | `.normal` / `.cooldown(elapsed)` → `.circuitOpen(now, s+1)` | `.strike` | `s+1 >= circuitStrikeThreshold` (default **4**) | With the default: strikes 1,2,3 → `.cooldown`; strike 4 → `.circuitOpen`. |
 | `.circuitOpen(since, s)` → `.circuitOpen(now, s+1)` | `.strike` | — | Not a no-op — `since` is refreshed to now and `strikes` increments. |
 
-There is no "cooldown elapsed → normal" **event**. An elapsed cooldown is
-handled at the query layer: `RateLimiter.blocked` compares `until` to `now`, and
-the state is lazily cleared on the next `.cleanSuccess`.
+There is no "cooldown elapsed → normal" **event**. An elapsed cooldown is handled at the query layer: `RateLimiter.blocked` compares `until` to `now`, and the state is lazily cleared on the next `.cleanSuccess`.
 
 ### Who fires each event
 
 All go through `RateLimiter`, which wraps `RatePolicy.next`:
 
 | event | `RateLimiter` method | engine caller | when |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `.strike(retryAfter:)` | `recordStrike` | `strikeHostIfRateLimited` | called unconditionally from `routeFailure` when `errorClass` is `.rateLimited`, **before** the retry-budget check (so a strike lands even on the terminal failure). Also logs `hostRateStateChanged`, and `circuitOpened` when the new state is a circuit. |
 | `.cleanSuccess` | `recordCleanSuccess` | `recordCleanSuccessFor` | from `completeIfClean` — only on a genuinely clean `.completed` download. |
 | `.userReset` | `resetCircuit` / `resetAllCircuits` | engine circuit-reset intents | Only when the host is `.circuitOpen`; applies `RatePolicy.next(..., .userReset)` then drops the entry when the result is `.normal`. |
 
-User reset comes from the warning banner's "Retry now" and the host-rate
-popover's per-host / "Retry all" buttons → `AppModel.resetCircuit` /
-`resetAllCircuits` → engine → `afterRateReset()` (bump + `evaluateSchedule`).
+User reset comes from the warning banner's "Retry now" and the host-rate popover's per-host / "Retry all" buttons → `AppModel.resetCircuit` / `resetAllCircuits` → engine → `afterRateReset()` (bump + `evaluateSchedule`).
 
-`recordStrike` side effects (per host): that host's `adaptiveCap = 1`,
-`cleanStreak = 0`, `strikeLoweredCap = true`, `lastErrorKey[host] = key`.
+`recordStrike` side effects (per host): that host's `adaptiveCap = 1`, `cleanStreak = 0`, `strikeLoweredCap = true`, `lastErrorKey[host] = key`.
 
 ### How `RateState` feeds back into the job machine
 
-1. **`blockedHostIDs` / `blockedProbeHostIDs`** — a `.queued` job (or a job
-   needing a probe) whose host is `rateLimiter.blocked` is excluded from the
-   scheduler. `blocked`: `.normal → false`, `.cooldown → until > now`,
-   `.circuitOpen → always true`. Host-at-cap jobs are unioned into the same
-   blocked set via `hostCapBlockedIDs` (per-host adaptive slot pressure).
-2. **`reQueueForHostRate`** — on a `.rateLimited` retryable failure, exactly one
-   job per host goes `.cooldown(deadline)`; the rest stay `.queued` and are
-   held out by `blockedHostIDs`. If the host is already `.circuitOpen` (no
-   cooldown deadline), the job goes `.queued` and is held the same way.
+1. **`blockedHostIDs` / `blockedProbeHostIDs`** — a `.queued` job (or a job needing a probe) whose host is `rateLimiter.blocked` is excluded from the scheduler. `blocked`: `.normal → false`, `.cooldown → until > now`, `.circuitOpen → always true`. Host-at-cap jobs are unioned into the same blocked set via `hostCapBlockedIDs` (per-host adaptive slot pressure).
+2. **`reQueueForHostRate`** — on a `.rateLimited` retryable failure, exactly one job per host goes `.cooldown(deadline)`; the rest stay `.queued` and are held out by `blockedHostIDs`. If the host is already `.circuitOpen` (no cooldown deadline), the job goes `.queued` and is held the same way.
 3. **`effectiveQueueHalt()`** derives the `.circuitOpen` queue halt (see §1).
-4. **`preview` / `previewPlaylist`** return `.failure(.hostBlocked)` when the
-   host is blocked — the probe never launches.
+4. **`preview` / `previewPlaylist`** return `.failure(.hostBlocked)` when the host is blocked — the probe never launches.
 5. **Adaptive concurrency** (per-`RateHost` on `RateLimiter`; prefs cap is global):
-   - Untouched hosts start at `min(max(1, adaptiveConcurrencyStart),
-     preferencesCap)` — default start **2**.
-   - Each clean success bumps that host's `cleanStreak`; at
-     `cleanStreakToRaise` (default **5**) that host's `adaptiveCap += 1`
-     (capped at the preferences cap) and the streak resets.
+   - Untouched hosts start at `min(max(1, adaptiveConcurrencyStart), preferencesCap)` — default start **2**.
+   - Each clean success bumps that host's `cleanStreak`; at `cleanStreakToRaise` (default **5**) that host's `adaptiveCap += 1` (capped at the preferences cap) and the streak resets.
    - A strike drops that host's `adaptiveCap` to 1 immediately.
-   - `concurrencyReducedToOne(for:)` drives
-     `HostRateDisplayState.concurrencyReducedToOne`.
-   - Scheduler global ceiling is the preferences `cap`; a host's own adaptive
-     cap limits how many of that host's downloads may run concurrently.
-     `effectiveCap` equals the prefs `cap` (Force Start eviction uses the same
-     global ceiling).
-6. **`fragmentCount(for:)`** — host `.normal` → `concurrentFragmentsNormal`
-   (4), otherwise `concurrentFragmentsThrottled` (1): a gentler yt-dlp `-N`
-   for any host under pressure.
+   - `concurrencyReducedToOne(for:)` drives `HostRateDisplayState.concurrencyReducedToOne`.
+   - Scheduler global ceiling is the preferences `cap`; a host's own adaptive cap limits how many of that host's downloads may run concurrently. `effectiveCap` equals the prefs `cap` (Force Start eviction uses the same global ceiling).
+6. **`fragmentCount(for:)`** — host `.normal` → `concurrentFragmentsNormal` (4), otherwise `concurrentFragmentsThrottled` (1): a gentler yt-dlp `-N` for any host under pressure.
 
 ### `EngineTuning` — rate-limiting fields
 
-`Sources/GrabberKit/Model/EngineTuning.swift`. `EngineTuning.resolved()` is what
-the engine uses; every unset or malformed env key keeps the default.
+`Sources/GrabberKit/Model/EngineTuning.swift`. `EngineTuning.resolved()` is what the engine uses; every unset or malformed env key keeps the default.
 
 | field | default | env key | role |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `circuitStrikeThreshold` | 4 | (rate-limit tuning) | strike count at which `.cooldown` → `.circuitOpen` |
 | `adaptiveConcurrencyStart` | 2 | " | initial `adaptiveCap` |
 | `cleanStreakToRaise` | 5 | " | consecutive clean successes to bump `adaptiveCap` by 1 |
@@ -305,18 +230,13 @@ the engine uses; every unset or malformed env key keeps the default.
 | `metadataProbeLimit` | 3 | `MG_METADATA_PROBE_LIMIT` | token-bucket probe limit (not wired by default — see §4) |
 | `metadataProbeWindowSeconds` | 60 | `MG_METADATA_PROBE_WINDOW_SECONDS` | token-bucket window |
 
-`RateState` display: `RateLimiter.displaySummary(now:)` emits a
-`HostRateDisplayState` only for hosts that are visibly limited (cooling and not
-elapsed, or circuit-open) — `.normal` hosts are omitted. Carried in
-`QueueSnapshot.hostRateSummary`.
+`RateState` display: `RateLimiter.displaySummary(now:)` emits a `HostRateDisplayState` only for hosts that are visibly limited (cooling and not elapsed, or circuit-open) — `.normal` hosts are omitted. Carried in `QueueSnapshot.hostRateSummary`.
 
 ---
 
 ## 3. Shield status (`ShieldStatus`) — the bot-check helper
 
-`ShieldStatus` — `Sources/GrabberKit/PotProvider/ShieldStatus.swift`:
-`.running(port:)` · `.down` · `.missing`. Owned by the `PotProviderProcess`
-actor.
+`ShieldStatus` — `Sources/GrabberKit/PotProvider/ShieldStatus.swift`: `.running(port:)` · `.down` · `.missing`. Owned by the `PotProviderProcess` actor.
 
 ```mermaid
 stateDiagram-v2
@@ -335,28 +255,18 @@ stateDiagram-v2
     down --> running : auto-restart after potRestartBackoffSeconds
 ```
 
-`DownloadEngine.shieldStatus` mirrors the actor's value; it is refreshed in
-`preview` / `previewPlaylist` / `ensureShield` / `restartShield` / `shutdown`
-and carried in `QueueSnapshot.shieldStatus`. `makeContext` sets `potBaseURL`
-only when the status is `.running` **and** the host is YouTube. A dead shield
-does **not** halt the queue — YouTube jobs run without POT and may fail with
-`.botCheck`, which is auto-retryable.
+`DownloadEngine.shieldStatus` mirrors the actor's value; it is refreshed in `preview` / `previewPlaylist` / `ensureShield` / `restartShield` / `shutdown` and carried in `QueueSnapshot.shieldStatus`. `makeContext` sets `potBaseURL` only when the status is `.running` **and** the host is YouTube. A dead shield does **not** halt the queue — YouTube jobs run without POT and may fail with `.botCheck`, which is auto-retryable.
 
 ---
 
 ## 4. Parked capabilities (phase homes)
 
-Architectural headroom that must not float without an owner. Each row names the
-phase that will plan and ship it (or drop it in that phase’s plan).
+Architectural headroom that must not float without an owner. Each row names the phase that will plan and ship it (or drop it in that phase’s plan).
 
 | capability | current state | phase |
-|---|---|---|
-| **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 16** |
+| --- | --- | --- |
+| **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 17** |
 | **Queue-row drag-reorder (view order)** | AppKit grid ships; rows not yet draggable. Slot: session `RowStore` manual order + sort-overwrite confirm; engine schedule unchanged. | **Phase 15** |
 | **Aurora body-face / first-run Home redesign** | Inter still Aurora body; first-run structure live but creative pass pending. | **Phase 15** |
 
-Phase 14 shipped (and removed from this table): per-host adaptive concurrency,
-engine-owned `QueueSnapshot.playlistGroups`, `.userReset` through `RatePolicy`,
-metadata-probe wait visibility (`JobSnapshot.probeWaitUntil`). Halt-on-dead-shield
-(`.shieldDown`) was rejected — chip/banner only. Warning banner is already
-bottom-docked (former “banner → footer” park — closed, not Phase 15).
+Phase 14 shipped (and removed from this table): per-host adaptive concurrency, engine-owned `QueueSnapshot.playlistGroups`, `.userReset` through `RatePolicy`, metadata-probe wait visibility (`JobSnapshot.probeWaitUntil`). Halt-on-dead-shield (`.shieldDown`) was rejected — chip/banner only. Warning banner is already bottom-docked (former “banner → footer” park — closed, not Phase 15).

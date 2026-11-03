@@ -102,6 +102,7 @@ let project = Project(
             bundleId: "app.mediagrabber.mac.kit",
             deploymentTargets: .macOS("14.0"),
             sources: ["Sources/GrabberKit/**"],
+            resources: [.folderReference(path: "Resources/YtDlpPlugins")],
             dependencies: []
         ),
         .target(

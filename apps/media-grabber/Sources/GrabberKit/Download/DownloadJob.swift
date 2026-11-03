@@ -14,7 +14,6 @@ final class DownloadJob: @unchecked Sendable {
     var cooldownUntil: Date?
     var sizeBytes: Int64?
     var attempt: Int
-    var forceCookies: Bool
     var outputFiles: [URL]
     // Runtime-only (not persisted) — set on completion / a failed integrity check.
     var integrityVerdict: IntegrityVerdict?
@@ -28,6 +27,8 @@ final class DownloadJob: @unchecked Sendable {
     var playlistGroupID: UUID?
     var playlistIndex: Int?
     var probeWaitUntil: Date?
+    // Memory only, never persisted; cleared when this job reaches a final state.
+    var videoPassword: String?
 
     init(request: DownloadRequest, id: UUID = UUID(), addedAt: Date = .now) {
         self.id = id
@@ -41,7 +42,6 @@ final class DownloadJob: @unchecked Sendable {
         cooldownUntil = nil
         sizeBytes = nil
         attempt = 0
-        forceCookies = false
         outputFiles = []
         integrityVerdict = nil
         actualQuality = nil
@@ -53,7 +53,7 @@ final class DownloadJob: @unchecked Sendable {
         probeWaitUntil = nil
     }
 
-    func snapshot(availableActions: Set<RowAction>) -> JobSnapshot {
+    func snapshot(availableActions: Set<RowAction>, signInAdvice: SignInAdvice = .none) -> JobSnapshot {
         JobSnapshot(
             id: id,
             url: request.url,
@@ -77,7 +77,8 @@ final class DownloadJob: @unchecked Sendable {
             playlistIndex: playlistIndex,
             integrityVerdict: integrityVerdict,
             availableActions: availableActions,
-            probeWaitUntil: probeWaitUntil
+            probeWaitUntil: probeWaitUntil,
+            signInAdvice: signInAdvice
         )
     }
 }

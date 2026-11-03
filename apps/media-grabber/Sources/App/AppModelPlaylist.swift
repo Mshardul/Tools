@@ -34,8 +34,10 @@ extension AppModel {
         await log.log(.probeCompleted(url: url, title: nil, ok: false))
     }
 
-    func resolvePlaylist(_ url: String) async {
+    func resolvePlaylist(_ url: String, serial: Int? = nil) async {
+        let serial = serial ?? probeSerial
         let result = await engine.previewPlaylist(url)
+        guard serial == probeSerial else { return }
         isProbing = false
         switch result {
         case let .success(dump):
@@ -53,13 +55,21 @@ extension AppModel {
     private func showProbeFailure(_ error: MetadataError, url: String) async {
         let shieldStatus = await engine.currentSnapshot().shieldStatus
         let isYouTube = RateHost(urlString: url).canonical == "youtube"
+        let host = RateHost(urlString: url)
+        let advice = SignInPolicy.probeAdvice(
+            for: error, host: host, cookiesConfigured: !prefs.cookiesFromBrowser.isNone
+        )
         probeError = AppModelDialogs.probeErrorMessage(
             for: error,
             vpnActive: vpnDetector.isVPNActive,
             shieldStatus: shieldStatus,
-            isYouTube: isYouTube
+            isYouTube: isYouTube,
+            advice: advice
         )
         shieldSetup.probePrompt = error == .botCheck && isYouTube ? Self.shieldPrompt(for: shieldStatus) : nil
+        if error == .passcodeRequired || error == .passcodeRejected {
+            presentPasscodePrompt(forLink: url, wasRejected: error == .passcodeRejected)
+        }
     }
 
     private static func shieldPrompt(for status: ShieldStatus) -> ShieldSetupController.ProbePrompt? {
@@ -70,8 +80,10 @@ extension AppModel {
         }
     }
 
-    func resolveVideo(_ url: String) async {
+    func resolveVideo(_ url: String, serial: Int? = nil) async {
+        let serial = serial ?? probeSerial
         let result = await engine.preview(url)
+        guard serial == probeSerial else { return }
         isProbing = false
         isPlaylistPickerPresented = false
         switch result {

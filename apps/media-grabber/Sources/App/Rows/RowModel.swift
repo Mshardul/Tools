@@ -201,7 +201,7 @@ final class RowModel: Identifiable {
             playerClientUsed: known.playerClientUsed, playlistGroupID: known.playlistGroupID,
             playlistIndex: known.playlistIndex,
             integrityVerdict: known.integrityVerdict, availableActions: known.availableActions,
-            probeWaitUntil: known.probeWaitUntil
+            probeWaitUntil: known.probeWaitUntil, signInAdvice: known.signInAdvice
         )
         statusText = Self.status(for: snapshot)
         speedText = Self.speed(for: snapshot)
@@ -292,7 +292,7 @@ extension RowModel {
 
     static func quality(for snapshot: JobSnapshot) -> String {
         let request: String = switch snapshot.kind {
-        case let .video(maxHeight): "\(maxHeight)p"
+        case let .video(maxHeight): maxHeight == Int.max ? "Best" : "\(maxHeight)p"
         case let .audio(format): format.rawValue
         }
         guard let actual = snapshot.actualQuality, actual != request else { return request }

@@ -95,10 +95,10 @@ public struct CookieResolver: Sendable {
 
     // MARK: - Resolve
 
-    public func resolve(source: CookieSource, jobOverride: Bool) -> CookieResolution {
+    public func resolve(source: CookieSource) -> CookieResolution {
         switch source {
         case .none:
-            noneResolution(jobOverride: jobOverride)
+            CookieResolution(argument: nil, verdict: .unconfigured)
         case .safari:
             safariResolution()
         case let .firefox(profile):
@@ -116,13 +116,6 @@ public struct CookieResolver: Sendable {
             argument: source.ytDlpSpec,
             verdict: .ready(browserKey: source.browserKey)
         )
-    }
-
-    private func noneResolution(jobOverride: Bool) -> CookieResolution {
-        guard jobOverride else {
-            return CookieResolution(argument: nil, verdict: .unconfigured)
-        }
-        return substitutedResolution()
     }
 
     private func safariResolution() -> CookieResolution {
@@ -147,19 +140,6 @@ public struct CookieResolver: Sendable {
             )
         }
         return CookieResolution(argument: "firefox", verdict: .ready(browserKey: "firefox"))
-    }
-
-    private func substitutedResolution() -> CookieResolution {
-        if safariAccess() == .granted {
-            return CookieResolution(argument: "safari", verdict: .ready(browserKey: "safari"))
-        }
-        let candidates: [CookieSource] = [.chrome, .brave, .edge, .firefox(profile: nil)]
-        if let source = candidates.first(where: { browserSupportDirectoryExists(for: $0) }) {
-            return CookieResolution(
-                argument: source.ytDlpSpec, verdict: .ready(browserKey: source.browserKey)
-            )
-        }
-        return CookieResolution(argument: nil, verdict: .unconfigured)
     }
 
     private func browserSupportDirectoryExists(for source: CookieSource) -> Bool {

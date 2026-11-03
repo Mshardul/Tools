@@ -223,7 +223,20 @@ enum LogRedaction {
     private static let homePrefix = "/Users/"
 
     static func redact(_ value: String) -> String {
-        stripCredentials(rewriteHomePaths(value))
+        redactCookieHeaders(stripCredentials(rewriteHomePaths(value)))
+    }
+
+    private static let cookieHeader = try? NSRegularExpression(
+        pattern: "\\b((?:set-)?cookie):[^\\n]*",
+        options: [.caseInsensitive]
+    )
+
+    static func redactCookieHeaders(_ value: String) -> String {
+        guard let cookieHeader else { return value }
+        let range = NSRange(value.startIndex..., in: value)
+        return cookieHeader.stringByReplacingMatches(
+            in: value, options: [], range: range, withTemplate: "$1: <redacted>"
+        )
     }
 
     static func redact(_ fields: [String: String]) -> [String: String] {

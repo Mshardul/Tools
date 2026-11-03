@@ -6,8 +6,13 @@ final class ErrorClassKeyTests: XCTestCase {
         .rateLimited(), .botCheck, .sabrGated, .formatsMissing, .cookieReadFailed,
         .geoBlocked, .private, .unavailable, .ageRestricted, .networkDown,
         .diskFull, .permissionDenied, .incomplete, .depMissing, .potProviderDown,
-        .unknown(raw: "x")
+        .passcodeRequired, .passcodeRejected, .unknown(raw: "x")
     ]
+
+    func test_passcodeKeys() {
+        XCTAssertEqual(ErrorClass.passcodeRequired.key, "passcode_required")
+        XCTAssertEqual(ErrorClass.passcodeRejected.key, "passcode_rejected")
+    }
 
     func test_everyCaseHasADistinctKey() {
         let keys = all.map(\.key)

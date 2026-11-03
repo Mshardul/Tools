@@ -5,11 +5,13 @@ public struct ExtractorContext: Sendable, Equatable {
     public var potBaseURL: URL?
     public var playerClient: String?
     public var cookieArgument: String?
+    public var videoPassword: String?
 
     public static let none = ExtractorContext(
         pluginDirs: [],
         potBaseURL: nil,
         playerClient: nil,
-        cookieArgument: nil
+        cookieArgument: nil,
+        videoPassword: nil
     )
 }

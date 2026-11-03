@@ -16,6 +16,8 @@ public actor DownloadEngine: DownloadEngineProtocol {
     var isOnline = true
     var networkTask: Task<Void, Never>?
     var shieldStatus: ShieldStatus = .missing
+    // Passcodes typed for a link before its job exists; a submitted job takes its link's entry for itself.
+    var passcodes: [String: String] = [:]
     var playlistGroupRegistry: [UUID: PersistedPlaylistGroup] = [:]
 
     let eventStream: AsyncStream<QueueEvent>
@@ -69,6 +71,7 @@ public actor DownloadEngine: DownloadEngineProtocol {
             )
         }
         let job = DownloadJob(request: request)
+        job.videoPassword = passcodes.removeValue(forKey: request.url)
         if let meta = prefetchedMetadata {
             job.title = meta.title
             job.extractor = meta.extractor

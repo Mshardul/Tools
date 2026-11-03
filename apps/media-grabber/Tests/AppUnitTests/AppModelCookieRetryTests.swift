@@ -39,14 +39,6 @@ final class AppModelCookieRetryTests: XCTestCase {
         XCTAssertTrue(engine.retriedWithCookiesIDs.isEmpty)
     }
 
-    func test_browserSet_callsEngineNoPageChange() async {
-        let (model, engine) = makeModel(.safari)
-        let id = UUID()
-        await model.handleRowAction(id, action: .retryWithCookies)
-        XCTAssertEqual(engine.retriedWithCookiesIDs, [id])
-        XCTAssertEqual(model.page, .home)
-    }
-
     func test_resolveCookieRetry_firesAndClears() async {
         let (model, engine) = makeModel(.none)
         let id = UUID()

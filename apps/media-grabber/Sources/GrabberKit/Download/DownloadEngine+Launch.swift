@@ -12,13 +12,13 @@ extension DownloadEngine {
             return
         }
         let url = job.request.url
-        let forceCookies = job.forceCookies
+        let passcode = job.videoPassword
         let probe = dependencies.probe
         probeTask = Task { [weak self] in
             guard let self else {
                 return
             }
-            let context = await makeContext(url: url, attempt: 0, forceCookies: forceCookies)
+            let context = await makeContext(url: url, attempt: 0, passcode: passcode)
             let result = await probe.probe(url, context: context) { [weak self] until in
                 Task { await self?.setProbeWait(id, until: until) }
             }
@@ -68,16 +68,13 @@ extension DownloadEngine {
         guard let job = jobs.first(where: { $0.id == id }) else {
             return nil
         }
-        let context = await makeContext(
-            url: job.request.url,
-            attempt: job.attempt,
-            forceCookies: job.forceCookies
-        )
+        let context = await makeContext(url: job.request.url, attempt: job.attempt, passcode: job.videoPassword)
         job.playerClientUsed = context.playerClient
-        let cookieArgument = resolveCookieArgument(for: job)
+        let cookieArgument = resolveCookieArgument()
         let launch = ProcessLaunch(
             executableURL: dependencies.ytDlpURL,
-            arguments: downloadArguments(for: job, cookieArgument: cookieArgument, context: context)
+            arguments: downloadArguments(for: job, cookieArgument: cookieArgument, context: context),
+            environment: BundledYtDlpPlugins.launchEnvironment
         )
         let jobLog = JobLog(
             id: id,
@@ -116,11 +113,11 @@ extension DownloadEngine {
         )
     }
 
-    func resolveCookieArgument(for job: DownloadJob) -> String? {
+    func resolveCookieArgument() -> String? {
         let home = dependencies.cookieResolverHome
             ?? FileManager.default.homeDirectoryForCurrentUser
         return CookieResolver(fileManager: dependencies.fileManager, home: home)
-            .resolve(source: preferences.cookiesFromBrowser, jobOverride: job.forceCookies)
+            .resolve(source: preferences.cookiesFromBrowser)
             .argument
     }
 

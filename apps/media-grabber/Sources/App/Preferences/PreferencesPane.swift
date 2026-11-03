@@ -30,7 +30,7 @@ enum PreferencesPane: String, CaseIterable, Hashable {
         case .network:
             "Applied to new downloads."
         case .cookies:
-            "Sign in to reach private or age-restricted videos."
+            "Sign in to reach private or age-restricted videos on sites that need it."
         case .updates:
             "Check for new versions of the app and the downloader."
         case .logsPrivacy:

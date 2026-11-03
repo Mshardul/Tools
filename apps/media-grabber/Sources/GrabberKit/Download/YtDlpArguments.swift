@@ -5,10 +5,15 @@ public enum YtDlpArguments {
         + "%(progress._speed_str)s|%(progress._eta_str)s|"
         + "%(progress.downloaded_bytes)s|%(progress.total_bytes)s"
 
-    public static func extractorFlags(context: ExtractorContext) -> [String] {
+    public static func extractorFlags(context: ExtractorContext, redact: Bool = false) -> [String] {
         var flags: [String] = []
-        if !context.pluginDirs.isEmpty {
-            flags += ["--plugin-dirs", context.pluginDirs.map(\.path).joined(separator: ":")]
+        // One token, so a passcode that starts with "-" is read as the flag's value, never as a flag.
+        if let passcode = context.videoPassword, !passcode.isEmpty {
+            flags += ["--video-password=\(redact ? "<redacted>" : passcode)"]
+        }
+        // yt-dlp reads a colon-joined value as one path and loads nothing, so each directory gets its own flag.
+        for dir in context.pluginDirs {
+            flags += ["--plugin-dirs", dir.path]
         }
         if let pot = context.potBaseURL {
             flags += ["--extractor-args", "youtubepot-bgutilhttp:base_url=\(pot.absoluteString)"]
@@ -47,7 +52,7 @@ public enum YtDlpArguments {
         baseArgv(for: request, tuning: tuning)
             + ["--concurrent-fragments", String(concurrentFragments)]
             + cookieFlags(cookieArgument, redact: true)
-            + extractorFlags(context: context)
+            + extractorFlags(context: context, redact: true)
             + globalFlags(options, proxyURL: options.proxyURL.map(maskUserinfo(in:)))
             + [request.url]
     }
@@ -78,7 +83,6 @@ public enum YtDlpArguments {
             "--retry-sleep", tuning.retrySleep,
             "--throttled-rate", "\(tuning.throttledRateKBps)K",
             "--file-access-retries", "\(tuning.fileAccessRetries)",
-            "--no-part-hint",
             "--sleep-requests", "\(tuning.sleepRequests)",
             "--sleep-interval", "\(tuning.sleepInterval)",
             "--max-sleep-interval", "\(tuning.maxSleepInterval)"

@@ -28,6 +28,39 @@ final class ErrorSignaturesTests: XCTestCase {
         )
     }
 
+    private func fixtureLine(_ name: String) throws -> String {
+        let url = try XCTUnwrap(Bundle.module.url(forResource: name, withExtension: "txt"))
+        return try String(contentsOf: url, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func test_passcodeRequired() {
+        let line = "ERROR: [zoom] abc: This video is protected by a passcode, use the --video-password option"
+        XCTAssertEqual(classify(line), .passcodeRequired)
+    }
+
+    func test_passcodeRejected() throws {
+        let line = try fixtureLine("zoom-stderr-passcode-rejected")
+        XCTAssertEqual(classify(line), .passcodeRejected)
+    }
+
+    func test_unavailableZoomRecording_isUnavailableNotPasscode() throws {
+        let line = try fixtureLine("zoom-stderr-unavailable")
+        XCTAssertEqual(classify(line), .unavailable)
+    }
+
+    func test_zoomPrivateAndBotSentencesUseExistingClasses() {
+        let signedIn = "ERROR: [zoom] abc: Private video: this Zoom recording is only available to signed-in viewers."
+        let captcha = "ERROR: [zoom] abc: Zoom is asking to confirm you're not a bot. "
+            + "Open the link in your browser once, then try again."
+        XCTAssertEqual(classify(signedIn), .private)
+        XCTAssertEqual(classify(captcha), .botCheck)
+    }
+
+    func test_passcodeWordOutsideAnErrorLine_isIgnored() {
+        XCTAssertNil(classify("[zoom] abc: Validating passcode"))
+        XCTAssertNil(classify("[zoom] abc: This video is protected by a passcode"))
+    }
+
     func test_private_unavailable_ageRestricted() {
         XCTAssertEqual(
             classify("ERROR: Private video. Sign in if you've been granted access to this video"),

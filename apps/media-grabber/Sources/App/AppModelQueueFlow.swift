@@ -7,34 +7,47 @@ extension AppModel {
         await resolvePasted(homeFieldText)
     }
 
-    func resolvePasted(_ url: String) async {
+    func resolvePasted(_ url: String, supersede: Bool = false) async {
         let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        guard supersede || probingURL != trimmed else { return }
+        probeSerial += 1
+        let serial = probeSerial
+        probingURL = trimmed
+        defer {
+            if serial == probeSerial {
+                probingURL = nil
+            }
+        }
         isProbing = true
         probeError = nil
         shieldSetup.probePrompt = nil
+        resetPasscodePrompt()
 
         switch PlaylistLink.classify(trimmed) {
         case .youtubeUnsupported:
             await resolveUnsupportedPlaylistLink(trimmed)
         case .youtubePlaylist:
-            await resolvePlaylist(trimmed)
+            await resolvePlaylist(trimmed, serial: serial)
         case .singleVideo:
-            await resolveVideo(trimmed)
+            await resolveVideo(trimmed, serial: serial)
         }
     }
 
     func clearResolved() {
+        probeSerial += 1
+        probingURL = nil
         resolved = nil
         probeError = nil
         shieldSetup.probePrompt = nil
+        resetPasscodePrompt()
         isPlaylistPickerPresented = false
     }
 
     func reprobeCurrentLink() async {
         let text = homeFieldText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-        await resolvePasted(text)
+        await resolvePasted(text, supersede: true)
     }
 
     func grab(overrides: RunwayOverrides = RunwayOverrides()) async {

@@ -23,7 +23,15 @@ extension AppModel {
         case .openInBrowser: openInBrowser(jobID: id)
         case .retry: await engine.retry(id)
         case .showLog: await showLog(jobID: id)
-        case .retryWithCookies: await retryWithCookies(id)
+        case .retryWithCookies, .enterPasscode: presentFixPrompt(for: id, action: action)
+        }
+    }
+
+    private func presentFixPrompt(for id: UUID, action: RowAction) {
+        if action == .enterPasscode {
+            presentPasscodePrompt(forJob: id)
+        } else {
+            retryWithCookies(id)
         }
     }
 
@@ -39,13 +47,9 @@ extension AppModel {
         _ = rowStore.moveVisibleItem(from: fromIndex, to: toIndex)
     }
 
-    private func retryWithCookies(_ id: UUID) async {
-        if prefs.cookiesFromBrowser.isNone {
-            setPendingCookieRetry(id)
-            page = .preferences(.cookies)
-        } else {
-            await engine.retryWithCookies(id)
-        }
+    private func retryWithCookies(_ id: UUID) {
+        setPendingCookieRetry(id)
+        page = .preferences(.cookies)
     }
 
     func handlePlaylistGroupAction(_ id: UUID, action: PlaylistGroupAction) async {

@@ -1,0 +1,1 @@
+ERROR: [zoom] <recording-token>: Zoom rejected the passcode

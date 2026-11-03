@@ -91,6 +91,13 @@ final class RowModelStatusTests: XCTestCase {
         XCTAssertEqual(RowModel.quality(for: snap), "1080p")
     }
 
+    func test_quality_bestAvailableShowsBestNotTheSentinelHeight() {
+        let snap = snapshot(kind: .video(maxHeight: Int.max), actualQuality: nil)
+        XCTAssertEqual(RowModel.quality(for: snap), "Best")
+        let finished = snapshot(kind: .video(maxHeight: Int.max), actualQuality: "900p")
+        XCTAssertEqual(RowModel.quality(for: finished), "Best → 900p")
+    }
+
     func test_badge_hiddenWhileRetrying() {
         let retrying = RowModel(snapshot(state: .queued, attempt: 1), queuePosition: 3)
         XCTAssertNil(retrying.queueBadge)

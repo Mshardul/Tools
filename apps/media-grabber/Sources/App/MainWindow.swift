@@ -59,6 +59,12 @@ struct MainWindow: View {
         )) {
             ShieldSetupSheet(controller: appModel.shieldSetup)
         }
+        .sheet(isPresented: Binding(
+            get: { appModel.isPasscodeSheetShown },
+            set: { appModel.isPasscodeSheetShown = $0 }
+        )) {
+            PasscodeSheet(appModel: appModel)
+        }
         .overlay {
             if let request = appModel.pendingConfirmation {
                 ConfirmationDialog(request: request) { confirmed, suppress in

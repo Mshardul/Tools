@@ -87,6 +87,7 @@ final class EngineIntentsTests: XCTestCase {
 
         await engine.pause(first)
         await expectState(collector, first) { $0 == .paused }
+        _ = await collector.waitForState(second) { $0 == .running }
         await engine.resume(first)
 
         // resume() re-appends the job at the list tail with progress state cleared.

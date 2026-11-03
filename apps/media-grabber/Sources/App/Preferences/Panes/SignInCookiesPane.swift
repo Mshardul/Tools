@@ -57,7 +57,7 @@ struct SignInCookiesPane: View {
         @Bindable var model = model
         return PrefRow(
             "Browser",
-            helper: "Use your browser's YouTube sign-in for age-restricted or private videos."
+            helper: Self.browserHelper
         ) {
             SkinnedPicker(
                 caption: "Browser",
@@ -147,13 +147,10 @@ struct SignInCookiesPane: View {
     }
 
     private var tipBlock: some View {
-        Text(
-            "For the most reliable results, use a browser profile that's signed in to "
-                + "YouTube and keep it closed while downloading."
-        )
-        .font(theme.bodyFont(11.5, .regular))
-        .foregroundStyle(theme.palette.dim)
-        .padding(.top, Spacing.s3)
+        Text(Self.tipText)
+            .font(theme.bodyFont(11.5, .regular))
+            .foregroundStyle(theme.palette.dim)
+            .padding(.top, Spacing.s3)
     }
 
     @ViewBuilder
@@ -206,6 +203,11 @@ struct SignInCookiesPane: View {
         case .firefox: "Firefox"
         }
     }
+
+    static let browserHelper = "Use your browser's sign-in for videos that need an account."
+
+    static let tipText = "For the most reliable results, use a browser profile that's signed in to "
+        + "the site and keep it closed while downloading."
 
     static func pendingBannerText(jobTitle: String?) -> String {
         "Pick a browser to retry \"\(jobTitle ?? "this download")\" with your sign-in."

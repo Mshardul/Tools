@@ -69,6 +69,21 @@ final class EngineCookieTests: XCTestCase {
         XCTAssertFalse((runner.launches.first?.arguments ?? []).contains("--cookies-from-browser"))
     }
 
+    func test_noBrowserChosen_argvHasNoCookieTokens() async {
+        let runner = FakeProcessRunner()
+        runner.script(Fix.completingScript(), forPathEndingIn: "yt-dlp")
+        var fm = safariReadableFM()
+        fm.dirs = [chromeDir: [home.appendingPathComponent("x")]]
+        let engine = Fix.engine(
+            runner: runner, probe: probe(), preferences: prefs(.none),
+            fileManager: fm, resolverHome: home
+        )
+        let collector = EventCollector(engine.events)
+        let id = await submitJob(engine, Fix.request())
+        await expectState(collector, id) { $0 == .completed }
+        XCTAssertFalse((runner.launches.first?.arguments ?? []).contains("--cookies-from-browser"))
+    }
+
     // MARK: - The Extracted 0 cookies override
 
     func test_zeroCookiesLine_plusNonZeroExit_withCookieArg_classifiesCookieReadFailed() async {

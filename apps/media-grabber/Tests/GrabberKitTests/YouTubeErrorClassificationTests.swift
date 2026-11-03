@@ -51,11 +51,11 @@ final class YouTubeErrorClassificationTests: XCTestCase {
     func testPresentationSentencesAndActions() {
         XCTAssertEqual(
             ErrorClass.botCheck.presentation.sentence,
-            "Couldn't verify you. Try again, or add browser cookies in Preferences."
+            "Couldn't verify this request. Try again in a moment."
         )
         XCTAssertEqual(
             ErrorClass.botCheck.presentation.offeredActions,
-            [.retry, .retryWithCookies]
+            [.retry]
         )
         XCTAssertEqual(
             ErrorClass.sabrGated.presentation.sentence,
@@ -68,7 +68,7 @@ final class YouTubeErrorClassificationTests: XCTestCase {
         )
         XCTAssertEqual(
             ErrorClass.formatsMissing.presentation.offeredActions,
-            [.retry, .retryWithCookies]
+            [.retry]
         )
         XCTAssertEqual(
             ErrorClass.potProviderDown.presentation.sentence,

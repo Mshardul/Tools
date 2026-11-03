@@ -42,6 +42,25 @@ final class PreferencesPaneTests: XCTestCase {
         )
     }
 
+    func test_cookiePaneCopy_isSiteNeutral() {
+        XCTAssertEqual(
+            PreferencesPane.cookies.subtitle,
+            "Sign in to reach private or age-restricted videos on sites that need it."
+        )
+        XCTAssertEqual(
+            SignInCookiesPane.browserHelper,
+            "Use your browser's sign-in for videos that need an account."
+        )
+        XCTAssertEqual(
+            SignInCookiesPane.tipText,
+            "For the most reliable results, use a browser profile that's signed in to the site "
+                + "and keep it closed while downloading."
+        )
+        for text in [PreferencesPane.cookies.subtitle, SignInCookiesPane.browserHelper, SignInCookiesPane.tipText] {
+            XCTAssertFalse(text.contains("YouTube"))
+        }
+    }
+
     func test_diagnosticsPane_isInSystemGroup() {
         XCTAssertEqual(PreferencesPane.diagnostics.group, .system)
     }

@@ -79,7 +79,7 @@ final class CookiePaneModel {
     func testSignIn() async {
         guard let signInProbe, signInTest != .running else { return }
         let name = SignInCookiesPane.displayName(for: source)
-        let resolution = resolver.resolve(source: source, jobOverride: false)
+        let resolution = resolver.resolve(source: source)
         guard let argument = resolution.argument else {
             signInTest = .failed(message(for: resolution.verdict, browser: name))
             return
@@ -154,7 +154,7 @@ final class CookiePaneModel {
         firefoxProfiles = resolver.firefoxProfiles()
         safariAccess = resolver.safariAccess()
         if isChromium {
-            chromiumBrowserFound = resolver.resolve(source: source, jobOverride: false).verdict != .noProfiles
+            chromiumBrowserFound = resolver.resolve(source: source).verdict != .noProfiles
         }
         if hasStaleFirefoxProfile() {
             prefs.cookiesFromBrowser = .firefox(profile: nil)

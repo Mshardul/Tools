@@ -1,22 +1,13 @@
 # MediaGrabber
 
-A small macOS app that takes one pasted video URL, resolves its title, and
-downloads the file with a live progress bar — then shows "Saved" with a
-Reveal-in-Finder action. It shells out to [`yt-dlp`](https://github.com/yt-dlp/yt-dlp)
-(one child process per download) and uses `ffmpeg` for muxing. Neither tool is
-bundled; the app installs both through Homebrew on first run if they are
-missing.
+A small macOS app that takes one pasted video URL, resolves its title, and downloads the file with a live progress bar — then shows "Saved" with a Reveal-in-Finder action. It shells out to [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (one child process per download) and uses `ffmpeg` for muxing. Neither tool is bundled; the app installs both through Homebrew on first run if they are missing.
 
-> **Working name.** `MediaGrabber` / bundle ID `app.mediagrabber.mac` are
-> placeholders. The final product name is chosen at v1 (Phase 13 / spec §14);
-> renaming is a find-and-replace.
+> **Working name.** `MediaGrabber` / bundle ID `app.mediagrabber.mac` are placeholders. The final product name is chosen in Phase 18 (spec §14); renaming is a find-and-replace.
 
 ## Requirements
 
 - macOS 14.0 or later.
-- [Homebrew](https://brew.sh). The app runs `brew install yt-dlp ffmpeg` for you
-  on first launch if the tools aren't already on `PATH`; if Homebrew itself is
-  missing, onboarding shows the one-line install command to paste into Terminal.
+- [Homebrew](https://brew.sh). The app runs `brew install yt-dlp ffmpeg` for you on first launch if the tools aren't already on `PATH`; if Homebrew itself is missing, onboarding shows the one-line install command to paste into Terminal.
 
 ## Run locally
 
@@ -27,9 +18,7 @@ mise install
 make
 ```
 
-`make` (same as `make run`) rebuilds from current sources, kills any running
-MediaGrabber, and opens the new build. Running it again replaces the previous
-instance instead of launching a second copy.
+`make` (same as `make run`) rebuilds from current sources, kills any running MediaGrabber, and opens the new build. Running it again replaces the previous instance instead of launching a second copy.
 
 Tests and the Xcode workspace:
 
@@ -48,56 +37,34 @@ mise exec -- swiftlint lint --strict
 
 ## Running a downloaded build (Gatekeeper)
 
-Builds are ad-hoc signed (no paid Apple Developer account), so a copy you
-downloaded is quarantined. One-time unblock, either:
+Builds are ad-hoc signed (no paid Apple Developer account), so a copy you downloaded is quarantined. One-time unblock, either:
 
-- **System Settings → Privacy & Security →** scroll to the blocked-app notice →
-  **Open Anyway**, then confirm on the next launch; or
+- **System Settings → Privacy & Security →** scroll to the blocked-app notice → **Open Anyway**, then confirm on the next launch; or
 - `xattr -dr com.apple.quarantine /Applications/MediaGrabber.app`
 
 A build you compiled yourself is not quarantined and needs neither step.
 
 ## Where things land
 
-- **Downloads:** `~/Downloads` by default, changeable per-download in the
-  runway or as a default in Preferences → Downloads.
+- **Downloads:** `~/Downloads` by default, changeable per-download in the runway or as a default in Preferences → Downloads.
 - **Logs:** `~/Library/Logs/MediaGrabber/` — local only, never uploaded.
   - `app.log` — app-wide events (launch, probes, duplicate prompts, quit).
-  - `jobs/<job-id>.log` — one raw `yt-dlp` transcript per download.
-  See [PRIVACY.md](PRIVACY.md) for exactly what they contain.
-- **Persisted state:** `queue.json`, `history.json`, and `columns.json` under
-  `~/Library/Application Support/MediaGrabber/` — relaunch restores the queue.
+  - `jobs/<job-id>.log` — one raw `yt-dlp` transcript per download. See [PRIVACY.md](PRIVACY.md) for exactly what they contain.
+- **Persisted state:** `queue.json`, `history.json`, and `columns.json` under `~/Library/Application Support/MediaGrabber/` — relaunch restores the queue.
 
 ## What the app does today
 
-A multi-download queue with a live table (pause / resume / cancel / remove /
-force-start per row), rate limiting and a circuit breaker per host, retry with
-error-class-aware messaging, cookie-based sign-in for gated videos, a
-bot-check shield for YouTube, playlist paste → picker → grouped rows, and
-add-flow ingress (clipboard, drag, Services, a `mediagrabber://` URL scheme) —
-every entry point lands in the same Home field. Graceful quit confirms when a
-download is active, flushes persistence, then shuts down child processes.
+A multi-download queue with a live table (pause / resume / cancel / remove / force-start per row), rate limiting and a circuit breaker per host, retry with error-class-aware messaging, cookie-based sign-in for gated videos, a bot-check shield for YouTube, playlist paste → picker → grouped rows, and add-flow ingress (clipboard, drag, Services, a `mediagrabber://` URL scheme) — every entry point lands in the same Home field. Graceful quit confirms when a download is active, flushes persistence, then shuts down child processes.
 
-For how it fits together: [`docs/architecture.md`](docs/architecture.md)
-(component map, request/event/persistence paths) and
-[`docs/state-flow.md`](docs/state-flow.md) (every job, rate-limit, and shield
-state with its triggers).
+For how it fits together: [`docs/architecture.md`](docs/architecture.md) (component map, request/event/persistence paths) and [`docs/state-flow.md`](docs/state-flow.md) (every job, rate-limit, and shield state with its triggers).
 
 Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
 
-Not yet built: Phase 15 table & Home finish (queue-row drag-reorder, banner →
-footer, Aurora body-face, first-run Home redesign); site/identity maturity
-(Phase 16); product name + app icon (Phase 17). Phase 14 engine maturity
-shipped (per-host adaptive concurrency, probe-wait visibility, engine playlist
-groups, `.userReset`). Phases 12–13 (Downloads grid + polish) are shipped —
-Progress / Speed / ETA stay separate columns. See
-[roadmap.md](roadmap.md).
+Not yet built: Phase 15 table & Home finish (queue-row drag-reorder, banner → footer, Aurora body-face, first-run Home redesign); cookie independence (Phase 16); site/identity maturity (Phase 17); product name + app icon (Phase 18). Phase 14 engine maturity shipped (per-host adaptive concurrency, probe-wait visibility, engine playlist groups, `.userReset`). Phases 12–13 (Downloads grid + polish) are shipped — Progress / Speed / ETA stay separate columns. See [roadmap.md](roadmap.md).
 
 ## Known gaps
 
-- **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the
-  UI falls back to system faces. Parks in **Phase 13** — see
-  [roadmap.md](roadmap.md).
+- **The Aurora typefaces (Sora / Inter / JetBrains Mono) aren't bundled** — the UI falls back to system faces. Parks in **Phase 13** — see [roadmap.md](roadmap.md).
 
 ## License
 

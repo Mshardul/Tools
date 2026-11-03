@@ -1,34 +1,62 @@
 APP_NAME := MediaGrabber
 BUNDLE_ID := app.mediagrabber.mac
 DERIVED := build
-APP := $(abspath $(DERIVED)/Build/Products/Debug/$(APP_NAME).app)
+CONFIG ?= Debug
+APP := $(abspath $(DERIVED)/Build/Products/$(CONFIG)/$(APP_NAME).app)
+INSTALLED := /Applications/$(APP_NAME).app
+LSREGISTER := /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 .DEFAULT_GOAL := run
-.PHONY: generate build run test lint release release-patch release-minor release-major
+.PHONY: generate build install drop-build-app run plugin-test test lint release release-patch release-minor release-major
 
 generate:
 	mise exec -- tuist generate --no-open
 
 build: generate
 	xcodebuild -workspace $(APP_NAME).xcworkspace -scheme $(APP_NAME) \
+		-configuration $(CONFIG) \
 		-destination 'platform=macOS' \
 		-derivedDataPath $(DERIVED) \
 		build
 
-run: build
+# make install [CONFIG=Release]; replaces the app in /Applications and removes the build copy so only one exists.
+install: build
 	@pids=`osascript -e 'tell application "System Events" to get unix id of (every process whose bundle identifier is "$(BUNDLE_ID)")' 2>/dev/null | tr ',' ' '` ; \
 		if [ -n "$$pids" ]; then kill -9 $$pids; fi
 	@killall -9 $(APP_NAME) >/dev/null 2>&1 || true
 	@while pgrep -x $(APP_NAME) >/dev/null 2>&1; do sleep 0.05; done
-	open "$(APP)"
+	@test -d "$(APP)" || { echo "build product missing: $(APP)"; exit 1; }
+	rm -rf "$(INSTALLED)"
+	ditto "$(APP)" "$(INSTALLED)"
+	$(LSREGISTER) -f "$(INSTALLED)"
+	@$(MAKE) --no-print-directory drop-build-app
+	open "$(INSTALLED)"
+
+drop-build-app:
+	@for config in Debug Release; do \
+		app="$(abspath $(DERIVED))/Build/Products/$$config/$(APP_NAME).app" ; \
+		if [ -d "$$app" ]; then $(LSREGISTER) -u "$$app" ; rm -rf "$$app" ; fi ; \
+	done
+
+run: install
+
+PY ?= $(abspath ../../.venv/bin/python)
+
+# Runs the bundled yt-dlp plugin's tests against the yt-dlp version pinned in requirements.txt.
+plugin-test:
+	$(PY) -m pip install -q -r Tests/PluginTests/requirements.txt
+	$(PY) -I -B -m unittest discover -s Tests/PluginTests -p 'test_*.py'
 
 # make test [ONLY=AppUnitTests/SomeSuite]; builds into the same build/ dir as `make`, never DerivedData.
-test: generate
+test: plugin-test generate
 	xcodebuild -workspace $(APP_NAME).xcworkspace -scheme $(APP_NAME)-Workspace \
 		-destination 'platform=macOS' \
 		-derivedDataPath $(DERIVED) \
 		$(if $(ONLY),-only-testing:$(ONLY)) \
-		test
+		test ; \
+		status=$$? ; \
+		$(MAKE) --no-print-directory drop-build-app ; \
+		exit $$status
 
 lint:
 	mise exec -- swiftformat --lint .

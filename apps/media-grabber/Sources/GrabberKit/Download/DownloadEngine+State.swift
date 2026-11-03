@@ -4,11 +4,17 @@ extension DownloadEngine {
     // MARK: - Snapshot / emit
 
     func buildSnapshot() -> QueueSnapshot {
+        let cookiesConfigured = !preferences.cookiesFromBrowser.isNone
         let jobSnapshots = jobs.map { job in
-            job.snapshot(availableActions: Self.availableActions(
-                for: job.state,
-                isImmediatelySchedulable: isImmediatelySchedulable(job)
-            ))
+            let advice = Self.signInAdvice(for: job, cookiesConfigured: cookiesConfigured)
+            return job.snapshot(
+                availableActions: Self.availableActions(
+                    for: job.state,
+                    isImmediatelySchedulable: isImmediatelySchedulable(job),
+                    signInAdvice: advice
+                ),
+                signInAdvice: advice
+            )
         }
         return QueueSnapshot(
             jobs: jobSnapshots,
@@ -19,6 +25,15 @@ extension DownloadEngine {
             isOnline: isOnline,
             shieldStatus: shieldStatus,
             playlistGroups: playlistGroupSnapshots(jobSnapshots: jobSnapshots)
+        )
+    }
+
+    static func signInAdvice(for job: DownloadJob, cookiesConfigured: Bool) -> SignInAdvice {
+        guard case let .failed(errorClass) = job.state else { return .none }
+        return SignInPolicy.advice(
+            for: errorClass,
+            host: RateHost(urlString: job.request.url),
+            cookiesConfigured: cookiesConfigured
         )
     }
 
@@ -89,7 +104,6 @@ extension DownloadEngine {
             durationSeconds: job.durationSeconds,
             state: PersistedState.persisted(from: job.state),
             attempt: job.attempt,
-            forceCookies: job.forceCookies,
             playlistGroupID: job.playlistGroupID,
             playlistIndex: job.playlistIndex,
             addedAt: job.addedAt,
@@ -107,7 +121,6 @@ extension DownloadEngine {
         job.extractor = persisted.extractor
         job.durationSeconds = persisted.durationSeconds
         job.attempt = persisted.attempt
-        job.forceCookies = persisted.forceCookies
         job.state = persisted.state.restoredJobState
         job.finishedAt = persisted.finishedAt
         job.playlistGroupID = persisted.playlistGroupID

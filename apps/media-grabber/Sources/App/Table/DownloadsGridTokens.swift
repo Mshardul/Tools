@@ -98,6 +98,7 @@ extension IconKind {
         case .forceStart: "arrow.up.to.line"
         case .retry: "arrow.clockwise"
         case .retryWithCookies: "key.fill"
+        case .enterPasscode: "lock.fill"
         case .reveal: "folder"
         case .openInBrowser: "globe"
         case .remove: "trash"

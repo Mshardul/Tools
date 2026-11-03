@@ -56,6 +56,7 @@ extension DownloadEngine {
         case let .failure(error):
             job.state = .failed(Self.errorClass(for: error))
             job.finishedAt = .now
+            dropPasscode(for: job)
         }
         bump()
         emitSnapshot()
@@ -104,6 +105,7 @@ extension DownloadEngine {
         if result.wasCancelled {
             job.state = .cancelled
             job.finishedAt = .now
+            dropPasscode(for: job)
             finishTerminal()
             return
         }
@@ -130,6 +132,7 @@ extension DownloadEngine {
         job.outputFiles = finalizedOutputFiles(for: job)
         job.state = .completed
         job.finishedAt = .now
+        dropPasscode(for: job)
         recordCleanSuccessFor(job)
         finishTerminal()
         return true
@@ -149,6 +152,7 @@ extension DownloadEngine {
         }
         job.state = .failed(errorClass)
         job.finishedAt = .now
+        dropPasscode(for: job)
         finishTerminal()
     }
 
@@ -314,6 +318,7 @@ extension DownloadEngine {
         job.state = .cancelled
         job.finishedAt = .now
         job.probeWaitUntil = nil
+        dropPasscode(for: job)
         enforceTerminalCap()
         bump()
         emitSnapshot()

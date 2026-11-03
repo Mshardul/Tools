@@ -17,6 +17,8 @@ public protocol DownloadEngineProtocol: Sendable {
     func resume(_ id: UUID) async
     func retry(_ id: UUID) async
     func retryWithCookies(_ id: UUID) async
+    func setPasscode(_ passcode: String, for url: String) async
+    func retryWithPasscode(_ id: UUID, passcode: String) async
     func cancel(_ id: UUID) async
     func remove(_ id: UUID) async
     func forceStart(_ id: UUID) async

@@ -27,6 +27,11 @@ final class AppModel {
     var homeFieldText = ""
     var resolved: ResolvedLink?
     var probeError: String?
+    // Identifies the newest link check; a slower, older check must not overwrite the newer one's result.
+    var probeSerial = 0
+    var probingURL: String?
+    var passcodeNeeded: PasscodePrompt?
+    var isPasscodeSheetShown = false
     var isProbing = false
     var playlistGroups: [PersistedPlaylistGroup] = []
     var isPlaylistPickerPresented = false

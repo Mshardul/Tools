@@ -27,10 +27,10 @@ public enum QueueHaltReason: Sendable, Equatable {
 public enum RowAction: Sendable, Hashable, CaseIterable {
     case pause, resume, cancel, remove, forceStart, reveal, openInBrowser
     // Gated: the engine never puts these in a job's action set yet.
-    case retry, retryWithCookies, showLog
+    case retry, retryWithCookies, enterPasscode, showLog
 
     public static let displayOrder: [RowAction] = [
-        .pause, .resume, .cancel, .forceStart, .retry, .retryWithCookies,
+        .pause, .resume, .cancel, .forceStart, .retry, .retryWithCookies, .enterPasscode,
         .reveal, .openInBrowser, .remove, .showLog
     ]
 }
@@ -60,6 +60,7 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
     public let integrityVerdict: IntegrityVerdict?
     public let availableActions: Set<RowAction>
     public let probeWaitUntil: Date?
+    public let signInAdvice: SignInAdvice
 
     public init(
         id: UUID,
@@ -84,7 +85,8 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
         playlistIndex: Int? = nil,
         integrityVerdict: IntegrityVerdict?,
         availableActions: Set<RowAction>,
-        probeWaitUntil: Date? = nil
+        probeWaitUntil: Date? = nil,
+        signInAdvice: SignInAdvice = .none
     ) {
         self.id = id
         self.url = url
@@ -109,5 +111,6 @@ public struct JobSnapshot: Sendable, Equatable, Identifiable {
         self.integrityVerdict = integrityVerdict
         self.availableActions = availableActions
         self.probeWaitUntil = probeWaitUntil
+        self.signInAdvice = signInAdvice
     }
 }

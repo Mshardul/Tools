@@ -11,6 +11,7 @@ public final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
         var playlistResults: [String: PlaylistOutcome] = [:]
         var playlistFallback: PlaylistOutcome = .failure(.malformedOutput)
         var probedURLs: [String] = []
+        var probedContexts: [ExtractorContext] = []
         var probedPlaylistURLs: [String] = []
         var perProbeDelay: Duration = .zero
     }
@@ -23,6 +24,10 @@ public final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
 
     public var probedURLs: [String] {
         box.read { $0.probedURLs }
+    }
+
+    public var probedContexts: [ExtractorContext] {
+        box.read { $0.probedContexts }
     }
 
     public var wasProbed: Bool {
@@ -72,11 +77,12 @@ public final class FakeMetadataProbe: MetadataProbing, @unchecked Sendable {
 
     public func probe(
         _ url: String,
-        context _: ExtractorContext,
+        context: ExtractorContext,
         onWait _: (@Sendable (Date?) -> Void)?
     ) async -> Outcome {
         let (result, delay) = box.mutate { state -> (Outcome, Duration) in
             state.probedURLs.append(url)
+            state.probedContexts.append(context)
             return (state.results[url] ?? state.fallback, state.perProbeDelay)
         }
         if delay != .zero {

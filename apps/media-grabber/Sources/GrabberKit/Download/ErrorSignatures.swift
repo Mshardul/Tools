@@ -64,8 +64,26 @@ public enum ErrorSignatures {
         if matchesCookieReadFailed(lowered) {
             return .cookieReadFailed
         }
+        if let passcode = passcodeClass(inErrorLinesOf: line) {
+            return passcode
+        }
         return table.first { entry in
             entry.substrings.contains { lowered.contains($0.lowercased()) }
+        }?.errorClass
+    }
+
+    // Only text on an "ERROR:" line counts, so a progress or info line that mentions a passcode never classifies.
+    private static let passcodeSignatures: [(errorClass: ErrorClass, substring: String)] = [
+        (.passcodeRequired, "protected by a passcode"),
+        (.passcodeRejected, "zoom rejected the passcode")
+    ]
+
+    private static func passcodeClass(inErrorLinesOf text: String) -> ErrorClass? {
+        let errorLines = text.split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+            .filter { $0.hasPrefix("error:") }
+        return passcodeSignatures.first { signature in
+            errorLines.contains { $0.contains(signature.substring) }
         }?.errorClass
     }
 

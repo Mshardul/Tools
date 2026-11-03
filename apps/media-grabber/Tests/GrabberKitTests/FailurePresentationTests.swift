@@ -6,8 +6,17 @@ final class FailurePresentationTests: XCTestCase {
         .rateLimited(), .geoBlocked, .private, .unavailable, .ageRestricted,
         .networkDown, .cookieReadFailed, .diskFull, .permissionDenied,
         .incomplete, .depMissing, .botCheck, .sabrGated, .formatsMissing,
-        .potProviderDown, .unknown(raw: "ERROR: boom")
+        .potProviderDown, .passcodeRequired, .passcodeRejected, .unknown(raw: "ERROR: boom")
     ]
+
+    func test_passcodeClassesHaveTheirSentencesAndNeverOfferPlainRetry() {
+        XCTAssertEqual(ErrorClass.passcodeRequired.presentation.sentence, "This recording needs a passcode.")
+        XCTAssertEqual(ErrorClass.passcodeRejected.presentation.sentence, "That passcode didn't work.")
+        for errorClass in [ErrorClass.passcodeRequired, .passcodeRejected] {
+            XCTAssertFalse(errorClass.isAutoRetryable, "\(errorClass)")
+            XCTAssertEqual(errorClass.presentation.offeredActions, [.enterPasscode], "\(errorClass)")
+        }
+    }
 
     func test_everyCaseHasANonEmptySentence() {
         for errorClass in cases {
@@ -22,19 +31,26 @@ final class FailurePresentationTests: XCTestCase {
     func test_offeredActionsMatchSpec() {
         XCTAssertEqual(ErrorClass.rateLimited().presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.geoBlocked.presentation.offeredActions, [])
-        XCTAssertEqual(ErrorClass.private.presentation.offeredActions, [.retryWithCookies])
+        XCTAssertEqual(ErrorClass.private.presentation.offeredActions, [])
         XCTAssertEqual(ErrorClass.unavailable.presentation.offeredActions, [])
-        XCTAssertEqual(ErrorClass.ageRestricted.presentation.offeredActions, [.retryWithCookies])
+        XCTAssertEqual(ErrorClass.ageRestricted.presentation.offeredActions, [])
         XCTAssertEqual(ErrorClass.depMissing.presentation.offeredActions, [])
         XCTAssertEqual(ErrorClass.networkDown.presentation.offeredActions, [.retry])
-        XCTAssertEqual(
-            ErrorClass.cookieReadFailed.presentation.offeredActions,
-            [.retry, .retryWithCookies]
-        )
+        XCTAssertEqual(ErrorClass.cookieReadFailed.presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.diskFull.presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.permissionDenied.presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.incomplete.presentation.offeredActions, [.retry])
         XCTAssertEqual(ErrorClass.unknown(raw: "x").presentation.offeredActions, [.retry])
+    }
+
+    func test_noClassOffersSignInFromClassAlone() {
+        for errorClass in cases {
+            XCTAssertFalse(errorClass.presentation.offeredActions.contains(.retryWithCookies), "\(errorClass)")
+        }
+    }
+
+    func test_botCheckSentenceNeverMentionsCookies() {
+        XCTAssertFalse(ErrorClass.botCheck.presentation.sentence.lowercased().contains("cookie"))
     }
 
     func test_isAutoRetryableIsASubsetOfClassesOfferingRetry() {

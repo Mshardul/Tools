@@ -2,7 +2,7 @@ import GrabberKit
 import SwiftUI
 
 enum IconKind: String {
-    case pause, resume, cancel, forceStart, retry, retryWithCookies
+    case pause, resume, cancel, forceStart, retry, retryWithCookies, enterPasscode
     case reveal, openInBrowser, remove, showLog
     case sortNeutral, sortAsc, sortDesc, filter, columnsMenu
     case warning
@@ -27,6 +27,7 @@ struct Icon: View {
         case .forceStart: "arrow.up.to.line"
         case .retry: "arrow.clockwise"
         case .retryWithCookies: "key.fill"
+        case .enterPasscode: "lock.fill"
         case .reveal: "folder"
         case .openInBrowser: "globe"
         case .remove: "trash"
@@ -50,6 +51,7 @@ extension RowAction {
         case .forceStart: .forceStart
         case .retry: .retry
         case .retryWithCookies: .retryWithCookies
+        case .enterPasscode: .enterPasscode
         case .reveal: .reveal
         case .openInBrowser: .openInBrowser
         case .remove: .remove
@@ -64,7 +66,8 @@ extension RowAction {
         case .cancel: "Cancel"
         case .forceStart: "Force start"
         case .retry: "Retry"
-        case .retryWithCookies: "Retry with cookies"
+        case .retryWithCookies: "Restart with sign-in"
+        case .enterPasscode: "Enter passcode"
         case .reveal: "Reveal in Finder"
         case .openInBrowser: "Open in browser"
         case .remove: "Remove"

@@ -12,6 +12,8 @@ enum SiteNames {
         "vimeo.com": "Vimeo",
         "soundcloud": "SoundCloud",
         "archive.org": "Internet Archive",
+        "zoom": "Zoom",
+        "zoom:clips": "Zoom",
         "generic": "Web"
     ]
 }

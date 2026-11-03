@@ -124,26 +124,45 @@ enum AppModelDialogs {
         )
     }
 
+    private static func signInMessage(for error: MetadataError, advice: SignInAdvice) -> String {
+        if error == .ageRestricted {
+            return SignInCopy.sentence(for: .ageRestricted, advice: advice)
+                ?? "This video is age-restricted and needs you to be signed in."
+        }
+        return SignInCopy.sentence(for: .private, advice: advice) ?? "This video is private."
+    }
+
     static func probeErrorMessage(
         for error: MetadataError,
         vpnActive: Bool = false,
         shieldStatus: ShieldStatus = .missing,
-        isYouTube: Bool = false
+        isYouTube: Bool = false,
+        advice: SignInAdvice = .none
     ) -> String {
+        switch error {
+        case .botCheck:
+            BotCheckCopy.sentence(
+                vpnActive: vpnActive, shieldStatus: shieldStatus, isYouTube: isYouTube, advice: advice
+            )
+        case .ageRestricted, .private:
+            signInMessage(for: error, advice: advice)
+        default:
+            plainProbeMessage(for: error)
+        }
+    }
+
+    private static func plainProbeMessage(for error: MetadataError) -> String {
         switch error {
         case .badURL: "That doesn't look like a valid link."
         case .unsupported: "That site isn't supported."
         case .unavailable: "This video isn't available."
         case .network: "No internet connection."
         case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
-        case .malformedOutput: "Couldn't read the video details."
-        case .botCheck:
-            BotCheckCopy.sentence(vpnActive: vpnActive, shieldStatus: shieldStatus, isYouTube: isYouTube)
-        case .cookieReadFailed:
-            "Couldn't read your browser's sign-in. Close the browser and try again, or pick another in Preferences."
-        case .hostBlocked:
-            "This site is cooling down. Try again in a moment."
-        case .unknown: "Couldn't read the video details."
+        case .cookieReadFailed: "Couldn't read your browser's sign-in. Close the browser and try again."
+        case .hostBlocked: "This site is cooling down. Try again in a moment."
+        case .passcodeRequired: "This recording needs a passcode."
+        case .passcodeRejected: "That passcode didn't work."
+        case .malformedOutput, .unknown, .botCheck, .ageRestricted, .private: "Couldn't read the video details."
         }
     }
 }

@@ -88,10 +88,7 @@ struct HomeView: View {
     @ViewBuilder
     private var probeStatus: some View {
         if appModel.isProbing {
-            ProgressView()
-                .controlSize(.small)
-                .tint(theme.palette.accent)
-                .accessibilityLabel("Checking link")
+            ProbeStatusView()
         }
     }
 
@@ -135,6 +132,11 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if let prompt = appModel.shieldSetup.probePrompt {
                     ShieldPromptButton(prompt: prompt)
+                }
+                if let prompt = appModel.passcodeNeeded, case .link = prompt.target {
+                    Button("Enter passcode") {
+                        appModel.isPasscodeSheetShown = true
+                    }
                 }
             }
         }

@@ -73,6 +73,14 @@ final class MetadataProbeFormatTests: XCTestCase {
         XCTAssertEqual(meta.audioTracks, [])
     }
 
+    func testProbeLaunchKeepsPluginBytecodeOutOfTheAppBundle() async {
+        let runner = FakeProcessRunner()
+        runner.script(.stdout(#"{"title":"Clip"}"#), forPathEndingIn: "yt-dlp")
+        let sut = MetadataProbe(ytDlpURL: ytDlp, runner: runner)
+        _ = await sut.probe("https://example.zoom.us/rec/share/x", context: .none)
+        XCTAssertEqual(runner.launches.first?.environment?["PYTHONDONTWRITEBYTECODE"], "1")
+    }
+
     func testProbeArgvIncludesPlayerClient() async {
         let runner = FakeProcessRunner()
         runner.script(.stdout(#"{"title":"Clip"}"#), forPathEndingIn: "yt-dlp")

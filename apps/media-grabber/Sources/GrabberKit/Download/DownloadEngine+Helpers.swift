@@ -3,7 +3,8 @@ import Foundation
 extension DownloadEngine {
     static func availableActions(
         for state: JobState,
-        isImmediatelySchedulable: Bool = false
+        isImmediatelySchedulable: Bool = false,
+        signInAdvice: SignInAdvice = .none
     ) -> Set<RowAction> {
         switch state {
         case .queued:
@@ -25,26 +26,27 @@ extension DownloadEngine {
         case .cancelled:
             [.retry, .remove, .openInBrowser, .showLog]
         case let .failed(errorClass):
-            errorClass.presentation.offeredActions.union([.remove, .openInBrowser, .showLog])
+            errorClass.presentation.offeredActions
+                .union(signInAdvice == .suggest ? [.retryWithCookies] : [])
+                .union([.remove, .openInBrowser, .showLog])
         }
     }
 
     static func errorClass(for error: MetadataError) -> ErrorClass {
-        switch error {
+        if let matching = error.matchingErrorClass {
+            return matching
+        }
+        return switch error {
         case .network:
             .networkDown
         case .ytDlpMissing, .launchFailed:
             .depMissing
         case let .unknown(raw):
             .unknown(raw: raw)
-        case .badURL, .unsupported, .unavailable, .malformedOutput:
-            .unknown(raw: "\(error)")
-        case .botCheck:
-            .botCheck
-        case .cookieReadFailed:
-            .cookieReadFailed
         case .hostBlocked:
             .rateLimited()
+        default:
+            .unknown(raw: "\(error)")
         }
     }
 

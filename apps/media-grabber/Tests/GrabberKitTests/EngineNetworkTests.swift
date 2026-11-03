@@ -79,7 +79,13 @@ final class EngineNetworkTests: XCTestCase {
         let first = await submitJob(engine, Fix.request(url: "https://a.test/1"))
         let second = await submitJob(engine, Fix.request(url: "https://b.test/2"))
         _ = await collector.waitForState(first) { $0 == .running }
-        _ = await collector.waitForState(second) { $0 == .queued }
+        for _ in 0 ..< 200 {
+            let snapshot = await engine.currentSnapshot().jobs.first { $0.id == second }
+            if snapshot?.state == .queued, snapshot?.title != nil {
+                break
+            }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
 
         net.goOffline()
         try? await Task.sleep(for: .milliseconds(60))

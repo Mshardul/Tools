@@ -30,7 +30,6 @@ final class YtDlpArgumentsTests: XCTestCase {
         "--retry-sleep", "linear=1:10:2",
         "--throttled-rate", "100K",
         "--file-access-retries", "5",
-        "--no-part-hint",
         "--sleep-requests", "1",
         "--sleep-interval", "1",
         "--max-sleep-interval", "5"

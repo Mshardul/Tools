@@ -17,7 +17,7 @@ Nothing else is sent anywhere.
 
 ## Browser sign-in
 
-Using a browser's sign-in is opt-in (Preferences → Sign-in & cookies). When you pick a browser, `yt-dlp` reads its cookies on your Mac and sends them to the site you are downloading from, the same way the browser would. MediaGrabber stores only which browser you chose. Cookie contents are never written to the logs.
+Downloads work without any sign-in, and MediaGrabber never asks for one up front. Using a browser's sign-in is opt-in (Preferences → Sign-in & cookies): you choose one browser, and MediaGrabber reads cookies only from that browser. When you pick a browser, `yt-dlp` reads its cookies on your Mac and sends them to the site you are downloading from, the same way the browser would. MediaGrabber stores only which browser you chose, never sends cookies anywhere else, and never writes cookie contents to the logs or the diagnostic report.
 
 ## Clipboard detection
 
@@ -44,7 +44,7 @@ Needed for debugging a failed download:
 
 Applied in the log-line builder, before anything is written:
 
-- **Cookie contents.**
+- **Cookie contents** — `Cookie` and `Set-Cookie` header values, and any field whose name contains "cookie".
 - **Proxy credentials** — the host is kept, the `user:password@` is removed (`http://u:p@host` → `http://host`).
 - Any `--username` / `--password` values.
 - **Absolute home paths** — `/Users/<name>/…` is rewritten to `~/…`.

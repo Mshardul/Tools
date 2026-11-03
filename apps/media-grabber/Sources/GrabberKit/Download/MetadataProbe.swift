@@ -40,9 +40,28 @@ public enum MetadataError: Error, Sendable, Equatable {
     case launchFailed
     case malformedOutput
     case botCheck
+    case ageRestricted
+    case `private`
     case cookieReadFailed
     case hostBlocked
+    case passcodeRequired
+    case passcodeRejected
     case unknown(raw: String)
+}
+
+extension MetadataError {
+    // The probe failures that name an ErrorClass one-to-one.
+    var matchingErrorClass: ErrorClass? {
+        switch self {
+        case .botCheck: .botCheck
+        case .ageRestricted: .ageRestricted
+        case .private: .private
+        case .cookieReadFailed: .cookieReadFailed
+        case .passcodeRequired: .passcodeRequired
+        case .passcodeRejected: .passcodeRejected
+        default: nil
+        }
+    }
 }
 
 public protocol MetadataProbing: Sendable {
@@ -161,7 +180,8 @@ public actor MetadataProbe: MetadataProbing {
     private func runYtDlp(arguments: [String]) async -> ProbeProcessOutput {
         let execution = runner.run(ProcessLaunch(
             executableURL: ytDlpURL,
-            arguments: arguments
+            arguments: arguments,
+            environment: BundledYtDlpPlugins.launchEnvironment
         ))
         let textTask = Task {
             await collectText(from: execution.lines)
@@ -235,6 +255,17 @@ public actor MetadataProbe: MetadataProbing {
         return nil
     }
 
+    // Sign-in and passcode failures: the user can fix these, so they outrank the generic unavailable check.
+    private func signatureFailure(in stderr: String) -> MetadataError? {
+        switch ErrorSignatures.firstMatch(in: stderr) {
+        case .ageRestricted: .ageRestricted
+        case .private: .private
+        case .passcodeRequired: .passcodeRequired
+        case .passcodeRejected: .passcodeRejected
+        default: nil
+        }
+    }
+
     private func classify(stderr: String, exitCode: Int32) -> MetadataError {
         if exitCode == 127, stderr.contains("launch failed:") {
             return .launchFailed
@@ -250,6 +281,9 @@ public actor MetadataProbe: MetadataProbing {
         }
         if case .cookieReadFailed = ErrorSignatures.firstMatch(in: stderr) {
             return .cookieReadFailed
+        }
+        if let signatureFailure = signatureFailure(in: stderr) {
+            return signatureFailure
         }
         if unavailableSignatures.contains(where: stderr.contains) {
             return .unavailable
@@ -287,7 +321,7 @@ public actor MetadataProbe: MetadataProbing {
     private static let sharedUnavailableSignatures: [String] = ErrorSignatures.table
         .filter { entry in
             switch entry.errorClass {
-            case .unavailable, .private, .geoBlocked: true
+            case .unavailable, .geoBlocked: true
             default: false
             }
         }

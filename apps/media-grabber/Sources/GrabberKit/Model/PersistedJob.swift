@@ -9,7 +9,6 @@ public struct PersistedJob: Codable, Sendable, Equatable {
     public var durationSeconds: Int?
     public var state: PersistedState
     public var attempt: Int
-    public var forceCookies: Bool
     public var playlistGroupID: UUID?
     public var playlistIndex: Int?
     public var addedAt: Date
@@ -23,7 +22,6 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         durationSeconds: Int? = nil,
         state: PersistedState,
         attempt: Int = 0,
-        forceCookies: Bool = false,
         playlistGroupID: UUID? = nil,
         playlistIndex: Int? = nil,
         addedAt: Date,
@@ -36,14 +34,12 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         self.durationSeconds = durationSeconds
         self.state = state
         self.attempt = attempt
-        self.forceCookies = forceCookies
         self.playlistGroupID = playlistGroupID
         self.playlistIndex = playlistIndex
         self.addedAt = addedAt
         self.finishedAt = finishedAt
     }
 
-    // A queue.json written before forceCookies existed decodes it as false.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -53,7 +49,6 @@ public struct PersistedJob: Codable, Sendable, Equatable {
         durationSeconds = try container.decodeIfPresent(Int.self, forKey: .durationSeconds)
         state = try container.decode(PersistedState.self, forKey: .state)
         attempt = try container.decodeIfPresent(Int.self, forKey: .attempt) ?? 0
-        forceCookies = try container.decodeIfPresent(Bool.self, forKey: .forceCookies) ?? false
         playlistGroupID = try container.decodeIfPresent(UUID.self, forKey: .playlistGroupID)
         playlistIndex = try container.decodeIfPresent(Int.self, forKey: .playlistIndex)
         addedAt = try container.decode(Date.self, forKey: .addedAt)
