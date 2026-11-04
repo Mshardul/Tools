@@ -1,5 +1,6 @@
 import AppKit
 import GrabberKit
+import SwiftUI
 
 struct DownloadsGridTokens {
     let ground: NSColor
@@ -18,6 +19,7 @@ struct DownloadsGridTokens {
     let barFillStart: NSColor
     let barFillEnd: NSColor
     let hairlineWidth: CGFloat
+    let controlBorderWidth: CGFloat
 
     let cell: NSFont
     let body13Semibold: NSFont
@@ -44,6 +46,7 @@ struct DownloadsGridTokens {
         barFillStart: hex("#5EF2C8"),
         barFillEnd: hex("#8B7BFF"),
         hairlineWidth: 1,
+        controlBorderWidth: 1,
         cell: GridFont.body(13),
         body13Semibold: GridFont.body(13, .semibold),
         body12Medium: GridFont.body(12, .medium),
@@ -53,9 +56,33 @@ struct DownloadsGridTokens {
     )
 
     static func make(theme: Theme) -> DownloadsGridTokens {
-        // All palettes currently resolve to aurora; keep Theme in the API for later skins.
-        _ = theme
-        return .aurora
+        let palette = theme.palette
+        let type = DownloadsGridTokens.aurora
+        return DownloadsGridTokens(
+            ground: nsColor(palette.ground),
+            panelSolid: nsColor(palette.panelSolid),
+            panel: nsColor(palette.panel),
+            panelHi: nsColor(palette.panelHi),
+            stroke: nsColor(palette.stroke),
+            hair: nsColor(palette.hair),
+            text: nsColor(palette.text),
+            dim: nsColor(palette.dim),
+            faint: nsColor(palette.faint),
+            accent: nsColor(palette.accent),
+            accent2: nsColor(palette.accent2),
+            warn: nsColor(palette.warn),
+            danger: nsColor(palette.danger),
+            barFillStart: nsColor(palette.barFillStart),
+            barFillEnd: nsColor(palette.barFillEnd),
+            hairlineWidth: theme.hairlineWidth,
+            controlBorderWidth: theme.controlBorderWidth,
+            cell: GridFont.body(13, family: theme.bodyFamily),
+            body13Semibold: GridFont.body(13, .semibold, family: theme.bodyFamily),
+            body12Medium: GridFont.body(12, .medium, family: theme.bodyFamily),
+            header: GridFont.mono(10, .medium, family: theme.monoFamily),
+            pill: GridFont.mono(10, family: theme.monoFamily),
+            mono11: GridFont.mono(11, family: theme.monoFamily)
+        )
     }
 
     func statusDotColor(for state: JobState) -> NSColor {
@@ -75,6 +102,16 @@ struct DownloadsGridTokens {
         case .completed, .cancelled: dim
         default: text
         }
+    }
+
+    private static func nsColor(_ color: Color) -> NSColor {
+        let resolved = color.resolve(in: EnvironmentValues())
+        return NSColor(
+            srgbRed: CGFloat(resolved.red),
+            green: CGFloat(resolved.green),
+            blue: CGFloat(resolved.blue),
+            alpha: CGFloat(resolved.opacity)
+        )
     }
 
     private static func hex(_ value: String) -> NSColor {
@@ -114,12 +151,20 @@ extension IconKind {
 }
 
 enum GridFont {
-    static func body(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {
-        custom(Theme.auroraBodyFamily, size, weight) ?? .systemFont(ofSize: size, weight: weight)
+    static func body(
+        _ size: CGFloat,
+        _ weight: NSFont.Weight = .regular,
+        family: String = Theme.auroraBodyFamily
+    ) -> NSFont {
+        custom(family, size, weight) ?? .systemFont(ofSize: size, weight: weight)
     }
 
-    static func mono(_ size: CGFloat, _ weight: NSFont.Weight = .regular) -> NSFont {
-        custom("JetBrains Mono", size, weight) ?? .monospacedSystemFont(ofSize: size, weight: weight)
+    static func mono(
+        _ size: CGFloat,
+        _ weight: NSFont.Weight = .regular,
+        family: String = Theme.auroraMonoFamily
+    ) -> NSFont {
+        custom(family, size, weight) ?? .monospacedSystemFont(ofSize: size, weight: weight)
     }
 
     private static func custom(_ family: String, _ size: CGFloat, _ weight: NSFont.Weight) -> NSFont? {

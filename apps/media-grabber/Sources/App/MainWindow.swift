@@ -13,7 +13,9 @@ struct MainWindow: View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 brandRow
-                Divider().overlay(theme.palette.hair)
+                Rectangle()
+                    .fill(theme.kind == .tapeDeck ? theme.palette.stroke : theme.palette.hair)
+                    .frame(height: theme.hairlineWidth)
                 HealthStrip(chips: appModel.healthChips) { chip in
                     if chip.id == "shield", chip.interaction == .setUp {
                         appModel.shieldSetup.present()
@@ -30,7 +32,7 @@ struct MainWindow: View {
                 Divider().overlay(theme.palette.hair)
                 HStack(alignment: .top, spacing: 0) {
                     rail
-                        .frame(width: 160)
+                        .frame(width: ColumnMetrics.homeRailWidth)
                     Divider().overlay(theme.palette.hair)
                     page
                 }
@@ -40,7 +42,7 @@ struct MainWindow: View {
                     )
                 }
             }
-            .background(theme.palette.ground)
+            .background(theme.kind == .tapeDeck ? theme.palette.panelSolid : theme.palette.ground)
             .frame(minWidth: 820, minHeight: 560)
             .onDrop(of: [.url, .plainText], isTargeted: nil) { providers in
                 handleDrop(providers)
@@ -49,7 +51,10 @@ struct MainWindow: View {
             WarningBanner(content: appModel.bannerContent)
                 .onPreferenceChange(BannerHeightKey.self) { bannerHeight = $0 }
 
-            ToastHost(items: appModel.toastCenter.items) { id in
+            ToastHost(
+                items: appModel.toastCenter.items,
+                bannerHeight: appModel.bannerContent == nil ? 0 : bannerHeight
+            ) { id in
                 appModel.toastCenter.dismiss(id)
             }
         }
@@ -99,16 +104,18 @@ struct MainWindow: View {
 
     private var brandRow: some View {
         @Bindable var appModel = appModel
+        let onBrand = theme.kind == .tapeDeck
         return HStack(spacing: Spacing.s3) {
             MotifView(isActive: jobRunning, size: 20)
             Text("MediaGrabber")
-                .font(theme.displayFont(17, .semibold))
-                .foregroundStyle(theme.palette.text)
+                .font(theme.displayFont(onBrand ? 18 : 17, onBrand ? .heavy : .semibold))
+                .foregroundStyle(onBrand ? theme.palette.panelSolid : theme.palette.text)
             Spacer()
             nav(for: $appModel.page)
         }
         .padding(.horizontal, Spacing.s5)
         .padding(.vertical, Spacing.s3)
+        .background(onBrand ? theme.palette.brand : .clear)
     }
 
     private func nav(for page: Binding<AppModel.Page>) -> some View {
@@ -117,6 +124,18 @@ struct MainWindow: View {
             navButton("Preferences", .preferences(), page)
             navButton("About", .about(), page)
         }
+    }
+
+    private func navColor(active: Bool, onBrand: Bool) -> Color {
+        if onBrand {
+            return active ? theme.palette.brand : theme.palette.panelSolid
+        }
+        return active ? theme.palette.text : theme.palette.dim
+    }
+
+    private func navFill(active: Bool, onBrand: Bool) -> Color {
+        guard active else { return .clear }
+        return onBrand ? theme.palette.panelSolid : theme.palette.panel
     }
 
     private func isActive(_ page: AppModel.Page, _ target: AppModel.Page) -> Bool {
@@ -132,14 +151,17 @@ struct MainWindow: View {
         _ page: Binding<AppModel.Page>
     ) -> some View {
         let active = isActive(page.wrappedValue, value)
+        let onBrand = theme.kind == .tapeDeck
         return Button { page.wrappedValue = value } label: {
             Text(label)
-                .font(theme.bodyFont(12, .medium))
-                .foregroundStyle(active ? theme.palette.text : theme.palette.dim)
+                .font(onBrand ? theme.monoFont(11, .medium) : theme.bodyFont(12, .medium))
+                .textCase(onBrand ? .uppercase : nil)
+                .tracking(onBrand ? 0.66 : 0)
+                .foregroundStyle(navColor(active: active, onBrand: onBrand))
                 .padding(.horizontal, Spacing.s3)
                 .padding(.vertical, Spacing.s1)
                 .background(
-                    active ? theme.palette.panel : .clear,
+                    navFill(active: active, onBrand: onBrand),
                     in: RoundedRectangle(cornerRadius: theme.chipRadius)
                 )
         }

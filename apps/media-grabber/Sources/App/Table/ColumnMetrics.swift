@@ -4,11 +4,11 @@ import SwiftUI
 
 enum ColumnMetrics {
     private static let widths: [ColumnID: CGFloat] = [
-        .title: 200, .status: 150, .remark: 160, .progress: 100,
-        .speed: 72, .eta: 72, .type: 96, .quality: 112,
-        .size: 80, .duration: 80, .site: 96,
+        .title: 100, .status: 150, .remark: 160, .progress: 64,
+        .speed: 56, .eta: 64, .type: 56, .quality: 72,
+        .size: 56, .duration: 80, .site: 96,
         .addedAt: 120, .finishedAt: 120, .destination: 120,
-        .attempt: 64, .clientUsed: 64, .actions: 196
+        .attempt: 64, .clientUsed: 64, .actions: 159
     ]
 
     private static let titles: [ColumnID: String] = [
@@ -24,6 +24,12 @@ enum ColumnMetrics {
         .title, .status, .type, .quality, .site, .destination, .clientUsed
     ]
 
+    static let homeRailWidth: CGFloat = 160
+
+    static func tableViewport(windowWidth: CGFloat) -> CGFloat {
+        windowWidth - homeRailWidth - 1
+    }
+
     static func width(for column: ColumnID) -> CGFloat {
         widths[column] ?? 80
     }
@@ -37,12 +43,16 @@ enum ColumnMetrics {
 
     static func minWidth(for column: ColumnID) -> CGFloat {
         switch column {
-        case .title: 120
-        case .speed, .eta, .attempt: 48
-        case .type, .site: 96
-        case .quality: 112
+        case .title: 80
+        case .speed: 56
+        case .eta: 64
+        case .attempt: 48
+        case .type: 56
+        case .quality: 72
+        case .progress: 64
+        case .size: 56
         case .actions: width(for: .actions)
-        default: 80
+        default: 64
         }
     }
 

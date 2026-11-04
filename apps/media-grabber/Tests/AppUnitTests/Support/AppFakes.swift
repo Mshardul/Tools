@@ -26,6 +26,7 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
         )
         var restoreSnapshot: QueueSnapshot?
         var restoreCalled = false
+        var restoreCount = 0
         var revalidateCalled = false
         var shutdownCalled = false
         var previewResult: Result<MediaMetadata, MetadataError> = .failure(.malformedOutput)
@@ -89,6 +90,10 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 
     var restoreCalled: Bool {
         box.read { $0.restoreCalled }
+    }
+
+    var restoreCount: Int {
+        box.read { $0.restoreCount }
     }
 
     var revalidateCalled: Bool {
@@ -192,20 +197,6 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
             return stubbed
         }
         return items.map { _ in UUID() }
-    }
-
-    func restore(active _: [PersistedJob], history _: [PersistedJob]) async {
-        let snapshot = box.mutate { state -> QueueSnapshot? in
-            state.restoreCalled = true
-            if let restoreSnapshot = state.restoreSnapshot {
-                state.snapshot = restoreSnapshot
-                return restoreSnapshot
-            }
-            return nil
-        }
-        if let snapshot {
-            continuation.yield(.snapshot(snapshot))
-        }
     }
 
     func revalidate() async {
@@ -313,6 +304,21 @@ final class FakeEngine: DownloadEngineProtocol, @unchecked Sendable {
 }
 
 extension FakeEngine {
+    func restore(active _: [PersistedJob], history _: [PersistedJob]) async {
+        let snapshot = box.mutate { state -> QueueSnapshot? in
+            state.restoreCalled = true
+            state.restoreCount += 1
+            if let restoreSnapshot = state.restoreSnapshot {
+                state.snapshot = restoreSnapshot
+                return restoreSnapshot
+            }
+            return nil
+        }
+        if let snapshot {
+            continuation.yield(.snapshot(snapshot))
+        }
+    }
+
     func upsertPlaylistGroup(_ group: PersistedPlaylistGroup) async {
         let snapshot = box.mutate { state -> QueueSnapshot in
             if let index = state.playlistGroups.firstIndex(where: { $0.id == group.id }) {
@@ -380,16 +386,5 @@ final class FakeRevealSink: RevealSink {
 
     func reveal(_ files: [URL]) {
         revealed = files
-    }
-}
-
-@MainActor
-final class FakeOpenURLSink: OpenURLSink {
-    private(set) var opened: [URL] = []
-
-    nonisolated init() {}
-
-    func open(_ url: URL) {
-        opened.append(url)
     }
 }

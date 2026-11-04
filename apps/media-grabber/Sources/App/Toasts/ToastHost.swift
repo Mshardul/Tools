@@ -1,7 +1,22 @@
 import SwiftUI
 
+enum ToastChrome {
+    static func fill(_ palette: PaletteTokens) -> Color {
+        palette.panelSolid
+    }
+
+    static let shadowRadius: CGFloat = 15
+    static let shadowY: CGFloat = 12
+
+    static func bottomInset(bannerHeight: CGFloat) -> CGFloat {
+        guard bannerHeight > 0 else { return Spacing.s4 }
+        return bannerHeight + Spacing.s4 + Spacing.s4
+    }
+}
+
 struct ToastHost: View {
     let items: [ToastItem]
+    var bannerHeight: CGFloat = 0
     let onDismiss: (UUID) -> Void
 
     @Environment(\.theme) private var theme
@@ -18,7 +33,9 @@ struct ToastHost: View {
                 transaction.disablesAnimations = true
             }
         }
-        .padding(Spacing.s4)
+        .padding(.horizontal, Spacing.s4)
+        .padding(.top, Spacing.s4)
+        .padding(.bottom, ToastChrome.bottomInset(bannerHeight: bannerHeight))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
         .allowsHitTesting(!items.isEmpty)
         .onChange(of: items.map(\.id)) { _, _ in
@@ -45,9 +62,10 @@ struct ToastHost: View {
         .padding(.horizontal, Spacing.s4)
         .padding(.vertical, Spacing.s3)
         .background(
-            theme.palette.panel,
+            ToastChrome.fill(theme.palette),
             in: RoundedRectangle(cornerRadius: theme.cardRadius)
         )
+        .shadow(color: .black.opacity(0.4), radius: ToastChrome.shadowRadius, y: ToastChrome.shadowY)
         .overlay(
             RoundedRectangle(cornerRadius: theme.cardRadius)
                 .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)

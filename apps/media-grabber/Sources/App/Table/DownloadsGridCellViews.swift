@@ -176,6 +176,9 @@ final class GridActionsCellView: NSTableCellView {
             button.isEnabled = enabled
             button.isHidden = !enabled
             button.contentTintColor = tokens.text
+            button.layer?.borderWidth = tokens.controlBorderWidth
+            button.layer?.borderColor = tokens.stroke.cgColor
+            button.layer?.backgroundColor = tokens.panel.cgColor
             button.toolTip = action.accessibilityLabel
             button.setAccessibilityLabel(action.accessibilityLabel)
             button.tag = index

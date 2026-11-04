@@ -3,6 +3,22 @@ import XCTest
 
 @MainActor
 final class ToastCenterTests: XCTestCase {
+    func test_fillIsOpaquePanel() {
+        let palette = palette(for: .auroraMintIris)
+        XCTAssertEqual(ToastChrome.fill(palette).description, palette.panelSolid.description)
+    }
+
+    func test_hasAShadow() {
+        XCTAssertEqual(ToastChrome.shadowY, 12)
+        XCTAssertGreaterThan(ToastChrome.shadowRadius, 0)
+    }
+
+    func test_sitsClearOfTheBanner() {
+        XCTAssertEqual(ToastChrome.bottomInset(bannerHeight: 0), Spacing.s4)
+        let banner: CGFloat = 48
+        XCTAssertGreaterThanOrEqual(ToastChrome.bottomInset(bannerHeight: banner), banner + Spacing.s4 + Spacing.s4)
+    }
+
     func test_enqueue_appendsToItems() {
         let center = ToastCenter()
         center.enqueue(ToastItem(text: "Clip.mp4 saved", actionTitle: "Reveal", action: nil))

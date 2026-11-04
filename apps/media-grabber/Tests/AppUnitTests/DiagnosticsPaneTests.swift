@@ -30,6 +30,47 @@ final class DiagnosticsPaneTests: XCTestCase {
         }
     }
 
+    func test_beforeCheck_isNeutralAndHidesReportActions() {
+        let model = DiagnosticsPaneModel(
+            metadataProbe: FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny")),
+            environmentProbe: FakeEnvironmentProbe(.with(ytDlp: true, ffmpeg: true)),
+            ytDlpUpdater: FakeYtDlpUpdater(),
+            sharePresenter: SpySharePresenter()
+        )
+        XCTAssertFalse(model.hasReport)
+        XCTAssertTrue(model.presentedRows.isEmpty)
+        XCTAssertEqual(DiagnosticsPaneModel.emptyPlaceholder, "Not checked yet.")
+    }
+
+    func test_afterCheck_usesPlainWording() async {
+        let model = DiagnosticsPaneModel(
+            metadataProbe: FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny")),
+            environmentProbe: FakeEnvironmentProbe(EnvironmentReport(
+                brew: nil,
+                ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2000.01.01"),
+                ffmpeg: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/ffmpeg"), version: "8.0")
+            )),
+            ytDlpUpdater: FakeYtDlpUpdater(),
+            sharePresenter: SpySharePresenter()
+        )
+        await model.runCheck()
+        XCTAssertTrue(model.hasReport)
+        XCTAssertEqual(model.presentedRows.map(\.label), ["Test run", "Downloader", "Media tools"])
+        let combined = model.presentedRows.map(\.value).joined(separator: "\n") + "\n" + model.reportText
+        XCTAssertFalse(combined.contains("yt-dlp"))
+        XCTAssertFalse(combined.contains("ffmpeg"))
+        XCTAssertFalse(combined.contains("Canary"))
+        XCTAssertFalse(combined.contains("min "))
+    }
+
+    func test_runCheckUsesTheGoGradient() {
+        let palette = palette(for: .auroraMintIris)
+        XCTAssertEqual(
+            DiagnosticsPrimaryButton.colors(palette).map(\.description),
+            [palette.goFillStart, palette.goFillEnd].map(\.description)
+        )
+    }
+
     func test_runCheck_updatesReportWithCanaryResult() async {
         let fakeMetadataProbe = FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny"))
         let model = DiagnosticsPaneModel(

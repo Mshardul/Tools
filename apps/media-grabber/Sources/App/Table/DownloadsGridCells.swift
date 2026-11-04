@@ -88,6 +88,8 @@ extension DownloadsGridController {
         tableView: NSTableView
     ) -> NSView {
         switch column {
+        case .title:
+            titleCell(for: row, tableView: tableView)
         case .status:
             statusCell(for: row, tableView: tableView)
         case .progress:
@@ -114,6 +116,16 @@ extension DownloadsGridController {
         field.stringValue = TablePresentation.cellText(for: row, column: column)
         field.toolTip = column == .title ? (row.snapshot.title ?? "") : nil
         return field
+    }
+
+    private func titleCell(for row: RowModel, tableView: NSTableView) -> NSView {
+        let cell = tableView.makeView(
+            withIdentifier: NSUserInterfaceItemIdentifier("title-cell"),
+            owner: nil
+        ) as? GridTitleCellView ?? GridTitleCellView()
+        cell.identifier = NSUserInterfaceItemIdentifier("title-cell")
+        cell.apply(title: row.snapshot.title ?? "", state: row.snapshot.state, tokens: tokens)
+        return cell
     }
 
     private func statusCell(for row: RowModel, tableView: NSTableView) -> NSView {

@@ -333,7 +333,7 @@ The **concurrency note** renders in the "Simultaneous downloads" row's right col
 | Label | Helper | Control | Backs |
 | --- | --- | --- | --- |
 | Theme | Aurora is dark and luminous. Tape Deck is warm and light. | `SkinnedSegment` — Aurora / Tape Deck | `theme` |
-| Palette | — | 3 split-fill swatches (~38pt, name below; selected has a 2pt `--accent` outline at 2pt offset) for the selected theme | `palette` |
+| Palette | — | 3 split-fill swatches (56×38pt, name below; selected has a 2pt `--accent` outline at 2pt offset) for the selected theme | `palette` |
 
 Changing Theme resets `palette` to that theme's default. Both controls apply live.
 

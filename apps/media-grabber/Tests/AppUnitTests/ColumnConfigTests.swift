@@ -66,8 +66,8 @@ final class ColumnConfigTests: XCTestCase {
         XCTAssertEqual(config.sortDirection, .descending)
     }
 
-    func test_addedAtVisibleByDefault() {
-        XCTAssertTrue(ColumnConfig.default.visibleColumns.contains(.addedAt))
+    func test_addedAtHiddenByDefault() {
+        XCTAssertFalse(ColumnConfig.default.visibleColumns.contains(.addedAt))
     }
 
     func test_statusHiddenByDefault() {

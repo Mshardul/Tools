@@ -4,57 +4,6 @@ import GrabberKit
 import Observation
 import SwiftUI
 
-// Tails the app log and the most-recent job log for DiagnosticBundle; kept behind a protocol so
-// tests can inject a fake instead of touching the real files under ~/Library/Logs/MediaGrabber.
-protocol LogReading: Sendable {
-    func appLogTail() -> String
-    func mostRecentJobLog() -> String?
-}
-
-struct AppLogReader: LogReading {
-    private let appLogDirectory: URL
-    private let jobLogDirectory: URL
-    private let tailLineCount: Int
-
-    init(
-        appLogDirectory: URL = LogWriter.defaultDirectory,
-        jobLogDirectory: URL = JobLog.defaultDir,
-        tailLineCount: Int = 200
-    ) {
-        self.appLogDirectory = appLogDirectory
-        self.jobLogDirectory = jobLogDirectory
-        self.tailLineCount = tailLineCount
-    }
-
-    func appLogTail() -> String {
-        let fileURL = appLogDirectory.appendingPathComponent("app.log")
-        guard let contents = try? String(contentsOf: fileURL, encoding: .utf8) else { return "" }
-        let lines = contents.split(separator: "\n", omittingEmptySubsequences: false)
-        return lines.suffix(tailLineCount).joined(separator: "\n")
-    }
-
-    func mostRecentJobLog() -> String? {
-        let fileManager = FileManager.default
-        guard let entries = try? fileManager.contentsOfDirectory(
-            at: jobLogDirectory,
-            includingPropertiesForKeys: [.contentModificationDateKey]
-        ) else {
-            return nil
-        }
-        let newest = entries
-            .filter { $0.pathExtension == "log" }
-            .max { lhs, rhs in
-                modificationDate(lhs, fileManager: fileManager) < modificationDate(rhs, fileManager: fileManager)
-            }
-        guard let newest else { return nil }
-        return try? String(contentsOf: newest, encoding: .utf8)
-    }
-
-    private func modificationDate(_ url: URL, fileManager: FileManager) -> Date {
-        (try? fileManager.attributesOfItem(atPath: url.path)[.modificationDate] as? Date) ?? .distantPast
-    }
-}
-
 @MainActor
 @Observable
 final class DiagnosticsPaneModel {
@@ -70,6 +19,72 @@ final class DiagnosticsPaneModel {
     private(set) var isRunningCheck = false
     private(set) var isReinstallingYtDlp = false
     private(set) var latestReport: EnvironmentReport?
+
+    static let emptyPlaceholder = "Not checked yet."
+
+    struct PresentedRow: Equatable {
+        let label: String
+        let value: String
+        let tone: RowTone
+    }
+
+    enum RowTone: Equatable {
+        case ok, warn, bad, neutral
+    }
+
+    var hasReport: Bool {
+        lastRunAt != nil
+    }
+
+    var presentedRows: [PresentedRow] {
+        guard hasReport else { return [] }
+        return [
+            PresentedRow(label: "Test run", value: canaryValue, tone: canaryTone),
+            PresentedRow(label: "Downloader", value: downloaderValue, tone: downloaderTone),
+            PresentedRow(label: "Media tools", value: mediaToolsValue, tone: mediaToolsTone)
+        ]
+    }
+
+    private var canaryValue: String {
+        switch canaryResult {
+        case .notRun: "not yet run this session"
+        case .passed: "passed"
+        case .failed: "failed"
+        }
+    }
+
+    private var canaryTone: RowTone {
+        switch canaryResult {
+        case .notRun: .neutral
+        case .passed: .ok
+        case .failed: .bad
+        }
+    }
+
+    private var downloaderValue: String {
+        guard let version = latestReport?.ytDlp?.version else { return "not found" }
+        return switch latestReport?.ytDlpDriftVerdict {
+        case .current, nil: "\(version) · current"
+        case .drift: "\(version) · update available"
+        case .unknown: version
+        }
+    }
+
+    private var downloaderTone: RowTone {
+        switch latestReport?.ytDlpDriftVerdict {
+        case .current, nil: latestReport?.ytDlp == nil ? .bad : .ok
+        case .drift: .warn
+        case .unknown: .neutral
+        }
+    }
+
+    private var mediaToolsValue: String {
+        latestReport?.ffmpeg?.version ?? "not found"
+    }
+
+    private var mediaToolsTone: RowTone {
+        latestReport?.ffmpeg == nil ? .bad : .ok
+    }
 
     private let metadataProbe: MetadataProbing
     private let environmentProbe: EnvironmentProbing
@@ -133,16 +148,16 @@ final class DiagnosticsPaneModel {
 
     private static func formatReport(canary: CanaryResult, report: EnvironmentReport) -> String {
         var lines: [String] = []
-        lines.append("Canary probe: \(canary == .passed ? "passed" : "failed")")
+        lines.append("Test run: \(canary == .passed ? "passed" : "failed")")
         if let ytDlp = report.ytDlp {
-            lines.append("yt-dlp: \(ytDlp.version)\(driftSuffix(report))")
+            lines.append("Downloader: \(ytDlp.version)\(driftSuffix(report))")
         } else {
-            lines.append("yt-dlp: not found")
+            lines.append("Downloader: not found")
         }
         if let ffmpeg = report.ffmpeg {
-            lines.append("ffmpeg: \(ffmpeg.version)")
+            lines.append("Media tools: \(ffmpeg.version)")
         } else {
-            lines.append("ffmpeg: not found")
+            lines.append("Media tools: not found")
         }
         return lines.joined(separator: "\n")
     }
@@ -150,7 +165,7 @@ final class DiagnosticsPaneModel {
     private static func driftSuffix(_ report: EnvironmentReport) -> String {
         switch report.ytDlpDriftVerdict {
         case .current, nil: " · current"
-        case let .drift(_, minimum): " · update available (min \(minimum))"
+        case .drift: " · update available"
         case .unknown: ""
         }
     }
@@ -182,8 +197,15 @@ struct DiagnosticsPane: View {
 
             if let model {
                 lastRunLine(model)
-                reportRows(model)
-                actionButtons(model)
+                if model.hasReport {
+                    reportRows(model)
+                    actionButtons(model)
+                } else {
+                    Text(DiagnosticsPaneModel.emptyPlaceholder)
+                        .font(theme.bodyFont(13, .regular))
+                        .foregroundStyle(theme.palette.dim)
+                        .padding(.top, Spacing.s3)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -208,7 +230,14 @@ struct DiagnosticsPane: View {
                     .foregroundStyle(theme.palette.onAccent)
                     .padding(.horizontal, Spacing.s4)
                     .padding(.vertical, Spacing.s2)
-                    .background(theme.palette.accent, in: RoundedRectangle(cornerRadius: theme.controlRadius))
+                    .background(
+                        LinearGradient(
+                            colors: DiagnosticsPrimaryButton.colors(theme.palette),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: theme.controlRadius)
+                    )
             }
             .buttonStyle(.plain)
             .disabled(model?.isRunningCheck ?? true)
@@ -232,49 +261,37 @@ struct DiagnosticsPane: View {
 
     private func reportRows(_ model: DiagnosticsPaneModel) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            reportRow(
-                "Canary probe",
-                value: canaryValueText(model.canaryResult),
-                verdict: canaryVerdict(model.canaryResult)
-            )
-            if let ytDlp = model.latestReport?.ytDlp {
-                ytDlpRow(model, ytDlp: ytDlp)
-            } else {
-                reportRow("yt-dlp", value: "not found", verdict: .bad)
-            }
-            if let ffmpeg = model.latestReport?.ffmpeg {
-                reportRow("ffmpeg", value: ffmpeg.version, verdict: .ok)
-            } else {
-                reportRow("ffmpeg", value: "not found", verdict: .bad)
+            ForEach(Array(model.presentedRows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: Spacing.s2) {
+                    reportRow(row.label, value: row.value, tone: row.tone)
+                    if row.label == "Downloader", case .drift = model.latestReport?.ytDlpDriftVerdict {
+                        updateButton(model)
+                    }
+                }
             }
         }
         .padding(.vertical, Spacing.s2)
     }
 
-    private func ytDlpRow(_ model: DiagnosticsPaneModel, ytDlp _: ToolInfo) -> some View {
-        HStack(spacing: Spacing.s2) {
-            reportRow("yt-dlp", value: ytDlpValueText(model.latestReport), verdict: ytDlpVerdict(model.latestReport))
-            if case .drift = model.latestReport?.ytDlpDriftVerdict {
-                Button {
-                    Task { await model.reinstallYtDlp() }
-                } label: {
-                    Label("Update", systemImage: "arrow.clockwise")
-                        .font(theme.bodyFont(11, .semibold))
-                        .foregroundStyle(theme.palette.warn)
-                        .padding(.horizontal, Spacing.s2)
-                        .padding(.vertical, 3)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: theme.pillRadius)
-                                .stroke(theme.palette.warn, lineWidth: theme.hairlineWidth)
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(model.isReinstallingYtDlp)
-            }
+    private func updateButton(_ model: DiagnosticsPaneModel) -> some View {
+        Button {
+            Task { await model.reinstallYtDlp() }
+        } label: {
+            Label("Update", systemImage: "arrow.clockwise")
+                .font(theme.bodyFont(11, .semibold))
+                .foregroundStyle(theme.palette.warn)
+                .padding(.horizontal, Spacing.s2)
+                .padding(.vertical, 3)
+                .overlay(
+                    RoundedRectangle(cornerRadius: theme.pillRadius)
+                        .stroke(theme.palette.warn, lineWidth: theme.hairlineWidth)
+                )
         }
+        .buttonStyle(.plain)
+        .disabled(model.isReinstallingYtDlp)
     }
 
-    private func reportRow(_ key: String, value: String, verdict: RowVerdict) -> some View {
+    private func reportRow(_ key: String, value: String, tone: DiagnosticsPaneModel.RowTone) -> some View {
         HStack {
             Text(key)
                 .font(theme.monoFont(12, .regular))
@@ -282,7 +299,7 @@ struct DiagnosticsPane: View {
             Spacer()
             Text(value)
                 .font(theme.monoFont(12, .regular))
-                .foregroundStyle(verdict.color(theme))
+                .foregroundStyle(tone.color(theme))
         }
         .padding(.vertical, Spacing.s2)
         .overlay(alignment: .bottom) {
@@ -314,39 +331,6 @@ struct DiagnosticsPane: View {
         .buttonStyle(.plain)
     }
 
-    private func canaryValueText(_ result: DiagnosticsPaneModel.CanaryResult) -> String {
-        switch result {
-        case .notRun: "not yet run this session"
-        case .passed: "passed"
-        case .failed: "failed"
-        }
-    }
-
-    private func canaryVerdict(_ result: DiagnosticsPaneModel.CanaryResult) -> RowVerdict {
-        switch result {
-        case .notRun: .neutral
-        case .passed: .ok
-        case .failed: .bad
-        }
-    }
-
-    private func ytDlpValueText(_ report: EnvironmentReport?) -> String {
-        guard let version = report?.ytDlp?.version else { return "not found" }
-        return switch report?.ytDlpDriftVerdict {
-        case .current, nil: "\(version) · current"
-        case let .drift(_, minimum): "\(version) · update available (min \(minimum))"
-        case .unknown: version
-        }
-    }
-
-    private func ytDlpVerdict(_ report: EnvironmentReport?) -> RowVerdict {
-        switch report?.ytDlpDriftVerdict {
-        case .current, nil: .ok
-        case .drift: .warn
-        case .unknown: .neutral
-        }
-    }
-
     private func makeModel() -> DiagnosticsPaneModel {
         let ytDlpURL = appModel.latestEnvironmentReport?.ytDlp?.path
         let probe: MetadataProbing = if let ytDlpURL {
@@ -364,12 +348,13 @@ struct DiagnosticsPane: View {
     }
 }
 
-private enum RowVerdict {
-    case ok
-    case warn
-    case bad
-    case neutral
+enum DiagnosticsPrimaryButton {
+    static func colors(_ palette: PaletteTokens) -> [Color] {
+        [palette.goFillStart, palette.goFillEnd]
+    }
+}
 
+private extension DiagnosticsPaneModel.RowTone {
     func color(_ theme: Theme) -> Color {
         switch self {
         case .ok: theme.palette.accent

@@ -43,6 +43,7 @@ struct HealthStrip: View {
         }
         .padding(.horizontal, Spacing.s5)
         .padding(.vertical, Spacing.s2)
+        .background(theme.kind == .tapeDeck ? theme.palette.ground : .clear)
     }
 
     @ViewBuilder
@@ -147,7 +148,7 @@ struct HealthStrip: View {
         .padding(.horizontal, Spacing.s3)
         .padding(.vertical, Spacing.s1 + 1)
         .background(theme.palette.panel, in: Capsule())
-        .overlay(Capsule().stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth))
+        .overlay(Capsule().stroke(theme.palette.stroke, lineWidth: theme.controlBorderWidth))
     }
 
     func isPulsing(_ dot: DotState, reduceMotion: Bool) -> Bool {

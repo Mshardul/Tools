@@ -150,16 +150,7 @@ final class AppModel {
         shieldSetup.onInstalled = { [weak self] in await self?.reprobeCurrentLink() }
     }
 
-    func onAppear() async {
-        await log.log(.appLaunched)
-        await performLaunchSetup()
-        await refreshOnboardingState()
-        if !needsOnboarding {
-            await engine.ensureShield()
-        }
-        startConsumerIfNeeded()
-        Task { await checkForAppUpdateOnLaunch() }
-    }
+    private var didRunLaunchSetup = false
 
     func performLaunchSetup() async {
         guard !debugFlags.resetState, let persistence else { return }
@@ -283,5 +274,20 @@ final class AppModel {
         if snapshot.queueHalt == .depMissing {
             needsOnboarding = true
         }
+    }
+}
+
+extension AppModel {
+    func onAppear() async {
+        guard !didRunLaunchSetup else { return }
+        didRunLaunchSetup = true
+        await log.log(.appLaunched)
+        await performLaunchSetup()
+        await refreshOnboardingState()
+        if !needsOnboarding {
+            await engine.ensureShield()
+        }
+        startConsumerIfNeeded()
+        Task { await checkForAppUpdateOnLaunch() }
     }
 }

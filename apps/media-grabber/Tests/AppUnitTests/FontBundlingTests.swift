@@ -20,4 +20,10 @@ final class FontBundlingTests: XCTestCase {
     func test_jetBrainsMonoFamily_resolvesAfterBundling() {
         XCTAssertNotNil(NSFont(name: "JetBrains Mono", size: 14))
     }
+
+    func test_tapeDeckFamilies_resolveAfterBundling() {
+        for family in ["Bricolage Grotesque", "DM Sans", "DM Mono"] {
+            XCTAssertNotNil(NSFont(name: family, size: 14), family)
+        }
+    }
 }

@@ -113,9 +113,9 @@ struct SkinnedPicker<Option: Hashable>: View {
         .clipShape(RoundedRectangle(cornerRadius: theme.cardRadius))
         .shadow(
             color: elevationColor,
-            radius: theme.kind == .aurora ? 20 : 0,
-            x: theme.kind == .aurora ? 0 : 3,
-            y: theme.kind == .aurora ? 0 : 3
+            radius: theme.kind == .aurora ? 20 : theme.cardShadowRadius,
+            x: theme.kind == .aurora ? 0 : theme.cardShadowOffset,
+            y: theme.kind == .aurora ? 0 : theme.cardShadowOffset
         )
         .accessibilityElement(children: .contain)
         .onKeyPress(.upArrow) { moveHighlight(-1); return .handled }

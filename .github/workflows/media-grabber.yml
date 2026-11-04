@@ -80,22 +80,6 @@ jobs:
             | sort | tail -1)"
           test -n "$r" || { echo "no xcresult produced" >&2; exit 1; }
           cp -R "$r" "$RUNNER_TEMP/Result.xcresult"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: xcresult-${{ matrix.os }}
-          path: ${{ runner.temp }}/Result.xcresult
-          if-no-files-found: warn
-
-  coverage:
-    needs: test
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: xcresult-macos-15
-          path: ${{ runner.temp }}/Result.xcresult
       - name: Coverage summary
         working-directory: .
         run: |
@@ -119,3 +103,9 @@ jobs:
           print(line("GrabberKit", "**headline**"))
           print(line("MediaGrabber", "informational (SwiftUI view code)"))
           PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xcresult-${{ matrix.os }}
+          path: ${{ runner.temp }}/Result.xcresult
+          if-no-files-found: warn

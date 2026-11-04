@@ -20,19 +20,31 @@ struct Theme {
         palette = MediaGrabber.palette(for: paletteKind)
     }
 
+    static let auroraDisplayFamily = "Sora"
     static let auroraBodyFamily = "IBM Plex Sans"
-    static let tapeDeckBodyFamily = "Inter"
+    static let auroraMonoFamily = "JetBrains Mono"
+    static let tapeDeckDisplayFamily = "Bricolage Grotesque"
+    static let tapeDeckBodyFamily = "DM Sans"
+    static let tapeDeckMonoFamily = "DM Mono"
 
     private var isAurora: Bool {
         kind == .aurora
+    }
+
+    var displayFamily: String {
+        isAurora ? Self.auroraDisplayFamily : Self.tapeDeckDisplayFamily
     }
 
     var bodyFamily: String {
         isAurora ? Self.auroraBodyFamily : Self.tapeDeckBodyFamily
     }
 
+    var monoFamily: String {
+        isAurora ? Self.auroraMonoFamily : Self.tapeDeckMonoFamily
+    }
+
     var displayFont: (CGFloat, Font.Weight) -> Font {
-        { size, weight in Self.resolvedFont("Sora", size: size, weight: weight) }
+        { size, weight in Self.resolvedFont(displayFamily, size: size, weight: weight) }
     }
 
     var bodyFont: (CGFloat, Font.Weight) -> Font {
@@ -42,7 +54,7 @@ struct Theme {
     var monoFont: (CGFloat, Font.Weight) -> Font {
         { size, weight in
             Self.resolvedFont(
-                "JetBrains Mono",
+                monoFamily,
                 size: size,
                 weight: weight,
                 fallbackDesign: .monospaced
@@ -65,27 +77,43 @@ struct Theme {
     }
 
     var windowRadius: CGFloat {
-        isAurora ? 18 : 10
+        isAurora ? 18 : 14
     }
 
     var cardRadius: CGFloat {
-        isAurora ? 14 : 8
+        isAurora ? 14 : 12
     }
 
     var controlRadius: CGFloat {
-        isAurora ? 9 : 6
+        isAurora ? 9 : 8
     }
 
     var pillRadius: CGFloat {
-        isAurora ? 20 : 14
+        20
     }
 
     var chipRadius: CGFloat {
-        isAurora ? 7 : 5
+        isAurora ? 7 : 6
     }
 
     var hairlineWidth: CGFloat {
-        1
+        isAurora ? 1 : 2
+    }
+
+    var controlBorderWidth: CGFloat {
+        isAurora ? 1 : 1.5
+    }
+
+    var cardShadowOffset: CGFloat {
+        isAurora ? 0 : 8
+    }
+
+    var cardShadowRadius: CGFloat {
+        isAurora ? 24 : 0
+    }
+
+    var cardShadowColor: Color {
+        Color.black.opacity(0.35)
     }
 
     var motif: MotifKind {

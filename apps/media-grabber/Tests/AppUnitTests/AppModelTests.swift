@@ -248,6 +248,30 @@ extension AppModelTests {
         ))
     }
 
+    func test_secondOnAppear_doesNotReloadTheQueue() async {
+        let engine = FakeEngine()
+        let persistence = FakeQueuePersisting()
+        engine.setRestoreSnapshot(QueueSnapshot(
+            jobs: [AppModelTestHelpers.jobSnapshot()],
+            revision: 1,
+            queueHalt: nil,
+            generatedAt: .init(),
+            hostRateSummary: [:],
+            isOnline: true
+        ))
+        let model = makeModel(engine: engine, persistence: persistence)
+
+        await model.onAppear()
+        await model.onAppear()
+
+        XCTAssertEqual(engine.restoreCount, 1)
+        XCTAssertEqual(engine.ensureCount, 1)
+    }
+
+    func test_openedLinksReuseTheExistingWindow() {
+        XCTAssertEqual(MainWindowPolicy.externalEvents, ["*"])
+    }
+
     func test_restoreProducedJobs_forcesHasGrabbedOnce() async {
         let engine = FakeEngine()
         let persistence = FakeQueuePersisting()

@@ -6,7 +6,7 @@ public enum ColumnID: String, Codable, Sendable, CaseIterable {
     case actions
 
     public static let defaultVisible: [ColumnID] = [
-        .title, .progress, .speed, .eta, .type, .quality, .size, .addedAt
+        .title, .progress, .speed, .eta, .type, .quality, .size
     ]
 
     public static let defaultOrder: [ColumnID] = [

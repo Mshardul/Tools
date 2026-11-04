@@ -2,6 +2,9 @@ import GrabberKit
 import SwiftUI
 
 struct AppearancePane: View {
+    static let swatchWidth: CGFloat = 56
+    static let swatchHeight: CGFloat = 38
+
     @Environment(AppModel.self) private var appModel
     @Environment(\.theme) private var theme
 
@@ -73,7 +76,7 @@ struct AppearancePane: View {
                     tokens.accent
                     tokens.accent2
                 }
-                .frame(width: 84, height: 38)
+                .frame(width: Self.swatchWidth, height: Self.swatchHeight)
                 .clipShape(RoundedRectangle(cornerRadius: theme.chipRadius))
                 .overlay {
                     if selected {

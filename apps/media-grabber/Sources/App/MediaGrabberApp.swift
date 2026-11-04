@@ -1,6 +1,10 @@
 import GrabberKit
 import SwiftUI
 
+enum MainWindowPolicy {
+    static let externalEvents: Set<String> = ["*"]
+}
+
 @main
 struct MediaGrabberApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -58,6 +62,10 @@ struct MediaGrabberApp: App {
                 .environment(appModel)
                 .environment(incomingLinks)
                 .background(WindowFrameAutosave(name: "MediaGrabberMain"))
+                .handlesExternalEvents(
+                    preferring: MainWindowPolicy.externalEvents,
+                    allowing: MainWindowPolicy.externalEvents
+                )
                 .onOpenURL { url in
                     Task { await incomingLinks.handleOpenURL(url) }
                 }
@@ -69,6 +77,7 @@ struct MediaGrabberApp: App {
                     await incomingLinks.applicationDidBecomeActive()
                 }
         }
+        .handlesExternalEvents(matching: MainWindowPolicy.externalEvents)
         .defaultSize(width: 980, height: 720)
         .windowResizability(.contentMinSize)
         .commands {
