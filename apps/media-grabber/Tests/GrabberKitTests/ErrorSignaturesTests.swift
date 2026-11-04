@@ -86,6 +86,18 @@ final class ErrorSignaturesTests: XCTestCase {
         XCTAssertNil(classify("[download] 42% of 10MiB"))
     }
 
+    func test_diskFullAndUnwritableFolderAreNotRetriedAutomatically() {
+        let full = classify("ERROR: unable to write data: No space left on device")
+        let denied = classify("ERROR: [Errno 13] Permission denied: '/Users/me/Downloads/clip.mp4'")
+        XCTAssertEqual(full, .diskFull)
+        XCTAssertEqual(denied, .permissionDenied)
+        for errorClass in [full, denied].compactMap(\.self) {
+            XCTAssertFalse(errorClass.isAutoRetryable)
+            XCTAssertEqual(errorClass.presentation.offeredActions, [.retry])
+            XCTAssertFalse(errorClass.presentation.sentence.isEmpty)
+        }
+    }
+
     func test_cookieReadFailed_eachFragmentGroupClassifies() {
         let lines = [
             "ERROR: could not find chrome cookies database in \"...\"",

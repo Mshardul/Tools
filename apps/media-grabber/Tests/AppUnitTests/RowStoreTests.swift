@@ -90,6 +90,19 @@ final class RowStoreTests: XCTestCase {
         XCTAssertEqual(store.rows[1].snapshot.progress?.fraction, 0.9)
     }
 
+    func test_progressInsideTheSameBucketStillRefreshesSpeedAndEta() {
+        let store = RowStore()
+        store.apply(.snapshot(queueSnapshot([snap(1, state: .running)])))
+        let shown = store.visibleItems
+
+        store.apply(progressEvent(1, fraction: 0.02))
+
+        XCTAssertEqual(store.visibleItems, shown)
+        XCTAssertFalse(store.rows[0].speedText.isEmpty)
+        XCTAssertEqual(store.rows[0].etaText, "0:03")
+        XCTAssertEqual(store.rows[0].snapshot.progress?.fraction, 0.02)
+    }
+
     func test_progressSortActive_progressEventReorders() {
         var config = ColumnConfig.default
         config.sortColumn = .progress

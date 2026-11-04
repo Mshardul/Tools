@@ -137,7 +137,9 @@ enum AppModelDialogs {
         vpnActive: Bool = false,
         shieldStatus: ShieldStatus = .missing,
         isYouTube: Bool = false,
-        advice: SignInAdvice = .none
+        advice: SignInAdvice = .none,
+        hostRate: RateState? = nil,
+        now: Date = Date()
     ) -> String {
         switch error {
         case .botCheck:
@@ -146,9 +148,19 @@ enum AppModelDialogs {
             )
         case .ageRestricted, .private:
             signInMessage(for: error, advice: advice)
+        case .hostBlocked:
+            hostBlockedMessage(state: hostRate, now: now)
         default:
             plainProbeMessage(for: error)
         }
+    }
+
+    private static func hostBlockedMessage(state: RateState?, now: Date) -> String {
+        if case let .cooldown(until, _) = state {
+            let remaining = CountdownFormat.mmss(until: until, now: now)
+            return "This site is cooling down. Try again in \(remaining)."
+        }
+        return "This site is paused. Choose Retry now to continue."
     }
 
     private static func plainProbeMessage(for error: MetadataError) -> String {
@@ -159,7 +171,7 @@ enum AppModelDialogs {
         case .network: "No internet connection."
         case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
         case .cookieReadFailed: "Couldn't read your browser's sign-in. Close the browser and try again."
-        case .hostBlocked: "This site is cooling down. Try again in a moment."
+        case .hostBlocked: hostBlockedMessage(state: nil, now: Date())
         case .passcodeRequired: "This recording needs a passcode."
         case .passcodeRejected: "That passcode didn't work."
         case .malformedOutput, .unknown, .botCheck, .ageRestricted, .private: "Couldn't read the video details."

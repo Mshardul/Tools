@@ -8,6 +8,7 @@ public actor DownloadEngine: DownloadEngineProtocol {
     var revision: UInt64 = 0
     var queueHalt: QueueHaltReason?
     var deferrals: [(id: UUID, notBefore: Date)] = []
+    var hostWakeIDs: [RateHost: UUID] = [:]
     var deferralTask: Task<Void, Never>?
     var probeInFlight = false
     var capOverrideForTests: Int?

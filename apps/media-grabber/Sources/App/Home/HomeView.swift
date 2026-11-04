@@ -221,6 +221,7 @@ struct HomeView: View {
     private func autoProbe(_ value: String) {
         probeTask?.cancel()
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard appModel.acceptsAutomaticProbe(of: trimmed) else { return }
         guard trimmed.contains("://") else {
             appModel.clearResolved()
             return

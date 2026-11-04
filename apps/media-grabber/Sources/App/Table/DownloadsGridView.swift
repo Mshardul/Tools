@@ -4,6 +4,7 @@ import SwiftUI
 
 struct DownloadsGridView: NSViewRepresentable {
     @Bindable var store: RowStore
+    var liveDisplayTick: Int
     @Binding var columnConfig: ColumnConfig
     @Binding var scrollToRowID: UUID?
     let onAction: (UUID, RowAction) -> Void
@@ -25,7 +26,7 @@ struct DownloadsGridView: NSViewRepresentable {
     func updateNSView(_: NSView, context: Context) {
         let controller = context.coordinator.controller
         wire(controller: controller)
-        controller.sync(DownloadsGridSyncState(
+        let state = DownloadsGridSyncState(
             items: store.visibleItems,
             visibleColumns: columnConfig.orderedVisibleColumns(),
             columnConfig: columnConfig,
@@ -38,7 +39,14 @@ struct DownloadsGridView: NSViewRepresentable {
                 let values = store.rows.map { TablePresentation.cellText(for: $0, column: column) }
                 return Array(Set(values)).sorted()
             }
-        ))
+        )
+        if liveDisplayTick != context.coordinator.paintedTick, controller.canRefreshLiveCells(for: state) {
+            context.coordinator.paintedTick = liveDisplayTick
+            controller.refreshLiveColumns()
+            return
+        }
+        context.coordinator.paintedTick = liveDisplayTick
+        controller.sync(state)
     }
 
     private func wire(controller: DownloadsGridController) {
@@ -95,5 +103,6 @@ struct DownloadsGridView: NSViewRepresentable {
     @MainActor
     final class Coordinator {
         let controller = DownloadsGridController()
+        var paintedTick = 0
     }
 }

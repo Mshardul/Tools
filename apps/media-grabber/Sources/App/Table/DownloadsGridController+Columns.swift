@@ -5,6 +5,39 @@ import GrabberKit
 @MainActor
 extension DownloadsGridController {
     // Spare width goes to Title so the table spans its container; scrolling appears only when columns truly don't fit.
+    func canRefreshLiveCells(for state: DownloadsGridSyncState) -> Bool {
+        guard state.scrollToRowID == nil else { return false }
+        guard !tableView.tableColumns.isEmpty else { return false }
+        return visibleColumns == state.visibleColumns
+            && columnConfig == state.columnConfig
+            && selectedJobIDs == state.selectedJobIDs
+            && selectionAnchorID == state.selectionAnchorID
+            && visibleChildOrder == state.visibleChildOrder
+            && items == state.items
+    }
+
+    func refreshLiveColumns() {
+        guard tableView.numberOfRows == items.count else {
+            tableView.reloadData()
+            return
+        }
+        var columns = IndexSet()
+        for (index, column) in tableView.tableColumns.enumerated() {
+            guard let columnID = DownloadsGridColumns.columnID(from: column.identifier) else { continue }
+            switch columnID {
+            case .progress, .speed, .eta, .size:
+                columns.insert(index)
+            default:
+                break
+            }
+        }
+        guard !columns.isEmpty else { return }
+        tableView.reloadData(
+            forRowIndexes: IndexSet(integersIn: 0 ..< items.count),
+            columnIndexes: columns
+        )
+    }
+
     func fillViewportWithTitle() {
         let titleIdentifier = DownloadsGridColumns.identifier(for: .title)
         guard let title = tableView.tableColumn(withIdentifier: titleIdentifier) else { return }

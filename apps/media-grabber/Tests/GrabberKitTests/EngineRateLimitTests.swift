@@ -23,6 +23,13 @@ final class EngineRateLimitTests: XCTestCase {
         return false
     }
 
+    private func hasLeftTheQueue(_ state: JobState) -> Bool {
+        switch state {
+        case .running, .completed, .probing: true
+        default: false
+        }
+    }
+
     private let rl429 = FakeProcessRunner.Script.stderr(
         "ERROR: HTTP Error 429: Too Many Requests", exitCode: 1
     )
@@ -98,6 +105,64 @@ final class EngineRateLimitTests: XCTestCase {
         let adaptive = await engine.adaptiveCapForTest(RateHost(urlString: "https://youtube.com/watch?v=x"))
         XCTAssertEqual(collector.latestSnapshot()?.hostRateSummary.isEmpty, true)
         XCTAssertEqual(adaptive, EngineTuning.default.adaptiveConcurrencyStart)
+    }
+
+    func testQueuedSiblingStartsAfterTheCoolingJobIsCancelled() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 1000))
+        let runner = FakeProcessRunner()
+        runner.scripts(
+            [rl429, Fix.completingScript()],
+            forPathEndingIn: "yt-dlp"
+        )
+        let engine = Fix.engine(
+            runner: runner, probe: successProbe(), cap: 2, clock: clock,
+            tuning: EngineTuning.resolved(environment: ["MG_BACKOFF_LADDER": "1"])
+        )
+        let collector = EventCollector(engine.events)
+
+        let cooling = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=a"))
+        _ = await collector.waitForState(cooling) { self.isCooldown($0) }
+        let waiting = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=b"))
+        XCTAssertEqual(job(collector, waiting)?.state, .queued)
+
+        await engine.cancel(cooling)
+        // The replacement wake is armed on a task. Let it register before the clock moves.
+        try? await Task.sleep(for: .milliseconds(30))
+        clock.advance(by: .seconds(2))
+        try? await Task.sleep(for: .milliseconds(30))
+
+        let started = await collector.waitForState(waiting) { self.hasLeftTheQueue($0) }
+        XCTAssertTrue(started)
+    }
+
+    func testQueuedSiblingStartsAfterTheCoolingJobFailsForGood() async {
+        let clock = FakeClock(now: Date(timeIntervalSince1970: 1000))
+        let runner = FakeProcessRunner()
+        runner.scripts(
+            [rl429, rl429, Fix.completingScript()],
+            forPathEndingIn: "yt-dlp"
+        )
+        let engine = Fix.engine(
+            runner: runner, probe: successProbe(), cap: 2, clock: clock,
+            tuning: EngineTuning.resolved(environment: ["MG_BACKOFF_LADDER": "1"]),
+            maxAutoRetries: 1
+        )
+        let collector = EventCollector(engine.events)
+
+        let cooling = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=a"))
+        _ = await collector.waitForState(cooling) { self.isCooldown($0) }
+        let waiting = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=b"))
+
+        clock.advance(by: .seconds(2))
+        try? await Task.sleep(for: .milliseconds(30))
+        _ = await collector.waitForState(cooling) { self.isFailed($0) }
+        XCTAssertEqual(job(collector, waiting)?.state, .queued)
+
+        try? await Task.sleep(for: .milliseconds(30))
+        clock.advance(by: .seconds(2))
+        try? await Task.sleep(for: .milliseconds(30))
+        let started = await collector.waitForState(waiting) { self.hasLeftTheQueue($0) }
+        XCTAssertTrue(started)
     }
 
     func testTerminalRateLimitedStillStrikes() async {

@@ -53,7 +53,7 @@ extension AppModel {
     }
 
     private func showProbeFailure(_ error: MetadataError, url: String) async {
-        let shieldStatus = await engine.currentSnapshot().shieldStatus
+        let snapshot = await engine.currentSnapshot()
         let isYouTube = RateHost(urlString: url).canonical == "youtube"
         let host = RateHost(urlString: url)
         let advice = SignInPolicy.probeAdvice(
@@ -62,11 +62,13 @@ extension AppModel {
         probeError = AppModelDialogs.probeErrorMessage(
             for: error,
             vpnActive: vpnDetector.isVPNActive,
-            shieldStatus: shieldStatus,
+            shieldStatus: snapshot.shieldStatus,
             isYouTube: isYouTube,
-            advice: advice
+            advice: advice,
+            hostRate: snapshot.hostRateSummary[host]?.state
         )
-        shieldSetup.probePrompt = error == .botCheck && isYouTube ? Self.shieldPrompt(for: shieldStatus) : nil
+        shieldSetup.probePrompt = error == .botCheck && isYouTube
+            ? Self.shieldPrompt(for: snapshot.shieldStatus) : nil
         if error == .passcodeRequired || error == .passcodeRejected {
             presentPasscodePrompt(forLink: url, wasRejected: error == .passcodeRejected)
         }

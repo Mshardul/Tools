@@ -40,6 +40,9 @@ final class AppModelHomeFieldTests: XCTestCase {
         XCTAssertEqual(model.homeFieldText, "https://example.com/watch?v=abc")
         XCTAssertEqual(model.resolved?.title, "Incoming Clip")
         XCTAssertEqual(engine.previewedURLs, ["https://example.com/watch?v=abc"])
+        XCTAssertFalse(model.acceptsAutomaticProbe(of: url.absoluteString))
+        XCTAssertEqual(engine.previewedURLs, ["https://example.com/watch?v=abc"])
+        XCTAssertTrue(model.acceptsAutomaticProbe(of: "https://example.com/watch?v=other"))
     }
 
     func test_isHomeBusy_whenHomeFieldTextNonEmpty() {

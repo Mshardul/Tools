@@ -88,10 +88,23 @@ public extension PlaylistDump {
             watchURL: watchURL,
             title: title,
             durationSeconds: durationSeconds(object),
-            thumbnailURL: object["thumbnail"] as? String,
+            thumbnailURL: thumbnailURL(from: object),
             extractor: extractor(from: object, playlistExtractor: playlistExtractor),
             playlistIndex: integer(object["playlist_index"]) ?? fallbackIndex
         )
+    }
+
+    private static func thumbnailURL(from object: [String: Any]) -> String? {
+        if let direct = object["thumbnail"] as? String, !direct.isEmpty {
+            return direct
+        }
+        guard let list = object["thumbnails"] as? [[String: Any]] else { return nil }
+        for item in list {
+            if let url = item["url"] as? String, !url.isEmpty {
+                return url
+            }
+        }
+        return nil
     }
 
     private static func watchURL(from object: [String: Any]) -> String? {

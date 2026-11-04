@@ -2,7 +2,18 @@ import Foundation
 import GrabberKit
 
 extension AppModel {
+    func acceptsAutomaticProbe(of value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard filledProbeURL == trimmed else {
+            filledProbeURL = nil
+            return true
+        }
+        filledProbeURL = nil
+        return false
+    }
+
     func applyIncomingURL(_ url: URL) async {
+        filledProbeURL = url.absoluteString
         homeFieldText = url.absoluteString
         await resolvePasted(homeFieldText)
     }

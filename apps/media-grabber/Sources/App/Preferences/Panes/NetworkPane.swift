@@ -6,6 +6,7 @@ struct NetworkPane: View {
     @Environment(\.theme) private var theme
 
     @State private var proxyText = ""
+    @FocusState private var proxyFocused: Bool
 
     private static let speedStep = 100
     private static let speedFloor = 100
@@ -33,7 +34,12 @@ struct NetworkPane: View {
                         RoundedRectangle(cornerRadius: theme.controlRadius)
                             .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
                     )
-                    .onSubmit { prefs.proxyURL = proxyText }
+                    .focused($proxyFocused)
+                    .onSubmit { commitProxy(prefs) }
+                    .onChange(of: proxyFocused) { _, focused in
+                        guard !focused else { return }
+                        commitProxy(prefs)
+                    }
             }
 
             PrefRow(
@@ -53,6 +59,11 @@ struct NetworkPane: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear { proxyText = appModel.prefs.proxyURL ?? "" }
+    }
+
+    private func commitProxy(_ prefs: Preferences) {
+        prefs.proxyURL = PreferenceFieldCommit.proxy(draft: proxyText)
+        proxyText = prefs.proxyURL ?? ""
     }
 
     private func speedStepper(_ prefs: Preferences) -> some View {

@@ -64,6 +64,7 @@ final class RowStoreGroupTests: XCTestCase {
 
         store.apply(progressEvent(1, fraction: 0.16))
         XCTAssertEqual(store.groups, firstGroups)
+        XCTAssertFalse(store.rows[0].speedText.isEmpty)
 
         store.apply(progressEvent(1, fraction: 0.24))
         XCTAssertEqual(store.groups.first?.rollupFraction ?? -1, 0.1, accuracy: 0.0001)

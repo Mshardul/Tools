@@ -18,6 +18,20 @@ final class PlaylistDumpTests: XCTestCase {
         XCTAssertEqual(dump.entries[1].durationSeconds, 390)
     }
 
+    func testThumbnailsListSuppliesTheFirstPicture() throws {
+        let json = """
+        {"title":"Show","_type":"playlist","entries":[{
+          "id":"ccccccccccc","title":"Clip",
+          "thumbnails":[{"url":"https://i.ytimg.com/vi/ccccccccccc/default.jpg"}]
+        }]}
+        """
+        let dump = try PlaylistDump.decode(json, pasteURL: "https://www.youtube.com/playlist?list=PLx").get()
+        XCTAssertEqual(
+            dump.entries[0].thumbnailURL,
+            "https://i.ytimg.com/vi/ccccccccccc/default.jpg"
+        )
+    }
+
     func testEmptyEntriesIsMalformed() {
         let json = #"{"title":"Empty","_type":"playlist","entries":[]}"#
         XCTAssertEqual(

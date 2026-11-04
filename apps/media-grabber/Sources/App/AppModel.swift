@@ -25,6 +25,8 @@ final class AppModel {
     private(set) var latestEnvironmentReport: EnvironmentReport?
     private(set) var lastSubmittedJobID: UUID?
     var homeFieldText = ""
+    var filledProbeURL: String?
+
     var resolved: ResolvedLink?
     var probeError: String?
     // Identifies the newest link check; a slower, older check must not overwrite the newer one's result.

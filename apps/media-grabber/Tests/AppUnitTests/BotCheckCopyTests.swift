@@ -53,10 +53,20 @@ final class BotCheckCopyTests: XCTestCase {
         )
     }
 
-    func testProbeErrorHostBlocked() {
+    func testProbeErrorHostBlockedWhileCoolingShowsTheRemainingTime() {
+        let now = Date(timeIntervalSince1970: 60)
+        let state = RateState.cooldown(until: Date(timeIntervalSince1970: 125), strikes: 1)
         XCTAssertEqual(
-            AppModelDialogs.probeErrorMessage(for: .hostBlocked),
-            "This site is cooling down. Try again in a moment."
+            AppModelDialogs.probeErrorMessage(for: .hostBlocked, hostRate: state, now: now),
+            "This site is cooling down. Try again in 1:05."
+        )
+    }
+
+    func testProbeErrorHostBlockedWhilePausedPointsAtRetryNow() {
+        let state = RateState.circuitOpen(since: Date(timeIntervalSince1970: 0), strikes: 4)
+        XCTAssertEqual(
+            AppModelDialogs.probeErrorMessage(for: .hostBlocked, hostRate: state, now: Date()),
+            "This site is paused. Choose Retry now to continue."
         )
     }
 

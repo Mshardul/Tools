@@ -8,6 +8,7 @@ struct DownloadsPane: View {
 
     @State private var namingPreset: FileNamingPreset = .title
     @State private var customTemplate = ""
+    @FocusState private var filenameFocused: Bool
 
     private static let qualityLadder: [(label: String, height: Int)] = [
         ("2160p", 2160),
@@ -179,7 +180,12 @@ struct DownloadsPane: View {
                         theme.palette.panel,
                         in: RoundedRectangle(cornerRadius: theme.controlRadius)
                     )
+                    .focused($filenameFocused)
                     .onSubmit { commitCustom(prefs) }
+                    .onChange(of: filenameFocused) { _, focused in
+                        guard !focused, namingPreset == .custom else { return }
+                        commitCustom(prefs)
+                    }
             }
         }
     }
@@ -193,12 +199,9 @@ struct DownloadsPane: View {
     }
 
     private func commitCustom(_ prefs: Preferences) {
-        let trimmed = customTemplate.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            customTemplate = prefs.filenameTemplate
-        } else {
-            prefs.filenameTemplate = trimmed
-        }
+        let next = PreferenceFieldCommit.filename(draft: customTemplate, saved: prefs.filenameTemplate)
+        customTemplate = next
+        prefs.filenameTemplate = next
     }
 
     private func chooseDefaultFolder(_ prefs: Preferences) {

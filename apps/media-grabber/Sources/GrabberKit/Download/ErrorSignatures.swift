@@ -4,6 +4,13 @@ import Foundation
 public enum ErrorSignatures {
     // Ordered, first case-insensitive substring match wins; networkDown is caught by ProgressParser before this table.
     static let table: [(errorClass: ErrorClass, substrings: [String])] = [
+        (.diskFull, [
+            "no space left on device"
+        ]),
+        (.permissionDenied, [
+            "permission denied",
+            "operation not permitted"
+        ]),
         (.rateLimited(), [
             "HTTP Error 429",
             "Too Many Requests",

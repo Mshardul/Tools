@@ -14,6 +14,17 @@ struct DownloadsTable: View {
 
     @Environment(\.theme) private var theme
 
+    // The grid is AppKit. Reading these strings here is what makes SwiftUI redraw speed, ETA, and the bar.
+    private var progressDisplayMark: Int {
+        var mark = 0
+        for row in store.rows {
+            mark &+= row.speedText.hashValue
+            mark &+= row.etaText.hashValue
+            mark &+= Int((row.snapshot.progress?.fraction ?? 0) * 10000)
+        }
+        return mark
+    }
+
     private var visibleColumns: [ColumnID] {
         columnConfig.orderedVisibleColumns()
     }
@@ -48,6 +59,7 @@ struct DownloadsTable: View {
             } else {
                 DownloadsGridView(
                     store: store,
+                    liveDisplayTick: progressDisplayMark,
                     columnConfig: $columnConfig,
                     scrollToRowID: $scrollToRowID,
                     onAction: onAction,

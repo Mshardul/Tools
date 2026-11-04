@@ -67,6 +67,26 @@ extension DownloadEngine {
         armDeferralTask()
     }
 
+    // Cancelling or failing the cooling row drops its timer. A queued sibling still needs a wake at the deadline.
+    func ensureHostCooldownWake(for host: RateHost) {
+        guard let deadline = rateLimiter.cooldownDeadline(for: host) else { return }
+        let sameHost: (DownloadJob) -> Bool = { RateHost(urlString: $0.request.url) == host }
+        let queued = jobs.contains { $0.state == .queued && sameHost($0) }
+        guard queued else { return }
+        let cooling = jobs.contains { isCooldownState($0.state) && sameHost($0) }
+        guard !cooling else { return }
+        deferStart(hostWakeID(for: host), until: deadline)
+    }
+
+    private func hostWakeID(for host: RateHost) -> UUID {
+        if let existing = hostWakeIDs[host] {
+            return existing
+        }
+        let made = UUID()
+        hostWakeIDs[host] = made
+        return made
+    }
+
     private func resumeIfCooldownElapsed(_ id: UUID, now: Date) -> Bool {
         guard let job = jobs.first(where: { $0.id == id }) else { return false }
         guard case let .cooldown(until) = job.state, until <= now else { return false }
