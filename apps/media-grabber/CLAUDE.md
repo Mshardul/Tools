@@ -43,7 +43,7 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 - The build reads the version from `TUIST_MG_VERSION` (unset → `0.0.0`); the release workflow exports it before `tuist generate`.
 - A tag push runs `.github/workflows/media-grabber-release.yml`: build Release, ad-hoc sign, DMG via the vendored `scripts/create-dmg`, verify the DMG's app version matches the tag, publish a GitHub Release with the `.dmg` + `SHA256SUMS`.
 - To test the release path without publishing: Actions tab → media-grabber-release → Run workflow → set `version`, tick `dry_run`.
-- Xcode is pinned in `.xcode-version` (single source of truth): each CI job reads it into a step output for `setup-xcode`, and `xcodes` reads it locally. A bump edits that one file. A weekly scheduled CI run tests against Xcode `latest` so a retired pin surfaces out of band.
+- Xcode is pinned in `.xcode-version` (single source of truth): the test and release jobs read it into a step output for `setup-xcode`, and `xcodes` reads it locally. Lint stays on Ubuntu (`swiftformat` / `swiftlint` only) so it does not wait on a macOS runner. A bump edits that one file. A weekly scheduled CI run tests against Xcode `latest` so a retired pin surfaces out of band.
 - Notarization, real Developer ID signing, and hardened runtime are not wired — the release workflow's sign step marks where they slot in.
 - `scripts/create-dmg` is vendored (andreyvit) at a pinned SHA with one local patch (support-dir path); see `scripts/support/PROVENANCE`.
 

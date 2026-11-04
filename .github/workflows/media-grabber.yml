@@ -18,18 +18,14 @@ defaults:
 
 jobs:
   lint:
-    runs-on: macos-15
+    # SwiftFormat and SwiftLint do not need Xcode. Keep this off macos-15 so a
+    # Mac runner shortage cannot fail the workflow before tuist test starts.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: xcodever
-        working-directory: .
-        run: echo "v=$(cat apps/media-grabber/.xcode-version)" >> "$GITHUB_OUTPUT"
       - uses: jdx/mise-action@v2
         with:
           working_directory: apps/media-grabber
-      - uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: ${{ steps.xcodever.outputs.v }}
       - run: mise exec -- swiftformat --lint .
       - run: mise exec -- swiftlint lint --strict
 
