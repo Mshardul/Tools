@@ -126,17 +126,17 @@ public struct CookieResolver: Sendable {
 
     private func firefoxResolution(requestedName: String?) -> CookieResolution {
         let profiles = firefoxProfiles()
-        if let requestedName, profiles.contains(where: { $0.name == requestedName }) {
+        if let requestedName, let match = profiles.first(where: { $0.name == requestedName }) {
             return CookieResolution(
-                argument: "firefox:\(requestedName)", verdict: .ready(browserKey: "firefox")
+                argument: "firefox:\(match.path)", verdict: .ready(browserKey: "firefox")
             )
         }
         if profiles.isEmpty {
             return CookieResolution(argument: nil, verdict: .noProfiles)
         }
-        if let defaultName = profiles.first(where: \.isDefault)?.name {
+        if let defaultProfile = profiles.first(where: \.isDefault) {
             return CookieResolution(
-                argument: "firefox:\(defaultName)", verdict: .ready(browserKey: "firefox")
+                argument: "firefox:\(defaultProfile.path)", verdict: .ready(browserKey: "firefox")
             )
         }
         return CookieResolution(argument: "firefox", verdict: .ready(browserKey: "firefox"))

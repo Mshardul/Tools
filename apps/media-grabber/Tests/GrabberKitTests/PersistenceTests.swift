@@ -261,10 +261,18 @@ final class PersistenceTests: XCTestCase {
             clock: clock,
             log: LogWriter(directory: dir.appendingPathComponent("logs"))
         )
+        let notices = Locked<[String]>([])
+        badPersistence.reportSaveFailure { sentence in
+            notices.mutate { $0.append(sentence) }
+        }
         badPersistence.saveQueue([job(1)])
         await badPersistence.flushNow()
         let failed = await badPersistence.didFirstWriteFail
         XCTAssertTrue(failed)
+        XCTAssertEqual(
+            notices.read { $0 },
+            ["The download list couldn't be saved. Check that the save folder is available, then try again."]
+        )
 
         try FileManager.default.removeItem(at: blocker)
         badPersistence.saveQueue([job(2)])

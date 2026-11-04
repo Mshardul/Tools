@@ -20,11 +20,8 @@ public enum PlaylistLink {
         if isWatchPath(path, host: components.host) {
             return .singleVideo
         }
-        if isChannelVideosPath(path) {
-            return .youtubeUnsupported
-        }
         guard path.contains("/playlist") else {
-            return .singleVideo
+            return .youtubeUnsupported
         }
 
         let list = components.queryItems?.first { $0.name == "list" }?.value ?? ""
@@ -37,13 +34,5 @@ public enum PlaylistLink {
             return true
         }
         return host?.lowercased() == "youtu.be" && path != "/playlist"
-    }
-
-    private static func isChannelVideosPath(_ path: String) -> Bool {
-        let channelPrefixes = ["/@", "/channel/", "/c/", "/user/"]
-        guard path.split(separator: "/").last == "videos" else {
-            return false
-        }
-        return path == "/videos" || channelPrefixes.contains(where: path.contains)
     }
 }

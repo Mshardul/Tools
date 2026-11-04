@@ -93,6 +93,11 @@ public final class Persistence: QueuePersisting {
     private let lastQueueJobs = Locked<[PersistedJob]?>(nil)
     private let lastPlaylistGroups = Locked<[PersistedPlaylistGroup]?>(nil)
     private let writer: Writer
+    private let saveFailed = Locked<(@Sendable (String) -> Void)?>(nil)
+
+    public func reportSaveFailure(_ handler: @escaping @Sendable (String) -> Void) {
+        saveFailed.mutate { $0 = handler }
+    }
 
     public init(
         dir: URL = Persistence.defaultDir,
@@ -104,7 +109,7 @@ public final class Persistence: QueuePersisting {
         self.log = log
         self.debug = debug
         self.clock = clock
-        writer = Writer(dir: dir, log: log)
+        writer = Writer(dir: dir, log: log, saveFailed: saveFailed)
     }
 
     public static var defaultDir: URL {
@@ -309,12 +314,14 @@ extension Persistence {
     actor Writer {
         private let dir: URL
         private let log: LogWriter
+        private let saveFailed: Locked<(@Sendable (String) -> Void)?>
         private var lastWritten: [String: Data] = [:]
         private(set) var didFirstWriteFail = false
 
-        init(dir: URL, log: LogWriter) {
+        init(dir: URL, log: LogWriter, saveFailed: Locked<(@Sendable (String) -> Void)?>) {
             self.dir = dir
             self.log = log
+            self.saveFailed = saveFailed
         }
 
         func write(_ value: some Encodable, to name: String) async {
@@ -333,6 +340,8 @@ extension Persistence {
             } catch {
                 didFirstWriteFail = true
                 await log.log(.persistenceWriteFailed(file: name, error: "\(error)"))
+                let sentence = SaveFailureNotice.sentence(file: name, error: error)
+                saveFailed.read { $0 }?(sentence)
             }
         }
     }

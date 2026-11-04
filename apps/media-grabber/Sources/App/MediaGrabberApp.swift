@@ -45,6 +45,15 @@ struct MediaGrabberApp: App {
             persistence: persistence,
             columnConfig: columnConfig
         )
+        persistence.reportSaveFailure { [weak model] sentence in
+            Task { @MainActor in
+                model?.toastCenter.enqueue(ToastItem(
+                    text: sentence,
+                    actionTitle: nil,
+                    action: nil
+                ))
+            }
+        }
 
         _installer = State(initialValue: installer)
         _appModel = State(initialValue: model)

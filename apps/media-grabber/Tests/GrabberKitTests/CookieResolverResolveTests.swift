@@ -85,23 +85,29 @@ final class CookieResolverResolveTests: XCTestCase {
     func test_firefox_namedProfilePresent() {
         let fm = firefoxFM(ini: """
         [Profile0]
-        Name=work
-        Path=Profiles/work
+        Name=Work
+        Path=Profiles/k8f3a2qx.default-release
         """)
-        let got = resolver(fm).resolve(source: .firefox(profile: "work"))
-        XCTAssertEqual(got.argument, "firefox:work")
+        let got = resolver(fm).resolve(source: .firefox(profile: "Work"))
+        XCTAssertEqual(
+            got.argument,
+            "firefox:/Users/tester/Library/Application Support/Firefox/Profiles/k8f3a2qx.default-release"
+        )
         XCTAssertEqual(got.verdict, .ready(browserKey: "firefox"))
     }
 
     func test_firefox_namedProfileAbsent_fallsToDefault() {
         let fm = firefoxFM(ini: """
         [Profile0]
-        Name=main
-        Path=Profiles/main
+        Name=Personal
+        Path=Profiles/ab12cd34.default
         Default=1
         """)
         let got = resolver(fm).resolve(source: .firefox(profile: "gone"))
-        XCTAssertEqual(got.argument, "firefox:main")
+        XCTAssertEqual(
+            got.argument,
+            "firefox:/Users/tester/Library/Application Support/Firefox/Profiles/ab12cd34.default"
+        )
     }
 
     func test_firefox_noProfiles_noProfilesVerdict() {

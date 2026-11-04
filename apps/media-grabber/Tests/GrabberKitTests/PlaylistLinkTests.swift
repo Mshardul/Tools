@@ -45,6 +45,21 @@ final class PlaylistLinkTests: XCTestCase {
         }
     }
 
+    func testChannelSearchAndOtherYouTubePagesAreUnsupported() {
+        let samples = [
+            "https://www.youtube.com/@foo",
+            "https://www.youtube.com/channel/UCxxx",
+            "https://www.youtube.com/c/foo",
+            "https://www.youtube.com/user/foo",
+            "https://www.youtube.com/results?search_query=cats",
+            "https://www.youtube.com/feed/subscriptions",
+            "https://www.youtube.com/"
+        ]
+        for url in samples {
+            XCTAssertEqual(PlaylistLink.classify(url), .youtubeUnsupported, url)
+        }
+    }
+
     func testNonYouTubeIsSingleVideo() {
         XCTAssertEqual(
             PlaylistLink.classify("https://archive.org/details/foo"),
