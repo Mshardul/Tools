@@ -164,6 +164,33 @@ public final class Preferences: @unchecked Sendable {
         }
     }
 
+    public var signInScope: SignInScope {
+        get {
+            guard let raw = defaults.string(forKey: "mg.signInScope"),
+                  let scope = SignInScope(rawValue: raw)
+            else {
+                return .allSites
+            }
+            return scope
+        }
+        set { defaults.set(newValue.rawValue, forKey: "mg.signInScope") }
+    }
+
+    public var signInSites: [String] {
+        get {
+            guard let data = defaults.data(forKey: "mg.signInSites"),
+                  let sites = try? JSONDecoder().decode([String].self, from: data)
+            else {
+                return []
+            }
+            return sites
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            defaults.set(data, forKey: "mg.signInSites")
+        }
+    }
+
     // MARK: - Runway last-selected
 
     public var lastVideoHeight: Int? {
@@ -263,6 +290,7 @@ public final class Preferences: @unchecked Sendable {
         "mg.theme", "mg.palette", "mg.detectClipboardLinks", "mg.proxyURL",
         "mg.forceIPv4", "mg.speedLimitKBps", "mg.lastVideoHeight",
         "mg.lastMediaType", "mg.lastAudioFormat", "mg.cookiesFromBrowser",
+        "mg.signInScope", "mg.signInSites",
         "mg.defaultAudioLanguagePolicy", "mg.lastAudioLanguage",
         "mg.autoCheckAppUpdates", "mg.autoCheckYtDlpUpdates"
     ]

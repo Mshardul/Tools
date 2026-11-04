@@ -52,7 +52,7 @@ final class GridAccessibilityTests: XCTestCase {
     }
 
     func test_refreshLabel_namesTheChipAction() {
-        XCTAssertEqual(HealthChipAccessibility.refreshLabel(id: "shield"), "Restart bot-check shield")
+        XCTAssertEqual(HealthChipAccessibility.refreshLabel(id: "shield"), "Restart YouTube check")
         XCTAssertEqual(HealthChipAccessibility.refreshLabel(id: "engine"), "Reinstall downloader")
         XCTAssertEqual(HealthChipAccessibility.refreshLabel(id: "other"), "Refresh")
         XCTAssertEqual(HealthChipAccessibility.popoverLabel(chipLabel: "youtube.com"), "youtube.com, host rate")

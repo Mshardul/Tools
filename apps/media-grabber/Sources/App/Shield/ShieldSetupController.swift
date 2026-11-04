@@ -84,7 +84,7 @@ final class ShieldSetupController {
             probePrompt = nil
             await onInstalled?()
         } else {
-            state = .failed(detail: "installed, but the shield did not start")
+            state = .failed(detail: "Installed, but the YouTube check did not start.")
         }
     }
 }

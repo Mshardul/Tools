@@ -7,7 +7,7 @@ struct ShieldPromptButton: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Button(prompt == .setUp ? "Set up the shield" : "Restart the shield") {
+        Button(prompt == .setUp ? "Set up the YouTube check" : "Restart the YouTube check") {
             switch prompt {
             case .setUp:
                 appModel.shieldSetup.present()

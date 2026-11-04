@@ -43,7 +43,8 @@ enum EngineFixture {
         tuning: EngineTuning = .default,
         maxAutoRetries: Int? = nil,
         potProvider: (any PotProviding)? = nil,
-        persistence: any QueuePersisting = NoopPersisting()
+        persistence: any QueuePersisting = NoopPersisting(),
+        playerClientOrder: (any PlayerClientOrdering)? = nil
     ) -> DownloadEngine {
         let prefs = preferences
             ?? Preferences(defaults: UserDefaults(suiteName: UUID().uuidString)!)
@@ -64,7 +65,8 @@ enum EngineFixture {
                 persistence: persistence,
                 cookieResolverHome: resolverHome,
                 networkMonitor: networkMonitor,
-                potProvider: potProvider ?? MissingPotProvider()
+                potProvider: potProvider ?? MissingPotProvider(),
+                playerClientOrder: playerClientOrder ?? BundledPlayerClientOrder()
             ),
             preferences: prefs
         )

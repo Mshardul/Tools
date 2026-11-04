@@ -69,6 +69,7 @@ public struct EngineDependencies: Sendable {
     public var cookieResolverHome: URL?
     public var networkMonitor: any NetworkPathMonitoring
     public var potProvider: any PotProviding
+    public var playerClientOrder: any PlayerClientOrdering
 
     public init(
         runner: ProcessRunning,
@@ -90,7 +91,8 @@ public struct EngineDependencies: Sendable {
         deleteJobLog: (@Sendable (UUID) -> Void)? = nil,
         cookieResolverHome: URL? = nil,
         networkMonitor: (any NetworkPathMonitoring)? = nil,
-        potProvider: any PotProviding = MissingPotProvider()
+        potProvider: any PotProviding = MissingPotProvider(),
+        playerClientOrder: any PlayerClientOrdering = BundledPlayerClientOrder()
     ) {
         self.runner = runner
         self.fileManager = fileManager
@@ -114,6 +116,7 @@ public struct EngineDependencies: Sendable {
         self.cookieResolverHome = cookieResolverHome
         self.networkMonitor = networkMonitor ?? AlwaysOnlineMonitor()
         self.potProvider = potProvider
+        self.playerClientOrder = playerClientOrder
     }
 
     public static func live(
@@ -152,8 +155,15 @@ public struct EngineDependencies: Sendable {
                 offlineGrace: TimeInterval(tuning.networkOfflineGraceSeconds),
                 onlineSettle: TimeInterval(tuning.networkOnlineSettleSeconds)
             ),
-            potProvider: potProvider
+            potProvider: potProvider,
+            playerClientOrder: LivePlayerClientOrder(directory: Self.playerClientDirectory())
         )
+    }
+
+    private static func playerClientDirectory() -> URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        return base.appendingPathComponent("MediaGrabber/player-clients", isDirectory: true)
     }
 
     private static func locateFfprobe() -> URL? {

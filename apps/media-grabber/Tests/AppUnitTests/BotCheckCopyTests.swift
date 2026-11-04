@@ -21,7 +21,7 @@ final class BotCheckCopyTests: XCTestCase {
 
     func testYouTubeShieldDown_blamesShieldAndAsksForNothingElse() {
         let message = BotCheckCopy.sentence(vpnActive: false, shieldStatus: .down, isYouTube: true, advice: .suggest)
-        XCTAssertEqual(message, "YouTube didn't accept this request because the bot-check shield stopped working.")
+        XCTAssertEqual(message, "YouTube didn't accept this request because the YouTube check stopped working.")
         XCTAssertFalse(message.contains("sign in"))
     }
 

@@ -18,7 +18,7 @@ struct UpdatesPane: View {
 
             PrefRow(
                 "Notify when the downloader is outdated",
-                helper: "Warn if yt-dlp falls behind the version this app expects."
+                helper: "Warn if the downloader falls behind the version this app expects."
             ) {
                 Toggle("", isOn: $prefs.autoCheckYtDlpUpdates)
                     .labelsHidden()

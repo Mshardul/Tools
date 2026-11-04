@@ -6,7 +6,7 @@ struct ShieldSetupSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.s4) {
-            Text("Set up the bot-check shield")
+            Text("Set up the YouTube check")
                 .font(theme.displayFont(20, .semibold))
                 .foregroundStyle(theme.palette.headline)
             Text(Self.explanation(for: controller.state))
@@ -63,7 +63,7 @@ struct ShieldSetupSheet: View {
     static func explanation(for state: ShieldSetupController.State) -> String {
         switch state {
         case .idle:
-            "YouTube sometimes asks apps to prove they aren't a robot. The bot-check shield is a small free helper "
+            "YouTube sometimes asks apps to prove they aren't a robot. The YouTube check is a small free helper "
                 + "that handles this for you. Setting it up takes about a minute."
         case .working:
             "Setting up. This can take a minute."

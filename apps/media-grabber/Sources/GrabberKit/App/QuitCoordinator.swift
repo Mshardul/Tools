@@ -44,7 +44,7 @@ public final class QuitCoordinator: Sendable {
     private static func quitMessage(for halt: QueueHaltReason?) -> String {
         switch halt {
         case .depMissing:
-            "Downloads are paused — yt-dlp needs reinstalling. Quit anyway?"
+            "Downloads are paused — the downloader needs reinstalling. Quit anyway?"
         case .networkDown:
             "Downloads are paused — no internet connection. They'll resume when you're back online. Quit anyway?"
         case .circuitOpen:

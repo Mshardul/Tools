@@ -85,7 +85,7 @@ enum GridStatusAccessibility {
 enum HealthChipAccessibility {
     static func refreshLabel(id: String) -> String {
         switch id {
-        case "shield": "Restart bot-check shield"
+        case "shield": "Restart YouTube check"
         case "engine": "Reinstall downloader"
         default: "Refresh"
         }

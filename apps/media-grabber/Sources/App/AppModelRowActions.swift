@@ -12,6 +12,21 @@ enum PlaylistGroupAction {
 }
 
 extension AppModel {
+    func resolveCookieRetry() async {
+        guard let id = pendingCookieRetryJobID else { return }
+        setPendingCookieRetry(nil)
+        guard let url = rowStore.rows.first(where: { $0.id == id })?.snapshot.url else {
+            await engine.retryWithCookies(id)
+            return
+        }
+        switch await addSignInSiteIfNeeded(url) {
+        case .added, .notNeeded:
+            await engine.retryWithCookies(id)
+        case .declined:
+            break
+        }
+    }
+
     func handleRowAction(_ id: UUID, action: RowAction) async {
         switch action {
         case .pause: await engine.pause(id)
@@ -30,8 +45,40 @@ extension AppModel {
     private func presentFixPrompt(for id: UUID, action: RowAction) {
         if action == .enterPasscode {
             presentPasscodePrompt(forJob: id)
+        } else if prefs.signInScope == .listedSites, !prefs.cookiesFromBrowser.isNone {
+            Task { await confirmAddingSignInSite(id) }
         } else {
             retryWithCookies(id)
+        }
+    }
+
+    enum SignInSiteAdd: Equatable {
+        case notNeeded
+        case added
+        case declined
+    }
+
+    func addSignInSiteIfNeeded(_ url: String) async -> SignInSiteAdd {
+        let host = RateHost(urlString: url).canonical
+        guard prefs.signInScope == .listedSites, !prefs.cookiesFromBrowser.isNone,
+              !prefs.signInSites.contains(host)
+        else {
+            return .notNeeded
+        }
+        let siteName = SiteNames.display(host)
+        let confirmed = await confirm(AppModelDialogs.signInSiteConfirmation(siteName: siteName))
+        guard confirmed else { return .declined }
+        prefs.signInSites.append(host)
+        return .added
+    }
+
+    private func confirmAddingSignInSite(_ id: UUID) async {
+        guard let url = rowStore.rows.first(where: { $0.id == id })?.snapshot.url else { return }
+        switch await addSignInSiteIfNeeded(url) {
+        case .added, .notNeeded:
+            await engine.retryWithCookies(id)
+        case .declined:
+            break
         }
     }
 

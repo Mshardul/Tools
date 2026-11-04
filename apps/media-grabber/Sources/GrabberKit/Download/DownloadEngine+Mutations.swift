@@ -153,6 +153,9 @@ extension DownloadEngine {
     }
 
     private func routeFailure(_ job: DownloadJob, id: UUID, errorClass: ErrorClass) {
+        if case .botCheck = errorClass, let used = job.playerClientUsed {
+            job.burnedPlayerClients.insert(used)
+        }
         let host = RateHost(urlString: job.request.url)
         strikeHostIfRateLimited(errorClass, host: host)
 

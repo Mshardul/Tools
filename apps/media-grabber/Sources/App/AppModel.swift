@@ -54,6 +54,7 @@ final class AppModel {
     }
 
     let rowStore = RowStore()
+    var youtubeCheckNudgeDismissedStorage = false
     let toastCenter = ToastCenter()
     let shieldSetup: ShieldSetupController
     let notificationRouter: any NotificationRouting
@@ -150,6 +151,7 @@ final class AppModel {
         )
         confirmer.model = self
         shieldSetup.onInstalled = { [weak self] in await self?.reprobeCurrentLink() }
+        youtubeCheckNudgeDismissedStorage = defaults.bool(forKey: "mg.youtubeCheckNudgeDismissed")
     }
 
     private var didRunLaunchSetup = false
@@ -210,12 +212,6 @@ final class AppModel {
         let continuation = confirmationContinuation
         confirmationContinuation = nil
         continuation?.resume(returning: confirmed)
-    }
-
-    func resolveCookieRetry() async {
-        guard let id = pendingCookieRetryJobID else { return }
-        pendingCookieRetryJobID = nil
-        await engine.retryWithCookies(id)
     }
 
     func setPendingCookieRetry(_ id: UUID?) {

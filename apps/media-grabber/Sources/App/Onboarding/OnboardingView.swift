@@ -6,6 +6,7 @@ import SwiftUI
 #endif
 
 struct OnboardingView: View {
+    static let youtubeCheckTitle = "YouTube check"
     @Bindable var installer: OnboardingInstaller
     let onContinue: () -> Void
 
@@ -132,10 +133,7 @@ struct OnboardingView: View {
         case (.homebrew, .failed):
             homebrewActions
         case (.downloaderTools, .pending):
-            VStack(alignment: .leading, spacing: Spacing.s3) {
-                commandBox("brew install yt-dlp ffmpeg")
-                primaryButton("Install now", enabled: true) { Task { await installer.start() } }
-            }
+            primaryButton("Install now", enabled: true) { Task { await installer.start() } }
         case (.botCheckShield, .pending):
             primaryButton("Set up", enabled: installer.canProceedToHome) {
                 Task { await installer.installShieldOnly() }
@@ -167,23 +165,6 @@ struct OnboardingView: View {
             Button("Open Terminal") { installer.openTerminalForHomebrew() }
             Button("Check again") { Task { await installer.recheck() } }
         }
-    }
-
-    private func commandBox(_ command: String) -> some View {
-        HStack(spacing: Spacing.s3) {
-            Text(command)
-                .font(theme.monoFont(12, .regular))
-                .foregroundStyle(theme.palette.text)
-                .textSelection(.enabled)
-            Button("Copy") { copy(command) }
-                .controlSize(.small)
-        }
-        .padding(Spacing.s3)
-        .background(theme.palette.panel, in: RoundedRectangle(cornerRadius: theme.controlRadius))
-        .overlay(
-            RoundedRectangle(cornerRadius: theme.controlRadius)
-                .stroke(theme.palette.stroke, lineWidth: theme.hairlineWidth)
-        )
     }
 
     private func primaryButton(_ title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
@@ -229,7 +210,7 @@ struct OnboardingView: View {
         switch step {
         case .homebrew: "Homebrew"
         case .downloaderTools: "Downloader + media tools"
-        case .botCheckShield: "Bot-check shield"
+        case .botCheckShield: Self.youtubeCheckTitle
         case .testRun: "Test run"
         }
     }

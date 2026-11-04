@@ -12,10 +12,9 @@ enum BotCheckCopy {
         if isYouTube {
             switch shieldStatus {
             case .down:
-                return "YouTube didn't accept this request because the bot-check shield stopped working."
+                return "YouTube didn't accept this request because the YouTube check stopped working."
             case .missing:
-                return "YouTube didn't accept this request. "
-                    + "The bot-check shield that helps with this isn't set up on this Mac."
+                return "YouTube didn't accept this request. The YouTube check isn't set up on this Mac."
             case .running:
                 break
             }

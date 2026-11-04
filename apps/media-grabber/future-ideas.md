@@ -13,3 +13,7 @@ A page that explains every failure reason the app can show (the codes behind a f
 Today a failed row shows its reason in plain words and offers Restart, so the user can act and try again. The page would go further: what the reason means, why it happens, and the steps to fix it.
 
 Related today: the reason on the row (mg-018) and Restart on every failed row (mg-067).
+
+## Declined for Phase 17
+
+Subtitles and embed, a menu-bar extra, schedules, stats, bandwidth graphs, a light and dark variant of each skin, and a compact breakpoint. Looked at while scoping site and identity work, and left unscheduled.

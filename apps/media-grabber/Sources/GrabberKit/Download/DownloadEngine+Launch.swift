@@ -68,9 +68,14 @@ extension DownloadEngine {
         guard let job = jobs.first(where: { $0.id == id }) else {
             return nil
         }
-        let context = await makeContext(url: job.request.url, attempt: job.attempt, passcode: job.videoPassword)
+        let context = await makeContext(
+            url: job.request.url,
+            attempt: job.attempt,
+            burnedClients: job.burnedPlayerClients,
+            passcode: job.videoPassword
+        )
         job.playerClientUsed = context.playerClient
-        let cookieArgument = resolveCookieArgument()
+        let cookieArgument = context.cookieArgument
         let launch = ProcessLaunch(
             executableURL: dependencies.ytDlpURL,
             arguments: downloadArguments(for: job, cookieArgument: cookieArgument, context: context),
@@ -111,14 +116,6 @@ extension DownloadEngine {
             context: context,
             concurrentFragments: fragmentCount(for: job.request.url)
         )
-    }
-
-    func resolveCookieArgument() -> String? {
-        let home = dependencies.cookieResolverHome
-            ?? FileManager.default.homeDirectoryForCurrentUser
-        return CookieResolver(fileManager: dependencies.fileManager, home: home)
-            .resolve(source: preferences.cookiesFromBrowser)
-            .argument
     }
 
     func runIntegrityCheck(

@@ -52,6 +52,8 @@ enum AboutTab: String, CaseIterable, Hashable {
 }
 
 struct AboutView: View {
+    static let downloaderTitle = "Downloader"
+    static let mediaToolsTitle = "Media tools"
     @Environment(AppModel.self) private var appModel
     @Environment(\.theme) private var theme
 
@@ -163,7 +165,7 @@ private struct AboutTabView: View {
 
     private var ytDlpRow: some View {
         aboutRow(
-            title: "Downloader (yt-dlp)",
+            title: AboutView.downloaderTitle,
             subtitle: nil,
             trailing: AnyView(ytDlpTrailing)
         )
@@ -205,7 +207,7 @@ private struct AboutTabView: View {
 
     private var ffmpegRow: some View {
         aboutRow(
-            title: "ffmpeg",
+            title: AboutView.mediaToolsTitle,
             subtitle: nil,
             trailing: AnyView(
                 statusText(

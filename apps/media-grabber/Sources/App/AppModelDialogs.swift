@@ -132,6 +132,17 @@ enum AppModelDialogs {
         return SignInCopy.sentence(for: .private, advice: advice) ?? "This video is private."
     }
 
+    static func signInSiteConfirmation(siteName: String) -> ConfirmationRequest {
+        ConfirmationRequest(
+            title: "Use sign-in for this site?",
+            message: "Use your signed-in browser for \(siteName)?",
+            confirmTitle: "Use sign-in",
+            cancelTitle: "Not now",
+            isDestructive: false,
+            suppressionKey: nil
+        )
+    }
+
     static func probeErrorMessage(
         for error: MetadataError,
         vpnActive: Bool = false,
@@ -169,7 +180,7 @@ enum AppModelDialogs {
         case .unsupported: "That site isn't supported."
         case .unavailable: "This video isn't available."
         case .network: "No internet connection."
-        case .ytDlpMissing, .launchFailed: "yt-dlp is missing — reopen setup."
+        case .ytDlpMissing, .launchFailed: "The downloader isn't installed. Open setup."
         case .cookieReadFailed: "Couldn't read your browser's sign-in. Close the browser and try again."
         case .hostBlocked: hostBlockedMessage(state: nil, now: Date())
         case .passcodeRequired: "This recording needs a passcode."

@@ -173,9 +173,9 @@ The `warning` glyph is reused for the Preferences concurrency note (§4.6) — n
     | chip bad state | `↻` runs |
     | --- | --- |
     | `shield · offline` | restart the POT provider process, re-run its health check |
-    | `engine · update available` | re-run a version-pinned `brew reinstall yt-dlp` (or `upgrade`) to the app's declared minimum, re-read the version — never an unconditional upgrade to latest |
+    | `Downloader · update available` | re-run a version-pinned `brew reinstall yt-dlp` (or `upgrade`) to the app's declared minimum, re-read the version — never an unconditional upgrade to latest |
     | `offline` | re-poll `NWPathMonitor` |
-    | `engine · missing` (dependency gone) | _not a refresh_ — routes back to Onboarding; hard block |
+    | `Downloader · missing` (dependency gone) | _not a refresh_ — routes back to Onboarding; hard block |
   - On success the chip flips green and the icon disappears. On failure an **error toast** shows the reason and the chip stays in its bad state (icon remains, no longer busy).
   - The `cooldown m:ss` chip is not an error — no refresh icon. Clicking it opens a small popover: why the cooldown happened, when it clears, and a **Retry now** button.
 - **Warning banner** — docked to the **bottom** of the window, floating over the table, `left/right: 16`, `bottom: 16`. The table gets bottom padding (≈ 78–82px) so its last row never sits under the banner. Reserved for **engine / host-level** conditions only: cooldown explainer, circuit-breaker open, dependency missing, POT provider down. One sentence + one action button. The theme styles it as a solid warm fill (Tape Deck: `--accent` on `--ink` border; Aurora: `--banner-fill` gradient).

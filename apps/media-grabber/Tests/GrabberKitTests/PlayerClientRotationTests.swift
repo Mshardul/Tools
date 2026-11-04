@@ -2,20 +2,23 @@
 import XCTest
 
 final class PlayerClientRotationTests: XCTestCase {
-    func testAttemptZeroIsTv() {
-        XCTAssertEqual(PlayerClientRotation.client(forAttempt: 0), "tv")
+    func testFirstUnburnedClient() {
+        XCTAssertEqual(PlayerClientRotation.client(order: ["tv", "ios"], burned: []), "tv")
+        XCTAssertEqual(PlayerClientRotation.client(order: ["tv", "ios"], burned: ["tv"]), "ios")
     }
 
-    func testAttemptFourIsWebSafari() {
-        XCTAssertEqual(PlayerClientRotation.client(forAttempt: 4), "web_safari")
+    func testExhaustedOrderUsesTheLastClient() {
+        XCTAssertEqual(PlayerClientRotation.client(order: ["tv", "ios"], burned: ["tv", "ios"]), "ios")
     }
 
-    func testAttemptPastEndSticks() {
-        XCTAssertEqual(PlayerClientRotation.client(forAttempt: 99), "web_safari")
+    func testEmptyOrderUsesTv() {
+        XCTAssertEqual(PlayerClientRotation.client(order: ["", " "], burned: []), "tv")
     }
 
-    func testSkipsWebAndAndroid() {
-        XCTAssertFalse(PlayerClientRotation.default.contains("web"))
-        XCTAssertFalse(PlayerClientRotation.default.contains("android"))
+    func testBundledOrder() {
+        XCTAssertEqual(
+            PlayerClientRotation.bundled,
+            ["tv", "ios", "tv_embedded", "mweb", "web_safari"]
+        )
     }
 }

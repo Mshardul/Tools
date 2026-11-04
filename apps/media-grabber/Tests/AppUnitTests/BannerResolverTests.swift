@@ -42,7 +42,7 @@ final class BannerResolverTests: XCTestCase {
         let content = bannerCopy(for: .potProviderDown, circuitHosts: []) {}
         XCTAssertEqual(
             content?.text,
-            "The bot-check shield stopped working — some YouTube downloads may fail or be low-res."
+            "The YouTube check stopped working. Some YouTube downloads may fail or be lower quality."
         )
         XCTAssertEqual(content?.buttonTitle, "Restart")
         XCTAssertNotNil(content?.action)

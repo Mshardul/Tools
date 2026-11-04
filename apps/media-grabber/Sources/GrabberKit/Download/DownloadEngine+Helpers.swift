@@ -4,7 +4,8 @@ extension DownloadEngine {
     static func availableActions(
         for state: JobState,
         isImmediatelySchedulable: Bool = false,
-        signInAdvice: SignInAdvice = .none
+        signInAdvice: SignInAdvice = .none,
+        offerSiteSignIn: Bool = false
     ) -> Set<RowAction> {
         switch state {
         case .queued:
@@ -27,7 +28,7 @@ extension DownloadEngine {
             [.retry, .remove, .openInBrowser, .showLog]
         case let .failed(errorClass):
             errorClass.presentation.offeredActions
-                .union(signInAdvice == .suggest ? [.retryWithCookies] : [])
+                .union(signInAdvice == .suggest || offerSiteSignIn ? [.retryWithCookies] : [])
                 .union([.remove, .openInBrowser, .showLog])
         }
     }

@@ -1,23 +1,6 @@
 import GrabberKit
 import SwiftUI
 
-enum FirstRunPresentation: Equatable {
-    case numberedStrip
-}
-
-struct FirstRunStep: Equatable {
-    let index: Int
-    let title: String
-    let subtitle: String
-
-    static let presentation = FirstRunPresentation.numberedStrip
-    static let strip: [FirstRunStep] = [
-        FirstRunStep(index: 1, title: "Paste a link", subtitle: "Any video page URL."),
-        FirstRunStep(index: 2, title: "Pick a format", subtitle: "Video quality or audio only."),
-        FirstRunStep(index: 3, title: "Press Grab", subtitle: "It saves to your folder.")
-    ]
-}
-
 struct HomeView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.theme) private var theme
@@ -70,6 +53,7 @@ struct HomeView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
             VStack(alignment: .leading, spacing: Spacing.s5) {
+                YouTubeCheckNudgeBanner()
                 hero
                 pasteBlock()
                 stepStrip
@@ -268,6 +252,7 @@ extension HomeView {
     private var tableLayout: some View {
         @Bindable var appModel = appModel
         return VStack(spacing: 0) {
+            YouTubeCheckNudgeBanner()
             pasteBlock()
                 .padding(.horizontal, Spacing.s6)
                 .padding(.top, Spacing.s4)

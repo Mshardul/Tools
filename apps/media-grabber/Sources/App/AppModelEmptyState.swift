@@ -11,6 +11,14 @@ extension AppModel {
         set { defaults.set(newValue, forKey: "mg.hasCompletedOnboarding") }
     }
 
+    var youtubeCheckNudgeDismissed: Bool {
+        get { youtubeCheckNudgeDismissedStorage }
+        set {
+            youtubeCheckNudgeDismissedStorage = newValue
+            defaults.set(newValue, forKey: "mg.youtubeCheckNudgeDismissed")
+        }
+    }
+
     func completeOnboarding() async {
         hasCompletedOnboarding = true
         await onboardingFinished()

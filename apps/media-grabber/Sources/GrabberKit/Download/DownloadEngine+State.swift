@@ -4,14 +4,25 @@ extension DownloadEngine {
     // MARK: - Snapshot / emit
 
     func buildSnapshot() -> QueueSnapshot {
-        let cookiesConfigured = !preferences.cookiesFromBrowser.isNone
+        let browserChosen = !preferences.cookiesFromBrowser.isNone
         let jobSnapshots = jobs.map { job in
-            let advice = Self.signInAdvice(for: job, cookiesConfigured: cookiesConfigured)
+            let host = RateHost(urlString: job.request.url).canonical
+            let cookiesSent = browserChosen && SignInScopePolicy.sendsCookies(
+                scope: preferences.signInScope,
+                sites: preferences.signInSites,
+                host: host
+            )
+            let advice = Self.signInAdvice(for: job, cookiesConfigured: cookiesSent)
+            let offerSiteSignIn = preferences.signInScope == .listedSites
+                && browserChosen
+                && !cookiesSent
+                && advice != .none
             return job.snapshot(
                 availableActions: Self.availableActions(
                     for: job.state,
                     isImmediatelySchedulable: isImmediatelySchedulable(job),
-                    signInAdvice: advice
+                    signInAdvice: advice,
+                    offerSiteSignIn: offerSiteSignIn
                 ),
                 signInAdvice: advice
             )

@@ -1,6 +1,6 @@
 # Media Grabber — macOS GUI downloader — Design
 
-**Status:** ready for implementation planning **Date:** 2026-08-28 **Leaf:** `apps/media-grabber/` (working directory name; product name is chosen at Phase 18 branding & release gate — see §14)
+**Status:** ready for implementation planning **Date:** 2026-08-28 **Leaf:** `apps/media-grabber/` (working directory name; product name is chosen at Phase 19 branding & release gate — see §14)
 
 ---
 
@@ -17,7 +17,7 @@
 - [11. Testing](#11-testing)
 - [12. Implementation phasing](#12-implementation-phasing)
 - [13. Never for this product](#13-never-for-this-product)
-- [14. Release decisions (Phase 18)](#14-release-decisions-phase-18)
+- [14. Release decisions (Phase 19)](#14-release-decisions-phase-19)
 
 ---
 
@@ -497,7 +497,7 @@ One click runs a **canary**: probe a known-stable video and report the yt-dlp an
 - **Distribution:** the ad-hoc-signed `.app` zipped and attached to GitHub Releases. No DMG or `.pkg` (a signed one also wants an account).
 - **First launch on another Mac** (macOS 15 Sequoia removed right-click → Open): the user hits "app is damaged / unverified" → **System Settings → Privacy & Security → Open Anyway** (the button shows for ~1 h after a failed launch), or `xattr -dr com.apple.quarantine /Applications/<App>.app`. One-time. Documented in the leaf README; the repo has a `quarantine-clear` tool.
 - `Info.plist`: `LSMinimumSystemVersion 14.0`; `CFBundleURLTypes` for a custom scheme (Services / other-app handoff); a Services declaration for "Download with …".
-- **If a Developer ID account is obtained (Phase 18):** switch to hardened runtime + notarization, bundle yt-dlp / ffmpeg / the POT provider, adopt Sparkle, and ship a DMG. The dependency layer (`EnvironmentProbe`, `PotProviderProcess`) is structured so "bundled" vs "external" is a single swappable resolver.
+- **If a Developer ID account is obtained (Phase 19):** switch to hardened runtime + notarization, bundle yt-dlp / ffmpeg / the POT provider, adopt Sparkle, and ship a DMG. The dependency layer (`EnvironmentProbe`, `PotProviderProcess`) is structured so "bundled" vs "external" is a single swappable resolver.
 
 ### 10.1 Dependency acquisition — the in-app onboarding
 
@@ -516,7 +516,7 @@ The app declares a minimum-known-good yt-dlp version as a hardcoded constant (al
 
 ### 10.2 App self-update
 
-A **GitHub-release check** (not Sparkle — Sparkle wants signed updates), for MediaGrabber's own version. Throttled to daily; on launch (and on the About page's manual "Check for updates" — §5.12) hit the Releases API. Before a check has resolved this session, About's MediaGrabber row reads "Check for updates"; once resolved with nothing newer, no button shows; once a newer release is found, the row shows "Update," which opens the release page. The HealthStrip carries no equivalent chip for this — engine-freshness is a yt-dlp concept (§10.1a), not an app-version one. The user replaces the app manually and redoes the one-time Gatekeeper step. Sparkle / notarization / bundled deps park in **Phase 18**, gated on obtaining a Developer ID account.
+A **GitHub-release check** (not Sparkle — Sparkle wants signed updates), for MediaGrabber's own version. Throttled to daily; on launch (and on the About page's manual "Check for updates" — §5.12) hit the Releases API. Before a check has resolved this session, About's MediaGrabber row reads "Check for updates"; once resolved with nothing newer, no button shows; once a newer release is found, the row shows "Update," which opens the release page. The HealthStrip carries no equivalent chip for this — engine-freshness is a yt-dlp concept (§10.1a), not an app-version one. The user replaces the app manually and redoes the one-time Gatekeeper step. Sparkle / notarization / bundled deps park in **Phase 19**, gated on obtaining a Developer ID account.
 
 ## 11. Testing
 
@@ -597,17 +597,19 @@ Fourteen phases. The boundaries are **dependency cuts**: each phase is picked as
 - **Phase 12 — Downloads table chrome.** Column header drag-reorder UI (wire existing `ColumnConfig.moveColumn` + persistence); resizable column widths (drag handles + persist in `ColumnConfig`); multi-select row actions (this phase’s plan reverses parent §5.4 “no row selection” and ships selection + batch actions). **Queue-row drag-reorder → Phase 15** (locked 2026-09-22; owner renumbered 2026-10-04). **Batch chrome:** bar above the table when selection non-empty (`N selected`
   - eligible verbs); hidden when empty — not a floating footer (locked 2026-09-22). Per-row Actions stay while selection is active — batch bar additive; row action targets that row only (locked 2026-09-22). Header select-all = currently visible rows only (rail + column filters; not collapsed-away playlist children) (locked 2026-09-22). On rail/column-filter change: keep selected IDs still visible, drop the rest — no off-screen batch (locked 2026-09-22). Resize: all data columns except Actions + checkbox; double-click divider auto-fits; widths in `ColumnConfig` (locked 2026-09-22). Multi-select: checkboxes + ⌘-click toggle + Shift-click range on visible order (locked 2026-09-22). **Table substrate:** AppKit owns the entire Downloads grid (headers + cells drawn in AppKit with shared tokens); SwiftUI owns shell outside that rect — rail / batch bar / dialogs (locked 2026-09-22). Not default hosted SwiftUI cells. **Progress, Speed, and ETA stay separate columns** (locked 2026-09-12 — no merged transfer column). Builds on Phase 11’s manager Home — do not reintroduce filter chips; Status column stays optional (hidden by default). Detail when reached; leaf backlog mirrors this stub.
 
-- **Phase 13 — Polish.** _(shipped)_ **In:** success + chip-refresh-failure toasts; native notifications for backgrounded failures; finish first-run → table + emptied-table state gaps (no full first-run copy redesign); live column-width readout while resizing; bundle Aurora typefaces (Sora / Inter / JetBrains Mono + `ATSApplicationFontsPath` — no body-face swap); Debug menu decide-and-close; Share Extension first-enable hint decide-and-close; **full a11y sweep last** (keyboard / VoiceOver / `prefers-reduced-motion` on every screen after other UI freezes). **Out → Phase 14:** per-host adaptive concurrency (engine). **Out → Phase 15:** Aurora body-face swap; first-run Home copy/composition redesign; Home banner → footer. **Out → Phase 18 (branding & release gate):** product name (§14) + app icon.
+- **Phase 13 — Polish.** _(shipped)_ **In:** success + chip-refresh-failure toasts; native notifications for backgrounded failures; finish first-run → table + emptied-table state gaps (no full first-run copy redesign); live column-width readout while resizing; bundle Aurora typefaces (Sora / Inter / JetBrains Mono + `ATSApplicationFontsPath` — no body-face swap); Debug menu decide-and-close; Share Extension first-enable hint decide-and-close; **full a11y sweep last** (keyboard / VoiceOver / `prefers-reduced-motion` on every screen after other UI freezes). **Out → Phase 14:** per-host adaptive concurrency (engine). **Out → Phase 15:** Aurora body-face swap; first-run Home copy/composition redesign; Home banner → footer. **Out → Phase 19 (branding & release gate):** product name (§14) + app icon.
 
-- **Phase 14 — Engine maturity.** _(shipped)_ Spec + plan archived: `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*`. Playlist-group aggregate state in GrabberKit; metadata-probe wait visibility; per-host adaptive concurrency; `.userReset` through `RatePolicy`; `.shieldDown` queue halt dropped (chip/banner only). **Out → Phase 15:** queue-row drag-reorder; banner → footer; body-face; first-run Home redesign. **Out → Phase 17:** POT/shield rotation; remote `player_client` JSON; per-site helpers; optional UX extras. **Out → Phase 18:** product name + icon; Sparkle / notarization / bundled deps.
+- **Phase 14 — Engine maturity.** _(shipped)_ Spec + plan archived: `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-14-engine-maturity*`. Playlist-group aggregate state in GrabberKit; metadata-probe wait visibility; per-host adaptive concurrency; `.userReset` through `RatePolicy`; `.shieldDown` queue halt dropped (chip/banner only). **Out → Phase 15:** queue-row drag-reorder; banner → footer; body-face; first-run Home redesign. **Out → Phase 17:** POT/shield rotation; remote `player_client` JSON; per-site helpers; optional UX extras. **Out → Phase 19:** product name + icon; Sparkle / notarization / bundled deps.
 
-- **Phase 15 — Table & Home finish.** _(shipped)_ View-only queue-row drag-reorder (session order; sort conflict confirms overwrite); Aurora body face IBM Plex Sans; first-run Home is a paste field plus a horizontal numbered strip. **Banner → footer already shipped** before this phase. Spec + plan archived: `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-15-table-home-finish*`. **Out → Phase 17 / 18:** unchanged (site/identity; branding).
+- **Phase 15 — Table & Home finish.** _(shipped)_ View-only queue-row drag-reorder (session order; sort conflict confirms overwrite); Aurora body face IBM Plex Sans; first-run Home is a paste field plus a horizontal numbered strip. **Banner → footer already shipped** before this phase. Spec + plan archived: `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-15-table-home-finish*`. **Out → Phase 17 / 19:** unchanged (site/identity; branding). Phase 18 is the site-identity closeout inserted 2026-11-05.
 
 - **Phase 16 — Cookie independence.** Cookie-less by default; a sign-in is suggested only after a failure it can fix; a configured browser is used as-is; site-neutral copy; cookie redaction in every log. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-03-cookie-independence.md`.
 
-- **Phase 17 — Site / identity maturity.** POT / shield rotation; remote `player_client` order JSON; per-site helpers beyond YouTube; optional UX extras if still wanted at plan time (subtitles / embed, menu bar, schedules, stats, bandwidth graphs, per-skin light/dark, compact breakpoint). Cookie-independence follow-ons: sign-in recommendations for popular or frequently used sites; consent-based cookie discovery from browser data the user grants; per-site cookie scoping.
+- **Phase 17 — Site / identity maturity.** _(specified)_ Player-client order from a cached JSON file and a per-job burned client after a bot-check; the YouTube check stays one optional local process; plain failure copy; a dismissible setup line when onboarding was skipped; sign-in applies to all sites or only named sites. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-05-media-grabber-phase-17-site-identity-design.md`. Optional extras (subtitles, menu bar, schedules, stats, graphs, per-skin light/dark, compact breakpoint) are unscheduled in `apps/media-grabber/future-ideas.md`. **Out → Phase 18:** the seven review decisions, in full on `apps/media-grabber/roadmap.md`.
 
-- **Phase 18 — Branding & release gate.** Product-name decision (§14) + find-and-replace + app icon. Revisit repo-root `BACKLOG.md` (v1 name gate). **Sparkle / notarization / bundled deps** — only if a Developer ID account exists by then (§10).
+- **Phase 18 — Site identity closeout.** _(in the working tree, not yet accepted)_ Inserted 2026-11-05. Owns the seven decisions the Phase 17 review deferred: no launch flash of the YouTube-check line; remote client names limited to `^[a-z0-9_]+$`; named-site list wording and an explanation when the list is empty; `state-flow.md` updated to the burned-client rule; a full copy audit including the Downloader health chip; delete `client(forAttempt:)`; jargon test reads real chip labels. The decisions are written out on `apps/media-grabber/roadmap.md`.
+
+- **Phase 19 — Branding & release gate.** Product-name decision (§14) + find-and-replace + app icon. Revisit repo-root `BACKLOG.md` (v1 name gate). **Sparkle / notarization / bundled deps** — only if a Developer ID account exists by then (§10). Renumbered from Phase 18 on 2026-11-05. Draft: `docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md`.
 
 ### 12.2 Shells built complete, filled later
 
@@ -639,10 +641,10 @@ These are **not** parked work — they will not ship under this design. Do not f
 
 DRM-protected sites (not possible — `yt-dlp` refuses); a hosted or cloud POT provider (local provider is the product); a PO-token auto-provider that invents tokens; downloading content the user has no right to copy; Mac App Store distribution (unless a later decision rewrites §2). The browser extension stays on the repo-root BACKLOG as **T-006** (separate leaf), not a MediaGrabber phase.
 
-## 14. Release decisions (Phase 18)
+## 14. Release decisions (Phase 19)
 
-**Product name.** Chosen at Phase 18 (branding & release gate); until then the code and directory use the working name `MediaGrabber` / `apps/media-grabber/` / bundle ID `app.mediagrabber.mac`. Renaming is a mechanical find-and-replace. ~20 candidates have been checked for collisions; the video-downloader space is saturated (Downie, Grabbr, Parabolic, Stacher, ClipGrab, …) and every short string is claimed somewhere. The verified-clean options (no Mac app, no downloader, no dev tool, no famous brand): **Weir** (`weir.app` is free), **Undertow**, **Vireo**, **Freshet**. Bundle ID: `app.<name>.mac` (reverse-DNS, `mac` suffix leaves room for other platforms later).
+**Product name.** Chosen at Phase 19 (branding & release gate); until then the code and directory use the working name `MediaGrabber` / `apps/media-grabber/` / bundle ID `app.mediagrabber.mac`. Renaming is a mechanical find-and-replace. ~20 candidates have been checked for collisions; the video-downloader space is saturated (Downie, Grabbr, Parabolic, Stacher, ClipGrab, …) and every short string is claimed somewhere. The verified-clean options (no Mac app, no downloader, no dev tool, no famous brand): **Weir** (`weir.app` is free), **Undertow**, **Vireo**, **Freshet**. Bundle ID: `app.<name>.mac` (reverse-DNS, `mac` suffix leaves room for other platforms later).
 
-**Icon direction.** Decided with the name (Phase 18 branding & release gate; parked out of Phase 13 polish — locked 2026-09-23; moved off Phase 14 — locked 2026-10-04).
+**Icon direction.** Decided with the name (Phase 19 branding & release gate; parked out of Phase 13 polish — locked 2026-09-23; moved off Phase 14 — locked 2026-10-04).
 
-**BACKLOG.md.** Left as-is for now — no new row, T-002 (the CLI) unchanged, T-006's dependency unchanged. Revisit when this app reaches v1 (after the Phase 18 name gate).
+**BACKLOG.md.** Left as-is for now — no new row, T-002 (the CLI) unchanged, T-006's dependency unchanged. Revisit when this app reaches v1 (after the Phase 19 name gate).

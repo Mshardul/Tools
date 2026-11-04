@@ -40,7 +40,7 @@ public struct FailurePresentation: Sendable, Equatable {
         "bot_check": "Couldn't verify this request. Try again in a moment.",
         "sabr_gated": "YouTube isn't offering a downloadable video for this link.",
         "formats_missing": "The quality you picked isn't available for this video.",
-        "pot_provider_down": "Bot-check protection is offline.",
+        "pot_provider_down": "The YouTube check is offline.",
         "passcode_required": "This recording needs a passcode.",
         "passcode_rejected": "That passcode didn't work."
     ]

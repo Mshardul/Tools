@@ -86,12 +86,12 @@ stateDiagram-v2
 | `.waitingForNetwork` → `.queued` | network came back online | `applyNetworkChange(true)` → `resumeFromNetwork` | Clears the `.networkDown` halt, every parked job → `.queued` at the tail, then `evaluateSchedule`. |
 | `.cooldown(until:)` → `.queued` | cooldown deadline elapsed | `fireDueDeferrals` → `resumeIfCooldownElapsed` | Guard `until <= now`. `cooldownUntil = nil`, then `evaluateSchedule`. One dormant `deferralTask` sleeps to the earliest deadline. |
 | `.cooldown(until:)` → `.running` | user Force Start | `forceStart` | `.cooldown → .queued` inline first (clears `cooldownUntil`, `cancelDeferral`), then the normal eviction + launch path. |
-| `.failed(ErrorClass)` → `.queued` | user Restart | `retry` | Offered only when `errorClass.presentation.offeredActions` contains `.retry`. Clears `finishedAt`/`progress`/`sizeBytes`/`integrityVerdict`/`actualQuality`, moves to the tail. **Always** `attempt = 0` and deletes part files — no smart-resume exception, even for a transient error with a live `.part` on disk (deliberate: Restart always starts fresh). |
+| `.failed(ErrorClass)` → `.queued` | user Restart | `retry` | Offered only when `errorClass.presentation.offeredActions` contains `.retry`. Clears `finishedAt`/`progress`/`sizeBytes`/`integrityVerdict`/`actualQuality` and `burnedPlayerClients`, moves to the tail. **Always** `attempt = 0` and deletes part files — no smart-resume exception, even for a transient error with a live `.part` on disk (deliberate: Restart always starts fresh, including the first player client). |
 | `.cancelled` → `.queued` | user Restart | `retry` | Same `retry` path as failed — always `attempt = 0`, deletes part files, moves to the tail. |
-| `.failed(ErrorClass)` → `.queued` | user Restart with sign-in | `retryWithCookies` | Offered only when the job's `signInAdvice` is `.suggest` (no browser chosen). The row action opens the Preferences browser picker and holds the job; choosing a browser calls `retryWithCookies`, which requires `SignInPolicy.fixableBySignIn`, sets `attempt = 0`, and deletes part files. The cookie argument comes from the chosen browser at spawn time; the job carries no cookie state. |
+| `.failed(ErrorClass)` → `.queued` | user Restart with sign-in | `retryWithCookies` | Offered when `signInAdvice` is `.suggest` (no browser chosen, or Only these sites and this host is not on the list). With a browser already chosen and the host unlisted, confirming adds the host and then calls `retryWithCookies`. That requires `SignInPolicy.fixableBySignIn`, sets `attempt = 0`, clears `burnedPlayerClients`, and deletes part files. Cookies are attached only when `SignInScopePolicy.sendsCookies` is true for that host. |
 | any terminal → _(evicted)_ | terminal-job count exceeds 200 | `enforceTerminalCap` | Oldest-`finishedAt` terminal jobs beyond 200 are dropped from memory and their job log deleted. |
 
-**Retry gates** — `Sources/GrabberKit/Download/FailurePresentation.swift`. `.retry` is offered for every error class **except** `geoBlocked, private, unavailable, ageRestricted, depMissing, sabrGated`. `.retryWithCookies` is never offered by the class alone: `DownloadEngine.availableActions` adds it when `SignInPolicy` returns `.suggest` — `ageRestricted` or `private` on any host, `botCheck` on YouTube, and no browser chosen. With a browser chosen the advice is `.checkBrowser` and no restart action is added. So `.failed(.geoBlocked)` is fully terminal; `.failed(.private)` offers only Restart with sign-in, and only without a chosen browser.
+**Retry gates** — `Sources/GrabberKit/Download/FailurePresentation.swift`. `.retry` is offered for every error class **except** `geoBlocked, private, unavailable, ageRestricted, depMissing, sabrGated`. `.retryWithCookies` is never offered by the class alone: `DownloadEngine.availableActions` adds it when `SignInPolicy` returns `.suggest`, and also when the scope is Only these sites, a browser is chosen, and this host is not on the list. `.suggest` is age-restricted or private on any host, or a YouTube bot-check, when cookies were not sent for that host. When cookies were sent, the advice is `.checkBrowser` and no restart action is added. So `.failed(.geoBlocked)` is fully terminal; `.failed(.private)` offers Restart with sign-in when cookies were not sent for that host.
 
 ### Terminal states
 
@@ -132,8 +132,8 @@ The deliberate asymmetry: **`.cooldown` offers Force Start** (override the host 
 - `Preferences.maxAutoRetries` — default **5**, clamped `1...5`.
 - `DownloadJob.attempt` starts at 0. `attempt += 1` happens **inside** the re-queue helpers, i.e. after the `attempt < maxAutoRetries` check passes.
 - With the default: tries run at `attempt` 0,1,2,3,4 (five tries); the sixth failure has `attempt == 5`, fails the check, and the job goes `.failed`.
-- `retry` resets `attempt = 0` (unless resuming a transient failure from a part file). `retryWithCookies` always resets to 0.
-- `attempt` also selects the YouTube player client (`PlayerClientRotation.client(forAttempt:)`) and the `Backoff.delay(attempt:)`.
+- `retry` and `retryWithCookies` reset `attempt = 0` and clear `burnedPlayerClients`.
+- `attempt` selects `Backoff.delay(attempt:)`. The YouTube player client comes from the cached order and that job's burned set (`PlayerClientRotation.client(order:burned:)`), not from `attempt`. A bot-check burns the client that was used. A non-YouTube download does not ask for an order.
 
 ### Add-flow entry points
 
@@ -265,6 +265,6 @@ Architectural headroom that must not float without an owner. Each row names the 
 
 | capability | current state | phase |
 | --- | --- | --- |
-| **POT / shield rotation** | `ShieldStatus` is single-instance. `PlayerClientRotation` is a pure function of `attempt`. Slot: provider pool + burned-client set. | **Phase 17** |
+| **POT / shield rotation** | One local helper. Phase 17 rotates YouTube player clients from a cached JSON order and a per-job burned set. No second provider. | **Phase 17** |
 
 Phase 14 shipped (and removed from this table): per-host adaptive concurrency, engine-owned `QueueSnapshot.playlistGroups`, `.userReset` through `RatePolicy`, metadata-probe wait visibility (`JobSnapshot.probeWaitUntil`). Halt-on-dead-shield (`.shieldDown`) was rejected — chip/banner only. Warning banner is already bottom-docked (former “banner → footer” park — closed, not Phase 15). Phase 15 shipped (and removed from this table): session view-order row drag, Aurora body face IBM Plex Sans, first-run numbered strip.

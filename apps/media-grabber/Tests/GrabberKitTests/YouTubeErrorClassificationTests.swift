@@ -72,7 +72,7 @@ final class YouTubeErrorClassificationTests: XCTestCase {
         )
         XCTAssertEqual(
             ErrorClass.potProviderDown.presentation.sentence,
-            "Bot-check protection is offline."
+            "The YouTube check is offline."
         )
         XCTAssertEqual(ErrorClass.potProviderDown.presentation.offeredActions, [.retry])
     }

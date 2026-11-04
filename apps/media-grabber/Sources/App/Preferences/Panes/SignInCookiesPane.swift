@@ -35,6 +35,9 @@ struct SignInCookiesPane: View {
             pendingRetryBanner(jobID: jobID)
         }
         browserRow(model)
+        if !model.source.isNone {
+            signInScopeRow(model)
+        }
         firefoxProfileRow(model)
         if model.showsChromiumNotFoundNote {
             chromiumNotFoundRow(model)
@@ -249,5 +252,35 @@ struct SignInCookiesPane: View {
         model.firefoxProfiles.first(where: \.isDefault)?.name
             ?? model.firefoxProfiles.first?.name
             ?? ""
+    }
+}
+
+extension SignInCookiesPane {
+    private func signInScopeRow(_ model: CookiePaneModel) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.s2) {
+            Picker("Use sign-in for", selection: Binding(
+                get: { model.signInScope },
+                set: { model.signInScope = $0 }
+            )) {
+                Text("All sites").tag(SignInScope.allSites)
+                Text("Only these sites").tag(SignInScope.listedSites)
+            }
+            .pickerStyle(.segmented)
+            if model.signInScope == .listedSites {
+                if model.signInSites.isEmpty {
+                    Text("Cookies go nowhere until you add a site.")
+                        .font(theme.bodyFont(13, .regular))
+                        .foregroundStyle(theme.palette.dim)
+                }
+                ForEach(model.signInSites, id: \.self) { site in
+                    HStack {
+                        Text(SiteNames.display(site))
+                        Spacer()
+                        Button("Remove") { model.removeSignInSite(site) }
+                    }
+                }
+            }
+        }
+        .padding(.bottom, Spacing.s3)
     }
 }

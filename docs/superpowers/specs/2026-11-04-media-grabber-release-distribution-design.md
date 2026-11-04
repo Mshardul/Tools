@@ -1,6 +1,6 @@
 # Release, install, update and uninstall
 
-**Status:** draft for review.
+**Status:** draft for review. This is the Phase 19 branding and release gate (`apps/media-grabber/roadmap.md`). Renumbered from Phase 18 on 2026-11-05.
 
 **Scope:** how MediaGrabber reaches testers and ordinary users, how it updates itself, and how it removes itself. Covers CI, the update mechanism, the in-app uninstall action, install-location handling and the user-facing README.
 

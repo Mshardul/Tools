@@ -72,7 +72,7 @@ public struct ShieldInstaller: Sendable {
         }
         prepareDirectory(supportDirectory)
 
-        onProgress("Downloading the shield\u{2026}")
+        onProgress("Downloading the YouTube check\u{2026}")
         let tarball = supportDirectory.appendingPathComponent("bgutil-source.tar.gz")
         if let detail = await download(
             "\(Self.repo)/releases/download/\(Self.version)/bgutil-ytdlp-pot-provider.zip",

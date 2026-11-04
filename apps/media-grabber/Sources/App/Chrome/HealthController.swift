@@ -6,8 +6,11 @@ import Observation
 @Observable
 final class HealthController {
     private(set) var chips: [HealthChip] = []
+    // Nil until the first queue snapshot. A missing helper is a real status, not the startup value.
+    private(set) var shieldStatus: ShieldStatus?
 
     func update(snapshot: QueueSnapshot, now _: Date, environmentReport: EnvironmentReport?) {
+        shieldStatus = snapshot.shieldStatus
         var next: [HealthChip] = [
             shieldChip(snapshot.shieldStatus)
         ]
@@ -36,16 +39,16 @@ final class HealthController {
     private func shieldChip(_ status: ShieldStatus) -> HealthChip {
         switch status {
         case .running:
-            HealthChip(id: "shield", label: "bot-check shield · on", dot: .ok, interaction: .none)
+            HealthChip(id: "shield", label: "YouTube check · on", dot: .ok, interaction: .none)
         case .down:
             HealthChip(
                 id: "shield",
-                label: "bot-check shield · offline",
+                label: "YouTube check · offline",
                 dot: .attention,
                 interaction: .refresh(isBusy: false)
             )
         case .missing:
-            HealthChip(id: "shield", label: "bot-check shield · not set up", dot: .attention, interaction: .setUp)
+            HealthChip(id: "shield", label: "YouTube check · not set up", dot: .attention, interaction: .setUp)
         }
     }
 
@@ -53,11 +56,11 @@ final class HealthController {
         guard let verdict else { return nil }
         switch verdict {
         case .current, .unknown:
-            return HealthChip(id: "engine", label: "engine · current", dot: .ok, interaction: .none)
+            return HealthChip(id: "engine", label: "Downloader · current", dot: .ok, interaction: .none)
         case .drift:
             return HealthChip(
                 id: "engine",
-                label: "engine · update available",
+                label: "Downloader · update available",
                 dot: .attention,
                 interaction: .refresh(isBusy: false)
             )

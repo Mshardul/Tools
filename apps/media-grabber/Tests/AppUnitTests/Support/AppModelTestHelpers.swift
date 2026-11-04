@@ -53,13 +53,14 @@ enum AppModelTestHelpers {
 
     static func jobSnapshot(
         id: UUID = UUID(),
+        url: String = "https://example.com/v",
         outputFiles: [URL] = [],
         state: JobState = .completed,
         playlistGroupID: UUID? = nil
     ) -> JobSnapshot {
         JobSnapshot(
             id: id,
-            url: "https://example.com/v",
+            url: url,
             rateHost: RateHost(urlString: "https://example.com/v"),
             title: "Clip",
             state: state,

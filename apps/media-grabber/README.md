@@ -2,7 +2,7 @@
 
 A small macOS app that takes one pasted video URL, resolves its title, and downloads the file with a live progress bar — then shows "Saved" with a Reveal-in-Finder action. It shells out to [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (one child process per download) and uses `ffmpeg` for muxing. Neither tool is bundled; the app installs both through Homebrew on first run if they are missing.
 
-> **Working name.** `MediaGrabber` / bundle ID `app.mediagrabber.mac` are placeholders. The final product name is chosen in Phase 18 (spec §14); renaming is a find-and-replace.
+> **Working name.** `MediaGrabber` / bundle ID `app.mediagrabber.mac` are placeholders. The final product name is chosen in Phase 19 (spec §14); renaming is a find-and-replace.
 
 ## Requirements
 
@@ -60,7 +60,7 @@ For how it fits together: [`docs/architecture.md`](docs/architecture.md) (compon
 
 Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
 
-Not yet built: site/identity maturity (Phase 17); product name, app icon, and install-without-Homebrew release (Phase 18). Phases 12–16 are shipped, including session row reorder, IBM Plex Sans as the Aurora body face, and cookie-less downloads. See [roadmap.md](roadmap.md).
+Not yet accepted: site/identity maturity (Phase 17) and its closeout (Phase 18) are in the working tree. Not yet built: product name, app icon, and install-without-Homebrew release (Phase 19). Phases 12–16 are shipped, including session row reorder, IBM Plex Sans as the Aurora body face, and cookie-less downloads. See [roadmap.md](roadmap.md).
 
 ## License
 

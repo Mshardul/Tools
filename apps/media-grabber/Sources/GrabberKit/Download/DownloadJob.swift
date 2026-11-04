@@ -24,6 +24,8 @@ final class DownloadJob: @unchecked Sendable {
     // Force-start evicts the oldest-startedAt running job.
     var startedAt: Date?
     var playerClientUsed: String?
+    // Memory only. A bot-check burns the client this job already tried.
+    var burnedPlayerClients: Set<String> = []
     var playlistGroupID: UUID?
     var playlistIndex: Int?
     var probeWaitUntil: Date?

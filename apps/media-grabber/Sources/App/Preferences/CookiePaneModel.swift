@@ -22,6 +22,13 @@ final class CookiePaneModel {
     private(set) var firefoxProfiles: [FirefoxProfile] = []
     private(set) var safariAccess: SafariCookieAccess = .noContainer
     private(set) var chromiumBrowserFound = true
+    var signInScope: SignInScope {
+        didSet { prefs.signInScope = signInScope }
+    }
+
+    var signInSites: [String] {
+        didSet { prefs.signInSites = signInSites }
+    }
 
     init(
         prefs: Preferences,
@@ -35,6 +42,12 @@ final class CookiePaneModel {
         self.resolver = resolver
         self.settingsLink = settingsLink
         self.openURL = openURL
+        signInScope = prefs.signInScope
+        signInSites = prefs.signInSites
+    }
+
+    func removeSignInSite(_ site: String) {
+        signInSites.removeAll { $0 == site }
     }
 
     var source: CookieSource {

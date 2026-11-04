@@ -13,7 +13,7 @@
 
 Finish the table and Home surfaces parked out of Phases 12–13: let users rearrange Downloads rows as a **session view order** (not engine priority), swap Aurora’s body face off Inter after a visual pick, and do the creative first-run Home pass the parent still points at Phase 15 for.
 
-Working name stays `MediaGrabber`. Branding remains Phase 18.
+Working name stays `MediaGrabber`. Branding remains Phase 19.
 
 **Build order (locked):** ship row drag-reorder first; then present body-face and first-run variants; then implement Theme / Home from the picks.
 
@@ -29,7 +29,7 @@ Working name stays `MediaGrabber`. Branding remains Phase 18.
 | Filter-chip clear prompts on drag | **Out** — sort conflict only |
 | POT / shield rotation; remote `player_client` JSON; per-site helpers | Phase 17 |
 | Optional UX extras (subtitles, menu bar, …) | Phase 17 (evaluate at that plan) |
-| Product name + app icon; Sparkle / notarization / bundled deps | Phase 18 |
+| Product name + app icon; Sparkle / notarization / bundled deps | Phase 19 |
 
 ---
 
@@ -46,7 +46,7 @@ Working name stays `MediaGrabber`. Branding remains Phase 18.
 | Banner → footer | **Closed** — already bottom-docked; remove from Phase 15 IN in parent / backlog / state-flow |
 | Body face | **IBM Plex Sans** (B1). Sora display and JetBrains Mono stay. Tape Deck body stays Inter. |
 | First-run Home | **H1** — paste field stays the only card; steps are a horizontal numbered strip. Same §5.3 gates (no table/runway until first Grab; step UI first-run-only; emptied-table does not resurrect steps). |
-| Branding | Still Phase 18 |
+| Branding | Still Phase 19 |
 
 ---
 
@@ -166,4 +166,4 @@ Exact types and method names land in the implementation plan.
 
 - **Phase 16 — Cookie independence.** Cookie-less by default; sign-in suggested only after a failure it can fix; site-neutral copy; cookie redaction in every log. Spec: `docs/superpowers/specs/2026-11-03-cookie-independence.md`.
 - **Phase 17 — Site / identity maturity.** POT/shield rotation; remote `player_client` JSON; per-site helpers; optional UX extras.
-- **Phase 18 — Branding & release gate.** Product name + icon; Sparkle / notarization / bundled deps if Developer ID exists.
+- **Phase 19 — Branding & release gate.** Product name + icon; Sparkle / notarization / bundled deps if Developer ID exists. Phase 18 is the site-identity closeout inserted 2026-11-05.

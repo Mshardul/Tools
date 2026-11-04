@@ -11,7 +11,7 @@ extension AppModel {
         let succeeded = await engine.restartShield()
         if !succeeded {
             toastCenter.enqueue(ToastItem(
-                text: "Bot-check shield restart failed",
+                text: "Couldn't restart the YouTube check.",
                 actionTitle: nil,
                 action: nil
             ))
@@ -26,9 +26,9 @@ extension AppModel {
         let snapshot = await engine.currentSnapshot()
         healthController.update(snapshot: snapshot, now: .now, environmentReport: report)
         healthController.clearBusy(chipID: "engine")
-        if case let .failure(reason) = result {
+        if case .failure = result {
             toastCenter.enqueue(ToastItem(
-                text: "yt-dlp update failed: \(reason)",
+                text: "Couldn't update the downloader.",
                 actionTitle: nil,
                 action: nil
             ))

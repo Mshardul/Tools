@@ -45,25 +45,47 @@ public extension DownloadEngine {
 }
 
 extension DownloadEngine {
-    func makeContext(url: String, attempt: Int, passcode: String? = nil) async -> ExtractorContext {
+    func makeContext(
+        url: String,
+        attempt _: Int,
+        burnedClients: Set<String> = [],
+        passcode: String? = nil
+    ) async -> ExtractorContext {
         let status = await dependencies.potProvider.status
         let dirs = await dependencies.potProvider.pluginDirs
         let base = await dependencies.potProvider.baseURL
-        let isYouTube = RateHost(urlString: url).canonical == "youtube"
+        let host = RateHost(urlString: url).canonical
+        let isYouTube = host == "youtube"
         let shieldUp = if case .running = status {
             true
         } else {
             false
         }
+        let client: String?
+        if isYouTube {
+            let order = await dependencies.playerClientOrder.order()
+            client = PlayerClientRotation.client(order: order, burned: burnedClients)
+        } else {
+            client = nil
+        }
         let home = dependencies.cookieResolverHome
             ?? FileManager.default.homeDirectoryForCurrentUser
-        let cookie = CookieResolver(fileManager: dependencies.fileManager, home: home)
-            .resolve(source: preferences.cookiesFromBrowser)
-            .argument
+        let sendsCookies = SignInScopePolicy.sendsCookies(
+            scope: preferences.signInScope,
+            sites: preferences.signInSites,
+            host: host
+        )
+        let cookie: String? = if preferences.cookiesFromBrowser.isNone || !sendsCookies {
+            nil
+        } else {
+            CookieResolver(fileManager: dependencies.fileManager, home: home)
+                .resolve(source: preferences.cookiesFromBrowser)
+                .argument
+        }
         return ExtractorContext(
             pluginDirs: dirs + BundledYtDlpPlugins.directories,
             potBaseURL: (isYouTube && shieldUp) ? base : nil,
-            playerClient: isYouTube ? PlayerClientRotation.client(forAttempt: attempt) : nil,
+            playerClient: client,
             cookieArgument: cookie,
             videoPassword: passcode ?? passcodes[url]
         )

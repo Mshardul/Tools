@@ -12,6 +12,7 @@ public extension DownloadEngine {
 
     private func restartFromScratch(_ job: DownloadJob) {
         job.attempt = 0
+        job.burnedPlayerClients = []
         job.state = .queued
         job.finishedAt = nil
         job.progress = nil

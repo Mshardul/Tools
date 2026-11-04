@@ -45,7 +45,7 @@ final class ShieldSetupControllerTests: XCTestCase {
     func test_installedButShieldDoesNotStart_isNotReportedAsDone() async {
         let sut = controller(restartResult: false)
         await sut.run()
-        XCTAssertEqual(sut.state, .failed(detail: "installed, but the shield did not start"))
+        XCTAssertEqual(sut.state, .failed(detail: "Installed, but the YouTube check did not start."))
     }
 
     func test_installFailure_isReported() async {

@@ -56,8 +56,13 @@ extension AppModel {
         let snapshot = await engine.currentSnapshot()
         let isYouTube = RateHost(urlString: url).canonical == "youtube"
         let host = RateHost(urlString: url)
+        let cookiesSent = !prefs.cookiesFromBrowser.isNone && SignInScopePolicy.sendsCookies(
+            scope: prefs.signInScope,
+            sites: prefs.signInSites,
+            host: host.canonical
+        )
         let advice = SignInPolicy.probeAdvice(
-            for: error, host: host, cookiesConfigured: !prefs.cookiesFromBrowser.isNone
+            for: error, host: host, cookiesConfigured: cookiesSent
         )
         probeError = AppModelDialogs.probeErrorMessage(
             for: error,
@@ -71,6 +76,9 @@ extension AppModel {
             ? Self.shieldPrompt(for: snapshot.shieldStatus) : nil
         if error == .passcodeRequired || error == .passcodeRejected {
             presentPasscodePrompt(forLink: url, wasRejected: error == .passcodeRejected)
+        }
+        if advice != .none, await addSignInSiteIfNeeded(url) == .added {
+            await resolvePasted(url, supersede: true)
         }
     }
 
