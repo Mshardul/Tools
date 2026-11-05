@@ -4,6 +4,8 @@ public final class QuitCoordinator: Sendable {
     private let engine: any DownloadEngineProtocol
     private let persistence: any QueuePersisting
     private let confirmer: any Confirming
+    // Uninstall deletes the footprint itself. A later quit must not write it back.
+    private let abandonSaves = Locked(false)
 
     public init(
         engine: any DownloadEngineProtocol,
@@ -15,7 +17,15 @@ public final class QuitCoordinator: Sendable {
         self.confirmer = confirmer
     }
 
+    public func abandonWithoutSaving() {
+        abandonSaves.mutate { $0 = true }
+    }
+
     public func requestTerminate() async -> Bool {
+        if abandonSaves.read({ $0 }) {
+            await engine.shutdown()
+            return true
+        }
         let snapshot = await engine.currentSnapshot()
         let hasActive = await engine.hasActiveJobs()
         if hasActive || snapshot.queueHalt != nil {

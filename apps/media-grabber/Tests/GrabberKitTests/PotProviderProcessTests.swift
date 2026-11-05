@@ -4,15 +4,19 @@ import XCTest
 
 final class PotProviderProcessTests: XCTestCase {
     private let home = URL(fileURLWithPath: "/tmp/mg-pot-proc-home")
-    private let bin = URL(fileURLWithPath: "/tmp/mg-pot-proc-bin")
 
     private func bgutilInstaller() -> PotPluginInstaller {
-        let bgutil = bin.appendingPathComponent("bgutil-ytdlp-pot-provider")
+        let node = URL(fileURLWithPath: "/bundle/Resources/Tools/node")
+        let mainJS = URL(fileURLWithPath: "/bundle/Resources/Shield/server/build/main.js")
         return PotPluginInstaller(
             home: home,
-            searchPaths: [bin],
-            isExecutable: { $0.path == bgutil.path },
-            fileExists: { $0.path == bgutil.path },
+            tools: ManagedTools(
+                resourceRoot: URL(fileURLWithPath: "/bundle/Resources"),
+                supportRoot: home.appendingPathComponent("Library/Application Support/MediaGrabber"),
+                isExecutable: { _ in false }
+            ),
+            isExecutable: { $0 == node },
+            fileExists: { $0 == node || $0 == mainJS },
             pluginStore: FakePluginStore()
         )
     }
@@ -20,7 +24,11 @@ final class PotProviderProcessTests: XCTestCase {
     private func emptyInstaller() -> PotPluginInstaller {
         PotPluginInstaller(
             home: home,
-            searchPaths: [bin],
+            tools: ManagedTools(
+                resourceRoot: URL(fileURLWithPath: "/bundle/Resources"),
+                supportRoot: home.appendingPathComponent("Library/Application Support/MediaGrabber"),
+                isExecutable: { _ in false }
+            ),
             isExecutable: { _ in false },
             fileExists: { _ in false },
             pluginStore: FakePluginStore()

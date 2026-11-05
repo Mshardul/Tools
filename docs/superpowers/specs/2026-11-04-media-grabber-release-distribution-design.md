@@ -1,6 +1,6 @@
 # Release, install, update and uninstall
 
-**Status:** draft for review. This is the Phase 19 branding and release gate (`apps/media-grabber/roadmap.md`). Renumbered from Phase 18 on 2026-11-05.
+**Status:** accepted. Implementation is in progress: install location, uninstall, and Sparkle are in the app. The name stays MediaGrabber, and the Dock icon is the existing Aurora orb. The appcast is published once the EdDSA key pair is stored as `MG_SPARKLE_PUBLIC_KEY` and `SPARKLE_EDDSA_PRIVATE_KEY`. Bundled tools resolve through `ManagedTools` and are fetched by `scripts/fetch-tools.sh`. The user-facing README is `apps/media-grabber/README.md`; build notes are in `apps/media-grabber/docs/development.md`. This is the Phase 19 branding and release gate (`apps/media-grabber/roadmap.md`). Renumbered from Phase 18 on 2026-11-05.
 
 **Scope:** how MediaGrabber reaches testers and ordinary users, how it updates itself, and how it removes itself. Covers CI, the update mechanism, the in-app uninstall action, install-location handling and the user-facing README.
 

@@ -39,6 +39,16 @@ struct AdvancedPane: View {
                 }
                 .foregroundStyle(theme.palette.danger)
             }
+
+            PrefRow(
+                "Uninstall MediaGrabber",
+                helper: "Removes the app and everything it saved. Downloaded files stay."
+            ) {
+                Button("Uninstall\u{2026}") {
+                    Task { await appModel.uninstall() }
+                }
+                .foregroundStyle(theme.palette.danger)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

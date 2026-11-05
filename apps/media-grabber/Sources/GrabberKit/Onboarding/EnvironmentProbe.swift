@@ -43,96 +43,55 @@ public protocol EnvironmentProbing: Sendable {
 
 public struct EnvironmentProbe: EnvironmentProbing {
     private let runner: ProcessRunning
-    private let searchPaths: [URL]
+    private let tools: ManagedTools
     private let isExecutable: @Sendable (URL) -> Bool
 
     public init(
         runner: ProcessRunning = ProcessRunner(),
-        extraSearchPaths: [URL] = EnvironmentProbe.defaultSearchPaths,
+        tools: ManagedTools = .live(),
         isExecutable: @escaping @Sendable (URL) -> Bool = { url in
             FileManager.default.isExecutableFile(atPath: url.path)
         }
     ) {
         self.runner = runner
-        searchPaths = extraSearchPaths
+        self.tools = tools
         self.isExecutable = isExecutable
     }
 
-    public static var defaultSearchPaths: [URL] {
-        var paths: [URL] = [
-            URL(fileURLWithPath: "/opt/homebrew/bin"),
-            URL(fileURLWithPath: "/usr/local/bin"),
-            URL(fileURLWithPath: "/usr/bin"),
-            FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent(".local/bin")
-        ]
-        let envPath = ProcessInfo.processInfo.environment["PATH"] ?? ""
-        for entry in envPath.split(separator: ":") where !entry.isEmpty {
-            let url = URL(fileURLWithPath: String(entry))
-            if !paths.contains(url) {
-                paths.append(url)
-            }
-        }
-        return paths
-    }
-
     public func probe() async -> EnvironmentReport {
-        async let brew = resolve(name: "brew", versionArgs: ["--version"], parse: Self.parseBrew)
-        async let ytDlp = resolve(
-            name: "yt-dlp",
-            versionArgs: ["--version"],
-            parse: Self.parseYtDlp
-        )
-        async let ffmpeg = resolve(
-            name: "ffmpeg",
-            versionArgs: ["-version"],
-            parse: Self.parseFfmpeg
-        )
-        let ffmpegInfo = await ffmpeg
-        let ffprobeInfo = await resolveFfprobe(besideFfmpeg: ffmpegInfo)
-        return await EnvironmentReport(
-            brew: brew,
-            ytDlp: ytDlp,
-            ffmpeg: ffmpegInfo,
-            ffprobe: ffprobeInfo
-        )
+        async let bundled = inspect(tools.bundledYtDlp, arguments: ["--version"], parse: Self.parseYtDlp)
+        async let updated = inspect(tools.updatedYtDlp, arguments: ["--version"], parse: Self.parseYtDlp)
+        async let ffmpeg = inspect(tools.ffmpegURL, arguments: ["-version"], parse: Self.parseFfmpeg)
+        async let ffprobe = inspect(tools.ffprobeURL, arguments: ["-version"], parse: Self.parseFfmpeg)
+        let ytDlp = await Self.preferNewer(bundled, updated)
+        return await EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: ffmpeg, ffprobe: ffprobe)
     }
 
-    private func resolveFfprobe(besideFfmpeg ffmpeg: ToolInfo?) async -> ToolInfo? {
-        guard let ffmpeg else { return nil }
-        let candidate = ffmpeg.path.deletingLastPathComponent().appendingPathComponent("ffprobe")
-        guard isExecutable(candidate) else { return nil }
-        let execution = runner.run(ProcessLaunch(executableURL: candidate, arguments: ["-version"]))
-        var output = ""
-        for await line in execution.lines {
-            switch line {
-            case let .stdout(text), let .stderr(text):
-                output += text + "\n"
-            }
+    static func preferNewer(_ bundled: ToolInfo?, _ updated: ToolInfo?) -> ToolInfo? {
+        switch (bundled, updated) {
+        case let (included?, replacement?):
+            guard let includedVersion = DottedVersion(parsing: included.version),
+                  let replacementVersion = DottedVersion(parsing: replacement.version),
+                  replacementVersion > includedVersion
+            else { return included }
+            return replacement
+        case let (included?, nil):
+            return included
+        case let (nil, replacement?):
+            return replacement
+        default:
+            return nil
         }
-        let result = await execution.result()
-        guard result.exitCode == 0, let version = Self.parseFfmpeg(output) else { return nil }
-        return ToolInfo(path: candidate, version: version)
     }
 
-    private func locate(_ name: String) -> URL? {
-        for dir in searchPaths {
-            let candidate = dir.appendingPathComponent(name)
-            if isExecutable(candidate) {
-                return candidate
-            }
-        }
-        return nil
-    }
-
-    private func resolve(
-        name: String,
-        versionArgs: [String],
+    private func inspect(
+        _ path: URL,
+        arguments: [String],
         parse: @Sendable (String) -> String?
     ) async -> ToolInfo? {
-        guard let path = locate(name) else { return nil }
+        guard isExecutable(path) else { return nil }
         let execution = runner.run(
-            ProcessLaunch(executableURL: path, arguments: versionArgs)
+            ProcessLaunch(executableURL: path, arguments: arguments)
         )
         var output = ""
         for await line in execution.lines {

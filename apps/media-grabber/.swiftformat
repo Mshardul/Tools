@@ -1,5 +1,5 @@
 --swiftversion 6.0
---exclude Derived,Tuist/.build,.build
+--exclude Derived,Tuist/.build,.build,build
 --indent 4
 --maxwidth 120
 --wraparguments before-first

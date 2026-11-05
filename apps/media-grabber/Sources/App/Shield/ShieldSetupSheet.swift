@@ -46,8 +46,6 @@ struct ShieldSetupSheet: View {
             Button("Setting up…") {}.disabled(true)
         case .done:
             Button("Done") { controller.dismiss() }.keyboardShortcut(.defaultAction)
-        case .needsHomebrew:
-            Button("Get Homebrew") { controller.openHomebrewSite() }.keyboardShortcut(.defaultAction)
         case .failed:
             Button("Try again") { Task { await controller.run() } }.keyboardShortcut(.defaultAction)
         }
@@ -69,9 +67,6 @@ struct ShieldSetupSheet: View {
             "Setting up. This can take a minute."
         case .done:
             "All set. Try your download again."
-        case .needsHomebrew:
-            "Setting this up needs Homebrew, a free tool installer for Mac. Install Homebrew, then come back and "
-                + "try again."
         case .failed:
             "Setup didn't finish. Check your internet connection and try again."
         }

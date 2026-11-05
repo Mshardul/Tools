@@ -119,6 +119,7 @@ private struct AboutTabView: View {
                 appRow
                 ytDlpRow
                 ffmpegRow
+                noticesRow
                 diagnosticsRow
             }
             .padding(.top, Spacing.s2)
@@ -135,30 +136,14 @@ private struct AboutTabView: View {
     }
 
     private var appUpdateSubtitle: String? {
-        switch model.appUpdateStatus {
-        case .notChecked: "Not checked yet this session."
-        case .upToDate, .checkFailed: nil
-        case let .updateAvailable(version, _): "Version \(version) is available."
-        }
+        appModel.canReplaceItself ? nil : InstallLocation.updateBlockedMessage
     }
 
     @ViewBuilder
     private var appUpdateTrailing: some View {
-        switch model.appUpdateStatus {
-        case .notChecked:
+        if appModel.canReplaceItself {
             textButton("Check for updates") {
-                Task { await model.checkForAppUpdate() }
-            }
-            .disabled(model.isCheckingAppUpdate)
-        case .upToDate:
-            EmptyView()
-        case .checkFailed:
-            Text("Check failed")
-                .font(theme.monoFont(12, .regular))
-                .foregroundStyle(theme.palette.danger)
-        case let .updateAvailable(_, releaseURL):
-            textButton("Update") {
-                appModel.openURLSink.open(releaseURL)
+                appModel.checkForUpdates()
             }
         }
     }
@@ -215,6 +200,14 @@ private struct AboutTabView: View {
                     verdict: model.environmentReport.ffmpeg == nil ? .bad : .ok
                 )
             )
+        )
+    }
+
+    private var noticesRow: some View {
+        aboutRow(
+            title: "Included tools",
+            subtitle: "The downloader, media tools, Node, and the YouTube check are part of the app.",
+            trailing: AnyView(EmptyView())
         )
     }
 

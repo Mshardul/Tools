@@ -4,7 +4,6 @@ import XCTest
 
 final class PotPluginInstallerTests: XCTestCase {
     private let home = URL(fileURLWithPath: "/tmp/mg-pot-home")
-    private let bin = URL(fileURLWithPath: "/tmp/mg-pot-bin")
 
     private func installer(
         executable: Set<String> = [],
@@ -13,7 +12,11 @@ final class PotPluginInstallerTests: XCTestCase {
     ) -> PotPluginInstaller {
         PotPluginInstaller(
             home: home,
-            searchPaths: [bin],
+            tools: ManagedTools(
+                resourceRoot: URL(fileURLWithPath: "/bundle/Resources"),
+                supportRoot: home.appendingPathComponent("Library/Application Support/MediaGrabber"),
+                isExecutable: { _ in false }
+            ),
             isExecutable: { executable.contains($0.path) },
             fileExists: { existing.contains($0.path) },
             pluginStore: store
@@ -26,16 +29,17 @@ final class PotPluginInstallerTests: XCTestCase {
         XCTAssertEqual(sut.pluginDirs(), [])
     }
 
-    func testPrefersBgutilBinaryOnSearchPath() {
-        let bgutil = bin.appendingPathComponent("bgutil-ytdlp-pot-provider")
-        let sut = installer(executable: [bgutil.path], existing: [bgutil.path])
+    func testUsesBundledNodeAndServer() {
+        let node = URL(fileURLWithPath: "/bundle/Resources/Tools/node")
+        let mainJS = URL(fileURLWithPath: "/bundle/Resources/Shield/server/build/main.js")
+        let sut = installer(executable: [node.path], existing: [node.path, mainJS.path])
         let launch = sut.resolveServerLaunch(port: 4416)
-        XCTAssertEqual(launch?.executableURL, bgutil)
-        XCTAssertEqual(launch?.arguments, ["--host", "127.0.0.1", "--port", "4416"])
+        XCTAssertEqual(launch?.executableURL, node)
+        XCTAssertEqual(launch?.arguments, [mainJS.path, "--host", "127.0.0.1", "--port", "4416"])
     }
 
     func testFallsBackToNodeAndAppSupportMainJS() {
-        let node = bin.appendingPathComponent("node")
+        let node = URL(fileURLWithPath: "/bundle/Resources/Tools/node")
         let mainJS = home.appendingPathComponent(
             "Library/Application Support/MediaGrabber/bgutil-server/server/build/main.js"
         )
@@ -48,31 +52,8 @@ final class PotPluginInstallerTests: XCTestCase {
         )
     }
 
-    func testFallsBackToPipxVenvMainJS() {
-        let node = bin.appendingPathComponent("node")
-        let lib = home.appendingPathComponent(
-            ".local/share/pipx/venvs/bgutil-ytdlp-pot-provider/lib"
-        )
-        let python = lib.appendingPathComponent("python3.12")
-        let pkg = python.appendingPathComponent("site-packages/bgutil_ytdlp_pot_provider")
-        let mainJS = pkg.appendingPathComponent("server/build/main.js")
-        let store = FakePluginStore()
-        store.listings = [
-            lib.path: [python],
-            python.appendingPathComponent("site-packages").path: [pkg]
-        ]
-        let sut = installer(
-            executable: [node.path],
-            existing: [node.path, mainJS.path],
-            store: store
-        )
-        let launch = sut.resolveServerLaunch(port: 4416)
-        XCTAssertEqual(launch?.executableURL, node)
-        XCTAssertEqual(launch?.arguments.first, mainJS.path)
-    }
-
     func testPluginDirsCopiesYtDlpPluginsBesideMainJS() {
-        let node = bin.appendingPathComponent("node")
+        let node = URL(fileURLWithPath: "/bundle/Resources/Tools/node")
         let mainJS = home.appendingPathComponent(
             "Library/Application Support/MediaGrabber/bgutil-server/server/build/main.js"
         )

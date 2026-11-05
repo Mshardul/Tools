@@ -1,6 +1,43 @@
 import ProjectDescription
 
 let mgVersion = Environment.mgVersion.getString(default: "0.0.0")
+let sparklePublicKey = Environment.sparklePublicKey.getString(default: "")
+
+// An empty SUPublicEDKey is invalid, and Sparkle then refuses to start.
+var appInfoPlist: [String: Plist.Value] = [
+    "LSMinimumSystemVersion": "14.0",
+    "CFBundleDisplayName": "MediaGrabber",
+    "NSHumanReadableCopyright": "MIT",
+    "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+    "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
+    "ATSApplicationFontsPath": ".",
+    "CFBundleIconFile": "AppIcon",
+    "CFBundleURLTypes": [
+        [
+            "CFBundleURLName": "MediaGrabber",
+            "CFBundleTypeRole": "Editor",
+            "CFBundleURLSchemes": ["mediagrabber"]
+        ]
+    ],
+    "SUFeedURL": "https://mshardul.github.io/Tools/media-grabber/appcast.xml",
+    "SUEnableAutomaticChecks": true,
+    "SUAutomaticallyUpdate": false,
+    "NSServices": [
+        [
+            "NSMenuItem": ["default": "Download with MediaGrabber"],
+            "NSMessage": "downloadWithMediaGrabber",
+            "NSPortName": "MediaGrabber",
+            "NSSendTypes": [
+                "public.utf8-plain-text",
+                "public.url",
+                "NSStringPboardType"
+            ]
+        ]
+    ]
+]
+if !sparklePublicKey.isEmpty {
+    appInfoPlist["SUPublicEDKey"] = .string(sparklePublicKey)
+}
 
 let project = Project(
     name: "MediaGrabber",
@@ -8,6 +45,9 @@ let project = Project(
         automaticSchemesOptions: .enabled(),
         developmentRegion: "en"
     ),
+    packages: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.7.1")
+    ],
     settings: .settings(
         base: [
             "SWIFT_VERSION": "6.0",
@@ -27,36 +67,21 @@ let project = Project(
             product: .app,
             bundleId: "app.mediagrabber.mac",
             deploymentTargets: .macOS("14.0"),
-            infoPlist: .extendingDefault(with: [
-                "LSMinimumSystemVersion": "14.0",
-                "CFBundleDisplayName": "MediaGrabber",
-                "NSHumanReadableCopyright": "MIT",
-                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
-                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
-                "ATSApplicationFontsPath": ".",
-                "CFBundleURLTypes": [
-                    [
-                        "CFBundleURLName": "MediaGrabber",
-                        "CFBundleTypeRole": "Editor",
-                        "CFBundleURLSchemes": ["mediagrabber"]
-                    ]
-                ],
-                "NSServices": [
-                    [
-                        "NSMenuItem": ["default": "Download with MediaGrabber"],
-                        "NSMessage": "downloadWithMediaGrabber",
-                        "NSPortName": "MediaGrabber",
-                        "NSSendTypes": [
-                            "public.utf8-plain-text",
-                            "public.url",
-                            "NSStringPboardType"
-                        ]
-                    ]
-                ]
-            ]),
+            infoPlist: .extendingDefault(with: appInfoPlist),
             sources: ["Sources/App/**"],
-            resources: ["PRIVACY.md", "Resources/Fonts/**"],
-            dependencies: [.target(name: "GrabberKit"), .target(name: "ShareExtension")],
+            resources: [
+                "PRIVACY.md",
+                "Resources/Fonts/**",
+                "Resources/AppIcon.icns",
+                "Resources/Tools/**",
+                "Resources/Shield/**",
+                "Resources/NOTICES.md"
+            ],
+            dependencies: [
+                .target(name: "GrabberKit"),
+                .target(name: "ShareExtension"),
+                .package(product: "Sparkle")
+            ],
             settings: .settings(base: [
                 "CODE_SIGN_IDENTITY": "-",
                 "CODE_SIGN_STYLE": "Manual",

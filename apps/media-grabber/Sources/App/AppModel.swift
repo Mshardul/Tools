@@ -92,11 +92,14 @@ final class AppModel {
     let revealSink: RevealSink
     let openURLSink: OpenURLSink
     let appUpdateChecker: AppUpdateChecker
+    let appUpdating: any AppUpdating
     let appVersion: String
+    let bundleURL: URL
+    let homeURL: URL
     let engineJobLogDir: URL
     private let suppression: SuppressionStore
     private var confirmationContinuation: CheckedContinuation<Bool, Never>?
-    private var consumerTask: Task<Void, Never>?
+    var consumerTask: Task<Void, Never>?
 
     init(
         engine: DownloadEngineProtocol,
@@ -111,8 +114,11 @@ final class AppModel {
         revealSink: RevealSink = WorkspaceRevealSink(),
         openURLSink: OpenURLSink = WorkspaceOpenURLSink(),
         appUpdateChecker: AppUpdateChecker = AppUpdateChecker(),
+        appUpdating: any AppUpdating = IdleAppUpdating(),
         shieldInstaller: ShieldInstaller = ShieldInstaller(),
         appVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0",
+        bundleURL: URL = Bundle.main.bundleURL,
+        homeURL: URL = FileManager.default.homeDirectoryForCurrentUser,
         engineJobLogDir: URL = JobLog.defaultDir,
         suppression: SuppressionStore = UserDefaultsSuppressionStore(),
         persistence: (any QueuePersisting)? = nil,
@@ -132,12 +138,15 @@ final class AppModel {
         self.revealSink = revealSink
         self.openURLSink = openURLSink
         self.appUpdateChecker = appUpdateChecker
+        self.appUpdating = appUpdating
         shieldSetup = ShieldSetupController(
             installer: shieldInstaller,
             restart: { await engine.restartShield() },
             openURL: openURLSink
         )
         self.appVersion = appVersion
+        self.bundleURL = bundleURL
+        self.homeURL = homeURL
         self.engineJobLogDir = engineJobLogDir
         self.suppression = suppression
         self.persistence = persistence
@@ -286,6 +295,7 @@ extension AppModel {
             await engine.ensureShield()
         }
         startConsumerIfNeeded()
-        Task { await checkForAppUpdateOnLaunch() }
+        await offerToMoveIntoApplicationsIfNeeded()
+        startUpdaterIfNeeded()
     }
 }

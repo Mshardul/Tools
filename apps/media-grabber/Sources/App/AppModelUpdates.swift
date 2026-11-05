@@ -5,7 +5,7 @@ extension AppModel {
 
     // A dev build reports 0.0.0, which would always look outdated, so it never prompts.
     func checkForAppUpdateOnLaunch() async {
-        guard prefs.autoCheckAppUpdates, appVersion != "0.0.0", !needsOnboarding else { return }
+        guard prefs.autoCheckAppUpdates, appVersion != "0.0.0", !needsOnboarding, canReplaceItself else { return }
         let status = await appUpdateChecker.checkForUpdate(currentVersion: appVersion)
         guard case let .updateAvailable(version, releaseURL) = status,
               defaults.string(forKey: Self.lastPromptedUpdateKey) != version

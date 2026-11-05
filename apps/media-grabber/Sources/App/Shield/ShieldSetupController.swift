@@ -9,7 +9,6 @@ final class ShieldSetupController {
         case idle
         case working(String)
         case done
-        case needsHomebrew
         case failed(detail: String)
     }
 
@@ -52,12 +51,6 @@ final class ShieldSetupController {
         isPresented = false
     }
 
-    func openHomebrewSite() {
-        if let url = URL(string: "https://brew.sh") {
-            openURL.open(url)
-        }
-    }
-
     func run() async {
         guard !isWorking else { return }
         state = .working("")
@@ -71,8 +64,6 @@ final class ShieldSetupController {
         switch outcome {
         case .installed:
             await finishInstall()
-        case .needsHomebrew:
-            state = .needsHomebrew
         case let .failed(detail):
             state = .failed(detail: detail)
         }

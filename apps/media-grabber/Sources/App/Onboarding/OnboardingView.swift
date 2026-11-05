@@ -1,10 +1,6 @@
 import GrabberKit
 import SwiftUI
 
-#if canImport(AppKit)
-    import AppKit
-#endif
-
 struct OnboardingView: View {
     static let youtubeCheckTitle = "YouTube check"
     @Bindable var installer: OnboardingInstaller
@@ -56,8 +52,7 @@ struct OnboardingView: View {
             Text("Let\u{2019}s get you set up.")
                 .font(theme.displayFont(30, .semibold))
                 .foregroundStyle(theme.palette.headline)
-            Text("MediaGrabber uses a few free tools to do the actual downloading. Anything already on your Mac is "
-                + "checked off below.")
+            Text("The downloader is included. One short check confirms it can reach a known video.")
                 .font(theme.bodyFont(14, .regular))
                 .foregroundStyle(theme.palette.dim)
                 .fixedSize(horizontal: false, vertical: true)
@@ -68,7 +63,7 @@ struct OnboardingView: View {
         HStack(spacing: Spacing.s3) {
             primaryButton("Continue", enabled: installer.canProceedToHome, action: onContinue)
             if !installer.canProceedToHome {
-                Text("Continue unlocks once the required tools are installed.")
+                Text("Continue unlocks once the check passes.")
                     .font(theme.bodyFont(12, .regular))
                     .foregroundStyle(theme.palette.faint)
             }
@@ -130,10 +125,6 @@ struct OnboardingView: View {
     @ViewBuilder
     private func actions(for step: OnboardingStepID, state: OnboardingStepState) -> some View {
         switch (step, state) {
-        case (.homebrew, .failed):
-            homebrewActions
-        case (.downloaderTools, .pending):
-            primaryButton("Install now", enabled: true) { Task { await installer.start() } }
         case (.botCheckShield, .pending):
             primaryButton("Set up", enabled: installer.canProceedToHome) {
                 Task { await installer.installShieldOnly() }
@@ -154,16 +145,6 @@ struct OnboardingView: View {
             await installer.installShieldOnly()
         case .testRun:
             await installer.check()
-        default:
-            await installer.start()
-        }
-    }
-
-    private var homebrewActions: some View {
-        HStack(spacing: Spacing.s2) {
-            Button("Copy command") { copy(HomebrewInstallInfo.command) }
-            Button("Open Terminal") { installer.openTerminalForHomebrew() }
-            Button("Check again") { Task { await installer.recheck() } }
         }
     }
 
@@ -189,13 +170,6 @@ struct OnboardingView: View {
         .grayscale(enabled ? 0 : 1)
     }
 
-    private func copy(_ text: String) {
-        #if canImport(AppKit)
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
-        #endif
-    }
-
     private func spokenState(_ state: OnboardingStepState) -> String {
         switch state {
         case .done: "done"
@@ -208,8 +182,6 @@ struct OnboardingView: View {
 
     private func title(for step: OnboardingStepID) -> String {
         switch step {
-        case .homebrew: "Homebrew"
-        case .downloaderTools: "Downloader + media tools"
         case .botCheckShield: Self.youtubeCheckTitle
         case .testRun: "Test run"
         }
@@ -233,16 +205,12 @@ struct OnboardingView: View {
     private func failureSummary(for step: OnboardingStepID, reason: String) -> String {
         switch step {
         case .botCheckShield: reason
-        case .downloaderTools: "Setup didn't finish. Check your internet connection and try again."
         case .testRun: "The check didn't pass."
-        case .homebrew: pendingSummary(for: step)
         }
     }
 
     private func pendingSummary(for step: OnboardingStepID) -> String {
         switch step {
-        case .homebrew: "A free tool installer for Mac. The other tools install through it."
-        case .downloaderTools: "Does the actual downloading. Required."
         case .botCheckShield: "Helps YouTube downloads get through. Recommended, not required."
         case .testRun: "We'll check a known video to confirm everything works."
         }

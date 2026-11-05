@@ -29,6 +29,10 @@ struct AppRelauncher {
 
     func relaunch(withExtraArguments extraArguments: [String]) {
         guard let executablePath = Bundle.main.executablePath else { return }
+        relaunch(executablePath: executablePath, extraArguments: extraArguments)
+    }
+
+    func relaunch(executablePath: String, extraArguments: [String] = []) {
         launcher.launch(executablePath: executablePath, arguments: extraArguments)
         terminate()
     }

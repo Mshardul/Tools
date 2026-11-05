@@ -167,9 +167,8 @@ public struct EngineDependencies: Sendable {
     }
 
     private static func locateFfprobe() -> URL? {
-        ["/opt/homebrew/bin/ffprobe", "/usr/local/bin/ffprobe"]
-            .first { FileManager.default.isExecutableFile(atPath: $0) }
-            .map(URL.init(fileURLWithPath:))
+        let url = ManagedTools.live().ffprobeURL
+        return FileManager.default.isExecutableFile(atPath: url.path) ? url : nil
     }
 }
 

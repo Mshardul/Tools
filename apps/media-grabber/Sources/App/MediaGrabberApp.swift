@@ -16,7 +16,7 @@ struct MediaGrabberApp: App {
         let debugFlags = DebugFlags.parse(CommandLine.arguments)
         let prefs = Preferences()
         let installer = OnboardingInstaller()
-        let ytDlpURL = Self.resolveYtDlp()
+        let ytDlpURL = ManagedTools.live().ytDlpURL()
         let log = LogWriter()
         let persistence = Persistence(
             log: log,
@@ -42,6 +42,7 @@ struct MediaGrabberApp: App {
             prefs: prefs,
             log: log,
             debugFlags: debugFlags,
+            appUpdating: SparkleAppUpdating(),
             persistence: persistence,
             columnConfig: columnConfig
         )
@@ -90,6 +91,12 @@ struct MediaGrabberApp: App {
         .defaultSize(width: 980, height: 720)
         .windowResizability(.contentMinSize)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") {
+                    appModel.checkForUpdates()
+                }
+                .disabled(!appModel.canReplaceItself)
+            }
             DebugMenuCommands(appModel: appModel, relauncher: AppRelauncher())
         }
     }
@@ -103,15 +110,5 @@ struct MediaGrabberApp: App {
         } else {
             MainWindow()
         }
-    }
-
-    private static func resolveYtDlp() -> URL {
-        let candidates = [
-            "/opt/homebrew/bin/yt-dlp",
-            "/usr/local/bin/yt-dlp",
-            "\(NSHomeDirectory())/.local/bin/yt-dlp"
-        ]
-        let found = candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-        return URL(fileURLWithPath: found ?? "/opt/homebrew/bin/yt-dlp")
     }
 }

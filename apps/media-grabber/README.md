@@ -1,66 +1,54 @@
 # MediaGrabber
 
-A small macOS app that takes one pasted video URL, resolves its title, and downloads the file with a live progress bar — then shows "Saved" with a Reveal-in-Finder action. It shells out to [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (one child process per download) and uses `ffmpeg` for muxing. Neither tool is bundled; the app installs both through Homebrew on first run if they are missing.
+MediaGrabber downloads a video from a link you paste. It shows the title, a progress bar, and **Saved** when the file is ready, with a button to reveal it in Finder.
 
-> **Working name.** `MediaGrabber` / bundle ID `app.mediagrabber.mac` are placeholders. The final product name is chosen in Phase 19 (spec §14); renaming is a find-and-replace.
+You can keep several downloads going, pause or cancel one, and paste a playlist and pick which items to keep. Sign-in is only suggested when a site needs it.
 
-## Requirements
+## Download
 
-- macOS 14.0 or later.
-- [Homebrew](https://brew.sh). The app runs `brew install yt-dlp ffmpeg` for you on first launch if the tools aren't already on `PATH`; if Homebrew itself is missing, onboarding shows the one-line install command to paste into Terminal.
+[Download MediaGrabber](https://github.com/Mshardul/Tools/releases?q=media-grabber-v)
 
-## Run locally
+Take the latest `MediaGrabber-N.N.N.dmg` from that list. Do not use the repository’s overall “latest” release; other tools in this repo publish releases too.
 
-```bash
-brew install mise
-cd apps/media-grabber
-mise install
-make
-```
+Apple Silicon Mac, macOS 14 or later.
 
-`make` (same as `make run`) rebuilds from current sources, kills any running MediaGrabber, and opens the new build. Running it again replaces the previous instance instead of launching a second copy.
+## Install
 
-Tests and the Xcode workspace:
+1. Open the disk image.
+2. Drag **MediaGrabber** onto the **Applications** folder.
+3. Eject the disk image and open MediaGrabber from Applications.
 
-```bash
-mise exec -- tuist generate --no-open
-xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace \
-  -destination 'platform=macOS' test
-```
+The first time you open a downloaded copy, macOS blocks it. Go to **System Settings → Privacy & Security**, choose **Open Anyway** next to the MediaGrabber notice, then open the app again and confirm.
 
-Lint:
+If you opened it from the disk image or from Downloads, the app offers to move itself into Applications. Updates stay off until it lives there.
 
-```bash
-mise exec -- swiftformat --lint .
-mise exec -- swiftlint lint --strict
-```
+## Updating
 
-## Running a downloaded build (Gatekeeper)
+With the app in Applications, it can look for a newer version about once a day. Nothing is installed until you accept it.
 
-Builds are ad-hoc signed (no paid Apple Developer account), so a copy you downloaded is quarantined. One-time unblock, either:
+- **MediaGrabber → Check for Updates…**
+- **About → Check for updates**
+- **Preferences → Updates** turns the automatic check on or off.
 
-- **System Settings → Privacy & Security →** scroll to the blocked-app notice → **Open Anyway**, then confirm on the next launch; or
-- `xattr -dr com.apple.quarantine /Applications/MediaGrabber.app`
+## Uninstall
 
-A build you compiled yourself is not quarantined and needs neither step.
+**Preferences → Advanced → Uninstall…**
 
-## Where things land
+Confirm with **Remove MediaGrabber?**. The app and the files it saved are removed. Videos you already downloaded stay where they are.
 
-- **Downloads:** `~/Downloads` by default, changeable per-download in the runway or as a default in Preferences → Downloads.
-- **Logs:** `~/Library/Logs/MediaGrabber/` — local only, never uploaded.
-  - `app.log` — app-wide events (launch, probes, duplicate prompts, quit).
-  - `jobs/<job-id>.log` — one raw `yt-dlp` transcript per download. See [PRIVACY.md](PRIVACY.md) for exactly what they contain.
-- **Persisted state:** `queue.json`, `history.json`, and `columns.json` under `~/Library/Application Support/MediaGrabber/` — relaunch restores the queue.
+If you would rather delete those files yourself, they are:
 
-## What the app does today
+- `~/Library/Application Support/MediaGrabber/`
+- `~/Library/Logs/MediaGrabber/`
+- `~/Library/Caches/app.mediagrabber.mac/`
+- `~/Library/Saved Application State/app.mediagrabber.mac.savedState/`
+- `~/Library/Preferences/app.mediagrabber.mac.plist`
 
-A multi-download queue with a live table (pause / resume / cancel / remove / force-start per row), rate limiting and a circuit breaker per host, retry with error-class-aware messaging, cookie-based sign-in for gated videos, a bot-check shield for YouTube, playlist paste → picker → grouped rows, and add-flow ingress (clipboard, drag, Services, a `mediagrabber://` URL scheme) — every entry point lands in the same Home field. Graceful quit confirms when a download is active, flushes persistence, then shuts down child processes.
+Then drag MediaGrabber from Applications to the Trash.
 
-For how it fits together: [`docs/architecture.md`](docs/architecture.md) (component map, request/event/persistence paths) and [`docs/state-flow.md`](docs/state-flow.md) (every job, rate-limit, and shield state with its triggers).
+## Getting help
 
-Debug flags: `-MGForceOnboarding`, `-MGResetState`, `-MGConcurrencyCap N`.
-
-Not yet accepted: site/identity maturity (Phase 17) and its closeout (Phase 18) are in the working tree. Not yet built: product name, app icon, and install-without-Homebrew release (Phase 19). Phases 12–16 are shipped, including session row reorder, IBM Plex Sans as the Aurora body face, and cookie-less downloads. See [roadmap.md](roadmap.md).
+**Preferences → Diagnostics → Share diagnostic bundle** sends a report through the Mac share sheet. Logs stay on your Mac unless you share them. [PRIVACY.md](PRIVACY.md) says what they contain.
 
 ## License
 

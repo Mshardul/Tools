@@ -5,6 +5,7 @@ excluded:
   - Derived
   - .build
   - Tuist/.build
+  - build
 disabled_rules:
   - todo
 opt_in_rules:

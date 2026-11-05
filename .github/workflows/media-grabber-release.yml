@@ -25,6 +25,8 @@ jobs:
   release:
     runs-on: macos-15
     timeout-minutes: 30
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: apps/media-grabber
@@ -85,9 +87,13 @@ jobs:
         with:
           xcode-version: ${{ steps.xcodever.outputs.v }}
 
+      - name: Bundle the downloader and media tools
+        run: scripts/fetch-tools.sh
+
       - name: Build Release
         env:
           TUIST_MG_VERSION: ${{ steps.version.outputs.version }}
+          TUIST_SPARKLE_PUBLIC_KEY: ${{ vars.MG_SPARKLE_PUBLIC_KEY }}
         run: |
           mise exec -- tuist generate --no-open
           mise exec -- tuist build --configuration Release MediaGrabber
@@ -100,8 +106,17 @@ jobs:
           app="$(find . -name 'MediaGrabber.app' -path '*Release*' -type d | head -1)"
           test -n "$app" || { echo "MediaGrabber.app not found" >&2; exit 1; }
           # notarization + --options runtime slot in here together, later
-          codesign --force --sign "${MG_SIGN_IDENTITY:--}" "$app"
-          codesign --verify --strict "$app"
+          scripts/sign-app.sh "$app" "${MG_SIGN_IDENTITY:--}"
+          tools="$app/Contents/Resources/Tools"
+          for bin in yt-dlp ffmpeg ffprobe node; do
+            test -x "$tools/$bin" || { echo "missing bundled $bin" >&2; exit 1; }
+          done
+          "$tools/yt-dlp" --version
+          "$tools/ffmpeg" -version
+          "$tools/ffprobe" -version
+          "$tools/node" --version
+          test -f "$app/Contents/Resources/Shield/server/build/main.js"
+          test -f "$app/Contents/Resources/Shield/plugin.zip"
           echo "path=$app" >> "$GITHUB_OUTPUT"
 
       - name: Package DMG
@@ -159,6 +174,53 @@ jobs:
           n="$(git tag --list 'media-grabber-v*' | grep -vc "^media-grabber-v${VERSION}$" || true)"
           if [ "$n" -gt 0 ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
 
+      - name: Sign the disk image for Sparkle
+        id: sparkle
+        env:
+          SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
+          VERSION: ${{ steps.version.outputs.version }}
+          DMG: ${{ steps.dmg.outputs.name }}
+          DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [ -z "$SPARKLE_EDDSA_PRIVATE_KEY" ]; then
+            if [ "$DRY" = "true" ]; then
+              echo "SPARKLE_EDDSA_PRIVATE_KEY is unset; the dry run is not signing an update"
+              echo "signed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo "SPARKLE_EDDSA_PRIVATE_KEY is required to publish an update" >&2
+            exit 1
+          fi
+          tool="$(find . "$HOME/Library/Caches/tuist" "$HOME/Library/Developer/Xcode/DerivedData" -path '*Sparkle/bin/sign_update' -type f 2>/dev/null | head -1)"
+          test -n "$tool" || { echo "sign_update not found" >&2; exit 1; }
+          key="$(mktemp)"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$SPARKLE_EDDSA_PRIVATE_KEY" > "$key"
+          chmod 600 "$key"
+          "$tool" --ed-key-file "$key" "$DMG" > sparkle-signature.txt
+          curl -fsSL "https://mshardul.github.io/Tools/media-grabber/appcast.xml" -o appcast-current.xml || : > appcast-current.xml
+          signature="$(sed -n 's/.*edSignature="\([^"]*\)".*/\1/p' sparkle-signature.txt)"
+          test -n "$signature" || { echo "sign_update did not print an edSignature" >&2; cat sparkle-signature.txt >&2; exit 1; }
+          length="$(stat -f%z "$DMG")"
+          mkdir -p appcast-publish
+          python3 scripts/appcast.py \
+            --existing appcast-current.xml \
+            --version "$VERSION" \
+            --url "https://github.com/Mshardul/Tools/releases/download/media-grabber-v${VERSION}/MediaGrabber-${VERSION}.dmg" \
+            --signature "$signature" \
+            --length "$length" \
+            --notes "https://github.com/Mshardul/Tools/releases/tag/media-grabber-v${VERSION}" \
+            --out appcast-publish/appcast.xml
+          cp appcast-publish/appcast.xml appcast.xml
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the appcast
+        if: ${{ steps.sparkle.outputs.signed == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-grabber-appcast
+          path: apps/media-grabber/appcast.xml
+
       - name: Publish release
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
         uses: softprops/action-gh-release@v2
@@ -174,3 +236,12 @@ jobs:
             MediaGrabber is not yet signed with an Apple Developer ID. On first launch,
             right-click the app and choose **Open**, or run
             `xattr -dr com.apple.quarantine /Applications/MediaGrabber.app`.
+
+      - name: Publish the appcast
+        if: ${{ steps.sparkle.outputs.signed == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: apps/media-grabber/appcast-publish
+          destination_dir: media-grabber
+          keep_files: true

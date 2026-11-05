@@ -1,0 +1,6 @@
+yt-dlp 2026.10.26 https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp_macos 0f922c15ccc0b83eefa1c8bc9104e434318c4bf16e408e1ee93b7745a6efe0aa
+node v22.23.4 https://nodejs.org/dist/v22.23.4/node-v22.23.4-darwin-arm64.tar.gz c9e1dbc748b33ed2d14f42445191ecaf14c56259c7a9a26d0042c49ec2b66428
+ffmpeg 7.1.1 https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz 733984395e0dbbe5c046abda2dc49a5544e7e0e1e2366bba849222ae9e3a03b1
+lame 3.100 https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e
+shield-plugin 2.0.2 https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/download/2.0.2/bgutil-ytdlp-pot-provider.zip a26b980bf6d8e8400d8f21445daa4d8381bf6183d20f0be309391f86b31e27ef
+shield-source 2.0.2 https://github.com/Brainicism/bgutil-ytdlp-pot-provider/archive/refs/tags/2.0.2.tar.gz 1f2ae9ec39405b8e80397dfc2551f58deed09d8dff4b2b8fbc314df8e091c0a1

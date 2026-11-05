@@ -516,7 +516,7 @@ The app declares a minimum-known-good yt-dlp version as a hardcoded constant (al
 
 ### 10.2 App self-update
 
-A **GitHub-release check** (not Sparkle — Sparkle wants signed updates), for MediaGrabber's own version. Throttled to daily; on launch (and on the About page's manual "Check for updates" — §5.12) hit the Releases API. Before a check has resolved this session, About's MediaGrabber row reads "Check for updates"; once resolved with nothing newer, no button shows; once a newer release is found, the row shows "Update," which opens the release page. The HealthStrip carries no equivalent chip for this — engine-freshness is a yt-dlp concept (§10.1a), not an app-version one. The user replaces the app manually and redoes the one-time Gatekeeper step. Sparkle / notarization / bundled deps park in **Phase 19**, gated on obtaining a Developer ID account.
+Sparkle checks for updates once the app is in an Applications folder. About and the app menu's **Check for Updates…** open Sparkle's own prompt. The Updates preference drives Sparkle's automatic check, and an update is not installed until the user accepts it. The check stays quiet while the app is running from anywhere else, because an ad-hoc app there cannot replace itself. The GitHub-release checker remains in the tree for its tests and is not what launch shows. The EdDSA public key arrives as `TUIST_SPARKLE_PUBLIC_KEY`. Bundled tools and the user-facing README are the rest of **Phase 19**. Notarization waits on an Apple Developer account.
 
 ## 11. Testing
 
@@ -605,11 +605,11 @@ Fourteen phases. The boundaries are **dependency cuts**: each phase is picked as
 
 - **Phase 16 — Cookie independence.** Cookie-less by default; a sign-in is suggested only after a failure it can fix; a configured browser is used as-is; site-neutral copy; cookie redaction in every log. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-03-cookie-independence.md`.
 
-- **Phase 17 — Site / identity maturity.** _(specified)_ Player-client order from a cached JSON file and a per-job burned client after a bot-check; the YouTube check stays one optional local process; plain failure copy; a dismissible setup line when onboarding was skipped; sign-in applies to all sites or only named sites. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-05-media-grabber-phase-17-site-identity-design.md`. Optional extras (subtitles, menu bar, schedules, stats, graphs, per-skin light/dark, compact breakpoint) are unscheduled in `apps/media-grabber/future-ideas.md`. **Out → Phase 18:** the seven review decisions, in full on `apps/media-grabber/roadmap.md`.
+- **Phase 17 — Site / identity maturity.** _(shipped)_ Player-client order from a cached JSON file and a per-job burned client after a bot-check; the YouTube check stays one optional local process; plain failure copy; a dismissible setup line when onboarding was skipped; sign-in applies to all sites or only named sites. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-05-media-grabber-phase-17-site-identity-design.md`. Optional extras (subtitles, menu bar, schedules, stats, graphs, per-skin light/dark, compact breakpoint) are unscheduled in `apps/media-grabber/future-ideas.md`.
 
-- **Phase 18 — Site identity closeout.** _(in the working tree, not yet accepted)_ Inserted 2026-11-05. Owns the seven decisions the Phase 17 review deferred: no launch flash of the YouTube-check line; remote client names limited to `^[a-z0-9_]+$`; named-site list wording and an explanation when the list is empty; `state-flow.md` updated to the burned-client rule; a full copy audit including the Downloader health chip; delete `client(forAttempt:)`; jargon test reads real chip labels. The decisions are written out on `apps/media-grabber/roadmap.md`.
+- **Phase 18 — Site identity closeout.** _(shipped)_ Inserted 2026-11-05. The seven review decisions: no launch flash of the YouTube-check line; remote client names limited to `^[a-z0-9_]+$`; named-site list wording and an explanation when the list is empty; `state-flow.md` updated to the burned-client rule; a full copy audit including the Downloader health chip; delete `client(forAttempt:)`; jargon test reads real chip labels. Written out on `apps/media-grabber/roadmap.md`.
 
-- **Phase 19 — Branding & release gate.** Product-name decision (§14) + find-and-replace + app icon. Revisit repo-root `BACKLOG.md` (v1 name gate). **Sparkle / notarization / bundled deps** — only if a Developer ID account exists by then (§10). Renumbered from Phase 18 on 2026-11-05. Draft: `docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md`.
+- **Phase 19 — Branding & release gate.** _(in progress)_ The name stays MediaGrabber. The Dock and Launchpad icon is the existing Aurora orb. Revisit repo-root `BACKLOG.md` at the v1 name gate. Sparkle is in the app (EdDSA appcast, no Developer ID); notarization still waits on an Apple Developer account. Install location, uninstall, bundled-tool resolution, and the user-facing README are in the app. Build notes live in `apps/media-grabber/docs/development.md`. Spec: `docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md`.
 
 ### 12.2 Shells built complete, filled later
 
@@ -643,8 +643,8 @@ DRM-protected sites (not possible — `yt-dlp` refuses); a hosted or cloud POT p
 
 ## 14. Release decisions (Phase 19)
 
-**Product name.** Chosen at Phase 19 (branding & release gate); until then the code and directory use the working name `MediaGrabber` / `apps/media-grabber/` / bundle ID `app.mediagrabber.mac`. Renaming is a mechanical find-and-replace. ~20 candidates have been checked for collisions; the video-downloader space is saturated (Downie, Grabbr, Parabolic, Stacher, ClipGrab, …) and every short string is claimed somewhere. The verified-clean options (no Mac app, no downloader, no dev tool, no famous brand): **Weir** (`weir.app` is free), **Undertow**, **Vireo**, **Freshet**. Bundle ID: `app.<name>.mac` (reverse-DNS, `mac` suffix leaves room for other platforms later).
+**Product name.** Stays `MediaGrabber`, bundle ID `app.mediagrabber.mac`. The earlier rename candidates (Weir, Undertow, Vireo, Freshet) are set aside.
 
-**Icon direction.** Decided with the name (Phase 19 branding & release gate; parked out of Phase 13 polish — locked 2026-09-23; moved off Phase 14 — locked 2026-10-04).
+**Icon.** The Dock, Launchpad, and Finder icon is the existing Aurora orb, bundled as `Resources/AppIcon.icns` (`CFBundleIconFile` = `AppIcon`).
 
 **BACKLOG.md.** Left as-is for now — no new row, T-002 (the CLI) unchanged, T-006's dependency unchanged. Revisit when this app reaches v1 (after the Phase 19 name gate).

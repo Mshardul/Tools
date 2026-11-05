@@ -54,18 +54,13 @@ final class ShieldSetupControllerTests: XCTestCase {
         runner.script(.stderr("curl: (6) Could not resolve host\n"), forPathEndingIn: "curl")
         let sut = controller(installer: installer(runner: runner, alreadyBuilt: false))
         await sut.run()
-        XCTAssertEqual(sut.state, .failed(detail: "download: curl: (6) Could not resolve host\n"))
+        XCTAssertEqual(sut.state, .failed(detail: "This copy of the app doesn't include the YouTube check."))
     }
 
-    func test_missingHomebrew_pointsToHomebrewSite() async {
-        let opener = FakeOpenURLSink()
-        let sut = controller(
-            installer: installer(alreadyBuilt: false, nodeInstalled: false, brew: false), opener: opener
-        )
+    func test_missingHelper_reportsFailure() async {
+        let sut = controller(installer: installer(alreadyBuilt: false, nodeInstalled: false, brew: false))
         await sut.run()
-        XCTAssertEqual(sut.state, .needsHomebrew)
-        sut.openHomebrewSite()
-        XCTAssertEqual(opener.opened.map(\.absoluteString), ["https://brew.sh"])
+        XCTAssertEqual(sut.state, .failed(detail: "This copy of the app doesn't include the YouTube check."))
     }
 
     func test_presentResetsFinishedStateAndShowsSheet() async {
@@ -78,7 +73,7 @@ final class ShieldSetupControllerTests: XCTestCase {
 
     func test_copyNeverContainsCommandsOrJargon() {
         let states: [ShieldSetupController.State] = [
-            .idle, .working(""), .done, .needsHomebrew, .failed(detail: "x")
+            .idle, .working(""), .done, .failed(detail: "x")
         ]
         for state in states {
             let text = ShieldSetupSheet.explanation(for: state).lowercased()

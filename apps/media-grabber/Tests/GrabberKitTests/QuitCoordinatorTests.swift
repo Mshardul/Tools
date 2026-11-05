@@ -54,7 +54,7 @@ final class QuitCoordinatorTests: XCTestCase {
 
         XCTAssertFalse(shouldQuit)
         XCTAssertEqual(confirmer.seenRequests.count, 1)
-        XCTAssertTrue(confirmer.seenRequests[0].message.contains("yt-dlp"))
+        XCTAssertTrue(confirmer.seenRequests[0].message.contains("downloader needs reinstalling"))
     }
 
     func test_purelyQueuedNoHalt_noPrompt_flushShutdownTrue() async {
@@ -72,6 +72,26 @@ final class QuitCoordinatorTests: XCTestCase {
         XCTAssertTrue(shouldQuit)
         XCTAssertTrue(confirmer.seenRequests.isEmpty)
         XCTAssertEqual(persistence.flushCount, 1)
+        XCTAssertTrue(engine.shutdownCalled)
+    }
+
+    func test_abandonWithoutSaving_skipsPromptAndFlush() async {
+        let engine = FakeEngine()
+        engine.setHasActiveJobs(true)
+        let persistence = FakeQueuePersisting()
+        let confirmer = FakeConfirmer(answering: false)
+        let coordinator = makeCoordinator(
+            engine: engine,
+            persistence: persistence,
+            confirmer: confirmer
+        )
+
+        coordinator.abandonWithoutSaving()
+        let shouldQuit = await coordinator.requestTerminate()
+
+        XCTAssertTrue(shouldQuit)
+        XCTAssertTrue(confirmer.seenRequests.isEmpty)
+        XCTAssertEqual(persistence.flushCount, 0)
         XCTAssertTrue(engine.shutdownCalled)
     }
 

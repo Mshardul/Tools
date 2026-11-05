@@ -10,3 +10,12 @@ xcuserdata/
 # Release artifacts — built in CI, never committed
 *.dmg
 /SHA256SUMS
+
+# Sparkle EdDSA private key. The public key is TUIST_SPARKLE_PUBLIC_KEY.
+.sparkle-private-key
+
+# Bundled tools are fetched by scripts/fetch-tools.sh. They are not committed.
+Resources/Tools/*
+!Resources/Tools/.gitkeep
+Resources/Shield/*
+!Resources/Shield/.gitkeep

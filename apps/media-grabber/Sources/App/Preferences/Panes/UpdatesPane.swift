@@ -1,3 +1,4 @@
+import GrabberKit
 import SwiftUI
 
 struct UpdatesPane: View {
@@ -10,10 +11,16 @@ struct UpdatesPane: View {
 
             PrefRow(
                 "Check for app updates automatically",
-                helper: "Looks for a newer MediaGrabber release once a day."
+                helper: appModel.canReplaceItself
+                    ? "Looks for a newer MediaGrabber release once a day."
+                    : InstallLocation.updateBlockedMessage
             ) {
                 Toggle("", isOn: $prefs.autoCheckAppUpdates)
                     .labelsHidden()
+                    .disabled(!appModel.canReplaceItself)
+                    .onChange(of: prefs.autoCheckAppUpdates) { _, enabled in
+                        appModel.setAutomaticUpdateChecks(enabled)
+                    }
             }
 
             PrefRow(

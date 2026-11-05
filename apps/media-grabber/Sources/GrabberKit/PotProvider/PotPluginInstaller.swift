@@ -2,20 +2,20 @@ import Foundation
 
 public struct PotPluginInstaller: Sendable {
     private let home: URL
-    private let searchPaths: [URL]
+    private let tools: ManagedTools
     private let isExecutable: @Sendable (URL) -> Bool
     private let fileExists: @Sendable (URL) -> Bool
     private let pluginStore: any PluginStoring
 
     public init(
         home: URL,
-        searchPaths: [URL],
+        tools: ManagedTools,
         isExecutable: @escaping @Sendable (URL) -> Bool,
         fileExists: @escaping @Sendable (URL) -> Bool,
         pluginStore: any PluginStoring
     ) {
         self.home = home
-        self.searchPaths = searchPaths
+        self.tools = tools
         self.isExecutable = isExecutable
         self.fileExists = fileExists
         self.pluginStore = pluginStore
@@ -26,7 +26,7 @@ public struct PotPluginInstaller: Sendable {
     ) -> PotPluginInstaller {
         PotPluginInstaller(
             home: home,
-            searchPaths: EnvironmentProbe.defaultSearchPaths,
+            tools: .live(home: home),
             isExecutable: { FileManager.default.isExecutableFile(atPath: $0.path) },
             fileExists: { FileManager.default.fileExists(atPath: $0.path) },
             pluginStore: FoundationPluginStore()
@@ -50,15 +50,8 @@ public struct PotPluginInstaller: Sendable {
     }
 
     public func resolveServerLaunch(port: Int, host: String = "127.0.0.1") -> ProcessLaunch? {
-        if let bgutil = firstExecutable(named: "bgutil-ytdlp-pot-provider") {
-            return ProcessLaunch(
-                executableURL: bgutil,
-                arguments: ["--host", host, "--port", "\(port)"]
-            )
-        }
-        guard let node = firstExecutable(named: "node"), let mainJS = nodeEntry() else {
-            return nil
-        }
+        let node = tools.nodeURL
+        guard isExecutable(node), let mainJS = nodeEntry() else { return nil }
         return ProcessLaunch(
             executableURL: node,
             arguments: [mainJS.path, "--host", host, "--port", "\(port)"]
@@ -69,20 +62,11 @@ public struct PotPluginInstaller: Sendable {
         home.appendingPathComponent("Library/Application Support/MediaGrabber/yt-dlp-plugins")
     }
 
-    private func firstExecutable(named name: String) -> URL? {
-        searchPaths
-            .map { $0.appendingPathComponent(name) }
-            .first { isExecutable($0) }
-    }
-
     private func nodeEntry() -> URL? {
-        if let appSupport = existing(appSupportMainJS) {
-            return appSupport
+        if let bundled = existing(tools.shieldServer) {
+            return bundled
         }
-        if let pipx = pipxMainJS(root: pipxShareLib) {
-            return pipx
-        }
-        return pipxMainJS(root: pipxLegacyLib)
+        return existing(appSupportMainJS)
     }
 
     private var appSupportMainJS: URL {
@@ -91,43 +75,10 @@ public struct PotPluginInstaller: Sendable {
         )
     }
 
-    private var pipxShareLib: URL {
-        home.appendingPathComponent(".local/share/pipx/venvs/bgutil-ytdlp-pot-provider/lib")
-    }
-
-    private var pipxLegacyLib: URL {
-        home.appendingPathComponent(".local/pipx/venvs/bgutil-ytdlp-pot-provider/lib")
-    }
-
-    private func pipxMainJS(root: URL) -> URL? {
-        let pythons = pluginStore.contentsOfDirectory(at: root).filter {
-            $0.lastPathComponent.hasPrefix("python")
-        }
-        var index = 0
-        while index < pythons.count {
-            if let found = mainJS(underSitePackages: pythons[index]) {
-                return found
-            }
-            index += 1
-        }
-        return nil
-    }
-
-    private func mainJS(underSitePackages pythonDir: URL) -> URL? {
-        let site = pythonDir.appendingPathComponent("site-packages")
-        let packages = pluginStore.contentsOfDirectory(at: site)
-        var index = 0
-        while index < packages.count {
-            let candidate = packages[index].appendingPathComponent("server/build/main.js")
-            if fileExists(candidate) {
-                return candidate
-            }
-            index += 1
-        }
-        return nil
-    }
-
     private func pluginSource() -> URL? {
+        if let zip = existing(tools.shieldPlugin) {
+            return zip
+        }
         if let fromJS = nodeEntry().flatMap(pluginsBesideMainJS), fileExists(fromJS) {
             return fromJS
         }

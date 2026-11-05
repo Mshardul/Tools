@@ -3,138 +3,74 @@ import TestSupport
 import XCTest
 
 final class EnvironmentProbeTests: XCTestCase {
-    private func probe(
-        runner: FakeProcessRunner,
-        present: Set<String>,
-        searchPaths: [String] = ["/opt/homebrew/bin", "/usr/local/bin"]
-    ) -> EnvironmentProbe {
+    private let resources = URL(fileURLWithPath: "/bundle/Resources")
+    private let support = URL(fileURLWithPath: "/support")
+
+    private func probe(runner: FakeProcessRunner, present: Set<String>) -> EnvironmentProbe {
         EnvironmentProbe(
             runner: runner,
-            extraSearchPaths: searchPaths.map { URL(fileURLWithPath: $0) },
-            isExecutable: { url in present.contains(url.path) }
+            tools: ManagedTools(resourceRoot: resources, supportRoot: support, isExecutable: { _ in true }),
+            isExecutable: { present.contains($0.path) }
         )
     }
 
-    func test_allToolsPresent_parsesVersions() async {
-        let runner = FakeProcessRunner()
-        runner.script(.stdout("Homebrew 4.3.0\n"), forPathEndingIn: "brew")
-        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
-        runner.script(
-            .stdout("ffmpeg version 8.0 Copyright (c) 2000-2024\n"),
-            forPathEndingIn: "ffmpeg"
-        )
-        let sut = probe(
-            runner: runner,
-            present: [
-                "/opt/homebrew/bin/brew",
-                "/opt/homebrew/bin/yt-dlp",
-                "/opt/homebrew/bin/ffmpeg"
-            ]
-        )
-        let report = await sut.probe()
-        XCTAssertEqual(report.brew?.version, "4.3.0")
-        XCTAssertEqual(report.ytDlp?.version, "2025.09.26")
-        XCTAssertEqual(report.ffmpeg?.version, "8.0")
-        XCTAssertTrue(report.isReadyForDownloads)
-    }
-
-    func test_ytDlpMissing_reportsNilAndNotReady() async {
-        let runner = FakeProcessRunner()
-        runner.script(.stdout("Homebrew 4.3.0\n"), forPathEndingIn: "brew")
-        runner.script(
-            .stdout("ffmpeg version 8.0 Copyright\n"),
-            forPathEndingIn: "ffmpeg"
-        )
-        let sut = probe(
-            runner: runner,
-            present: ["/opt/homebrew/bin/brew", "/opt/homebrew/bin/ffmpeg"]
-        )
-        let report = await sut.probe()
-        XCTAssertNil(report.ytDlp)
-        XCTAssertFalse(report.isReadyForDownloads)
-    }
-
-    func test_ffmpegMalformedVersion_treatedAsMissing() async {
-        let runner = FakeProcessRunner()
-        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
-        runner.script(.stdout("garbage\n"), forPathEndingIn: "ffmpeg")
-        let sut = probe(
-            runner: runner,
-            present: ["/opt/homebrew/bin/yt-dlp", "/opt/homebrew/bin/ffmpeg"]
-        )
-        let report = await sut.probe()
-        XCTAssertNil(report.ffmpeg)
-    }
-
-    func test_firstMatchOnSearchPathWins() async {
-        let runner = FakeProcessRunner()
-        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
-        let sut = probe(
-            runner: runner,
-            present: [
-                "/opt/homebrew/bin/yt-dlp",
-                "/usr/local/bin/yt-dlp"
-            ]
-        )
-        let report = await sut.probe()
-        XCTAssertEqual(
-            report.ytDlp?.path,
-            URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp")
-        )
-    }
-
-    func test_ffprobeResolvedAsFfmpegSibling() async {
+    func test_bundledTools_parseVersions() async {
         let runner = FakeProcessRunner()
         runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
         runner.script(.stdout("ffmpeg version 8.0 Copyright\n"), forPathEndingIn: "ffmpeg")
         runner.script(.stdout("ffprobe version 8.0 Copyright\n"), forPathEndingIn: "ffprobe")
-        let sut = probe(
-            runner: runner,
-            present: [
-                "/opt/homebrew/bin/yt-dlp",
-                "/opt/homebrew/bin/ffmpeg",
-                "/opt/homebrew/bin/ffprobe"
-            ]
-        )
-        let report = await sut.probe()
-        XCTAssertEqual(report.ffprobe?.path, URL(fileURLWithPath: "/opt/homebrew/bin/ffprobe"))
+        let tools = ManagedTools(resourceRoot: resources, supportRoot: support, isExecutable: { _ in true })
+        let present = [tools.bundledYtDlp.path, tools.ffmpegURL.path, tools.ffprobeURL.path]
+        let report = await probe(runner: runner, present: Set(present)).probe()
+        XCTAssertNil(report.brew)
+        XCTAssertEqual(report.ytDlp?.version, "2025.09.26")
+        XCTAssertEqual(report.ffmpeg?.version, "8.0")
         XCTAssertEqual(report.ffprobe?.version, "8.0")
-    }
-
-    func test_ffmpegPresentNoSiblingFfprobe_reportNilButStillReady() async {
-        let runner = FakeProcessRunner()
-        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
-        runner.script(.stdout("ffmpeg version 8.0 Copyright\n"), forPathEndingIn: "ffmpeg")
-        let sut = probe(
-            runner: runner,
-            present: ["/opt/homebrew/bin/yt-dlp", "/opt/homebrew/bin/ffmpeg"]
-        )
-        let report = await sut.probe()
-        XCTAssertNil(report.ffprobe)
         XCTAssertTrue(report.isReadyForDownloads)
     }
 
-    func test_ffmpegAbsent_bothNil() async {
+    func test_updatedCopyWinsWhenNewer() async {
         let runner = FakeProcessRunner()
-        runner.script(.stdout("2025.09.26\n"), forPathEndingIn: "yt-dlp")
-        let sut = probe(runner: runner, present: ["/opt/homebrew/bin/yt-dlp"])
-        let report = await sut.probe()
-        XCTAssertNil(report.ffmpeg)
-        XCTAssertNil(report.ffprobe)
+        runner.script(.stdout("2025.01.01\n"), forExactPath: resources.appendingPathComponent("Tools/yt-dlp").path)
+        runner.script(.stdout("2026.02.02\n"), forExactPath: support.appendingPathComponent("bin/yt-dlp").path)
+        let tools = ManagedTools(resourceRoot: resources, supportRoot: support, isExecutable: { _ in true })
+        let report = await probe(
+            runner: runner,
+            present: [tools.bundledYtDlp.path, tools.updatedYtDlp.path]
+        ).probe()
+        XCTAssertEqual(report.ytDlp?.path, tools.updatedYtDlp)
+        XCTAssertEqual(report.ytDlp?.version, "2026.02.02")
     }
 
-    func test_noRealBrewOrNetwork() async {
+    func test_olderUpdate_keepsTheBundledCopy() async {
         let runner = FakeProcessRunner()
-        runner.script(.stdout("Homebrew 4.3.0\n"), forPathEndingIn: "brew")
-        let sut = probe(runner: runner, present: ["/opt/homebrew/bin/brew"])
-        _ = await sut.probe()
-        for launch in runner.launches {
-            XCTAssertTrue(
-                launch.executableURL.path.hasPrefix("/opt/homebrew/bin")
-                    || launch.executableURL.path.hasPrefix("/usr/local/bin"),
-                "unexpected launch: \(launch.executableURL.path)"
-            )
-        }
+        runner.script(.stdout("2026.02.02\n"), forExactPath: resources.appendingPathComponent("Tools/yt-dlp").path)
+        runner.script(.stdout("2025.01.01\n"), forExactPath: support.appendingPathComponent("bin/yt-dlp").path)
+        let tools = ManagedTools(resourceRoot: resources, supportRoot: support, isExecutable: { _ in true })
+        let report = await probe(
+            runner: runner,
+            present: [tools.bundledYtDlp.path, tools.updatedYtDlp.path]
+        ).probe()
+        XCTAssertEqual(report.ytDlp?.path, tools.bundledYtDlp)
+    }
+
+    func test_corruptUpdate_keepsTheBundledCopy() async {
+        let runner = FakeProcessRunner()
+        runner.script(.stdout("2025.09.26\n"), forExactPath: resources.appendingPathComponent("Tools/yt-dlp").path)
+        runner.script(.stderr("bad", exitCode: 1), forExactPath: support.appendingPathComponent("bin/yt-dlp").path)
+        let tools = ManagedTools(resourceRoot: resources, supportRoot: support, isExecutable: { _ in true })
+        let report = await probe(
+            runner: runner,
+            present: [tools.bundledYtDlp.path, tools.updatedYtDlp.path]
+        ).probe()
+        XCTAssertEqual(report.ytDlp?.path, tools.bundledYtDlp)
+    }
+
+    func test_missingDownloader_isNotReady() async {
+        let report = await probe(runner: FakeProcessRunner(), present: []).probe()
+        XCTAssertNil(report.ytDlp)
+        XCTAssertNil(report.ffmpeg)
+        XCTAssertFalse(report.isReadyForDownloads)
     }
 
     func test_environmentReport_driftVerdict_nilWhenYtDlpMissing() {
@@ -143,13 +79,13 @@ final class EnvironmentProbeTests: XCTestCase {
     }
 
     func test_environmentReport_driftVerdict_currentWhenAtOrAboveMinimum() {
-        let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2099.01.01")
+        let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/bundle/Tools/yt-dlp"), version: "2099.01.01")
         let report = EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: nil)
         XCTAssertEqual(report.ytDlpDriftVerdict, .current)
     }
 
     func test_environmentReport_driftVerdict_driftWhenBelowMinimum() {
-        let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2000.01.01")
+        let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/bundle/Tools/yt-dlp"), version: "2000.01.01")
         let report = EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: nil)
         guard case .drift = report.ytDlpDriftVerdict else {
             XCTFail("expected drift verdict, got \(String(describing: report.ytDlpDriftVerdict))")
