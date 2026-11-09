@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>MediaGrabber</title>
+    <link>https://mshardul.github.io/Tools/media-grabber/appcast.xml</link>
+    <description>MediaGrabber updates</description>
+    <language>en</language>
+    <item>
+      <title>Version 0.1.1</title>
+      <pubDate>Mon, 09 Nov 2026 17:49:23 GMT</pubDate>
+      <sparkle:version>0.1.1</sparkle:version>
+      <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure url="https://github.com/Mshardul/Tools/releases/download/media-grabber-v0.1.1/MediaGrabber-0.1.1.dmg" sparkle:edSignature="4zNbeBCvwGb96F01yhO2S1wW/vH7YuToK3Fntl3vnav0gB0TgdCuALhHxbTg3EZNAw1KslnIDF202A8Wv5P9Ag==" length="101430370" type="application/octet-stream"/>
+      <sparkle:releaseNotesLink>https://github.com/Mshardul/Tools/releases/tag/media-grabber-v0.1.1</sparkle:releaseNotesLink>
+    </item>
+  </channel>
+</rss>
