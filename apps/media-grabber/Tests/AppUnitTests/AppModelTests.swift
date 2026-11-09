@@ -326,7 +326,7 @@ extension AppModelTests {
         await model.restartYtDlp()
 
         XCTAssertEqual(model.toastCenter.items.count, 1)
-        XCTAssertTrue(model.toastCenter.items.first?.text.contains("network unreachable") ?? false)
+        XCTAssertEqual(model.toastCenter.items.first?.text, "Couldn't update the downloader.")
     }
 
     func test_restartYtDlp_onSuccess_doesNotToast() async {

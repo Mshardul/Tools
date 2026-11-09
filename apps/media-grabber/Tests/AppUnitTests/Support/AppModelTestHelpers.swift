@@ -19,7 +19,9 @@ enum AppModelTestHelpers {
         ytDlpUpdater: YtDlpUpdating? = nil,
         appUpdateChecker: AppUpdateChecker? = nil,
         appVersion: String = "0.0.0",
-        onboardingCompleted: Bool = true
+        onboardingCompleted: Bool = true,
+        bundleURL: URL = Bundle.main.bundleURL,
+        homeURL: URL = FileManager.default.homeDirectoryForCurrentUser
     ) -> AppModel {
         defaults.set(onboardingCompleted, forKey: "mg.hasCompletedOnboarding")
         if let persistence {
@@ -42,6 +44,8 @@ enum AppModelTestHelpers {
             openURLSink: openURLSink,
             appUpdateChecker: appUpdateChecker ?? AppUpdateChecker(),
             appVersion: appVersion,
+            bundleURL: bundleURL,
+            homeURL: homeURL,
             engineJobLogDir: engineJobLogDir ?? logDirectory,
             persistence: persistence
         )

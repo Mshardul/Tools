@@ -20,7 +20,8 @@ jobs:
   lint:
     # SwiftFormat and SwiftLint do not need Xcode. Keep this off macos-15 so a
     # Mac runner shortage cannot fail the workflow before tuist test starts.
-    runs-on: ubuntu-latest
+    # ubuntu-latest is 26.04, whose libxml2 the pinned SwiftLint binary cannot load.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
