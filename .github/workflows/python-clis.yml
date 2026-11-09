@@ -84,4 +84,5 @@ jobs:
             pip install -r requirements.txt
           fi
           pip install pytest
-      - run: pytest
+      # The pytest script leaves the leaf off sys.path once the repo pyproject is the config root.
+      - run: python -m pytest
