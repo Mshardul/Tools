@@ -96,15 +96,19 @@ jobs:
           TUIST_SPARKLE_PUBLIC_KEY: ${{ vars.MG_SPARKLE_PUBLIC_KEY }}
         run: |
           mise exec -- tuist generate --no-open
-          mise exec -- tuist build --configuration Release MediaGrabber
+          xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            -derivedDataPath build \
+            build
 
       - name: Locate and sign the app
         id: app
         env:
           MG_SIGN_IDENTITY: ${{ vars.MG_SIGN_IDENTITY }}
         run: |
-          app="$(find . -name 'MediaGrabber.app' -path '*Release*' -type d | head -1)"
-          test -n "$app" || { echo "MediaGrabber.app not found" >&2; exit 1; }
+          app="build/Build/Products/Release/MediaGrabber.app"
+          test -d "$app" || { echo "MediaGrabber.app not found at $app" >&2; exit 1; }
           # notarization + --options runtime slot in here together, later
           scripts/sign-app.sh "$app" "${MG_SIGN_IDENTITY:--}"
           tools="$app/Contents/Resources/Tools"

@@ -39,7 +39,9 @@ final class AppModelUpdatesTests: XCTestCase {
             logDirectory: logDirectory,
             openURLSink: opener,
             appUpdateChecker: AppUpdateChecker(client: FakeReleases(tag: latestTag)),
-            appVersion: appVersion
+            appVersion: appVersion,
+            bundleURL: URL(fileURLWithPath: "/Applications/MediaGrabber.app"),
+            homeURL: URL(fileURLWithPath: "/Users/ada", isDirectory: true)
         )
     }
 

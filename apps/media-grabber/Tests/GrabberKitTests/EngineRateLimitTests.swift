@@ -30,6 +30,22 @@ final class EngineRateLimitTests: XCTestCase {
         }
     }
 
+    // The wake's deadline is read when it arms, so one early clock advance leaves it in the future.
+    private func advanceUntilLeftQueue(
+        _ collector: EventCollector,
+        _ id: UUID,
+        clock: FakeClock
+    ) async -> Bool {
+        for _ in 0 ..< 8 {
+            let started = await collector.waitForState(id, { self.hasLeftTheQueue($0) }, timeout: 0.05)
+            if started {
+                return true
+            }
+            clock.advance(by: .seconds(2))
+        }
+        return false
+    }
+
     private let rl429 = FakeProcessRunner.Script.stderr(
         "ERROR: HTTP Error 429: Too Many Requests", exitCode: 1
     )
@@ -123,15 +139,12 @@ final class EngineRateLimitTests: XCTestCase {
         let cooling = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=a"))
         _ = await collector.waitForState(cooling) { self.isCooldown($0) }
         let waiting = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=b"))
-        XCTAssertEqual(job(collector, waiting)?.state, .queued)
+        let queued = await collector.waitForState(waiting) { $0 == .queued }
+        XCTAssertTrue(queued)
 
         await engine.cancel(cooling)
-        // The replacement wake is armed on a task. Let it register before the clock moves.
-        try? await Task.sleep(for: .milliseconds(30))
-        clock.advance(by: .seconds(2))
-        try? await Task.sleep(for: .milliseconds(30))
 
-        let started = await collector.waitForState(waiting) { self.hasLeftTheQueue($0) }
+        let started = await advanceUntilLeftQueue(collector, waiting, clock: clock)
         XCTAssertTrue(started)
     }
 
@@ -156,12 +169,10 @@ final class EngineRateLimitTests: XCTestCase {
         clock.advance(by: .seconds(2))
         try? await Task.sleep(for: .milliseconds(30))
         _ = await collector.waitForState(cooling) { self.isFailed($0) }
-        XCTAssertEqual(job(collector, waiting)?.state, .queued)
+        let stillQueued = await collector.waitForState(waiting) { $0 == .queued }
+        XCTAssertTrue(stillQueued)
 
-        try? await Task.sleep(for: .milliseconds(30))
-        clock.advance(by: .seconds(2))
-        try? await Task.sleep(for: .milliseconds(30))
-        let started = await collector.waitForState(waiting) { self.hasLeftTheQueue($0) }
+        let started = await advanceUntilLeftQueue(collector, waiting, clock: clock)
         XCTAssertTrue(started)
     }
 
