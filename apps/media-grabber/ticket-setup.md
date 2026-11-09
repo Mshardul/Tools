@@ -66,6 +66,7 @@ A ticket has the one component that holds most of its change.
 | --- | --- | --- |
 | `visual-fidelity` | The app looks and reads as the design system and mockups specify. | active |
 | `code-health` | Code, logs and docs say and do what they claim. | active |
+| `grab-details` | What a grab will save, and opening the saved file. | active |
 
 ## Priority
 
