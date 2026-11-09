@@ -139,7 +139,8 @@ final class EngineRateLimitTests: XCTestCase {
         let cooling = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=a"))
         _ = await collector.waitForState(cooling) { self.isCooldown($0) }
         let waiting = await submitJob(engine, Fix.request(url: "https://youtube.com/watch?v=b"))
-        XCTAssertEqual(job(collector, waiting)?.state, .queued)
+        let queued = await collector.waitForState(waiting) { $0 == .queued }
+        XCTAssertTrue(queued)
 
         await engine.cancel(cooling)
 
@@ -168,7 +169,8 @@ final class EngineRateLimitTests: XCTestCase {
         clock.advance(by: .seconds(2))
         try? await Task.sleep(for: .milliseconds(30))
         _ = await collector.waitForState(cooling) { self.isFailed($0) }
-        XCTAssertEqual(job(collector, waiting)?.state, .queued)
+        let stillQueued = await collector.waitForState(waiting) { $0 == .queued }
+        XCTAssertTrue(stillQueued)
 
         let started = await advanceUntilLeftQueue(collector, waiting, clock: clock)
         XCTAssertTrue(started)
