@@ -73,8 +73,8 @@ let project = Project(
                 "PRIVACY.md",
                 "Resources/Fonts/**",
                 "Resources/AppIcon.icns",
-                "Resources/Tools/**",
-                "Resources/Shield/**",
+                .folderReference(path: "Resources/Tools"),
+                .folderReference(path: "Resources/Shield"),
                 "Resources/NOTICES.md"
             ],
             dependencies: [

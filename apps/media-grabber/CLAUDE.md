@@ -57,6 +57,7 @@ Every planning conversation decides, per item raised: IN this phase, or DEFERRED
 
 - Aurora uses Sora, IBM Plex Sans (Regular, Medium, SemiBold), and JetBrains Mono. Tape Deck uses Bricolage Grotesque (Regular, Bold, ExtraBold), DM Sans (Regular, Medium, Bold), and DM Mono (Regular, Medium). Inter stays vendored. All live under `Resources/Fonts/<Family>/` and are registered via `ATSApplicationFontsPath` in `Project.swift`'s `infoPlist`. Each family's OFL license is alongside its font file (`<Family>/<Family>-OFL.txt`) — filenames are family-prefixed because Tuist flattens `resources:` globs into one `Contents/Resources/` directory, so bare `OFL.txt` files would collide.
 - `ATSApplicationFontsPath` is `"."` (the bundle's `Resources/` root), not a `Fonts` subdirectory — the same flattening means the font files land directly in `Resources/`, not `Resources/Fonts/`.
+- `Resources/Tools` and `Resources/Shield` are `.folderReference`s, not globs: `ManagedTools` resolves `Tools/yt-dlp` and `Shield/server/build/main.js`, and the Shield server needs its tree intact.
 
 ## Code style
 
