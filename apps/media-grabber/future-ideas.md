@@ -17,3 +17,7 @@ Related today: the reason on the row (mg-018) and Restart on every failed row (m
 ## Declined for Phase 17
 
 Subtitles and embed, a menu-bar extra, schedules, stats, bandwidth graphs, a light and dark variant of each skin, and a compact breakpoint. Looked at while scoping site and identity work, and left unscheduled.
+
+### A permissively licensed replacement for the sign-in helper
+
+The bundled YouTube sign-in helper (bgutil-ytdlp-pot-provider) is GPL-3.0, so the app ships it as a separate program with its licence text and source, and that is the only copyleft piece in the app. Its token generation is the MIT library `bgutils-js` (https://github.com/LuanRT/BgUtils) plus `youtubei.js` (MIT). A small server and a yt-dlp plugin written on those two would be MIT and keep the app free of copyleft, at the cost of owning the upkeep when YouTube changes its checks. `yt-dlp-getpot-wpc` (MIT) is not a fit because it needs a visible browser. Decide when the app is sold or distributed more widely.

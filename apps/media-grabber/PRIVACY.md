@@ -9,8 +9,8 @@ The app only talks to the network for the things listed here.
 - **Sites you download from.** `yt-dlp` fetches the video or audio you asked for, directly from the site.
 - **Link lookups.** When you paste a link, or the app picks one up from your clipboard, `yt-dlp` asks that site for the title and available formats.
 - **Setup check.** The first-run check and Diagnostics → Run check read a public test video on archive.org to confirm downloading works.
-- **Update check.** If "Check for app updates automatically" is on, the app asks GitHub for the latest release when it starts. About → Check for updates does the same when you press it. GitHub sees your network address like any web request. Turn the automatic check off in Preferences → Updates.
-- **Installing tools.** First-run setup and the downloader's Update button use Homebrew to install `yt-dlp`, `ffmpeg` and Node. The bot-check helper is downloaded from GitHub and built with npm.
+- **App update check.** If "Check for app updates automatically" is on, the app reads an update list from GitHub Pages about once a day. MediaGrabber → Check for Updates… does the same when you choose it. A new version is downloaded from GitHub only after you accept it. GitHub sees your network address like any web request. Turn the automatic check off in Preferences → Updates.
+- **Downloader updates.** `yt-dlp` ships inside the app. When its automatic update is on, or when you press Update in Preferences → Updates, the app downloads the newest `yt-dlp` from GitHub and checks it before using it.
 - **Bot-check helper.** It runs on your Mac and answers only on `127.0.0.1`. It contacts YouTube while preparing its token.
 
 Nothing else is sent anywhere.

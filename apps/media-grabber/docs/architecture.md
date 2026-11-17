@@ -68,6 +68,9 @@ flowchart TB
 | `LogWriter` / `JobLog` | — | Structured `LogEvent` stream + one raw transcript file per job. `Logging/`. |
 | `PotProviderProcess` | `actor` | Owns the bot-check "shield" child process. State machine detail: `docs/state-flow.md` §3. `PotProvider/`. |
 | `CookieResolver` | pure `struct` | Resolves the chosen browser to a yt-dlp argument; resolves to nothing when no browser is chosen. `Cookies/`. |
+| `ManagedTools` | `struct` | The one answer to "where is this tool": `ffmpeg`, `ffprobe` and `node` resolve to the bundled copy, `yt-dlp` to the newer of the bundled and the updated copy in Application Support. No `PATH` or Homebrew lookup anywhere. `Tools/`. |
+| `YtDlpUpdater` | `struct` | Fetches the newest `yt-dlp`, verifies its checksum, installs it atomically and keeps the previous copy on any failure. `Diagnostics/`. |
+| `AppFootprint` + uninstall flow | `enum` + effects | One list of everything the app writes outside its bundle; Preferences → Advanced → Uninstall removes it, then trashes the app, with no persistence flush in between. `App/`. |
 | `SignInPolicy` | pure `enum` | Decides from error class, host and whether a browser is chosen whether a failure earns a sign-in suggestion. `Cookies/`. |
 
 **App**
@@ -77,6 +80,7 @@ flowchart TB
 | `IncomingLinkController` | `@MainActor @Observable` | Owns every external URL ingress (clipboard, drag, Services, `mediagrabber://`) for the app's life. `App/Ingress/`. |
 | `AppModel` | `@MainActor @Observable` | The app's view-model. Split across `AppModel.swift` (core, consumer loop), `AppModelPlaylist.swift`, `AppModelRowActions.swift`, `AppModelDialogs.swift`, `AppModel+Banner.swift`, `AppModelIncomingLink.swift`. |
 | `RowStore` / `RowModel` | `@MainActor @Observable` | Converts `QueueEvent` into filtered, sorted, diffed UI rows. `App/Rows/`. |
+| `AppUpdating` | protocol | Wraps Sparkle: automatic-check toggle, Check for Updates…, disabled with an explanation when the app runs from a place it cannot replace itself (`InstallLocation`). `App/About/`. |
 | `HealthController` | `@MainActor @Observable` | Derives `HealthChip`s (shield / online / host-rate) from `QueueSnapshot`. `App/Chrome/`. |
 | `BannerResolver` | pure functions | Priority-resolves the one banner shown, if any (`depMissing > networkDown > circuitOpen > potProviderDown`). `App/Chrome/BannerResolver.swift`. |
 
