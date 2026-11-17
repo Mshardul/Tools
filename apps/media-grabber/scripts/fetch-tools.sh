@@ -2,10 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 root="$(pwd)"
-lock="$root/scripts/tools.lock"
-cache="$root/build/tool-src"
-tools="$root/Resources/Tools"
-shield="$root/Resources/Shield"
+out="${MG_TOOLS_OUT:-$root}"
+lock="${MG_TOOLS_LOCK:-$root/scripts/tools.lock}"
+cache="$out/build/tool-src"
+tools="$out/Resources/Tools"
+shield="$out/Resources/Shield"
 mkdir -p "$cache" "$tools" "$shield"
 
 field() {
@@ -81,7 +82,7 @@ if [ ! -x "$tools/ffmpeg" ] || [ ! -x "$tools/ffprobe" ] || [ "$(cat "$stamp" 2>
   printf '%s\n' "$ffmpeg_sha" > "$stamp"
 fi
 
-if [ ! -f "$shield/server/build/main.js" ]; then
+if [ ! -f "$shield/server/build/main.js" ] || [ ! -d "$shield/server/node_modules/express" ]; then
   fetch shield-source "$cache/shield.tar.gz"
   rm -rf "$cache/shield-src"
   mkdir -p "$cache/shield-src"
@@ -91,8 +92,13 @@ if [ ! -f "$shield/server/build/main.js" ]; then
     cd "$cache/shield-src/server"
     npm ci
     npx tsc
+    npm prune --omit=dev
+    # canvas is optional for jsdom and tokens work without it; it drags in dozens of native libraries
+    rm -rf node_modules/canvas
   )
+  rm -rf "$shield/server"
   mkdir -p "$shield/server"
-  rm -rf "$shield/server/build"
   cp -R "$cache/shield-src/server/build" "$shield/server/build"
+  cp -R "$cache/shield-src/server/node_modules" "$shield/server/node_modules"
+  cp "$cache/shield-src/server/package.json" "$shield/server/package.json"
 fi

@@ -20,7 +20,7 @@ extension AppModel {
 
     func restartYtDlp() async {
         healthController.markBusy(chipID: "engine")
-        let result = await ytDlpUpdater.reinstallToMinimum()
+        let result = await ytDlpUpdater.updateToLatest()
         let report = await envProbe.probe()
         setLatestEnvironmentReport(report)
         let snapshot = await engine.currentSnapshot()

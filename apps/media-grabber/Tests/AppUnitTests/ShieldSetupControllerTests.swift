@@ -8,15 +8,12 @@ final class ShieldSetupControllerTests: XCTestCase {
     private func installer(
         runner: FakeProcessRunner = FakeProcessRunner(),
         alreadyBuilt: Bool = true,
-        nodeInstalled: Bool = true,
-        brew: Bool = true
+        nodeInstalled: Bool = true
     ) -> ShieldInstaller {
         ShieldInstaller(
             runner: runner,
             home: URL(fileURLWithPath: "/Users/tester"),
-            isExecutable: {
-                ($0 == "/opt/homebrew/bin/node" && nodeInstalled) || ($0 == "/opt/homebrew/bin/brew" && brew)
-            },
+            isExecutable: { $0 == "/opt/homebrew/bin/node" && nodeInstalled },
             fileExists: { _ in alreadyBuilt },
             prepareDirectory: { _ in },
             removeItem: { _ in }
@@ -58,7 +55,7 @@ final class ShieldSetupControllerTests: XCTestCase {
     }
 
     func test_missingHelper_reportsFailure() async {
-        let sut = controller(installer: installer(alreadyBuilt: false, nodeInstalled: false, brew: false))
+        let sut = controller(installer: installer(alreadyBuilt: false, nodeInstalled: false))
         await sut.run()
         XCTAssertEqual(sut.state, .failed(detail: "This copy of the app doesn't include the YouTube check."))
     }

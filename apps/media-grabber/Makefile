@@ -7,10 +7,16 @@ INSTALLED := /Applications/$(APP_NAME).app
 LSREGISTER := /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
 
 .DEFAULT_GOAL := run
-.PHONY: generate build install drop-build-app run plugin-test test lint tools release release-patch release-minor release-major
+.PHONY: generate build install drop-build-app run plugin-test test lint tools tools-test appcast-test release release-patch release-minor release-major
 
 tools:
 	scripts/fetch-tools.sh
+
+tools-test:
+	scripts/tests/test_fetch_tools.sh
+
+appcast-test:
+	scripts/tests/test_appcast.sh $(PY)
 
 generate:
 	mise exec -- tuist generate --no-open
@@ -51,7 +57,7 @@ plugin-test:
 	$(PY) -I -B -m unittest discover -s Tests/PluginTests -p 'test_*.py'
 
 # make test [ONLY=AppUnitTests/SomeSuite]; builds into the same build/ dir as `make`, never DerivedData.
-test: plugin-test generate
+test: plugin-test tools-test appcast-test generate
 	xcodebuild -workspace $(APP_NAME).xcworkspace -scheme $(APP_NAME)-Workspace \
 		-destination 'platform=macOS' \
 		-derivedDataPath $(DERIVED) \

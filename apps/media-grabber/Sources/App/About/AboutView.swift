@@ -7,35 +7,24 @@ import SwiftUI
 final class AboutViewModel {
     let currentAppVersion: String
     private(set) var environmentReport: EnvironmentReport
-    private(set) var appUpdateStatus: AppUpdateStatus = .notChecked
-    private(set) var isCheckingAppUpdate = false
-    private(set) var isReinstallingYtDlp = false
+    private(set) var isUpdatingYtDlp = false
 
-    private let updateChecker: AppUpdateChecker
     private let ytDlpUpdater: YtDlpUpdating
 
     init(
         currentAppVersion: String,
         environmentReport: EnvironmentReport,
-        updateChecker: AppUpdateChecker,
         ytDlpUpdater: YtDlpUpdating
     ) {
         self.currentAppVersion = currentAppVersion
         self.environmentReport = environmentReport
-        self.updateChecker = updateChecker
         self.ytDlpUpdater = ytDlpUpdater
     }
 
-    func checkForAppUpdate() async {
-        isCheckingAppUpdate = true
-        defer { isCheckingAppUpdate = false }
-        appUpdateStatus = await updateChecker.checkForUpdate(currentVersion: currentAppVersion)
-    }
-
-    func reinstallYtDlp() async {
-        isReinstallingYtDlp = true
-        defer { isReinstallingYtDlp = false }
-        _ = await ytDlpUpdater.reinstallToMinimum()
+    func updateYtDlp() async {
+        isUpdatingYtDlp = true
+        defer { isUpdatingYtDlp = false }
+        _ = await ytDlpUpdater.updateToLatest()
     }
 }
 
@@ -89,8 +78,7 @@ struct AboutView: View {
     private func makeModel() -> AboutViewModel {
         AboutViewModel(
             currentAppVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0",
-            environmentReport: appModel.latestEnvironmentReport ?? .init(brew: nil, ytDlp: nil, ffmpeg: nil),
-            updateChecker: AppUpdateChecker(),
+            environmentReport: appModel.latestEnvironmentReport ?? .init(ytDlp: nil, ffmpeg: nil),
             ytDlpUpdater: appModel.ytDlpUpdater
         )
     }
@@ -167,7 +155,7 @@ private struct AboutTabView: View {
             HStack(spacing: Spacing.s2) {
                 statusText("\(installed) · update available", verdict: .warn)
                 Button {
-                    Task { await model.reinstallYtDlp() }
+                    Task { await model.updateYtDlp() }
                 } label: {
                     Label("Update", systemImage: "arrow.clockwise")
                         .font(theme.bodyFont(11, .semibold))
@@ -180,7 +168,7 @@ private struct AboutTabView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .disabled(model.isReinstallingYtDlp)
+                .disabled(model.isUpdatingYtDlp)
             }
         }
     }
@@ -207,7 +195,11 @@ private struct AboutTabView: View {
         aboutRow(
             title: "Included tools",
             subtitle: "The downloader, media tools, Node, and the YouTube check are part of the app.",
-            trailing: AnyView(EmptyView())
+            trailing: AnyView(
+                textButton("Read licenses") {
+                    appModel.openNotices()
+                }
+            )
         )
     }
 

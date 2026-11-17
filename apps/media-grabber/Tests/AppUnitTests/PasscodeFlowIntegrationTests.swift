@@ -83,7 +83,6 @@ final class PasscodeFlowIntegrationTests: XCTestCase {
             notificationRouter: FakeNotificationRouter(),
             revealSink: FakeRevealSink(),
             openURLSink: FakeOpenURLSink(),
-            appUpdateChecker: AppUpdateChecker(),
             appVersion: "0.0.0",
             engineJobLogDir: logDir,
             persistence: nil

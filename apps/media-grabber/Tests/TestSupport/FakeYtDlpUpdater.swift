@@ -12,7 +12,7 @@ public final class FakeYtDlpUpdater: YtDlpUpdating, @unchecked Sendable {
         box.mutate { $0 = result }
     }
 
-    public func reinstallToMinimum() async -> YtDlpUpdateResult {
+    public func updateToLatest() async -> YtDlpUpdateResult {
         box.read { $0 }
     }
 }

@@ -91,7 +91,6 @@ final class AppModel {
     let persistence: (any QueuePersisting)?
     let revealSink: RevealSink
     let openURLSink: OpenURLSink
-    let appUpdateChecker: AppUpdateChecker
     let appUpdating: any AppUpdating
     let appVersion: String
     let bundleURL: URL
@@ -113,7 +112,6 @@ final class AppModel {
         notificationRouter: any NotificationRouting = NotificationRouter(),
         revealSink: RevealSink = WorkspaceRevealSink(),
         openURLSink: OpenURLSink = WorkspaceOpenURLSink(),
-        appUpdateChecker: AppUpdateChecker = AppUpdateChecker(),
         appUpdating: any AppUpdating = IdleAppUpdating(),
         shieldInstaller: ShieldInstaller = ShieldInstaller(),
         appVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.0.0",
@@ -137,7 +135,6 @@ final class AppModel {
         self.notificationRouter = notificationRouter
         self.revealSink = revealSink
         self.openURLSink = openURLSink
-        self.appUpdateChecker = appUpdateChecker
         self.appUpdating = appUpdating
         shieldSetup = ShieldSetupController(
             installer: shieldInstaller,

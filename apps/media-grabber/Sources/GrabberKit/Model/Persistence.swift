@@ -67,6 +67,7 @@ public protocol QueuePersisting: Sendable {
     func saveColumns(_ config: ColumnConfig)
     func savePlaylistGroups(_ groups: [PersistedPlaylistGroup])
     func flushNow() async
+    func disableWrites()
     func loadQueue() -> [PersistedJob]
     func loadHistory() -> [PersistedJob]
     func loadColumns() -> ColumnConfig?
@@ -92,6 +93,7 @@ public final class Persistence: QueuePersisting {
     private let pending = Locked(Pending())
     private let lastQueueJobs = Locked<[PersistedJob]?>(nil)
     private let lastPlaylistGroups = Locked<[PersistedPlaylistGroup]?>(nil)
+    private let writesDisabled = Locked(false)
     private let writer: Writer
     private let saveFailed = Locked<(@Sendable (String) -> Void)?>(nil)
 
@@ -123,23 +125,33 @@ public final class Persistence: QueuePersisting {
 
     // MARK: - Saves (synchronous stash + debounced write)
 
+    public func disableWrites() {
+        writesDisabled.mutate { $0 = true }
+        debounceTask.read { $0 }?.cancel()
+        pending.mutate { $0 = Pending() }
+    }
+
     public func saveQueue(_ jobs: [PersistedJob]) {
+        guard !writesDisabled.read({ $0 }) else { return }
         pending.mutate { $0.queue = jobs }
         lastQueueJobs.mutate { $0 = jobs }
         armDebounce()
     }
 
     public func saveHistory(_ jobs: [PersistedJob]) {
+        guard !writesDisabled.read({ $0 }) else { return }
         pending.mutate { $0.history = Self.cappedHistory(jobs) }
         armDebounce()
     }
 
     public func saveColumns(_ config: ColumnConfig) {
+        guard !writesDisabled.read({ $0 }) else { return }
         pending.mutate { $0.columns = config }
         armDebounce()
     }
 
     public func savePlaylistGroups(_ groups: [PersistedPlaylistGroup]) {
+        guard !writesDisabled.read({ $0 }) else { return }
         pending.mutate { $0.groups = groups }
         lastPlaylistGroups.mutate { $0 = groups }
         armDebounce()
@@ -165,6 +177,7 @@ public final class Persistence: QueuePersisting {
     }
 
     private func writePending() async {
+        guard !writesDisabled.read({ $0 }) else { return }
         let snapshot: Pending = pending.mutate { current in
             let taken = current
             current = Pending()

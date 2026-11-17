@@ -162,7 +162,6 @@ final class HealthControllerTests: XCTestCase {
     func testEngineChipCurrentVersionShowsOkChip() {
         let controller = HealthController()
         let report = EnvironmentReport(
-            brew: nil,
             ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2099.01.01"),
             ffmpeg: nil
         )
@@ -175,7 +174,6 @@ final class HealthControllerTests: XCTestCase {
     func testEngineChipDriftedVersionShowsAttentionWithRefresh() {
         let controller = HealthController()
         let report = EnvironmentReport(
-            brew: nil,
             ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2000.01.01"),
             ffmpeg: nil
         )
@@ -190,7 +188,6 @@ final class HealthControllerTests: XCTestCase {
         // Unparseable version reads as unknown, never as stale — never a false-alarm chip.
         let controller = HealthController()
         let report = EnvironmentReport(
-            brew: nil,
             ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "nightly"),
             ffmpeg: nil
         )

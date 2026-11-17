@@ -179,6 +179,7 @@ public struct NoopPersisting: QueuePersisting {
     public func saveColumns(_: ColumnConfig) {}
     public func savePlaylistGroups(_: [PersistedPlaylistGroup]) {}
     public func flushNow() async {}
+    public func disableWrites() {}
     public func loadQueue() -> [PersistedJob] {
         []
     }

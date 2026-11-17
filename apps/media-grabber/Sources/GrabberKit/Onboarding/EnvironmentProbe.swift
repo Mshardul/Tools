@@ -11,14 +11,12 @@ public struct ToolInfo: Sendable, Equatable {
 }
 
 public struct EnvironmentReport: Sendable, Equatable {
-    public let brew: ToolInfo?
     public let ytDlp: ToolInfo?
     public let ffmpeg: ToolInfo?
     // Resolved from the ffmpeg location, not a PATH search; a missing ffprobe degrades IntegrityCheck, never blocks.
     public let ffprobe: ToolInfo?
 
-    public init(brew: ToolInfo?, ytDlp: ToolInfo?, ffmpeg: ToolInfo?, ffprobe: ToolInfo? = nil) {
-        self.brew = brew
+    public init(ytDlp: ToolInfo?, ffmpeg: ToolInfo?, ffprobe: ToolInfo? = nil) {
         self.ytDlp = ytDlp
         self.ffmpeg = ffmpeg
         self.ffprobe = ffprobe
@@ -64,7 +62,7 @@ public struct EnvironmentProbe: EnvironmentProbing {
         async let ffmpeg = inspect(tools.ffmpegURL, arguments: ["-version"], parse: Self.parseFfmpeg)
         async let ffprobe = inspect(tools.ffprobeURL, arguments: ["-version"], parse: Self.parseFfmpeg)
         let ytDlp = await Self.preferNewer(bundled, updated)
-        return await EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: ffmpeg, ffprobe: ffprobe)
+        return await EnvironmentReport(ytDlp: ytDlp, ffmpeg: ffmpeg, ffprobe: ffprobe)
     }
 
     static func preferNewer(_ bundled: ToolInfo?, _ updated: ToolInfo?) -> ToolInfo? {
@@ -103,13 +101,6 @@ public struct EnvironmentProbe: EnvironmentProbing {
         let result = await execution.result()
         guard result.exitCode == 0, let version = parse(output) else { return nil }
         return ToolInfo(path: path, version: version)
-    }
-
-    static func parseBrew(_ output: String) -> String? {
-        guard let first = firstNonEmptyLine(output) else { return nil }
-        let parts = first.split(separator: " ")
-        guard parts.count >= 2, parts[0] == "Homebrew" else { return nil }
-        return String(parts[1])
     }
 
     static func parseYtDlp(_ output: String) -> String? {

@@ -4,17 +4,20 @@ public struct ManagedTools: Sendable {
     public let resourceRoot: URL
     public let supportRoot: URL
     public let isExecutable: @Sendable (URL) -> Bool
+    public let versionOf: @Sendable (URL) -> String?
 
     public init(
         resourceRoot: URL,
         supportRoot: URL,
         isExecutable: @escaping @Sendable (URL) -> Bool = { url in
             FileManager.default.isExecutableFile(atPath: url.path)
-        }
+        },
+        versionOf: @escaping @Sendable (URL) -> String? = ManagedTools.runVersion
     ) {
         self.resourceRoot = resourceRoot
         self.supportRoot = supportRoot
         self.isExecutable = isExecutable
+        self.versionOf = versionOf
     }
 
     public static func live(
@@ -59,8 +62,8 @@ public struct ManagedTools: Sendable {
         let updated = updatedYtDlp
         guard isExecutable(updated) else { return bundled }
         guard isExecutable(bundled) else { return updated }
-        guard let bundledVersion = Self.ytDlpVersion(bundled),
-              let updatedVersion = Self.ytDlpVersion(updated),
+        guard let bundledVersion = versionOf(bundled),
+              let updatedVersion = versionOf(updated),
               let bundledParsed = DottedVersion(parsing: bundledVersion),
               let updatedParsed = DottedVersion(parsing: updatedVersion),
               updatedParsed > bundledParsed
@@ -68,7 +71,7 @@ public struct ManagedTools: Sendable {
         return updated
     }
 
-    private static func ytDlpVersion(_ url: URL) -> String? {
+    public static func runVersion(_ url: URL) -> String? {
         let process = Process()
         process.executableURL = url
         process.arguments = ["--version"]

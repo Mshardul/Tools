@@ -54,6 +54,7 @@ public enum UninstallCopy {
 
 public protocol UninstallEffects: Sendable {
     func shutdown() async
+    func stopSaving()
     func deleteFootprint() throws
     func clearPreferences()
     func trashBundle() throws
@@ -62,6 +63,7 @@ public protocol UninstallEffects: Sendable {
 public enum UninstallSequence {
     public static func run(_ effects: any UninstallEffects) async -> UninstallResult {
         await effects.shutdown()
+        effects.stopSaving()
         do {
             try effects.deleteFootprint()
         } catch {

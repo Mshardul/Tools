@@ -102,17 +102,6 @@ enum AppModelDialogs {
         )
     }
 
-    static func updateAvailable(version: String, current: String) -> ConfirmationRequest {
-        ConfirmationRequest(
-            title: "MediaGrabber \(version) is available",
-            message: "You have \(current). Download the new version? Quit and replace the app to update.",
-            confirmTitle: "Download",
-            cancelTitle: "Later",
-            isDestructive: false,
-            suppressionKey: nil
-        )
-    }
-
     static func batchCancelConfirmation() -> ConfirmationRequest {
         ConfirmationRequest(
             title: "Cancel selected downloads?",

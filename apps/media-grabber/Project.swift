@@ -52,6 +52,7 @@ let project = Project(
         base: [
             "SWIFT_VERSION": "6.0",
             "MACOSX_DEPLOYMENT_TARGET": "14.0",
+            "ARCHS": "arm64",
             "MARKETING_VERSION": .string(mgVersion),
             "CURRENT_PROJECT_VERSION": .string(mgVersion)
         ],

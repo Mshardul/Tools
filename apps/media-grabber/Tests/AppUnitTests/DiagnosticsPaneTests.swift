@@ -46,7 +46,6 @@ final class DiagnosticsPaneTests: XCTestCase {
         let model = DiagnosticsPaneModel(
             metadataProbe: FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny")),
             environmentProbe: FakeEnvironmentProbe(EnvironmentReport(
-                brew: nil,
                 ytDlp: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/yt-dlp"), version: "2000.01.01"),
                 ffmpeg: ToolInfo(path: URL(fileURLWithPath: "/opt/homebrew/bin/ffmpeg"), version: "8.0")
             )),
@@ -156,7 +155,7 @@ final class DiagnosticsPaneTests: XCTestCase {
         XCTAssertTrue(home.appliedURLs.isEmpty)
     }
 
-    func test_reinstallYtDlp_rerunsCheckAfterUpdate() async {
+    func test_updateYtDlp_rerunsCheckAfterUpdate() async {
         let updater = FakeYtDlpUpdater()
         let model = DiagnosticsPaneModel(
             metadataProbe: FakeMetadataProbe(default: FakeMetadataProbe.success(title: "Big Buck Bunny")),
@@ -164,7 +163,7 @@ final class DiagnosticsPaneTests: XCTestCase {
             ytDlpUpdater: updater,
             sharePresenter: SpySharePresenter()
         )
-        await model.reinstallYtDlp()
+        await model.updateYtDlp()
         XCTAssertEqual(model.canaryResult, .passed)
     }
 }

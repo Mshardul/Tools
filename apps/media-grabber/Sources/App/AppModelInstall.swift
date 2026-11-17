@@ -18,6 +18,11 @@ extension AppModel {
         appUpdating.start(automaticChecks: prefs.autoCheckAppUpdates)
     }
 
+    func openNotices(in bundle: Bundle = .main) {
+        guard let notices = bundle.url(forResource: "NOTICES", withExtension: "md") else { return }
+        openURLSink.open(notices)
+    }
+
     func setAutomaticUpdateChecks(_ enabled: Bool) {
         appUpdating.setAutomaticChecks(enabled)
     }
@@ -75,6 +80,7 @@ extension AppModel {
         stopConsumer()
         let effects = LiveUninstallEffects(
             engine: engine,
+            persistence: persistence,
             homeURL: homeURL,
             bundleURL: bundleURL,
             defaults: defaults
@@ -103,17 +109,20 @@ extension AppModel {
 
 private final class LiveUninstallEffects: UninstallEffects, @unchecked Sendable {
     private let engine: any DownloadEngineProtocol
+    private let persistence: (any QueuePersisting)?
     private let homeURL: URL
     private let bundleURL: URL
     private let defaults: UserDefaults
 
     init(
         engine: any DownloadEngineProtocol,
+        persistence: (any QueuePersisting)?,
         homeURL: URL,
         bundleURL: URL,
         defaults: UserDefaults
     ) {
         self.engine = engine
+        self.persistence = persistence
         self.homeURL = homeURL
         self.bundleURL = bundleURL
         self.defaults = defaults
@@ -121,6 +130,10 @@ private final class LiveUninstallEffects: UninstallEffects, @unchecked Sendable 
 
     func shutdown() async {
         await engine.shutdown()
+    }
+
+    func stopSaving() {
+        persistence?.disableWrites()
     }
 
     func deleteFootprint() throws {

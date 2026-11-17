@@ -37,7 +37,6 @@ public final class FakeEnvironmentProbe: EnvironmentProbing, @unchecked Sendable
 
 public extension EnvironmentReport {
     static func with(
-        brew: Bool = false,
         ytDlp: Bool = false,
         ffmpeg: Bool = false,
         ffprobe: Bool = false
@@ -48,7 +47,6 @@ public extension EnvironmentReport {
                 : nil
         }
         return EnvironmentReport(
-            brew: tool("brew", brew),
             ytDlp: tool("yt-dlp", ytDlp),
             ffmpeg: tool("ffmpeg", ffmpeg),
             ffprobe: tool("ffprobe", ffprobe)

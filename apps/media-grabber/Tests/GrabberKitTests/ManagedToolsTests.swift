@@ -27,4 +27,56 @@ final class ManagedToolsTests: XCTestCase {
         )
         XCTAssertEqual(tools.ytDlpURL(), bundled)
     }
+
+    private let bundled = URL(fileURLWithPath: "/bundle/Tools/yt-dlp")
+    private let updated = URL(fileURLWithPath: "/support/bin/yt-dlp")
+
+    private func tools(
+        executable: Set<URL>,
+        versions: [URL: String]
+    ) -> ManagedTools {
+        ManagedTools(
+            resourceRoot: URL(fileURLWithPath: "/bundle"),
+            supportRoot: URL(fileURLWithPath: "/support"),
+            isExecutable: { executable.contains($0) },
+            versionOf: { versions[$0] }
+        )
+    }
+
+    func test_ytDlp_updatedNewer_wins() {
+        let sut = tools(executable: [bundled, updated], versions: [bundled: "2026.05.01", updated: "2026.08.01"])
+        XCTAssertEqual(sut.ytDlpURL(), updated)
+    }
+
+    func test_ytDlp_updatedOlder_bundledWins() {
+        let sut = tools(executable: [bundled, updated], versions: [bundled: "2026.08.01", updated: "2026.05.01"])
+        XCTAssertEqual(sut.ytDlpURL(), bundled)
+    }
+
+    func test_ytDlp_updatedEqual_bundledWins() {
+        let sut = tools(executable: [bundled, updated], versions: [bundled: "2026.08.01", updated: "2026.08.01"])
+        XCTAssertEqual(sut.ytDlpURL(), bundled)
+    }
+
+    func test_ytDlp_updatedNotExecutable_bundledWins() {
+        let sut = tools(executable: [bundled], versions: [bundled: "2026.05.01", updated: "2026.08.01"])
+        XCTAssertEqual(sut.ytDlpURL(), bundled)
+    }
+
+    func test_ytDlp_updatedUnreadableVersion_bundledWins() {
+        let sut = tools(executable: [bundled, updated], versions: [bundled: "2026.05.01"])
+        XCTAssertEqual(sut.ytDlpURL(), bundled)
+    }
+
+    func test_ytDlp_bundledMissing_updatedIsUsed() {
+        let sut = tools(executable: [updated], versions: [updated: "2026.08.01"])
+        XCTAssertEqual(sut.ytDlpURL(), updated)
+    }
+
+    func test_ffmpeg_ignoresSupportDirectory() {
+        let sut = tools(executable: [], versions: [:])
+        XCTAssertFalse(sut.ffmpegURL.path.hasPrefix("/support"))
+        XCTAssertFalse(sut.ffprobeURL.path.hasPrefix("/support"))
+        XCTAssertFalse(sut.nodeURL.path.hasPrefix("/support"))
+    }
 }

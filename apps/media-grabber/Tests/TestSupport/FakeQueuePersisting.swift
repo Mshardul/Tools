@@ -8,6 +8,7 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
         var columnSaves: [ColumnConfig] = []
         var playlistGroupSaves: [[PersistedPlaylistGroup]] = []
         var flushes = 0
+        var writesDisabled = false
         var cannedQueue: [PersistedJob] = []
         var cannedHistory: [PersistedJob] = []
         var cannedColumns: ColumnConfig?
@@ -80,6 +81,14 @@ public final class FakeQueuePersisting: QueuePersisting, @unchecked Sendable {
 
     public func flushNow() async {
         box.mutate { $0.flushes += 1 }
+    }
+
+    public var writesDisabled: Bool {
+        box.read { $0.writesDisabled }
+    }
+
+    public func disableWrites() {
+        box.mutate { $0.writesDisabled = true }
     }
 
     public func loadQueue() -> [PersistedJob] {

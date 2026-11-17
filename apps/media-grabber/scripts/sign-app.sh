@@ -1,5 +1,5 @@
 #!/bin/bash
-# Signs Sparkle's nested helpers, then the framework, then the app. Ad-hoc unless an identity is passed.
+# Signs the bundled tools and Sparkle's nested helpers, then the framework, then the app. Ad-hoc unless an identity is passed.
 set -euo pipefail
 
 app="${1:?app bundle}"
@@ -28,5 +28,19 @@ if [ -d "$root/Updater.app" ]; then
   sign "$root/Updater.app"
 fi
 sign "$framework"
+
+tools="$app/Contents/Resources/Tools"
+if [ -d "$tools" ]; then
+  find "$tools" -type f -perm -u+x -print0 | while IFS= read -r -d '' tool; do
+    sign "$tool"
+  done
+fi
+shield="$app/Contents/Resources/Shield"
+if [ -d "$shield" ]; then
+  find "$shield" -type f -name '*.node' -print0 | while IFS= read -r -d '' addon; do
+    sign "$addon"
+  done
+fi
+
 sign "$app"
-codesign --verify --strict "$app"
+codesign --verify --deep --strict "$app"

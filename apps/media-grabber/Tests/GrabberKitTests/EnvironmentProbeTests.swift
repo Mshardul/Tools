@@ -22,7 +22,6 @@ final class EnvironmentProbeTests: XCTestCase {
         let tools = ManagedTools(resourceRoot: resources, supportRoot: support, isExecutable: { _ in true })
         let present = [tools.bundledYtDlp.path, tools.ffmpegURL.path, tools.ffprobeURL.path]
         let report = await probe(runner: runner, present: Set(present)).probe()
-        XCTAssertNil(report.brew)
         XCTAssertEqual(report.ytDlp?.version, "2025.09.26")
         XCTAssertEqual(report.ffmpeg?.version, "8.0")
         XCTAssertEqual(report.ffprobe?.version, "8.0")
@@ -74,19 +73,19 @@ final class EnvironmentProbeTests: XCTestCase {
     }
 
     func test_environmentReport_driftVerdict_nilWhenYtDlpMissing() {
-        let report = EnvironmentReport(brew: nil, ytDlp: nil, ffmpeg: nil)
+        let report = EnvironmentReport(ytDlp: nil, ffmpeg: nil)
         XCTAssertNil(report.ytDlpDriftVerdict)
     }
 
     func test_environmentReport_driftVerdict_currentWhenAtOrAboveMinimum() {
         let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/bundle/Tools/yt-dlp"), version: "2099.01.01")
-        let report = EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: nil)
+        let report = EnvironmentReport(ytDlp: ytDlp, ffmpeg: nil)
         XCTAssertEqual(report.ytDlpDriftVerdict, .current)
     }
 
     func test_environmentReport_driftVerdict_driftWhenBelowMinimum() {
         let ytDlp = ToolInfo(path: URL(fileURLWithPath: "/bundle/Tools/yt-dlp"), version: "2000.01.01")
-        let report = EnvironmentReport(brew: nil, ytDlp: ytDlp, ffmpeg: nil)
+        let report = EnvironmentReport(ytDlp: ytDlp, ffmpeg: nil)
         guard case .drift = report.ytDlpDriftVerdict else {
             XCTFail("expected drift verdict, got \(String(describing: report.ytDlpDriftVerdict))")
             return

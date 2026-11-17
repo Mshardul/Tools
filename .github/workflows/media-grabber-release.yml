@@ -111,6 +111,14 @@ jobs:
           test -d "$app" || { echo "MediaGrabber.app not found at $app" >&2; exit 1; }
           # notarization + --options runtime slot in here together, later
           scripts/sign-app.sh "$app" "${MG_SIGN_IDENTITY:--}"
+          echo "path=$app" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke test bundled tools
+        env:
+          APP: ${{ steps.app.outputs.path }}
+        run: |
+          app="$APP"
+          codesign --verify --deep --strict "$app"
           tools="$app/Contents/Resources/Tools"
           for bin in yt-dlp ffmpeg ffprobe node; do
             test -x "$tools/$bin" || { echo "missing bundled $bin" >&2; exit 1; }
@@ -120,8 +128,16 @@ jobs:
           "$tools/ffprobe" -version
           "$tools/node" --version
           test -f "$app/Contents/Resources/Shield/server/build/main.js"
+          test -d "$app/Contents/Resources/Shield/server/node_modules/express"
           test -f "$app/Contents/Resources/Shield/plugin.zip"
-          echo "path=$app" >> "$GITHUB_OUTPUT"
+          "$tools/node" "$app/Contents/Resources/Shield/server/build/main.js" --port 4999 > shield-smoke.log 2>&1 &
+          shield_pid=$!
+          trap 'kill $shield_pid 2>/dev/null || true' EXIT
+          for _ in 1 2 3 4 5 6 7 8 9 10; do
+            curl -fsS http://127.0.0.1:4999/ping && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:4999/ping || { cat shield-smoke.log; echo "sign-in helper did not start from the app" >&2; exit 1; }
 
       - name: Package DMG
         id: dmg

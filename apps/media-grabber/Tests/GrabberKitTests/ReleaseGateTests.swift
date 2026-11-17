@@ -110,21 +110,21 @@ final class ReleaseGateTests: XCTestCase {
         let effects = RecordingEffects(deleteError: CocoaError(.fileWriteUnknown))
         let result = await UninstallSequence.run(effects)
         XCTAssertEqual(result, .failed)
-        XCTAssertEqual(effects.steps, [.shutdown, .deleteFootprint])
+        XCTAssertEqual(effects.steps, [.shutdown, .stopSaving, .deleteFootprint])
     }
 
     func test_uninstallOrderStopsAfterAFailedTrash() async {
         let effects = RecordingEffects(trashError: CocoaError(.fileWriteNoPermission))
         let result = await UninstallSequence.run(effects)
         XCTAssertEqual(result, .needsManualRemoval)
-        XCTAssertEqual(effects.steps, [.shutdown, .deleteFootprint, .clearPreferences, .trashBundle])
+        XCTAssertEqual(effects.steps, [.shutdown, .stopSaving, .deleteFootprint, .clearPreferences, .trashBundle])
     }
 
     func test_uninstallOrderRemovesThenWouldQuit() async {
         let effects = RecordingEffects()
         let result = await UninstallSequence.run(effects)
         XCTAssertEqual(result, .removed)
-        XCTAssertEqual(effects.steps, [.shutdown, .deleteFootprint, .clearPreferences, .trashBundle])
+        XCTAssertEqual(effects.steps, [.shutdown, .stopSaving, .deleteFootprint, .clearPreferences, .trashBundle])
     }
 
     private func temporaryHome() -> URL {
@@ -140,7 +140,7 @@ final class ReleaseGateTests: XCTestCase {
 
 private final class RecordingEffects: UninstallEffects, @unchecked Sendable {
     enum Step: Equatable {
-        case shutdown, deleteFootprint, clearPreferences, trashBundle
+        case shutdown, stopSaving, deleteFootprint, clearPreferences, trashBundle
     }
 
     private let box = Locked(State())
@@ -162,6 +162,10 @@ private final class RecordingEffects: UninstallEffects, @unchecked Sendable {
 
     func shutdown() async {
         box.mutate { $0.steps.append(.shutdown) }
+    }
+
+    func stopSaving() {
+        box.mutate { $0.steps.append(.stopSaving) }
     }
 
     func deleteFootprint() throws {

@@ -17,7 +17,7 @@ final class DiagnosticsPaneModel {
     private(set) var reportText: String = ""
     private(set) var lastRunAt: Date?
     private(set) var isRunningCheck = false
-    private(set) var isReinstallingYtDlp = false
+    private(set) var isUpdatingYtDlp = false
     private(set) var latestReport: EnvironmentReport?
 
     static let emptyPlaceholder = "Not checked yet."
@@ -120,10 +120,10 @@ final class DiagnosticsPaneModel {
         lastRunAt = Date()
     }
 
-    func reinstallYtDlp() async {
-        isReinstallingYtDlp = true
-        defer { isReinstallingYtDlp = false }
-        _ = await ytDlpUpdater.reinstallToMinimum()
+    func updateYtDlp() async {
+        isUpdatingYtDlp = true
+        defer { isUpdatingYtDlp = false }
+        _ = await ytDlpUpdater.updateToLatest()
         await runCheck()
     }
 
@@ -275,7 +275,7 @@ struct DiagnosticsPane: View {
 
     private func updateButton(_ model: DiagnosticsPaneModel) -> some View {
         Button {
-            Task { await model.reinstallYtDlp() }
+            Task { await model.updateYtDlp() }
         } label: {
             Label("Update", systemImage: "arrow.clockwise")
                 .font(theme.bodyFont(11, .semibold))
@@ -288,7 +288,7 @@ struct DiagnosticsPane: View {
                 )
         }
         .buttonStyle(.plain)
-        .disabled(model.isReinstallingYtDlp)
+        .disabled(model.isUpdatingYtDlp)
     }
 
     private func reportRow(_ key: String, value: String, tone: DiagnosticsPaneModel.RowTone) -> some View {

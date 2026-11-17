@@ -7,7 +7,12 @@ public enum YtDlpUpdateResult: Sendable, Equatable {
 }
 
 public protocol YtDlpUpdating: Sendable {
-    func reinstallToMinimum() async -> YtDlpUpdateResult
+    func updateToLatest() async -> YtDlpUpdateResult
+}
+
+public enum YtDlpUpdateCopy {
+    public static let offline = "Couldn't download the update. Check your connection and try again."
+    public static let damaged = "The update didn't download properly, so nothing was changed. Try again later."
 }
 
 public struct YtDlpFetchError: Error, Equatable, Sendable {
@@ -27,6 +32,7 @@ public struct YtDlpBinary: Sendable, Equatable {
 }
 
 public protocol YtDlpReleaseFetching: Sendable {
+    func latestVersion() async -> Result<String, YtDlpFetchError>
     func latest() async -> Result<YtDlpBinary, YtDlpFetchError>
 }
 
@@ -35,11 +41,13 @@ public struct YtDlpUpdater: YtDlpUpdating {
     private let binDirectory: URL
     private let minimumVersion: String
     private let canary: @Sendable (URL) async -> Bool
+    private let installedVersion: @Sendable () -> String?
 
     public init(
         fetcher: YtDlpReleaseFetching,
         binDirectory: URL,
         minimumVersion: String = EngineTuning.default.minimumYtDlpVersion,
+        installedVersion: @escaping @Sendable () -> String? = { nil },
         canary: @escaping @Sendable (URL) async -> Bool = { url in
             if case .success = await CanaryProbe.run(ytDlpPath: url, runner: ProcessRunner()) {
                 return true
@@ -51,14 +59,29 @@ public struct YtDlpUpdater: YtDlpUpdating {
         self.binDirectory = binDirectory
         self.minimumVersion = minimumVersion
         self.canary = canary
+        self.installedVersion = installedVersion
     }
 
     public init() {
-        let bin = ManagedTools.live().supportRoot.appendingPathComponent("bin")
-        self.init(fetcher: GitHubYtDlpReleaseFetcher(), binDirectory: bin)
+        let tools = ManagedTools.live()
+        self.init(
+            fetcher: GitHubYtDlpReleaseFetcher(),
+            binDirectory: tools.supportRoot.appendingPathComponent("bin"),
+            installedVersion: { tools.versionOf(tools.ytDlpURL()) }
+        )
     }
 
-    public func reinstallToMinimum() async -> YtDlpUpdateResult {
+    public func updateToLatest() async -> YtDlpUpdateResult {
+        let latestVersion: String
+        switch await fetcher.latestVersion() {
+        case let .success(version):
+            latestVersion = version
+        case let .failure(error):
+            return .failure(reason: error.message)
+        }
+        if let installed = installedVersion(), isCurrent(installed: installed, latest: latestVersion) {
+            return .success(newVersion: installed)
+        }
         let fetched: YtDlpBinary
         switch await fetcher.latest() {
         case let .success(binary):
@@ -66,16 +89,24 @@ public struct YtDlpUpdater: YtDlpUpdating {
         case let .failure(error):
             return .failure(reason: error.message)
         }
+        if let rejection = rejection(for: fetched) {
+            return .failure(reason: rejection)
+        }
+        return await install(fetched)
+    }
+
+    private func rejection(for fetched: YtDlpBinary) -> String? {
         guard let downloaded = DottedVersion(parsing: fetched.version),
               let minimum = DottedVersion(parsing: minimumVersion),
               downloaded >= minimum
         else {
-            return .failure(reason: "The newest downloader is older than this app allows.")
+            return "The newest downloader is older than this app allows."
         }
         let digest = SHA256.hash(data: fetched.bytes).map { String(format: "%02x", $0) }.joined()
-        guard digest == fetched.sha256Hex.lowercased() else {
-            return .failure(reason: "The downloaded file didn't match its checksum.")
-        }
+        return digest == fetched.sha256Hex.lowercased() ? nil : YtDlpUpdateCopy.damaged
+    }
+
+    private func install(_ fetched: YtDlpBinary) async -> YtDlpUpdateResult {
         let fileManager = FileManager.default
         let incoming = binDirectory.appendingPathComponent("yt-dlp.incoming")
         let destination = binDirectory.appendingPathComponent("yt-dlp")
@@ -85,7 +116,7 @@ public struct YtDlpUpdater: YtDlpUpdating {
             try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: incoming.path)
         } catch {
             try? fileManager.removeItem(at: incoming)
-            return .failure(reason: "The download didn't finish.")
+            return .failure(reason: YtDlpUpdateCopy.offline)
         }
         guard await canary(incoming) else {
             try? fileManager.removeItem(at: incoming)
@@ -99,9 +130,16 @@ public struct YtDlpUpdater: YtDlpUpdating {
             }
         } catch {
             try? fileManager.removeItem(at: incoming)
-            return .failure(reason: "The download didn't finish.")
+            return .failure(reason: YtDlpUpdateCopy.offline)
         }
         return .success(newVersion: fetched.version)
+    }
+
+    private func isCurrent(installed: String, latest: String) -> Bool {
+        guard let have = DottedVersion(parsing: installed), let want = DottedVersion(parsing: latest) else {
+            return false
+        }
+        return have >= want
     }
 }
 
@@ -110,6 +148,18 @@ public struct GitHubYtDlpReleaseFetcher: YtDlpReleaseFetching {
 
     public init(session: URLSession = .shared) {
         self.session = session
+    }
+
+    public func latestVersion() async -> Result<String, YtDlpFetchError> {
+        do {
+            return try await .success(Self.version(fromTag: releaseTag()))
+        } catch {
+            return .failure(YtDlpFetchError(message: YtDlpUpdateCopy.offline))
+        }
+    }
+
+    private static func version(fromTag tag: String) -> String {
+        tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
     }
 
     public func latest() async -> Result<YtDlpBinary, YtDlpFetchError> {
@@ -121,12 +171,12 @@ public struct GitHubYtDlpReleaseFetcher: YtDlpReleaseFetching {
             let (sumsData, _) = try await session.data(from: sumsURL)
             let sums = String(data: sumsData, encoding: .utf8) ?? ""
             guard let checksum = Self.checksum(in: sums, filename: "yt-dlp_macos") else {
-                return .failure(YtDlpFetchError(message: "The download didn't finish."))
+                return .failure(YtDlpFetchError(message: YtDlpUpdateCopy.offline))
             }
-            let version = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
+            let version = Self.version(fromTag: tag)
             return .success(YtDlpBinary(version: version, bytes: bytes, sha256Hex: checksum))
         } catch {
-            return .failure(YtDlpFetchError(message: "The download didn't finish."))
+            return .failure(YtDlpFetchError(message: YtDlpUpdateCopy.offline))
         }
     }
 
