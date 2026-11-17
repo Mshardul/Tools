@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Shell variables, exported before any user task: `OLD="$HOME/Documents/Github/Tools"`, `NEW="$HOME/Documents/Github/MediaGrabber"`, `REPO=Mshardul/MediaGrabber`.
-- Agent tasks run inside `$NEW`. Tools is never edited before Task 17.
+- Agent tasks run inside `$NEW`. Tools source files are never edited before Task 17; the only earlier touches are the Task 1 commit and the Task 11 build-output cleanup.
 - Tag: `vX.Y.Z`. Bare `X.Y.Z` is the version everywhere else.
 - Feed: `https://github.com/Mshardul/MediaGrabber/releases/latest/download/appcast.xml`.
 - Runtime config: `https://raw.githubusercontent.com/Mshardul/MediaGrabber/main/config/player-clients.json`.
@@ -48,7 +48,30 @@ Run: `gh repo create "$REPO" --public` Expected: prints `https://github.com/Msha
 
 - [ ] **Step 3: Filter a fresh clone of Tools into `$NEW`**
 
-Filter a fresh clone, never the Tools checkout. `$NEW` must not exist beforehand: `test ! -e "$NEW"`. The result has exactly this content, with `origin` pointing at the new repository and nothing pushed:
+Filter a fresh clone, never the Tools checkout. Commit everything in `$OLD` first, because only committed files are carried.
+
+```bash
+test ! -e "$NEW"
+git clone --no-local "$OLD" "$NEW"
+cd "$NEW"
+git filter-repo \
+  --path apps/media-grabber/ \
+  --path docs/superpowers/ \
+  --path .github/workflows/media-grabber.yml \
+  --path .github/workflows/media-grabber-release.yml \
+  --path LICENSE \
+  --path-rename apps/media-grabber/: \
+  --path-rename .github/workflows/media-grabber.yml:.github/workflows/ci.yml \
+  --path-rename .github/workflows/media-grabber-release.yml:.github/workflows/release.yml
+git filter-repo --force --invert-paths \
+  --path docs/superpowers/specs/2026-05-25-claude-usage-dashboard-design.md \
+  --path docs/superpowers/plans/2026-05-25-claude-usage-dashboard.md \
+  --path docs/superpowers/specs/2026-08-21-tools-collection-design.md \
+  --path docs/superpowers/plans/2026-08-21-tools-collection-layout.md
+git remote add origin "git@github.com:$REPO.git"
+```
+
+`git filter-repo` is at `/opt/homebrew/bin/git-filter-repo`. The app's own `docs/superpowers/` merges into the root `docs/superpowers/` because both land at the same path. Nothing is pushed. The result has exactly this content:
 
 - the contents of `apps/media-grabber/` at the root;
 - `docs/superpowers/` at the same path, minus `specs/2026-05-25-claude-usage-dashboard-design.md`, `plans/2026-05-25-claude-usage-dashboard.md`, `specs/2026-08-21-tools-collection-design.md`, `plans/2026-08-21-tools-collection-layout.md`;
@@ -60,7 +83,7 @@ Filter a fresh clone, never the Tools checkout. `$NEW` must not exist beforehand
 - [ ] **Step 4: Check the result**
 
 ```bash
-cd "$NEW" && test -f Project.swift && test -f LICENSE && test -f .github/workflows/ci.yml && test -f .github/workflows/release.yml && test ! -e apps && echo layout-ok
+cd "$NEW" && test -f Project.swift && test -d site && test -f LICENSE && test -f .github/workflows/ci.yml && test -f .github/workflows/release.yml && test ! -e apps && echo layout-ok
 find "$NEW" -name .DS_Store -not -path '*/.git/*'
 for f in specs/2026-05-25-claude-usage-dashboard-design.md plans/2026-05-25-claude-usage-dashboard.md specs/2026-08-21-tools-collection-design.md plans/2026-08-21-tools-collection-layout.md; do test ! -e "$NEW/docs/superpowers/$f" || echo "unexpected $f"; done
 test -f "$NEW/docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md" && echo parent-spec-ok
@@ -170,7 +193,7 @@ Run: `scripts/tests/test_current_version.sh` Expected: FAIL, `scripts/current-ve
 
 - [ ] **Step 3: Implement `scripts/current-version.sh`**
 
-Keep only lines matching `^v[0-9]+\.[0-9]+\.[0-9]+$`, strip `v`, sort numerically on each of the three fields (`sort -t. -k1,1n -k2,2n -k3,3n`), take the last, print `0.0.0` if empty.
+Keep only lines matching `^v[0-9]+\.[0-9]+\.[0-9]+$`, strip `v`, sort numerically on each of the three fields (`sort -t. -k1,1n -k2,2n -k3,3n`), take the last, print `0.0.0` if empty. The script must exit 0 on empty input and on input with no qualifying line, so a `grep` that matches nothing must not abort it under `set -e -o pipefail`.
 
 - [ ] **Step 4: Run the test**
 
@@ -192,10 +215,11 @@ Run: `scripts/tests/test_current_version.sh` Expected: PASS.
 make -n release-dry-run VERSION=0.1.0
 make release-dry-run
 make release-dry-run VERSION=1.2
+make release-overwrite
 make release-overwrite VERSION=abc
 ```
 
-Expected: the first prints a line containing `gh workflow run release.yml -f version=0.1.0 -f dry_run=true`; the other three exit non-zero with the validation messages and start nothing.
+Expected: the first prints a line containing `gh workflow run release.yml -f version=0.1.0 -f dry_run=true`; the other four exit non-zero with the validation messages and start nothing.
 
 **Gate:** Step 4 and Step 6 results; `make lint` clean.
 
@@ -211,14 +235,15 @@ Expected: the first prints a line containing `gh workflow run release.yml -f ver
   - `feed_pin`: the `FEED` value in `scripts/appcast.py` equals the `SUFeedURL` value in `Project.swift`, and both equal `https://github.com/Mshardul/MediaGrabber/releases/latest/download/appcast.xml`.
   - `reinsert_replaces`: inserting version `0.1.0` twice with different signatures leaves exactly one `<sparkle:version>0.1.0</sparkle:version>` item, carrying the second signature.
   - `empty_existing`: `--existing` pointing at an empty file yields a valid feed with exactly one item.
+  - `missing_existing`: `--existing` pointing at a path that does not exist yields a valid feed with exactly one item.
 
 - [ ] **Step 2: Run them**
 
-Run: `make appcast-test` Expected: `feed_pin` FAILS (old address). `reinsert_replaces` and `empty_existing` pass: `upsert` already drops a same-version item.
+Run: `make appcast-test` Expected: `feed_pin` FAILS (old address). `reinsert_replaces` and `empty_existing` pass: `upsert` already drops a same-version item. `missing_existing` may fail; that is the signal to handle a missing file.
 
 - [ ] **Step 3: Implement**
 
-Set `FEED` in `scripts/appcast.py` and `SUFeedURL` in `Project.swift` to the feed address. If `empty_existing` unexpectedly failed in Step 2, change `parse_items`/`render` so an empty input starts empty.
+Set `FEED` in `scripts/appcast.py` and `SUFeedURL` in `Project.swift` to the feed address. If `empty_existing` or `missing_existing` failed in Step 2, change the existing-file read, `parse_items` or `render` so an empty or missing input starts empty.
 
 - [ ] **Step 4: Run**
 
@@ -269,9 +294,11 @@ Expected: PASS.
 
 - [ ] **Step 2: Verify**
 
+`actionlint` checks expressions, inputs and the shell in `run:` blocks, which a YAML parse does not. If `command -v actionlint` finds nothing, stop and ask you to run `brew install actionlint`.
+
 ```bash
 grep -n 'apps/media-grabber\|working-directory' .github/workflows/ci.yml
-ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }' .github/workflows/*.yml
+actionlint .github/workflows/*.yml
 ```
 
 Expected: no output from either.
@@ -328,20 +355,20 @@ The enclosure URL is `https://github.com/Mshardul/MediaGrabber/releases/download
 Replace the `softprops` and `peaceiris` steps with one step, skipped on a dry run, using `GH_TOKEN`:
 
 ```bash
-[ "$OVERWRITE" != "true" ] || gh release delete "$TAG" --yes
+[ "$OVERWRITE" != "true" ] || gh release delete "$TAG" --yes --cleanup-tag
 gh release create "$TAG" "$DMG" SHA256SUMS appcast.xml --draft --target "$GITHUB_SHA" --title "MediaGrabber $VERSION" --notes-file release-notes.md ${GENERATE:+--generate-notes}
-names="$(gh release view "$TAG" --json assets -q '.assets[].name' | sort | tr '\n' ' ')"
+names="$(gh release view "$TAG" --json assets -q '.assets[].name' | LC_ALL=C sort | tr '\n' ' ')"
 [ "$names" = "MediaGrabber-$VERSION.dmg SHA256SUMS appcast.xml " ] || { echo "assets incomplete: $names" >&2; exit 1; }
 gh release edit "$TAG" --draft=false --latest
 ```
 
-`release-notes.md` holds the existing install note, preceded by `Initial release.` when no earlier published release exists. `GENERATE` is set when one does. The Pages publish step is removed.
+`release-notes.md` holds the existing install note, preceded by `Initial release.` when no earlier published release exists. `GENERATE` is set when one does. The Pages publish step is removed. `--cleanup-tag` removes the old tag with the release, so the new tag is created at `$GITHUB_SHA` and matches the DMG.
 
 - [ ] **Step 6: Verify**
 
 ```bash
 grep -n 'apps/media-grabber\|media-grabber-v\|mshardul.github.io\|softprops\|peaceiris\|working-directory' .github/workflows/release.yml
-ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }' .github/workflows/*.yml
+actionlint .github/workflows/*.yml
 ```
 
 Expected: no output from either.
@@ -394,9 +421,9 @@ jobs:
 
 - [ ] **Step 2: Verify**
 
-Run: `ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }' .github/workflows/*.yml` Expected: no output.
+Run: `actionlint .github/workflows/*.yml` Expected: no output.
 
-**Gate:** parses. The first deploy happens when the product page adds `site/`.
+**Gate:** actionlint is clean. `site/` is carried over from Tools and is the first product page; its first deploy is Task 14, Step 3.
 
 ---
 
@@ -404,12 +431,12 @@ Run: `ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }' .github/workflows/*.y
 
 **Files:**
 
-- Modify: `Resources/NOTICES.md:6`, `README.md:9`, `CLAUDE.md`, `docs/development.md`, `docs/state-flow.md:5`, `docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md`, `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` (lines 3, 58, 69, 231, 268, 593, 608, 610, 612)
+- Modify: `Resources/NOTICES.md:6`, `README.md:9`, `roadmap.md` (any hit of the sweep pattern), `CLAUDE.md`, `docs/development.md`, `docs/state-flow.md:5`, `docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md`, `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` (lines 3, 58, 69, 231, 268, 593, 608, 610, 612)
 
 - [ ] **Step 1: Edit each as a plain statement of the current state**
   - `NOTICES.md`: the ffmpeg build script is `scripts/fetch-tools.sh` in `https://github.com/Mshardul/MediaGrabber`.
   - `README.md`: the download link is `https://github.com/Mshardul/MediaGrabber/releases/latest`.
-  - `CLAUDE.md` Release section: tag `vX.Y.Z`; the make targets from Task 4; workflows `ci.yml`, `release.yml`, `pages.yml`; the feed is the latest release's `appcast.xml`; Pages serves only the product page; the key names; remove "Pages must serve the `gh-pages` branch". Python section: `.venv/bin/python`, `make venv`. The doc-tree line no longer distinguishes a repo-root tree from an app-local one.
+  - `CLAUDE.md` Release section (the `release-major` line naming the `media-grabber-v*` tag, and the line naming `.github/workflows/media-grabber-release.yml`): tag `vX.Y.Z`; the make targets from Task 4; workflows `ci.yml`, `release.yml`, `pages.yml`; the feed is the latest release's `appcast.xml`; Pages serves only the product page; the key names; remove "Pages must serve the `gh-pages` branch". Python section: `.venv/bin/python`, `make venv`. The doc-tree line no longer distinguishes a repo-root tree from an app-local one.
   - `docs/development.md`: remove `cd apps/media-grabber` and "From `apps/media-grabber`".
   - `docs/state-flow.md`: paths are relative to the repository root.
   - Release distribution spec: the feed is the latest release's asset, the tag is `vX.Y.Z`, no filtered-release-list workaround, and `overwrite` is the explicit way to replace a published release.
@@ -418,13 +445,13 @@ Run: `ruby -ryaml -e 'ARGV.each { |f| YAML.load_file(f) }' .github/workflows/*.y
 - [ ] **Step 2: Verify**
 
 ```bash
-grep -rInE 'Mshardul/Tools|mshardul\.github\.io/Tools|media-grabber-v|apps/media-grabber|\.\./\.\./\.venv|Github/Tools' . --exclude-dir=.git --exclude-dir=.venv --exclude-dir=Derived --exclude-dir=build --exclude-dir=superpowers --exclude-dir=archived
+grep -rInE 'Mshardul/Tools|mshardul\.github\.io/Tools|media-grabber-v|apps/media-grabber|\.\./\.\./\.venv|Github/Tools|gh-pages|media-grabber(-release)?\.yml|media-grabber-appcast' . --exclude-dir=.git --exclude-dir=.venv --exclude-dir=Derived --exclude-dir=build --exclude-dir=superpowers --exclude-dir=archived
 ```
 
 Expected: no output. A hit inside a ticket row or audit report that describes past work stays; any other hit is fixed. Then run the same pattern without the `superpowers` exclusion on the two living specs:
 
 ```bash
-grep -nE 'Mshardul/Tools|mshardul\.github\.io/Tools|media-grabber-v|apps/media-grabber|\.\./\.\./\.venv|Github/Tools' docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md
+grep -nE 'Mshardul/Tools|mshardul\.github\.io/Tools|media-grabber-v|apps/media-grabber|\.\./\.\./\.venv|Github/Tools|gh-pages|media-grabber(-release)?\.yml|media-grabber-appcast' docs/superpowers/specs/2026-11-04-media-grabber-release-distribution-design.md docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md
 ```
 
 Expected: no output.
@@ -451,12 +478,22 @@ Run: `mdfind 'kMDItemCFBundleIdentifier == "app.mediagrabber.mac"'` Expected: ex
 
 - [ ] **Step 1: Push**
 
-Commit the edits in `$NEW` and push `main` to `$REPO`, history included. The first push carries the edited files.
+```bash
+cd "$NEW"
+git add -A
+git commit -m "Point every address at the standalone repository"
+git push -u origin main
+```
+
+The first push carries the history and the edited files. It also triggers `pages.yml` because `site/` is new; that run fails until Task 14 turns Pages on, so ignore it. CI runs before Task 13 creates the key; `Project.swift` omits `SUPublicEDKey` when `TUIST_SPARKLE_PUBLIC_KEY` is unset, so the build and tests do not need it.
 
 - [ ] **Step 2: Watch CI**
 
 ```bash
-gh run watch --repo "$REPO" "$(gh run list --repo "$REPO" --workflow ci.yml --limit 1 --json databaseId -q '.[0].databaseId')"
+sleep 10
+RUN="$(gh run list --repo "$REPO" --workflow ci.yml --limit 1 --json databaseId -q '.[0].databaseId')"
+test -n "$RUN" || { echo "no ci run yet; wait and repeat" >&2; false; }
+gh run watch --repo "$REPO" --exit-status "$RUN"
 gh run list --repo "$REPO" --workflow ci.yml --limit 1 --json conclusion -q '.[0].conclusion'
 curl -fsSI https://raw.githubusercontent.com/Mshardul/MediaGrabber/main/config/player-clients.json | head -1
 ```
@@ -531,7 +568,20 @@ Run: `gh api -X POST "repos/$REPO/pages" -f build_type=workflow` Expected: JSON.
 
 Run: `gh api "repos/$REPO/pages" -q .build_type` Expected: `workflow`
 
-**Gate:** Step 2.
+- [ ] **Step 3: Deploy the first page**
+
+```bash
+gh workflow run pages.yml --repo "$REPO"
+sleep 10
+RUN="$(gh run list --repo "$REPO" --workflow pages.yml --limit 1 --json databaseId -q '.[0].databaseId')"
+test -n "$RUN" || { echo "no pages run yet; wait and repeat" >&2; false; }
+gh run watch --repo "$REPO" --exit-status "$RUN"
+curl -fsSI "$(gh api "repos/$REPO/pages" -q .html_url)" | head -1
+```
+
+Expected: the run succeeds and curl prints `HTTP/2 200`.
+
+**Gate:** Step 3.
 
 ---
 
@@ -544,8 +594,10 @@ Run (in `$NEW`): `make release-dry-run VERSION=0.1.0` Expected: `gh` reports the
 - [ ] **Step 2: Watch it**
 
 ```bash
+sleep 10
 RUN="$(gh run list --repo "$REPO" --workflow release.yml --limit 1 --json databaseId -q '.[0].databaseId')"
-gh run watch --repo "$REPO" "$RUN"
+test -n "$RUN" || { echo "no release run yet; wait and repeat" >&2; false; }
+gh run watch --repo "$REPO" --exit-status "$RUN"
 gh api "repos/$REPO/actions/runs/$RUN/artifacts" -q '.artifacts[].name'
 ```
 
@@ -590,20 +642,38 @@ Check first: `gh api repos/Mshardul/Tools/pages -q .html_url`. If it serves anyt
 
 - [ ] **Step 3: Remove the app from Tools**
 
-In `$OLD`, remove `apps/media-grabber/`, `.github/workflows/media-grabber.yml`, `.github/workflows/media-grabber-release.yml`, and every file under `docs/superpowers/` except the four that belong to other tools.
+```bash
+cd "$OLD"
+make -C apps/media-grabber drop-build-app
+git rm -rq apps/media-grabber .github/workflows/media-grabber.yml .github/workflows/media-grabber-release.yml
+git ls-files docs/superpowers | grep -Ev '2026-05-25-claude-usage-dashboard|2026-08-21-tools-collection' | xargs git rm -q
+rm -rf apps/media-grabber
+```
+
+The last line removes ignored build leftovers that `git rm` does not touch. You run it, so it is your call.
 
 - [ ] **Step 4: Point Tools at the new repository**
 
-Ask the agent to add one line to `$OLD/README.md` linking `https://github.com/Mshardul/MediaGrabber`. This edits Tools, so name the file and say yes first.
+Ask the agent to make two edits in Tools: add one line to `$OLD/README.md` linking `https://github.com/Mshardul/MediaGrabber`, and drop the sentence about the Swift app from the first-line comment of `$OLD/pyproject.toml`. This edits Tools, so name each file and say yes first.
 
-- [ ] **Step 5: Check**
+- [ ] **Step 5: Commit and push Tools**
+
+```bash
+cd "$OLD"
+git add -A
+git commit -m "Move MediaGrabber to its own repository"
+git push
+```
+
+- [ ] **Step 6: Check**
 
 ```bash
 test ! -d "$OLD/apps/media-grabber" && echo app-gone
 ls "$OLD/docs/superpowers/specs" "$OLD/docs/superpowers/plans"
 gh secret list --repo Mshardul/Tools | grep -c SPARKLE
+grep -rIn 'media-grabber' "$OLD" --exclude-dir=.git --exclude-dir=.venv --exclude-dir=node_modules
 ```
 
-Expected: `app-gone`; the two listings show only the four other-tool documents; the count is `0`.
+Expected: `app-gone`; the two listings show only the four other-tool documents; the count is `0`; the last grep prints nothing.
 
-**Gate:** Step 5. The phase is complete.
+**Gate:** Step 6. The phase is complete.
