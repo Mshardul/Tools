@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No phase/ticket/epic references anywhere in source code or UI copy, ever (comments, identifiers, log strings, tooltips — nothing). A not-yet-built thing says "coming in a future update," never a phase number.
-- Comments: single-line only, only to explain *why*, only when the type/function names don't already carry it. No `///` doc comments. Max 120 chars (`.swiftformat --maxwidth` / `.swiftlint line_length` are both 120).
+- Comments: single-line only, only to explain _why_, only when the type/function names don't already carry it. No `///` doc comments. Max 120 chars (`.swiftformat --maxwidth` / `.swiftlint line_length` are both 120).
 - No git commands of any kind (no `git status`, no `git mv`, nothing) unless the user's own message asks for one in that turn. File moves/renames use plain `mv`.
 - yt-dlp version pin is a **soft pin**: the app declares a minimum-known-good version as a hardcoded constant; drift is "installed is older than declared," never "installed differs from declared." Installed-newer-than-declared is current, not drift. The fix action re-runs `brew reinstall yt-dlp` (or `upgrade`) to reach at least the declared minimum — **never** an unconditional "upgrade to latest." A version string that fails to parse into comparable integer components is treated as **unknown**, never as stale.
 - Every chip with a `↻` action (the existing shield-restart chip and the new engine-freshness chip) gets the same busy-state treatment while its fix runs: the glyph spins, the dot shows a pulsing neutral state, the icon is disabled for the duration. Both animations are suppressed under `prefers-reduced-motion` (macOS: `NSWorkspace.shared.accessibilityDisplayShouldReduceMotion`, wired the same way the existing motif spinner already checks it).
@@ -28,6 +28,7 @@
 ## File Structure
 
 **New files:**
+
 - `Sources/GrabberKit/Onboarding/DottedVersion.swift` — the dotted-integer version parser/comparator and the drift verdict type. Pure, no I/O.
 - `Sources/GrabberKit/Onboarding/CanaryProbe.swift` — the shared canary-URL constant and probe-run function, called identically by Onboarding and Diagnostics ("one canary concept, not two").
 - `Sources/GrabberKit/Diagnostics/DiagnosticBundle.swift` — builds the redacted zip (app-log tail, most-recent job log, report text) and returns a file URL.
@@ -48,6 +49,7 @@
 - `Tests/AppUnitTests/SiteDisplayNameTests.swift`
 
 **Modified files:**
+
 - `Sources/GrabberKit/Onboarding/EnvironmentProbe.swift` — `EnvironmentReport` gains a `ytDlpDriftVerdict` field (computed from `DottedVersion`).
 - `Sources/GrabberKit/Model/EngineTuning.swift` — new `minimumYtDlpVersion` constant.
 - `Sources/GrabberKit/Onboarding/OnboardingInstaller.swift` — `testRun` step calls a real `MetadataProbe` canary instead of auto-passing.
@@ -73,10 +75,12 @@
 ## Task 1: `DottedVersion` — dotted-integer version parsing and comparison
 
 **Files:**
+
 - Create: `Sources/GrabberKit/Onboarding/DottedVersion.swift`
 - Test: `Tests/GrabberKitTests/DottedVersionTests.swift`
 
 **Interfaces:**
+
 - Produces: `public struct DottedVersion: Sendable, Equatable, Comparable` with `public init?(parsing raw: String)` (returns `nil` if unparseable) and `public static func <(lhs: DottedVersion, rhs: DottedVersion) -> Bool`. Also `public enum YtDlpDriftVerdict: Sendable, Equatable { case current, drift(installed: String, minimum: String), unknown(raw: String) }` and `public static func driftVerdict(installedRaw: String, minimumRaw: String) -> YtDlpDriftVerdict`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -152,8 +156,7 @@ final class DottedVersionTests: XCTestCase {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DottedVersionTests`
-Expected: FAIL — `DottedVersion` does not exist yet (compile error).
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DottedVersionTests` Expected: FAIL — `DottedVersion` does not exist yet (compile error).
 
 - [ ] **Step 3: Write the implementation**
 
@@ -217,24 +220,24 @@ extension DottedVersion {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DottedVersionTests`
-Expected: PASS, all 11 tests.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DottedVersionTests` Expected: PASS, all 11 tests.
 
 - [ ] **Step 5: Lint**
 
-Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Onboarding/DottedVersion.swift Tests/GrabberKitTests/DottedVersionTests.swift` then `mise exec -- swiftlint lint --strict Sources/GrabberKit/Onboarding/DottedVersion.swift`
-Fix any violations before proceeding.
+Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Onboarding/DottedVersion.swift Tests/GrabberKitTests/DottedVersionTests.swift` then `mise exec -- swiftlint lint --strict Sources/GrabberKit/Onboarding/DottedVersion.swift` Fix any violations before proceeding.
 
 ---
 
 ## Task 2: `EngineTuning.minimumYtDlpVersion` constant + `EnvironmentReport` drift field
 
 **Files:**
+
 - Modify: `Sources/GrabberKit/Model/EngineTuning.swift`
 - Modify: `Sources/GrabberKit/Onboarding/EnvironmentProbe.swift`
 - Test: `Tests/GrabberKitTests/EnvironmentProbeTests.swift` (existing file — add new test cases)
 
 **Interfaces:**
+
 - Consumes: `DottedVersion.driftVerdict(installedRaw:minimumRaw:)` from Task 1.
 - Produces: `EngineTuning.minimumYtDlpVersion: String` (a stored constant, env-overridable via `MG_MIN_YTDLP_VERSION` following the existing `MG_*` override pattern in `EngineTuning.resolved(environment:)`). `EnvironmentReport.ytDlpDriftVerdict: YtDlpDriftVerdict` computed from `ytDlp?.version` against `EngineTuning.default.minimumYtDlpVersion` (missing yt-dlp is reported as `.unknown(raw: "")`, since a missing dependency is a different failure mode entirely handled elsewhere — this field only exists when `ytDlp != nil`, so it stays `EnvironmentReport.ytDlpDriftVerdict: YtDlpDriftVerdict?`).
 
@@ -266,8 +269,7 @@ func test_environmentReport_driftVerdict_driftWhenBelowMinimum() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/EnvironmentProbeTests`
-Expected: FAIL — `ytDlpDriftVerdict` does not exist on `EnvironmentReport`.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/EnvironmentProbeTests` Expected: FAIL — `ytDlpDriftVerdict` does not exist on `EnvironmentReport`.
 
 - [ ] **Step 3: Add the constant to `EngineTuning`**
 
@@ -300,13 +302,11 @@ public var ytDlpDriftVerdict: YtDlpDriftVerdict? {
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/EnvironmentProbeTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/EnvironmentProbeTests` Expected: PASS.
 
 - [ ] **Step 6: Run the full GrabberKit suite to check nothing else broke**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests`
-Expected: PASS (existing `EngineTuningTests` must still pass with the new field added to `.default`/`.resolved`).
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests` Expected: PASS (existing `EngineTuningTests` must still pass with the new field added to `.default`/`.resolved`).
 
 - [ ] **Step 7: Lint**
 
@@ -317,10 +317,12 @@ Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Model/EngineTuning.swif
 ## Task 3: `YtDlpUpdater` — pinned reinstall action
 
 **Files:**
+
 - Create: `Sources/GrabberKit/Diagnostics/YtDlpUpdater.swift`
 - Test: `Tests/GrabberKitTests/YtDlpUpdaterTests.swift`
 
 **Interfaces:**
+
 - Consumes: `ProcessRunning` (existing protocol, see `Tests/TestSupport/FakeProcessRunner.swift` for the fake), `EnvironmentProbing` (existing).
 - Produces: `public protocol YtDlpUpdating: Sendable { func reinstallToMinimum() async -> YtDlpUpdateResult }`, `public enum YtDlpUpdateResult: Sendable, Equatable { case success(newVersion: String), failure(reason: String) }`, `public struct YtDlpUpdater: YtDlpUpdating`.
 
@@ -377,8 +379,7 @@ final class YtDlpUpdaterTests: XCTestCase {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/YtDlpUpdaterTests`
-Expected: FAIL — `YtDlpUpdater` does not exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/YtDlpUpdaterTests` Expected: FAIL — `YtDlpUpdater` does not exist.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -432,8 +433,7 @@ public struct YtDlpUpdater: YtDlpUpdating {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/YtDlpUpdaterTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/YtDlpUpdaterTests` Expected: PASS.
 
 - [ ] **Step 5: Lint**
 
@@ -444,10 +444,12 @@ Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Diagnostics/YtDlpUpdate
 ## Task 4: Real canary probe for Onboarding's `testRun` step
 
 **Files:**
+
 - Modify: `Sources/GrabberKit/Onboarding/OnboardingInstaller.swift`
 - Test: `Tests/GrabberKitTests/OnboardingInstallerTests.swift` (existing — add cases)
 
 **Interfaces:**
+
 - Consumes: `MetadataProbing` (existing protocol from `Sources/GrabberKit/Download/MetadataProbe.swift`), `Tests/TestSupport/FakeMetadataProbe.swift` (existing fake).
 - Produces: `OnboardingInstaller.init(probe: EnvironmentProbing = EnvironmentProbe(), runner: ProcessRunning = ProcessRunner(), metadataProbe: MetadataProbing? = nil)` — `metadataProbe` defaults to `nil` and is lazily constructed from the resolved `ytDlp` tool path when needed (so call sites that don't inject one still get a real probe in production, while tests can inject a fake directly).
 
@@ -496,8 +498,7 @@ func test_testRunStep_probesTheKnownCanaryURL() async {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/OnboardingInstallerTests`
-Expected: FAIL — `metadataProbe` parameter doesn't exist, `canaryURL` doesn't exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/OnboardingInstallerTests` Expected: FAIL — `metadataProbe` parameter doesn't exist, `canaryURL` doesn't exist.
 
 - [ ] **Step 3: Implement a shared `CanaryProbe` type — not a private helper on `OnboardingInstaller`**
 
@@ -553,13 +554,11 @@ Check `OnboardingStepID` / the step-state enum for whether a `.failed` case alre
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/OnboardingInstallerTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/OnboardingInstallerTests` Expected: PASS.
 
 - [ ] **Step 5: Run the full GrabberKit suite**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests`
-Expected: PASS — no regressions in other onboarding tests that relied on the old auto-pass behavior. If any do, update them to inject a `FakeMetadataProbe` with a success result rather than reverting the change.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests` Expected: PASS — no regressions in other onboarding tests that relied on the old auto-pass behavior. If any do, update them to inject a `FakeMetadataProbe` with a success result rather than reverting the change.
 
 - [ ] **Step 6: Lint**
 
@@ -570,10 +569,12 @@ Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Onboarding/OnboardingIn
 ## Task 5: `DiagnosticBundle` — the redacted support zip
 
 **Files:**
+
 - Create: `Sources/GrabberKit/Diagnostics/DiagnosticBundle.swift`
 - Test: `Tests/GrabberKitTests/DiagnosticBundleTests.swift`
 
 **Interfaces:**
+
 - Consumes: nothing new — reads plain file contents (app log, job log) passed in as strings/URLs, no direct filesystem-path knowledge of `~/Library/Logs/MediaGrabber` (that resolution happens at the call site in the App target, per existing precedent — check how `Sources/App/` currently resolves the logs directory, e.g. search for `Library/Logs/MediaGrabber`, and pass the resolved tail/log contents in rather than have this pure type re-derive paths).
 - Produces: `public struct DiagnosticBundle: Sendable { public static func build(appLogTail: String, jobLog: String?, report: String) throws -> Data }` — returns zip file `Data` (not a written-to-disk URL; the App-target call site decides where to write it, since Diagnostics writes via `NSSharingServicePicker` which wants `Data`/a temp file, not a fixed path).
 
@@ -630,8 +631,7 @@ final class DiagnosticBundleTests: XCTestCase {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DiagnosticBundleTests`
-Expected: FAIL — `DiagnosticBundle` does not exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DiagnosticBundleTests` Expected: FAIL — `DiagnosticBundle` does not exist.
 
 - [ ] **Step 3: Write the implementation**
 
@@ -743,8 +743,7 @@ private extension Data {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DiagnosticBundleTests`
-Expected: PASS. If using a real zip library found in Step 3, verify the produced archive round-trips (unzip and check contents) rather than only checking the raw signature bytes.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/DiagnosticBundleTests` Expected: PASS. If using a real zip library found in Step 3, verify the produced archive round-trips (unzip and check contents) rather than only checking the raw signature bytes.
 
 - [ ] **Step 5: Lint**
 
@@ -755,11 +754,13 @@ Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Diagnostics/DiagnosticB
 ## Task 6: Chip busy state — `DotState.busy` + `ChipInteraction` refresh-in-progress
 
 **Files:**
+
 - Modify: `Sources/App/Chrome/HealthStrip.swift`
 - Modify: `Sources/App/Chrome/HealthController.swift`
 - Test: `Tests/AppUnitTests/HealthControllerTests.swift` (existing — add cases)
 
 **Interfaces:**
+
 - Produces: `enum DotState { case ok, attention, busy }`; `enum ChipInteraction { case none, refresh(isBusy: Bool), popover(PopoverKind) }` (changing `.refresh` from a bare case to carrying `isBusy: Bool` — this breaks `Tests/AppUnitTests/HealthControllerTests.swift:29`'s `XCTAssertEqual(controller.chips[0].interaction, .refresh)`, which must become `.refresh(isBusy: false)`); `HealthController` gains `func markBusy(chipID: String)` and `func clearBusy(chipID: String)`, both `@MainActor`, which mutate the relevant chip's `interaction` to `.refresh(isBusy: true/false)` in place without rebuilding the whole `chips` array from a snapshot.
 
 - [ ] **Step 1: Write the failing tests**
@@ -804,8 +805,7 @@ func testSubsequentSnapshotUpdateClearsBusyState() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests`
-Expected: FAIL — `.busy` case, `.refresh(isBusy:)`, `markBusy`/`clearBusy` don't exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests` Expected: FAIL — `.busy` case, `.refresh(isBusy:)`, `markBusy`/`clearBusy` don't exist.
 
 - [ ] **Step 3: Update `DotState` and `ChipInteraction`**
 
@@ -871,8 +871,7 @@ Update `shieldChip(_:)`'s existing `.refresh` construction (line 21-33) to `inte
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests` Expected: PASS.
 
 - [ ] **Step 6: Fix the compile break at the shield-chip call site**
 
@@ -894,8 +893,7 @@ HealthStrip(chips: appModel.healthChips) { chip in
 
 - [ ] **Step 7: Run the full AppUnitTests suite**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Expected: PASS — check for any other `.refresh` pattern-match sites broken by the associated-value change (compiler will catch these as exhaustiveness errors; fix each to match `.refresh(let isBusy)` or `.refresh` with `_` as appropriate).
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests` Expected: PASS — check for any other `.refresh` pattern-match sites broken by the associated-value change (compiler will catch these as exhaustiveness errors; fix each to match `.refresh(let isBusy)` or `.refresh` with `_` as appropriate).
 
 - [ ] **Step 8: Lint**
 
@@ -906,11 +904,13 @@ Run: `mise exec -- swiftformat --lint Sources/App/Chrome/HealthStrip.swift Sourc
 ## Task 7: Engine-freshness chip
 
 **Files:**
+
 - Modify: `Sources/App/Chrome/HealthController.swift`
 - Modify: `Sources/App/AppModel.swift`
 - Test: `Tests/AppUnitTests/HealthControllerTests.swift` (existing — add cases)
 
 **Interfaces:**
+
 - Consumes: `EnvironmentReport.ytDlpDriftVerdict` (Task 2), `YtDlpUpdating` (Task 3), `HealthController.markBusy`/`clearBusy` (Task 6).
 - Produces: `HealthController.update(snapshot:now:environmentReport:)` — the existing method gains a third parameter, `environmentReport: EnvironmentReport?`. `AppModel` calls `envProbe.probe()` exactly once today, inside `refreshOnboardingState()` (`Sources/App/AppModel.swift:169`), and discards the result after computing `needsOnboarding` — this task adds a new stored property `AppModel.latestEnvironmentReport: EnvironmentReport?` (private(set)), sets it inside `refreshOnboardingState()` right after the existing `envProbe.probe()` call, and passes `latestEnvironmentReport` into the `healthController.update(...)` call in `AppModel.runConsumer()` (`Sources/App/AppModel.swift:373`), which has no `EnvironmentReport` in scope today. `AppModel.restartYtDlp()` mirrors the existing `restartShield()` method exactly, calling `YtDlpUpdating.reinstallToMinimum()`, then re-running `envProbe.probe()` to refresh `latestEnvironmentReport` before the next `HealthController.update` call picks it up.
 
@@ -962,8 +962,7 @@ func testEngineChipUnknownVersionShowsOkNotAttention() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests`
-Expected: FAIL — no `environmentReport` parameter, no "engine" chip ID produced.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests` Expected: FAIL — no `environmentReport` parameter, no "engine" chip ID produced.
 
 - [ ] **Step 3: Implement the engine chip**
 
@@ -1053,13 +1052,11 @@ HealthStrip(chips: appModel.healthChips) { chip in
 
 - [ ] **Step 5: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/HealthControllerTests` Expected: PASS.
 
 - [ ] **Step 6: Run the full AppUnitTests suite**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Expected: PASS — fix any other call site broken by `update`'s new parameter.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests` Expected: PASS — fix any other call site broken by `update`'s new parameter.
 
 - [ ] **Step 7: Lint**
 
@@ -1070,6 +1067,7 @@ Run: `mise exec -- swiftformat --lint Sources/App/Chrome/HealthController.swift 
 ## Task 8: `PreferencesPane.diagnostics` + `DiagnosticsPane` view
 
 **Files:**
+
 - Modify: `Sources/App/Preferences/PreferencesPane.swift`
 - Modify: `Sources/App/Preferences/PreferencesView.swift`
 - Create: `Sources/App/Preferences/DiagnosticsPane.swift`
@@ -1078,6 +1076,7 @@ Run: `mise exec -- swiftformat --lint Sources/App/Chrome/HealthController.swift 
 - Test: `Tests/AppUnitTests/DiagnosticsPaneTests.swift`
 
 **Interfaces:**
+
 - Consumes: `YtDlpUpdating` (Task 3), `DiagnosticBundle.build` (Task 5), `MetadataProbing` + `CanaryProbe.url` (Task 4), `IncomingLinkController.markAppPasteboardWrite(_:)` (existing).
 - Produces: `PreferencesPane.diagnostics` case; `SharePresenter.share(data: Data, filename: String)`, a static/instance function called directly from a SwiftUI `Button` action, reading the current window's content view via `NSApp.keyWindow?.contentView` (simpler than wrapping an `NSViewRepresentable` — the app's one existing AppKit-bridging view, `WindowFrameAutosave.swift`, exists to reach `view.window` from inside the view hierarchy for window-autosave, a different need than presenting a share sheet from a button tap).
 
@@ -1095,8 +1094,7 @@ func test_diagnosticsPane_hasATitle() {
 }
 ```
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/PreferencesPaneTests`
-Expected: FAIL.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/PreferencesPaneTests` Expected: FAIL.
 
 Open `Sources/App/Preferences/PreferencesPane.swift`. Add `case diagnostics` to the enum (line 1-8, currently 7 cases) and its `.title`/`.subtitle`/`.group` computed properties following the exact pattern the other 7 cases already use (read the file to match the property style precisely — a `switch self` returning per-case strings, most likely).
 
@@ -1123,7 +1121,7 @@ enum SharePresenter {
 }
 ```
 
-No unit test for this one — it's a thin AppKit-interop shim with no meaningful pure logic to assert on beyond "it compiles and doesn't crash," which XCTest can't verify without an actual window; cover its call site's *decision to invoke it* in `DiagnosticsPaneTests` (Step 5) instead by injecting a spy in place of `SharePresenter` — extract the `share` call behind a small `protocol SharePresenting { func share(data: Data, filename: String) }` so `DiagnosticsPane` can take one via `@Environment` or initializer injection, and the test asserts the spy received the right `Data`/filename without touching real AppKit UI.
+No unit test for this one — it's a thin AppKit-interop shim with no meaningful pure logic to assert on beyond "it compiles and doesn't crash," which XCTest can't verify without an actual window; cover its call site's _decision to invoke it_ in `DiagnosticsPaneTests` (Step 5) instead by injecting a spy in place of `SharePresenter` — extract the `share` call behind a small `protocol SharePresenting { func share(data: Data, filename: String) }` so `DiagnosticsPane` can take one via `@Environment` or initializer injection, and the test asserts the spy received the right `Data`/filename without touching real AppKit UI.
 
 Revise the type to:
 
@@ -1211,8 +1209,7 @@ final class DiagnosticsPaneTests: XCTestCase {
 
 - [ ] **Step 5: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/DiagnosticsPaneTests`
-Expected: FAIL — `DiagnosticsPaneModel` doesn't exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/DiagnosticsPaneTests` Expected: FAIL — `DiagnosticsPaneModel` doesn't exist.
 
 - [ ] **Step 6: Implement `DiagnosticsPaneModel` and `DiagnosticsPane`**
 
@@ -1312,13 +1309,11 @@ Write `DiagnosticsPane: View` — a SwiftUI view matching `apps/media-grabber/do
 
 - [ ] **Step 7: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/DiagnosticsPaneTests -only-testing:AppUnitTests/PreferencesPaneTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/DiagnosticsPaneTests -only-testing:AppUnitTests/PreferencesPaneTests` Expected: PASS.
 
 - [ ] **Step 8: Run the full test suite and build the app**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Then: `make` (rebuild + launch), navigate to Preferences → Diagnostics, click Run check, confirm the report populates and both buttons work (Share opens the system share sheet; Copy report puts text on the clipboard — verify with ⌘V into a text field).
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests` Then: `make` (rebuild + launch), navigate to Preferences → Diagnostics, click Run check, confirm the report populates and both buttons work (Share opens the system share sheet; Copy report puts text on the clipboard — verify with ⌘V into a text field).
 
 - [ ] **Step 9: Lint**
 
@@ -1329,11 +1324,13 @@ Run: `mise exec -- swiftformat --lint Sources/App/Preferences/PreferencesPane.sw
 ## Task 9: `Preferences` Updates toggles + `UpdatesPane` view
 
 **Files:**
+
 - Modify: `Sources/GrabberKit/Model/Preferences.swift`
 - Modify: `Sources/App/Preferences/UpdatesPane.swift` — currently the stepless Phase 3 placeholder (`struct UpdatesPane: View { var body: some View { PrefSteplessPane(.updates, line: "Update checks are coming in a later update.") } }`); this task replaces its body. `PreferencesView.swift`'s `.updates` call site (`case .updates: UpdatesPane()`) needs no change — it already constructs `UpdatesPane()` with no arguments.
 - Test: `Tests/GrabberKitTests/PreferencesTests.swift` (existing — add cases)
 
 **Interfaces:**
+
 - Produces: `Preferences.autoCheckAppUpdates: Bool` (default `true`), `Preferences.autoCheckYtDlpUpdates: Bool` (default `true`), both added to `ownedKeys`.
 
 - [ ] **Step 1: Write the failing Preferences tests**
@@ -1371,8 +1368,7 @@ func test_resetToDefaults_resetsBothUpdateToggles() {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/PreferencesTests`
-Expected: FAIL.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/PreferencesTests` Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
@@ -1394,8 +1390,7 @@ Add both keys to the `ownedKeys` array (line 239-247).
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/PreferencesTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/PreferencesTests` Expected: PASS.
 
 `UpdatesPane` itself needs no additional test file: it is a declarative SwiftUI view binding two toggles directly to the `Preferences` properties Steps 1-4 already cover with real assertions. A test that constructs `Preferences` and flips a toggle without touching the view would duplicate Step 1's coverage under a misleading name — skip it.
 
@@ -1439,8 +1434,7 @@ No change is needed at the `.updates` call site in `PreferencesView.swift`'s `pa
 
 - [ ] **Step 6: Build and manually verify**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/PreferencesTests`
-Then `make`, open Preferences → Updates, confirm both toggles render and persist across app relaunch.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:GrabberKitTests/PreferencesTests` Then `make`, open Preferences → Updates, confirm both toggles render and persist across app relaunch.
 
 - [ ] **Step 7: Lint**
 
@@ -1451,12 +1445,14 @@ Run: `mise exec -- swiftformat --lint Sources/GrabberKit/Model/Preferences.swift
 ## Task 10: Reconcile Site display-name mapping (`SiteNames` as single source of truth)
 
 **Files:**
+
 - Modify: `Sources/App/SiteNames.swift`
 - Modify: `Sources/App/Rows/RowModel.swift`
 - Modify: `Sources/App/Chrome/HealthController.swift`
 - Test: `Tests/AppUnitTests/SiteDisplayNameTests.swift`
 
 **Interfaces:**
+
 - Produces: `SiteNames.display(_ key: String) -> String` becomes the one function both the table (`RowModel.site(for:)`) and the HealthStrip host chip (`HealthController.oneHostChip`) call. The two existing maps are keyed on different domains (yt-dlp `extractor` string vs. `RateHost.canonical`) but overlap in intent — both ultimately identify "youtube," "vimeo," etc. `SiteNames.display` takes the **already-lowercased key**; both call sites are responsible for lowercasing their own domain-specific identifier before calling it. `SiteNames` holds one merged dictionary covering every entry from both old maps' coverage (`youtube`, `youtube:tab`, `youtu.be`, `m.youtube.com`, `vimeo`, `vimeo.com`, `archive.org`, `generic`, plus the mockup's example `soundcloud`).
 
 - [ ] **Step 1: Write the failing tests**
@@ -1498,8 +1494,7 @@ final class SiteDisplayNameTests: XCTestCase {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/SiteDisplayNameTests`
-Expected: FAIL — `soundcloud` and the `youtube:tab`/`youtu.be`/`m.youtube.com` variants aren't in the current 3-entry `SiteNames` map.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/SiteDisplayNameTests` Expected: FAIL — `soundcloud` and the `youtube:tab`/`youtu.be`/`m.youtube.com` variants aren't in the current 3-entry `SiteNames` map.
 
 - [ ] **Step 3: Merge the two maps into `SiteNames`**
 
@@ -1535,13 +1530,11 @@ Research confirmed `HealthController.swift:58` already calls `SiteNames.display(
 
 - [ ] **Step 6: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/SiteDisplayNameTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/SiteDisplayNameTests` Expected: PASS.
 
 - [ ] **Step 7: Run the full AppUnitTests suite**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Expected: PASS — check for any existing test asserting the old `RowModel.siteMap` behavior directly (e.g. a `RowModelStatusTests` or similar asserting a specific Site cell string) and update it to expect the merged map's output if it differs.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests` Expected: PASS — check for any existing test asserting the old `RowModel.siteMap` behavior directly (e.g. a `RowModelStatusTests` or similar asserting a specific Site cell string) and update it to expect the merged map's output if it differs.
 
 - [ ] **Step 8: Lint**
 
@@ -1554,6 +1547,7 @@ Run: `mise exec -- swiftformat --lint Sources/App/SiteNames.swift Sources/App/Ro
 > **Supersedes** the earlier draft that invented labels (`retrying`, etc.) or removed Status entirely. Contract: `apps/media-grabber/docs/job-status-and-actions.md` (**locked**). Do not reintroduce top filter chips. Status column stays, **hidden by default**.
 
 **Files (expected — confirm paths while executing):**
+
 - Modify: `Sources/GrabberKit/Model/ColumnConfig.swift` — Status not in `defaultVisible`; add optional `.remark`
 - Modify: `Sources/App/Table/TablePresentation.swift`, `Sources/App/Rows/RowModel.swift`, `Sources/App/Rows/RowStatusText.swift` — 1:1 `JobState` labels; Remark per §5 catalog (short); **no** `retrying`
 - Modify: Home table chrome — status **left rail** (`All` / `Downloading` / `Done` / `Inactive` + badge); remove top filter chips
@@ -1564,6 +1558,7 @@ Run: `mise exec -- swiftformat --lint Sources/App/SiteNames.swift Sources/App/Ro
 - Docs (same phase or Task 15): parent §5.3/§5.4, `design-system.md` §4.2, Home mockup (later), `state-flow.md` § availableActions once code matches
 
 **Locked product rules (do not invent):**
+
 - Nine `JobState`s ↔ nine row labels (aliases OK: running→Downloading, completed→Saved).
 - Rail mapping per `job-status-and-actions.md` §2.
 - Remove = delete persistence entry (+ parts + job log). Cancel = keep as `cancelled`.
@@ -1578,18 +1573,20 @@ Run: `mise exec -- swiftformat --lint Sources/App/SiteNames.swift Sources/App/Ro
 - [ ] **Step 5: Row chrome** — Title `.help` tooltip; Remark hover/focus + optional column (a11y not hover-only).
 - [ ] **Step 6: Manual + lint** — exercise each rail bucket and action; `swiftformat`/`swiftlint` on touched files.
 
-*(Onboarding Install primacy — Install now primary; brew/pipx secondary — lands in the same Home/onboarding mockup pass if not already shipped; first-run empty Home copy stays Phase 13. Home mockups after this contract is treated as final — user preference.)*
+_(Onboarding Install primacy — Install now primary; brew/pipx secondary — lands in the same Home/onboarding mockup pass if not already shipped; first-run empty Home copy stays Phase 13. Home mockups after this contract is treated as final — user preference.)_
 
 ---
 
 ## Task 12: `AppModel.Page.about` + nav wiring (removing `.diagnostics` as a page)
 
 **Files:**
+
 - Modify: `Sources/App/AppModel.swift`
 - Modify: `Sources/App/MainWindow.swift`
 - Test: any existing `AppModelTests`/navigation test asserting on `Page.diagnostics` (find via `grep -rln "Page.diagnostics\|\.diagnostics" Tests/AppUnitTests/`)
 
 **Interfaces:**
+
 - Produces: `AppModel.Page` becomes `enum Page: Equatable { case home; case preferences(PreferencesPane = .downloads); case about }`.
 
 - [ ] **Step 1: Update the `Page` enum's `.diagnostics` case and its two call sites**
@@ -1644,8 +1641,7 @@ private var page: some View {
 
 - [ ] **Step 4: Build to find remaining compile breaks**
 
-Run: `mise exec -- tuist generate --no-open` then attempt a build via `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' build`
-Expected: compile errors at every remaining non-exhaustive `switch appModel.page` or `Page.diagnostics` reference. Fix each one explicitly (do not use `default:`).
+Run: `mise exec -- tuist generate --no-open` then attempt a build via `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' build` Expected: compile errors at every remaining non-exhaustive `switch appModel.page` or `Page.diagnostics` reference. Fix each one explicitly (do not use `default:`).
 
 - [ ] **Step 5: Update/remove any test referencing `Page.diagnostics`**
 
@@ -1653,8 +1649,7 @@ For each test found in Step 1, update its assertion to use `.about` if it was te
 
 - [ ] **Step 6: Run the full AppUnitTests suite**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests` Expected: PASS.
 
 - [ ] **Step 7: Lint**
 
@@ -1665,6 +1660,7 @@ Run: `mise exec -- swiftformat --lint Sources/App/AppModel.swift Sources/App/Mai
 ## Task 13: `AboutView` + `DeveloperView` + `AppUpdateChecker`
 
 **Files:**
+
 - Create: `Sources/App/About/AboutView.swift`
 - Create: `Sources/App/About/DeveloperView.swift`
 - Create: `Sources/App/About/AppUpdateChecker.swift`
@@ -1672,6 +1668,7 @@ Run: `mise exec -- swiftformat --lint Sources/App/AppModel.swift Sources/App/Mai
 - Test: `Tests/AppUnitTests/AppUpdateCheckerTests.swift`
 
 **Interfaces:**
+
 - Consumes: `EnvironmentReport.ytDlpDriftVerdict` (Task 2), `YtDlpUpdating` (Task 3), `AppModel.restartYtDlp()` (Task 7).
 - Produces: `protocol GitHubReleaseChecking: Sendable { func latestRelease(owner: String, repo: String) async throws -> GitHubRelease }`, `struct GitHubRelease: Sendable, Equatable { let tagName: String; let htmlURL: URL }`, `struct AppUpdateChecker { func checkForUpdate(currentVersion: String) async -> AppUpdateStatus }`, `enum AppUpdateStatus: Sendable, Equatable { case notChecked, upToDate, updateAvailable(version: String, releaseURL: URL), checkFailed }`.
 
@@ -1722,8 +1719,7 @@ final class AppUpdateCheckerTests: XCTestCase {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AppUpdateCheckerTests`
-Expected: FAIL — none of these types exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AppUpdateCheckerTests` Expected: FAIL — none of these types exist.
 
 - [ ] **Step 3: Implement `AppUpdateChecker`**
 
@@ -1788,8 +1784,7 @@ struct AppUpdateChecker {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AppUpdateCheckerTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AppUpdateCheckerTests` Expected: PASS.
 
 - [ ] **Step 5: Write the failing `AboutView`-model tests**
 
@@ -1853,8 +1848,7 @@ final class AboutViewTests: XCTestCase {
 
 - [ ] **Step 6: Run tests to verify they fail**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AboutViewTests`
-Expected: FAIL — `AboutViewModel` doesn't exist.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AboutViewTests` Expected: FAIL — `AboutViewModel` doesn't exist.
 
 - [ ] **Step 7: Implement `AboutViewModel`, `AboutView`, `DeveloperView`**
 
@@ -1904,8 +1898,7 @@ final class AboutViewModel {
 
 - [ ] **Step 8: Run tests to verify they pass**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AboutViewTests`
-Expected: PASS.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/AboutViewTests` Expected: PASS.
 
 - [ ] **Step 9: Wire `AboutView` into `MainWindow`**
 
@@ -1913,8 +1906,7 @@ Confirm Task 12's `case .about: AboutView()` now compiles against a real (not st
 
 - [ ] **Step 10: Run the full test suite and build**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests`
-Then `make`, navigate to About, confirm both tabs render, click "Check for updates," confirm the button state changes appropriately (or shows a failure gracefully if genuinely offline during manual testing).
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests` Then `make`, navigate to About, confirm both tabs render, click "Check for updates," confirm the button state changes appropriately (or shows a failure gracefully if genuinely offline during manual testing).
 
 - [ ] **Step 11: Lint**
 
@@ -1925,11 +1917,12 @@ Run: `mise exec -- swiftformat --lint Sources/App/About/` then `mise exec -- swi
 ## Task 14: `IncomingLinkController` clipboard-sniff call sites (Copy report, Share diagnostic bundle)
 
 **Files:**
+
 - Modify: `Sources/App/Preferences/DiagnosticsPane.swift` (from Task 8 — confirm the `pasteboardMarker` wiring is real, not just test-injected)
 - Modify: wherever `AppModel`/`PreferencesView` constructs `DiagnosticsPaneModel` in production (not test) code
 - Test: `Tests/AppUnitTests/IncomingLinkControllerTests.swift` (existing — confirm/add an integration-level case)
 
-This task closes the loop Task 8 left open: Task 8's `DiagnosticsPaneModel` accepts a `pasteboardMarker` closure defaulting to a no-op — this task wires the *real* `IncomingLinkController.markAppPasteboardWrite` into the production construction site. `AppModel.incomingLinkController: IncomingLinkController?` (`Sources/App/AppModel.swift:46`, `@ObservationIgnored weak var`) is weak and optional, so the production wiring must handle the nil case (a `nil` marker is simply a no-op, matching `DiagnosticsPaneModel`'s existing default).
+This task closes the loop Task 8 left open: Task 8's `DiagnosticsPaneModel` accepts a `pasteboardMarker` closure defaulting to a no-op — this task wires the _real_ `IncomingLinkController.markAppPasteboardWrite` into the production construction site. `AppModel.incomingLinkController: IncomingLinkController?` (`Sources/App/AppModel.swift:46`, `@ObservationIgnored weak var`) is weak and optional, so the production wiring must handle the nil case (a `nil` marker is simply a no-op, matching `DiagnosticsPaneModel`'s existing default).
 
 - [ ] **Step 1: Write the failing integration test**
 
@@ -1956,8 +1949,7 @@ func test_diagnosticsPaneModel_copyReport_ignoredByLaterClipboardSniff() async {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/IncomingLinkControllerTests`
-Expected: FAIL — the production `DiagnosticsPaneModel` construction site (added in Task 8) does not yet pass `pasteboardMarker:`, so it defaults to the no-op closure and the test's assertion (the app's own copy being ignored) fails.
+Run: `xcodebuild -workspace MediaGrabber.xcworkspace -scheme MediaGrabber-Workspace -destination 'platform=macOS' test -only-testing:AppUnitTests/IncomingLinkControllerTests` Expected: FAIL — the production `DiagnosticsPaneModel` construction site (added in Task 8) does not yet pass `pasteboardMarker:`, so it defaults to the no-op closure and the test's assertion (the app's own copy being ignored) fails.
 
 - [ ] **Step 3: Wire the real construction site**
 
@@ -1971,8 +1963,7 @@ pasteboardMarker: { [weak appModel] text in appModel?.incomingLinkController?.ma
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run the same command as Step 2.
-Expected: PASS.
+Run the same command as Step 2. Expected: PASS.
 
 - [ ] **Step 5: Manual verification**
 
@@ -1987,6 +1978,7 @@ Run lint on whatever file was changed in Step 3.
 ## Task 15: Documentation updates
 
 **Files:**
+
 - Modify: `apps/media-grabber/docs/design-system.md` (§4.2 Home — left rail, Status hidden by default, Remark, Inactive)
 - Modify: `docs/superpowers/specs/2026-08-28-youtube-downloader-mac-design.md` §5.3 / §5.4 (if not already aligned)
 - Modify: `apps/media-grabber/docs/state-flow.md` § availableActions once `job-status-and-actions.md` §6 closes
@@ -2005,6 +1997,7 @@ Run lint on whatever file was changed in Step 3.
 ## Self-Review Notes
 
 **Spec coverage check:**
+
 - §5.2 chip busy state → Task 6. Engine-freshness chip → Task 7. ✓
 - §5.3/§5.4 Home manager (rail, Status hidden by default, Remark, Site, Title tooltip) → Task 11 + Task 10. ✓
 - `job-status-and-actions.md` (full contract incl. Remark catalog, confirms, isActive, batch) → Task 11. ✓

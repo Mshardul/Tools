@@ -127,7 +127,7 @@ stateDiagram-v2
 
 ## 4. Actions per state (single job)
 
-Only list actions that are **enabled** (offered). Others are absent — not disabled placeholders — unless Phase 11 plan decides otherwise.
+Only list actions that are **enabled** (offered). Others are absent — not disabled placeholders.
 
 | State | Pause | Resume | Cancel | Force start | Restart | Restart with sign-in | Reveal | Remove | Open | Log |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

@@ -382,7 +382,7 @@ This section is written around YouTube, the hardest case. The mechanisms are per
 
 **Cookies from browser** — `--cookies-from-browser <choice>`, opt-in, default `.none`. `cookieReadFailed` fires on a direct user-requested cookie read that failed — a chosen browser in Preferences, or the Retry-with-cookies (`🔑`) action on a failed row. `CookieResolver` resolves the argument at spawn time (Firefox `profiles.ini` enumeration, a Safari Full-Disk-Access probe-read) and `YtDlpArguments` redacts the spec in logs.
 
-> Cookies are never required up front. A configured browser is used on every probe and download; otherwise both run cookie-less, and a failure that a sign-in can fix says so. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-03-cookie-independence.md` (Phase 16).
+> Cookies are never required up front. A configured browser is used on every probe and download; otherwise both run cookie-less, and a failure that a sign-in can fix says so. Spec: `docs/superpowers/specs/archived/2026-11-03-cookie-independence.md` (Phase 16).
 
 **User-Agent** — aligned to the chosen client; a small rotating pool.
 
@@ -603,9 +603,9 @@ Fourteen phases. The boundaries are **dependency cuts**: each phase is picked as
 
 - **Phase 15 — Table & Home finish.** _(shipped)_ View-only queue-row drag-reorder (session order; sort conflict confirms overwrite); Aurora body face IBM Plex Sans; first-run Home is a paste field plus a horizontal numbered strip. **Banner → footer already shipped** before this phase. Spec + plan archived: `docs/superpowers/{specs,plans}/archived/2026-10-04-media-grabber-phase-15-table-home-finish*`. **Out → Phase 17 / 19:** unchanged (site/identity; branding). Phase 18 is the site-identity closeout inserted 2026-11-05.
 
-- **Phase 16 — Cookie independence.** Cookie-less by default; a sign-in is suggested only after a failure it can fix; a configured browser is used as-is; site-neutral copy; cookie redaction in every log. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-03-cookie-independence.md`.
+- **Phase 16 — Cookie independence.** Cookie-less by default; a sign-in is suggested only after a failure it can fix; a configured browser is used as-is; site-neutral copy; cookie redaction in every log. Spec: `docs/superpowers/specs/archived/2026-11-03-cookie-independence.md`.
 
-- **Phase 17 — Site / identity maturity.** _(shipped)_ Player-client order from a cached JSON file and a per-job burned client after a bot-check; the YouTube check stays one optional local process; plain failure copy; a dismissible setup line when onboarding was skipped; sign-in applies to all sites or only named sites. Spec: `apps/media-grabber/docs/superpowers/specs/2026-11-05-media-grabber-phase-17-site-identity-design.md`. Optional extras (subtitles, menu bar, schedules, stats, graphs, per-skin light/dark, compact breakpoint) are unscheduled in `apps/media-grabber/future-ideas.md`.
+- **Phase 17 — Site / identity maturity.** _(shipped)_ Player-client order from a cached JSON file and a per-job burned client after a bot-check; the YouTube check stays one optional local process; plain failure copy; a dismissible setup line when onboarding was skipped; sign-in applies to all sites or only named sites. Spec: `docs/superpowers/specs/archived/2026-11-05-media-grabber-phase-17-site-identity-design.md`. Optional extras (subtitles, menu bar, schedules, stats, graphs, per-skin light/dark, compact breakpoint) are unscheduled in `apps/media-grabber/future-ideas.md`.
 
 - **Phase 18 — Site identity closeout.** _(shipped)_ Inserted 2026-11-05. The seven review decisions: no launch flash of the YouTube-check line; remote client names limited to `^[a-z0-9_]+$`; named-site list wording and an explanation when the list is empty; `state-flow.md` updated to the burned-client rule; a full copy audit including the Downloader health chip; delete `client(forAttempt:)`; jargon test reads real chip labels. Written out on `apps/media-grabber/roadmap.md`.
 

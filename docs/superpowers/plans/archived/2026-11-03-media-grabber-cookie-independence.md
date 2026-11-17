@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift, SwiftUI, XCTest, yt-dlp.
 
-**Spec:** `apps/media-grabber/docs/superpowers/specs/2026-11-03-cookie-independence.md`
+**Spec:** `docs/superpowers/specs/archived/2026-11-03-cookie-independence.md`
 
 ## Global Constraints
 

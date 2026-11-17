@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Working name stays `MediaGrabber`. No product-name / icon / Sparkle — Phase 18.
+- Working name stays `MediaGrabber`. No product-name / icon / Sparkle — Phase 19.
 - Row drag = **view order only**. Do **not** add an engine `reorder` intent or mutate `QueueSnapshot.jobs` order for priority.
 - Manual order is **session only** — not `columns.json`, not `queue.json`, not AppStorage.
 - Banner → footer is **already shipped** — do not touch `WarningBanner` / MainWindow dock as Phase 15 work.

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Swift, SwiftUI, XCTest, URLSession, yt-dlp.
 
-**Spec:** `apps/media-grabber/docs/superpowers/specs/2026-11-05-media-grabber-phase-17-site-identity-design.md`
+**Spec:** `docs/superpowers/specs/archived/2026-11-05-media-grabber-phase-17-site-identity-design.md`
 
 ## Global Constraints
 
