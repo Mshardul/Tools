@@ -1,4 +1,4 @@
-# Repo-wide Python tooling. Swift app apps/media-grabber/ has its own config.
+# Repo-wide Python tooling.
 
 [tool.ruff]
 target-version = "py314"

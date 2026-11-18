@@ -2,6 +2,8 @@
 
 A collection of small open-source tools (MIT). Each leaf directory is an independent project. Tools that outgrow this repo move to their own.
 
+MediaGrabber, a macOS video downloader, lives in its own repository: https://github.com/Mshardul/MediaGrabber
+
 Menu-bar / hotkey / palette **mini-tools** are out of scope here. `apps/` is only for full standalone apps.
 
 ## Python environment
@@ -16,7 +18,7 @@ python3 -m venv .venv
 Run tools with that interpreter, e.g. `.venv/bin/python cli/data-convert/data_convert.py …`, or `source .venv/bin/activate` first. Most leaves are stdlib-only; optional pins live in leaf `requirements.txt` files and are aggregated in the root `requirements.txt`.
 
 | Tool | Bucket | Status | What it does |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | [claude-usage](apps/claude-usage/) | apps | active | Browser dashboard for Claude Code token usage |
 | [youtube-downloader](cli/youtube-downloader/) | cli | active | Multi-threaded YouTube downloader built on `yt-dlp` |
 | [id-gen](cli/id-gen/) | cli | active | Generate uuid / nanoid |
